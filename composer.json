@@ -1,0 +1,8 @@
+{
+    "name": "kelompok3/docutrack-program",
+    "description": "This program was created by Group 3 of the TI3C class. The project aims to digitize the process of submitting the KAK (Work Reference Framework) for the Jakarta State Polytechnic Campus.",
+    "license": "MIT",
+    "require": {
+        "mpdf/mpdf": "^8.2"
+    }
+}
