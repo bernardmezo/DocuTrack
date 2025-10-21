@@ -1,0 +1,28 @@
+{
+  "name": "docutrack",
+  "version": "1.0.0",
+  "description": "folder proyek based learning PBL semester 3. web ini bertujuan untuk membuat ngtrack dokumen TOR dan LPJ pengajuan ke gedung direktorat ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx @tailwindcss/cli -i ./src-css/input.css -o ./public/assets/css/output.css --watch",
+    "build": "npx @tailwindcss/cli -i ./src-css/input.css -o ./public/assets/css/output.css --minify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bernardmezo/DocuTrack.git"
+  },
+  "keywords": [
+    "docutrack"
+  ],
+  "author": "agung, bernad, yopan, putra",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bernardmezo/DocuTrack/issues"
+  },
+  "homepage": "https://github.com/bernardmezo/DocuTrack#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.1.15",
+    "tailwindcss": "^4.1.15"
+  }
+}
