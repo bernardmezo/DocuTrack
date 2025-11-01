@@ -2,11 +2,12 @@
   "name": "docutrack",
   "version": "1.0.0",
   "description": "folder proyek based learning PBL semester 3. web ini bertujuan untuk membuat ngtrack dokumen TOR dan LPJ pengajuan ke gedung direktorat ",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx @tailwindcss/cli -i ./src-css/input.css -o ./public/assets/css/output.css --watch",
-    "build": "npx @tailwindcss/cli -i ./src-css/input.css -o ./public/assets/css/output.css --minify"
+    "dev": "postcss ./src-css/input.css -o ./public/assets/css/output.css --watch",
+    "build": "postcss ./src-css/input.css -o ./public/assets/css/output.css --minify"
   },
   "repository": {
     "type": "git",
@@ -21,8 +22,12 @@
     "url": "https://github.com/bernardmezo/DocuTrack/issues"
   },
   "homepage": "https://github.com/bernardmezo/DocuTrack#readme",
-  "dependencies": {
-    "@tailwindcss/cli": "^4.1.15",
-    "tailwindcss": "^4.1.15"
+  "dependencies": {},
+  "devDependencies": {
+    "tailwindcss": "^4.1.16",
+    "postcss": "^8.4.39",
+    "postcss-cli": "^11.0.0",
+    "autoprefixer": "^10.4.19",
+    "@tailwindcss/postcss": "^4.1.15"
   }
 }

@@ -1,1 +1,282 @@
 @import "tailwindcss";
+
+/* ========== THEME (Gabungan Landing Page + Admin + Form KAK) ========== */
+@theme {
+  /* Warna dari Landing Page & Form KAK */
+  --color-primary-dark-green: #033226;
+  --color-primary-medium-green: #0d6e5a;
+  --color-accent-teal: #0EB488;
+  --color-dark-text: #4a4a4a;
+  --color-light-grey-bg: #f7f9fc;
+  --color-hero-gradient-from: #0b8363ff;
+  --color-hero-gradient-to: #064E3B;
+  --color-feature-center-green: #006E54;
+  /* Warna lain (emerald, cyan) akan diambil otomatis oleh Tailwind jika digunakan */
+
+  /* Font dari Landing Page */
+  --font-montserrat: "Montserrat", sans-serif;
+  
+  /* Font dari Admin & Form KAK */
+  --font-poppins: "Poppins", sans-serif; 
+}
+
+/* ========== KEYFRAMES (Gabungan Admin + Form KAK) ========== */
+@keyframes pulseLg {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.9; }
+}
+@keyframes flow { /* Untuk stepper line */
+  0% { background-position: -200% 0; } 
+  100% { background-position: 200% 0; } 
+}
+@keyframes reveal { /* Untuk form fields */
+  0% { opacity: 0; transform: translateY(20px); } 
+  100% { opacity: 1; transform: translateY(0); } 
+}
+@keyframes slideDownFadeIn { /* Untuk repeater add */
+  0% { opacity: 0; transform: translateY(-10px); max-height: 0px; } 
+  100% { opacity: 1; transform: translateY(0); max-height: 150px; } 
+}
+@keyframes fadeOutScale { /* Untuk repeater remove */
+  0% { opacity: 1; transform: scale(1); max-height: 150px; padding-top: 0.75rem; padding-bottom: 0.75rem; margin-top: 0.5rem; margin-bottom: 0.5rem;} 
+  100% { opacity: 0; transform: scale(0.95); max-height: 0px; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0;} 
+}
+@keyframes fadeIn { /* Untuk section switch */
+  0% { opacity: 0; } 
+  100% { opacity: 1; } 
+}
+@keyframes fadeOut { /* Untuk section switch */
+  0% { opacity: 1; } 
+  100% { opacity: 0; } 
+}
+@keyframes fadeInUp { /* Dari Landing Page */
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== CUSTOM UTILITIES (Gabungan Landing Page + Admin + Form KAK) ========== */
+/* Font */
+@utility font-montserrat { font-family: var(--font-montserrat); }
+@utility font-poppins { font-family: var(--font-poppins); }
+
+/* Animasi */
+@utility animate-pulse-lg { animation: pulseLg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@utility animate-flow { animation: flow 2s linear infinite; }
+@utility animate-reveal { animation: reveal 0.5s cubic-bezier(0.215, 0.610, 0.355, 1) backwards; }
+@utility animate-slide-down-fade-in { animation: slideDownFadeIn 0.35s ease-out forwards; }
+@utility animate-fade-out-scale { animation: fadeOutScale 0.3s ease-out forwards; }
+@utility animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+@utility animate-fade-out { animation: fadeOut 0.5s ease-out forwards; }
+@utility animate-fade-in-up { animation: fadeInUp 0.7s ease-out forwards; opacity: 0; } /* Dari Landing Page */
+
+/* Penundaan Animasi (Dari Landing Page) */
+@utility delay-100 { animation-delay: 100ms; }
+@utility delay-200 { animation-delay: 200ms; }
+@utility delay-300 { animation-delay: 300ms; }
+@utility delay-400 { animation-delay: 400ms; }
+@utility delay-500 { animation-delay: 500ms; }
+
+/* ========== CSS KUSTOM (Gabungan Landing Page + Form KAK) ========== */
+/* -- Base styles (digabung) -- */
+html { @apply scroll-smooth; }
+/* body default ke montserrat (landing page), tapi layout app akan override ke poppins */
+body { @apply font-montserrat leading-relaxed bg-light-grey-bg text-dark-text overflow-x-hidden; }
+
+/* -- Tombol Brilliant (Landing Page) -- */
+@layer components {
+    .nav-link-base {
+        @apply flex items-center gap-2 px-4 py-2 rounded-full transition-colors font-medium;
+    }
+
+    .nav-link-inactive {
+        @apply text-gray-200 hover:bg-white/10 hover:text-white;
+    }
+
+    .nav-link-active {
+        @apply flex items-center gap-2 px-4 py-2 rounded-full 
+               bg-white/10 text-white font-medium 
+               transition-colors shadow-sm;
+    }
+    .btn-brilliant {
+            @apply inline-block rounded-full px-6 py-2 text-sm font-semibold text-white transition-all duration-500 ease-in-out;
+            background-image: linear-gradient(
+                to right, 
+                theme('colors.accent-teal'), 
+                theme('colors.emerald.400'), 
+                theme('colors.accent-teal')
+            );
+            background-size: 200% auto;
+            box-shadow: 0 4px 15px 0 theme(colors.accent-teal / 20%); 
+            text-shadow: 0 1px 2px theme(colors.black / 20%);
+        }
+
+    .btn-brilliant:hover {
+            background-position: -100% center; 
+            box-shadow: 0 8px 25px 0 theme(colors.accent-teal / 40%);
+            @apply -translate-y-0.5;
+        }
+
+    .btn-brilliant:active {
+            @apply scale-95;
+            box-shadow: 0 4px 15px 0 theme(colors.accent-teal / 20%);
+        }
+
+    .swal-konfirmasi.swal2-popup {
+        @apply rounded-xl shadow-lg;
+    }
+    .swal-konfirmasi.swal2-popup .swal2-title {
+        @apply text-2xl font-bold text-gray-800;
+    }
+    .swal-konfirmasi.swal2-popup .swal2-html-container {
+        @apply text-sm text-gray-600 mt-2 mb-4;
+    }
+    
+    /* Box untuk menampilkan nama kegiatan di dalam alert */
+    .swal-kegiatan-nama {
+        @apply bg-blue-50 text-blue-700 font-semibold p-3 rounded-lg mt-4 mb-2 text-base border border-blue-200;
+    }
+
+    /* Popup Loading */
+    .swal-loading.swal2-popup {
+        @apply rounded-xl;
+    }
+    .swal-loading.swal2-popup .swal2-title {
+        @apply text-xl font-semibold text-gray-700;
+    }
+    /* === STYLE FILTER TAB "PILL" (Brilliant UI) === */
+    .riwayat-filter-tab {
+        @apply w-full md:w-auto px-4 py-2 rounded-full text-sm font-semibold 
+               text-gray-600 transition-all duration-300 ease-in-out;
+    }
+    .riwayat-filter-tab:hover {
+        @apply bg-gray-200 text-gray-800;
+    }
+    .riwayat-filter-tab.active-tab {
+        @apply bg-blue-600 text-white shadow-md;
+    }
+    .riwayat-filter-tab.active-tab:hover {
+        @apply bg-blue-700 text-white;
+    }
+}
+
+/* -- Timeline Kustom (Landing Page) -- */
+.process-timeline {
+            @apply overflow-hidden;
+        }
+        
+        .timeline-container {
+            @apply relative max-w-[900px] mx-auto pt-12 pb-12;
+            counter-reset: timeline-step; 
+        }
+
+        /* Garis statis (di belakang) - z-10 */
+        .timeline-container::before { 
+            content: '';
+            @apply absolute w-1 bg-gray-200 top-0 bottom-0 left-1/2 -ml-0.5 z-10 shadow-inner;
+        }
+
+        /* Garis animasi - z-20 (DI TENGAH) */
+        .timeline-container::after { 
+            content: '';
+            @apply absolute w-1 bg-accent-teal top-0 left-1/2 -ml-0.5 z-20; 
+            height: var(--line-height-progress, 0%); 
+            transition: height 1s cubic-bezier(0.65, 0.05, 0.36, 1); 
+            box-shadow: 0 0 8px theme(colors.accent-teal / 80%);
+        }
+
+        /* KARTU TIMELINE - z-30 (DI ATAS SEMUA GARIS) */
+        .timeline-item {
+            @apply p-5 pr-10 relative w-1/2 mb-16 flex items-center bg-transparent shadow-none z-30;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out; 
+        }
+
+        .timeline-item.hidden { @apply opacity-0; }
+        .timeline-item:nth-child(odd).hidden { @apply -translate-x-12; }
+        .timeline-item:nth-child(even).hidden { @apply translate-x-12; }
+        .timeline-item.show { @apply opacity-100 translate-x-0; }
+
+        /* GAMBAR - z-auto (mengikuti z-30 dari parent) */
+        .timeline-item img {
+            @apply w-full h-auto rounded-lg shadow-xl block max-w-full cursor-pointer;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .timeline-item img:hover {
+            @apply scale-105 shadow-2xl;
+        }
+
+        /* Lingkaran Nomor - z-40 (DI ATAS GAMBAR) */
+        .timeline-item::before {
+            counter-increment: timeline-step;
+            content: counter(timeline-step);
+            @apply absolute w-12 h-12 top-1/2 scale-100 z-40
+                   bg-primary-dark-green rounded-full text-white font-bold text-2xl 
+                   flex items-center justify-center border-4 border-white;
+            transform: translateY(-50%) scale(1); 
+            transition: all 0.5s ease-out; 
+            box-shadow: 0 0 10px theme(colors.primary-medium-green / 50%); 
+        }
+        .timeline-item.hidden::before {
+            transform: translateY(-50%) scale(0.5); 
+            @apply opacity-0;
+        }
+        .timeline-item.show::before {
+            transform: translateY(-50%) scale(1); 
+            @apply opacity-100;
+            box-shadow: 0 0 15px theme(colors.accent-teal), 0 0 25px theme(colors.primary-medium-green / 70%); 
+        }
+
+        /* Posisi item (gambar) */
+        .timeline-item:nth-child(odd) { @apply left-0 justify-end pr-16; }
+        .timeline-item:nth-child(odd)::before { @apply -right-6 left-auto; }
+        .timeline-item:nth-child(even) { @apply left-1/2 justify-start pl-16; }
+        .timeline-item:nth-child(even)::before { @apply -left-6 right-auto; }
+
+        /* TIMELINE RESPONSIVE */
+        @media(max-width: 768px) {
+            .timeline-container::before,
+            .timeline-container::after {
+                @apply left-5 -ml-0.5;
+            }
+            .timeline-item {
+                @apply w-full left-0 mb-10 text-left justify-start shadow-none;
+            }
+            .timeline-item,
+            .timeline-item:nth-child(odd),
+            .timeline-item:nth-child(even) {
+                @apply left-0 p-0 pr-4 pl-20;
+            }
+            .timeline-item img {
+                @apply shadow-lg;
+            }
+            .timeline-item::before,
+            .timeline-item:nth-child(odd)::before,
+            .timeline-item:nth-child(even)::before {
+                @apply left-12 right-auto scale-100;
+                transform: translateY(-50%) scale(1);
+            }
+        }
+        @media(max-width: 480px) {
+            .timeline-item::before,
+            .timeline-item:nth-child(odd)::before,
+            .timeline-item:nth-child(even)::before {
+                @apply left-11 w-10 h-10 text-lg;
+            }
+            .timeline-item {
+                @apply pl-16 pr-2;
+            }
+        }
+
+/* -- Style Kustom Form KAK -- */
+.line-flow-animation { background-size: 300% 100%; @apply animate-flow; }
+.modal-list::-webkit-scrollbar { display: none; }
+.modal-list { -ms-overflow-style: none; scrollbar-width: none; }
+.form-step { @apply w-full; } 
+.form-step.active { @apply block relative z-10; }
+.form-step.inactive { @apply hidden; } 
+select:not([filled="true"]) + label { @apply scale-100 translate-y-0; }
+select:focus + label, select[filled="true"] + label { @apply scale-75 -translate-y-4 text-blue-600; }
+select:not([filled="true"]) { @apply text-transparent; }
+select { @apply bg-transparent appearance-none; }
+.select-wrapper::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; @apply absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none; }
+.repeater-row-tahapan, .repeater-row-indikator { @apply transition-all duration-300 ease-out overflow-hidden; }
+select option { color: initial; background-color: white; @apply px-4 py-2; }
