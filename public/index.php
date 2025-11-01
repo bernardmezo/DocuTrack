@@ -322,14 +322,6 @@ switch ($main_route) {
         }
         break;
 
-    // --- Rute PPK (Dilindungi Middleware) ---
-    case 'ppk':
-        AuthMiddleware::check();
-        PpkMiddleware::check();
-        echo "Halaman PPK (Dalam Pengembangan)";
-        // ... (Tambahkan switch $sub_route untuk ppk) ...
-        break; 
-
     // --- Rute BENDAHARA (Dilindungi Middleware) ---
     case 'bendahara':
         AuthMiddleware::check();
