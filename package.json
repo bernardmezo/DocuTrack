@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "folder proyek based learning PBL semester 3. web ini bertujuan untuk membuat ngtrack dokumen TOR dan LPJ pengajuan ke gedung direktorat ",
   "type": "module",
-  "main": "index.js",
+  "main": "index.js", 
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "postcss ./src-css/input.css -o ./public/assets/css/output.css --watch",
