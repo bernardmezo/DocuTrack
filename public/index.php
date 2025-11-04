@@ -15,6 +15,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once '../src/core/Controller.php'; // Base Controller
 // Muat semua middleware di awal
 require_once '../src/middleware/AuthMiddleware.php';
+require_once '../src/middleware/RegisterMiddleware.php';
 require_once '../src/middleware/AdminMiddleware.php';
 require_once '../src/middleware/VerifikatorMiddleware.php';
 require_once '../src/middleware/WadirMiddleware.php';
@@ -103,6 +104,19 @@ switch ($main_route) {
             exit;
         }
         break;
+    
+    case 'register':
+        
+        require_once '../src/controllers/AuthController.php';
+        $controller = new AuthController();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $controller->handleRegister();
+        } else {
+            // Jika akses GET ke /login, redirect ke home (karena pakai popup)
+            header('Location: /docutrack/public/');
+            exit;
+        }
+        break;
 
     case 'logout':
         require_once '../src/controllers/AuthController.php';
@@ -157,6 +171,8 @@ switch ($main_route) {
                     $controller->index(['active_page' => $base_admin_path . '/pengajuan-lpj']);
                 }
                 break;
+            
+            
 
             default:
                 not_found("Halaman Admin '/{$sub_route}' tidak ditemukan.");

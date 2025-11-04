@@ -40,6 +40,11 @@
                             LOGIN
                         </a>
                     </li>
+                    <li class="md:mx-[25px]"> 
+                        <a href="/docutrack/public" id="open-register-btn" class="btn-brilliant"> 
+                            REGISTER
+                        </a>
+                    </li>
                 </ul>
             </nav>
         </div>
@@ -48,6 +53,7 @@
     <main>
     <?php
         include '../src/views/partials/popup_login.php'; 
+        include '../src/views/partials/popup_regitser.php';
     ?>
 
     <script>
