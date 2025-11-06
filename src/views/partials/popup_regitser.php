@@ -99,7 +99,7 @@ if (session_status() == PHP_SESSION_NONE) {
             <!-- Bagian CAPTCHA -->
             <div class="input-group relative mb-8 text-center">
                 <img 
-                    src="/docutrack/public/chaptcha.php" 
+                    src="/docutrack/public/chaptcha.php"
                     alt="kode chaptcha"
                     id="captcha-image"
                     class="mx-auto mb-2 rounded border border-gray-400 bg-white shadow-md"
