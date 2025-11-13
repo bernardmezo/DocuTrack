@@ -51,7 +51,7 @@
                 </label>
                 <select id="register-role" name="login_role" required 
                         class="w-full border-b-2 border-white/50 bg-transparent py-2.5 text-lg text-white outline-none focus:border-white appearance-none">
-                    <option value="ain" class="bg-gray-800 text-white">Admin</option>
+                    <option value="admin" class="bg-gray-800 text-white">Admin</option>
                     <option value="ppk" class="bg-gray-800 text-white">PPK</option>
                     <option value="bendahara" class="bg-gray-800 text-white">Bendahara</option>
                     <option value="wadir" class="bg-gray-800 text-white">Wadir</option>

@@ -1,18 +1,9 @@
 <?php
 // File: src/views/pages/admin/pengajuan_usulan.php
 
-// Variabel $antrian_kak diasumsikan dikirim dari AdminPengajuanUsulanController
-if (!isset($antrian_kak)) {
-    // Data dummy untuk tampilan jika controller belum mengirim
-    $antrian_kak = [
-        ['id' => 1, 'nama' => 'Seminar Nasional', 'pengusul' => 'Putra (NIM), Prodi', 'status' => 'Menunggu'],
-        ['id' => 2, 'nama' => 'Seminar BEM', 'pengusul' => 'Yopan (NIM), Prodi', 'status' => 'Revisi'],
-        ['id' => 3, 'nama' => 'Kulum', 'pengusul' => 'Bernadya (NIM), Prodi', 'status' => 'Menunggu'],
-        ['id' => 4, 'nama' => 'Seminar Himatik', 'pengusul' => 'Fidel (NIM), Prodi', 'status' => 'Menunggu'],
-        ['id' => 5, 'nama' => 'Disnatalis', 'pengusul' => 'Anton (NIM), Prodi', 'status' => 'Disetujui'],
-        ['id' => 6, 'nama' => 'Seminar Expektik', 'pengusul' => 'Bambang (NIM), Prodi', 'status' => 'Ditolak'],
-    ];
-}
+// Variabel $antrian_kak dan $daftar_pengusul
+// sekarang DIJAMIN ada karena dikirim oleh controller.
+// Blok data dummy sudah dihapus.
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -55,8 +46,8 @@ if (!isset($antrian_kak)) {
                     ?>
                                 <tr class='hover:bg-gray-50 transition-colors'>
                                     <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-700 font-medium'><?= $nomor++; ?>.</td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-800 font-medium'><?= htmlspecialchars($item['nama'] ?? 'N/A'); ?></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-600'><?= htmlspecialchars($item['pengusul'] ?? 'N/A'); ?></td>
+                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-800 font-medium'><?= htmlspecialchars($item['nama_kegiatan'] ?? 'N/A'); ?></td>
+                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-600'><?= htmlspecialchars($item['nama_pengusul'] ?? 'N/A'); ?> (<?= htmlspecialchars($item['nama_prodi'] ?? 'N/A'); ?>)</td>
                                     <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-xs font-semibold'><span class='px-3 py-1 rounded-full <?= $status_class; ?>'><?= htmlspecialchars($item['status'] ?? 'N/A'); ?></span></td>
                                     <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm font-medium'>
                                         <div class='flex gap-2 items-center'>
@@ -99,19 +90,35 @@ if (!isset($antrian_kak)) {
                 <section class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden">
                     <form id="kak-form-element" action="#" method="POST" onsubmit="event.preventDefault(); /* Handle submit via JS */">
 
+                        <!-- Input hidden untuk data RAB (diisi oleh JS) -->
+                        <input type="hidden" id="rab_data_hidden" name="rab_data">
+
                         <div class="mb-8 animate-reveal" style="animation-delay: 0.1s;">
                             <h2 class="text-lg md:text-xl font-semibold text-gray-800 pb-3 mb-5 border-b border-gray-200">Informasi Dasar Kegiatan</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                
+                                <!-- [DIUBAH] Input teks menjadi dropdown -->
                                 <div class="relative">
-                                    <i class="fas fa-user absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
+                                    <i class="fas fa-user-tie absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
                                     <input required type="text" id="nama_pengusul" name="nama_pengusul" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
                                     <label for="nama_pengusul" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Nama Pengusul</label>
                                 </div>
+                                <!-- Akhir Perubahan -->
+
                                 <div class="relative">
                                     <i class="fas fa-clipboard-list absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
                                     <input required type="text" id="nama_kegiatan_kak" name="nama_kegiatan" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
                                     <label for="nama_kegiatan_kak" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Nama Kegiatan</label>
                                 </div>
+
+                                <!-- [BARU] Input untuk Kode MAK (dari tbl_kegiatan) -->
+                                <div class="relative">
+                                    <i class="fas fa-code absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
+                                    <input required type="text" id="kode_mak" name="kode_mak" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                    <label for="kode_mak" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Kode MAK</label>
+                                </div>
+                                <!-- Akhir Baru -->
+
                                 <div class="md:col-span-2 relative">
                                     <i class="fas fa-align-left absolute top-4 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
                                     <textarea required id="gambaran_umum_kak" name="gambaran_umum" rows="5" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "></textarea>
@@ -126,7 +133,7 @@ if (!isset($antrian_kak)) {
                         </div>
 
                         <div class="mb-8 animate-reveal" style="animation-delay: 0.2s;">
-                            <h2 class="text-lg md:text-xl font-semibold text-gray-800 pb-3 mb-5 border-b border-gray-200">Strategi Pencapaian Keluaran</h2>
+                            <h2 class="text-lg md:text-xl font-semibold text-gray-800 pb-3 mb-5 border-b border-gray-200">formtegi Pencapaian Keluaran</h2>
                             <div class="relative">
                                 <i class="fas fa-tasks absolute top-4 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
                                 <textarea required id="metode_pelaksanaan_kak" name="metode_pelaksanaan" rows="3" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "></textarea>
@@ -172,7 +179,8 @@ if (!isset($antrian_kak)) {
                                         <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Indikator</label>
                                         <div class="relative">
                                             <i class="fas fa-clipboard-check absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i>
-                                            <input required type="text" name="indikator_nama[]" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                            <!-- [DIUBAH] name="indikator_nama[]" menjadi "indikator_keberhasilan[]" -->
+                                            <input required type="text" name="indikator_keberhasilan[]" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
                                             <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Indikator Keberhasilan</label>
                                         </div>
                                     </div>
@@ -180,7 +188,7 @@ if (!isset($antrian_kak)) {
                                         <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Target (%)</label>
                                         <div class="relative">
                                             <i class="fas fa-bullseye absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i>
-                                            <input required type="number" min="0" max="100" name="indikator_target[]" class="block w-full px-4 py-3.5 pl-10 pr-7 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                            <input required type="number" min="0" max="100" name="target_persen[]" class="block w-full px-4 py-3.5 pl-10 pr-7 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
                                             <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Target</label>
                                             <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none text-sm">%</span>
                                         </div>
@@ -211,7 +219,8 @@ if (!isset($antrian_kak)) {
             <div id="form-tahap-2" class="form-step inactive">
                  <div class="bg-white rounded-lg shadow-lg p-4 md:p-10">
                      <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6">Indikator Kinerja Utama & Renstra</h2>
-                     <input type="hidden" id="indikator_kinerja_hidden" name="indikator_kinerja" value="">
+                     <!-- [DIUBAH] name="indikator_kinerja" menjadi "indikator_kerja_utama_renstra" -->
+                     <input type="hidden" id="indikator_kinerja_hidden" name="indikator_kerja_utama_renstra" value="">
                      <label for="open-indicator-modal-btn" class="text-sm font-medium text-gray-700">Indikator yang Dipilih:</label>
                      <div id="indicator-display-area" class="mt-2 flex flex-wrap items-center gap-2 p-3 min-h-[60px] w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 transition-colors">
                          <span id="indicator-tags-container" class="contents"></span>

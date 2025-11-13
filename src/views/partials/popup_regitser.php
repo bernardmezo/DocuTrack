@@ -33,7 +33,7 @@ if (session_status() == PHP_SESSION_NONE) {
             </div>
         <?php endif; ?>
 
-        <form action="/docutrack/public/register" method="POST">
+    <form action="/docutrack/public" method="POST">
             
             <div class="input-group relative mb-8">
                 <input type="text" id="register-nama" name="register_nama_lengkap" required 

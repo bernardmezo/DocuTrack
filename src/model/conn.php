@@ -2,7 +2,7 @@
 $host = 'localhost';
 $user = 'root';
 $pass = '';
-$db   = 'docutrack_db';
+$db = 'db_docutrack';
 
 $conn = mysqli_connect($host, $user, $pass, $db);
 
@@ -15,5 +15,4 @@ if (!$conn) {
     // Set karakter set ke UTF-8
     mysqli_set_charset($conn, 'utf8');
 }
-
-// $conn tersedia untuk file yang meng-include file ini
+?>

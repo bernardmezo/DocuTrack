@@ -46,11 +46,11 @@ class AuthController extends Controller {
         }
 
         // Cek apakah email terdaftar
-        $query = "SELECT id, nama_lengkap, email, password, role_id FROM users WHERE email = ?";
-        $stmt = mysqli_prepare($this->conn, $query);
-        mysqli_stmt_bind_param($stmt, "s", $email);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
+        // $query = "SELECT id, nama_lengkap, email, password, role_id FROM users WHERE email = ?";
+        // $stmt = mysqli_prepare($this->conn, $query);
+        // mysqli_stmt_bind_param($stmt, "s", $email);
+        // mysqli_stmt_execute($stmt);
+        // $result = mysqli_stmt_get_result($stmt);
 
         // --- SIMULASI DATABASE USER (Ganti dengan Model Anda nanti) ---
         
