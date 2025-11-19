@@ -111,14 +111,6 @@
                                     <label for="nama_kegiatan_kak" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Nama Kegiatan</label>
                                 </div>
 
-                                <!-- [BARU] Input untuk Kode MAK (dari tbl_kegiatan) -->
-                                <div class="relative">
-                                    <i class="fas fa-code absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
-                                    <input required type="text" id="kode_mak" name="kode_mak" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
-                                    <label for="kode_mak" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Kode MAK</label>
-                                </div>
-                                <!-- Akhir Baru -->
-
                                 <div class="md:col-span-2 relative">
                                     <i class="fas fa-align-left absolute top-4 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
                                     <textarea required id="gambaran_umum_kak" name="gambaran_umum" rows="5" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "></textarea>
