@@ -15,6 +15,67 @@ if (!isset($antrian_kak)) {
 }
 ?>
 
+<style>
+    /* Fix untuk Dropdown - Tambahkan ke file CSS utama atau di <style> tag */
+
+/* Pastikan select element selalu terlihat */
+select {
+    color: #1f2937 !important; /* text-gray-800 */
+    background-color: #ffffff !important; /* bg-white */
+}
+
+/* Option default (placeholder) warna abu-abu */
+select option[value=""],
+select option[disabled] {
+    color: #9ca3af !important; /* text-gray-400 */
+}
+
+/* Option yang bisa dipilih warna hitam */
+select option:not([value=""]):not([disabled]) {
+    color: #1f2937 !important; /* text-gray-800 */
+    background-color: #ffffff !important;
+}
+
+/* Saat option dipilih */
+select:valid {
+    color: #1f2937 !important; /* text-gray-800 */
+}
+
+/* Saat focus */
+select:focus {
+    color: #1f2937 !important;
+    background-color: #ffffff !important;
+}
+
+/* Untuk browser yang mendukung :has */
+select:has(option[value=""]:checked) {
+    color: #9ca3af !important;
+}
+
+select:has(option[value]:not([value=""]):checked) {
+    color: #1f2937 !important;
+}
+
+/* Firefox specific fix */
+@-moz-document url-prefix() {
+    select {
+        color: #1f2937 !important;
+    }
+    
+    select option {
+        color: #1f2937 !important;
+    }
+}
+
+/* Safari specific fix */
+@supports (-webkit-appearance: none) {
+    select {
+        -webkit-appearance: none;
+        color: #1f2937 !important;
+    }
+}
+</style>
+
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
     <section id="queue-section" class="bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8 transition-opacity duration-500 ease-out">
@@ -96,6 +157,104 @@ if (!isset($antrian_kak)) {
         <div class="form-content-wrapper relative min-h-[500px]">
 
             <div id="form-tahap-1" class="form-step inactive">
+    <section class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden">
+        <div class="mb-8">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">Input Data Pengusul/Pelaksana</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <!-- Nama Pengusul -->
+                <div class="relative">
+                    <label for="nama_pengusul_step1" class="block text-sm font-medium text-gray-700 mb-2">Nama Pengusul</label>
+                    <input required type="text" id="nama_pengusul_step1" name="nama_pengusul_step1" 
+                           class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
+                           placeholder="Masukkan nama pengusul">
+                </div>
+
+                <!-- NIM/NIP -->
+                <div class="relative">
+                    <label for="nim_nip" class="block text-sm font-medium text-gray-700 mb-2">NIM/NIP</label>
+                    <input required type="text" id="nim_nip" name="nim_nip" 
+                           class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
+                           placeholder="Masukkan NIM atau NIP">
+                </div>
+
+                <!-- Jurusan -->
+                <div class="relative">
+                    <label for="jurusan" class="block text-sm font-medium text-gray-700 mb-2">Jurusan</label>
+                    <div class="relative">
+                        <select required id="jurusan" name="jurusan" 
+                                class="block w-full px-4 py-3.5 pr-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600 cursor-pointer">
+                            <option value="" disabled selected class="text-gray-500">Pilih Jurusan</option>
+                            <option value="Teknik Informatika" class="text-gray-800">Teknik Informatika</option>
+                            <option value="Teknik Elektro" class="text-gray-800">Teknik Elektro</option>
+                            <option value="Teknik Mesin" class="text-gray-800">Teknik Mesin</option>
+                            <option value="Teknik Sipil" class="text-gray-800">Teknik Sipil</option>
+                            <option value="Akuntansi" class="text-gray-800">Akuntansi</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prodi -->
+                <div class="relative">
+                    <label for="prodi" class="block text-sm font-medium text-gray-700 mb-2">Prodi</label>
+                    <div class="relative">
+                        <select required id="prodi" name="prodi" 
+                                class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600">
+                            <option value="">Pilih Prodi</option>
+                            <option value="D4 Teknik Informatika dan Komputer">D4 Teknik Informatika dan Komputer</option>
+                            <option value="Teknik Elektro">D4 Teknik Elektro</option>
+                            <option value="D3 Teknik Multimedia Digital">D3 Teknik Multimedia Digital</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nama Kegiatan -->
+                <div class="md:col-span-2 relative">
+                    <label for="nama_kegiatan_step1" class="block text-sm font-medium text-gray-700 mb-2">Nama Kegiatan</label>
+                    <input required type="text" id="nama_kegiatan_step1" name="nama_kegiatan_step1" 
+                           class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
+                           placeholder="Masukkan nama kegiatan">
+                </div>
+
+                <!-- Wadir Tujuan -->
+                <div class="md:col-span-2 relative">
+                    <label for="wadir_tujuan" class="block text-sm font-medium text-gray-700 mb-2">Wadir Tujuan</label>
+                    <div class="relative">
+                        <select required id="wadir_tujuan" name="wadir_tujuan" 
+                                class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600">
+                            <option value="">Pilih Wadir Tujuan</option>
+                            <option value="Wadir 1">Wadir 1 - Akademik</option>
+                            <option value="Wadir 2">Wadir 2 - Umum & Keuangan</option>
+                            <option value="Wadir 3">Wadir 3 - Kemahasiswaan</option>
+                            <option value="Wadir 4">Wadir 4 - Kerjasama & Hubungan Luar</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
+            <button type="button" id="back-to-queue-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all">
+                <i class="fas fa-arrow-left text-xs"></i> Kembali ke Antrian
+            </button>
+            <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300" data-target-step="2" data-direction="next">
+                <span class="btn-text">Lanjut</span>
+                <i class="fas fa-arrow-right btn-icon text-xs"></i>
+            </button>
+        </div>
+    </section>
+</div>
+
+            <div id="form-tahap-2" class="form-step inactive">
                 <section class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden">
                     <form id="kak-form-element" action="#" method="POST" onsubmit="event.preventDefault(); /* Handle submit via JS */">
 
@@ -196,10 +355,10 @@ if (!isset($antrian_kak)) {
                         </div>
 
                         <div class="flex flex-col sm:flex-row justify-between items-center mt-12 pt-6 border-t border-gray-200 gap-4">
-                            <button type="button" id="back-to-queue-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all">
+                            <button type="button" class="btn-kembali btn-nav w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="1" data-direction="prev">
                                 <i class="fas fa-arrow-left text-xs"></i> Kembali ke Antrian
                             </button>
-                            <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300" data-target-step="2" data-direction="next">
+                            <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300" data-target-step="3" data-direction="next">
                                 <span class="btn-text">Lanjut</span>
                                 <i class="fas fa-arrow-right btn-icon text-xs"></i>
                             </button>
@@ -208,7 +367,7 @@ if (!isset($antrian_kak)) {
                 </section>
             </div>
 
-            <div id="form-tahap-2" class="form-step inactive">
+            <div id="form-tahap-3" class="form-step inactive">
                  <div class="bg-white rounded-lg shadow-lg p-4 md:p-10">
                      <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6">Indikator Kinerja Utama & Renstra</h2>
                      <input type="hidden" id="indikator_kinerja_hidden" name="indikator_kinerja" value="">
@@ -220,17 +379,17 @@ if (!isset($antrian_kak)) {
                          </button>
                      </div>
                      <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
-                        <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="1" data-direction="prev">
+                        <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="2" data-direction="prev">
                             <i class="fas fa-arrow-left btn-icon"></i> <span class="btn-text">Kembali</span>
                         </button>
-                        <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-all" data-target-step="3" data-direction="next">
+                        <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-all" data-target-step="4" data-direction="next">
                             <span class="btn-text">Lanjut</span> <i class="fas fa-arrow-right btn-icon"></i>
                         </button>
                      </div>
                  </div>
             </div>
 
-            <div id="form-tahap-3" class="form-step inactive">
+            <div id="form-tahap-4" class="form-step inactive">
                  <div class="bg-white rounded-lg shadow-lg p-4 md:p-10">
                       <div class="rab-header flex flex-col sm:flex-row justify-between items-start mb-6 gap-4">
                          <h2 class="text-xl md:text-2xl font-bold text-gray-800 flex-shrink-0">Rincian Anggaran Biaya (RAB)</h2>
@@ -255,7 +414,7 @@ if (!isset($antrian_kak)) {
                             </div>
                       </div>
                        <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
-                          <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="2" data-direction="prev">
+                          <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="3" data-direction="prev">
                               <i class="fas fa-arrow-left btn-icon"></i> <span class="btn-text">Kembali</span>
                           </button>
                           <button type="submit" form="kak-form-element" class="btn-nav w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-white bg-green-600 rounded-lg hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition-all">

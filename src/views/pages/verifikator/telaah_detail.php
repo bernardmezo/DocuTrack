@@ -37,8 +37,8 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
     if ($is_menunggu_status || $is_telah_direvisi_status) { // Hanya tampil jika status menunggu/telah direvisi
         echo "<div id='comment-box-{$field_name}' class='comment-box hidden mt-2 animate-reveal'>";
         echo "  <label for='comment-{$field_name}' class='text-xs font-semibold text-yellow-800'>Catatan Revisi untuk bagian ini:</label>";
-        echo "  <textarea id='comment-{$field_name}' name='komentar[{$field_name}]' rows='2' 
-                 class='mt-1 block w-full text-sm text-gray-800 bg-yellow-50 rounded-lg border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500' 
+        echo "  <textarea id='comment-{$field_name}' name='komentar[{$field_name}]' rows='3' 
+                 class='mt-1 block w-full text-sm text-gray-800 bg-yellow-50 rounded-lg border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 py-2.5 leading-relaxed resize-none' 
                  placeholder='Tulis catatan revisi di sini...'></textarea>";
         echo "</div>";
     }
