@@ -2,19 +2,15 @@
 // File: src/controllers/AuthController.php
 
 require_once '../src/core/Controller.php';
-// require_once '../src/models/User.php'; // (Nanti Anda akan pakai ini)
-include __DIR__ . '/../model/conn.php'; // Koneksi database
 
 class AuthController extends Controller {
 
-    private $conn;
-
     public function __construct() {
-        include __DIR__ . '/../model/conn.php';
-        $this->conn = $conn;
+        // Tidak butuh database sama sekali
     }
+
     /**
-     * Menampilkan halaman login (saat ini di-handle popup).
+     * Menampilkan halaman login.
      * Jika diakses langsung, redirect ke landing page.
      */
     public function index() {
@@ -22,11 +18,10 @@ class AuthController extends Controller {
         exit;
     }
 
-    /**
-     * Memproses data login dari form popup
-     */
 
-    // --- LOGIN MULTI-ROLE ---
+    // =====================================================
+    // ===============  LOGIN MULTI-ROLE  ==================
+    // =====================================================
 
     public function handleLogin() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -35,9 +30,9 @@ class AuthController extends Controller {
         }
 
         // Ambil input dari form login
-        $email = trim($_POST['login_email'] ?? '');
-        $password = trim($_POST['login_password'] ?? '');
-        $role_text = strtolower(trim($_POST['login_role'] ?? '')); // ubah biar huruf kecil semua agar konsisten
+        $email      = trim($_POST['login_email'] ?? '');
+        $password   = trim($_POST['login_password'] ?? '');
+        $role_text  = strtolower(trim($_POST['login_role'] ?? ''));
 
         if (empty($email) || empty($password)) {
             $_SESSION['login_error'] = 'Email dan password harus diisi.';
@@ -45,23 +40,14 @@ class AuthController extends Controller {
             exit;
         }
 
-        // Cek apakah email terdaftar
-        $query = "SELECT id, nama_lengkap, email, password, role_id FROM users WHERE email = ?";
-        $stmt = mysqli_prepare($this->conn, $query);
-        mysqli_stmt_bind_param($stmt, "s", $email);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
+        // ============================
+        //  DATABASE DUMMY TANPA DB
+        // ============================
 
-        // --- SIMULASI DATABASE USER (Ganti dengan Model Anda nanti) ---
-        
-        // $userModel = new User();
-        // $user = $userModel->findByEmail($email);
-        
-        // Data Dummy untuk Multi-Role
         $users_db = [
             'admin@example.com' => [
                 'id' => 1,
-                'password' => 'password123', 
+                'password' => 'password123',
                 'nama' => 'Admin Docutrack',
                 'role' => 'admin'
             ],
@@ -82,186 +68,91 @@ class AuthController extends Controller {
                 'password' => 'password123',
                 'nama' => 'Pejabat PPK',
                 'role' => 'ppk'
+            ],
+            'bendahara@example.com' => [
+                'id' => 5,
+                'password' => 'password123',
+                'nama' => 'Bendahara',
+                'role' => 'bendahara'
+            ],
+            'superadmin@example.com' => [
+                'id' => 6,
+                'password' => 'password123',
+                'nama' => 'Super Admin',
+                'role' => 'super-admin'
             ]
         ];
 
-        // --- Logika Login Multi-Role ---
 
-        if (isset($users_db[$email])) {
-            $user = $users_db[$email];
+        // ============================
+        //  LOGIKA LOGIN DUMMY
+        // ============================
 
-            // 2. Cek password (Di aplikasi nyata, gunakan password_verify())
-            if ($password === $user['password']) {
-                
-                // --- LOGIN BERHASIL ---
-                unset($_SESSION['login_error']);
-
-                // 3. Set Session
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['nama'];
-                $_SESSION['user_role'] = $user['role']; // <-- INI YANG PENTING
-
-                switch ($role_text) {
-                    // case 'super-admin':
-                    //     header('Location: /docutrack/public/admin/dashboard');
-                    //     break;
-                    case 'verifikator':
-                        header('Location: /docutrack/public/verifikator/dashboard');
-                        break;
-                    case 'wadir':
-                        header('Location: /docutrack/public/wadir/dashboard');
-                        break;
-                    case 'ppk':
-                        header('Location: /docutrack/public/ppk/dashboard');
-                        break;
-                    case 'bendahara':
-                        header('Location: /docutrack/public/bendahara/dashboard');
-                        break;
-                    case 'admin':
-                        header('Location: /docutrack/public/admin/dashboard');
-                        break;
-                    default:
-                        header('Location: /docutrack/public/');
-                        break;
-                }
-
-                exit;
-            } else {
-                $_SESSION['login_error'] = 'Password salah.';
-            } 
-        } else {
+        if (!isset($users_db[$email])) {
             $_SESSION['login_error'] = 'Email tidak ditemukan.';
-        }
-
-        // BAKAL DI PAKE KETIKA DESIGN DASHBOARD SUDAH JADI
-
-        // if ($user = mysqli_fetch_assoc($result)) {
-        //     // Cek password dengan password_verify()
-        //     if ($password == $user['password']) {
-                
-        //         // Bersihkan error sebelumnya
-        //         unset($_SESSION['login_error']);
-
-        //         // Set session login
-        //         $_SESSION['user_id'] = $user['id'];
-        //         $_SESSION['user_name'] = $user['nama_lengkap'];
-        //         $_SESSION['user_email'] = $user['email'];
-        //         $_SESSION['user_role_id'] = $user['role_id'];
-        //         $_SESSION['user_role'] = $role_text;
-
-        //         // Redirect sesuai role
-        //         switch ($role_text) {
-        //             // case 'super-admin':
-        //             //     header('Location: /docutrack/public/admin/dashboard');
-        //             //     break;
-        //             case 'verifikator':
-        //                 header('Location: /docutrack/public/verifikator/dashboard');
-        //                 break;
-        //             case 'wadir':
-        //                 header('Location: /docutrack/public/wadir/dashboard');
-        //                 break;
-        //             case 'ppk':
-        //                 header('Location: /docutrack/public/ppk/dashboard');
-        //                 break;
-        //             case 'bendahara':
-        //                 header('Location: /docutrack/public/bendahara/dashboard');
-        //                 break;
-        //             case 'admin':
-        //                 header('Location: /docutrack/public/admin/dashboard');
-        //                 break;
-        //             default:
-        //                 header('Location: /docutrack/public/');
-        //                 break;
-        //         }
-
-        //         exit; // Penting: hentikan eksekusi setelah redirect
-
-        //     } else {
-        //         // Password salah
-        //         $_SESSION['login_error'] = 'Password salah.';
-        //     }
-        // } else {
-        //     // Email tidak ditemukan
-        //     $_SESSION['login_error'] = 'Email tidak ditemukan.';
-        // }
-
-        // Jika gagal login, kembali ke halaman utama
-        header('Location: /docutrack/public/');
-        exit;
-    }
-
-        // -- REGITRASI USER BARU --
-
-        public function handleRegister() {
-        global $conn; // gunakan koneksi dari conn.php
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /docutrack/public/');
             exit;
         }
 
-        // Ambil data dari form
-        $nama_lengkap = $_POST['register_nama_lengkap'] ?? null;
-        $email = $_POST['register_email'] ?? null;
-        $password = $_POST['register_password'] ?? null;
-        $role_text = strtolower(trim($_POST['register_role'] ?? '')); // ubah jadi huruf kecil agar konsisten
+        $user = $users_db[$email];
 
-        // Validasi input kosong
-        if (empty($nama_lengkap) || empty($email) || empty($password) || empty($role_text)) {
-            $_SESSION['login_error'] = 'Data registrasi tidak boleh kosong.';
-            header('Location: /docutrack/public/1');
+        if ($password !== $user['password']) {
+            $_SESSION['login_error'] = 'Password salah.';
+            header('Location: /docutrack/public/');
             exit;
         }
 
-        // Mapping role ke ID
-        $role_map = [
-            'super-admin' => 1,
-            'verifikator' => 2,
-            'wadir' => 3,
-            'ppk' => 4,
-            'bendahara' => 5,
-            'user' => 6
-        ];
+        // ============================
+        //  LOGIN BERHASIL
+        // ============================
 
-        // Default ke user jika role tidak dikenali
-        $role_id = $role_map[$role_text] ?? 6;
+        unset($_SESSION['login_error']);
 
-        // Hash password
-        $password_hashed = password_hash($password, PASSWORD_BCRYPT);
+        $_SESSION['user_id']   = $user['id'];
+        $_SESSION['user_name'] = $user['nama'];
+        $_SESSION['user_role'] = $user['role'];
 
-        // Cek apakah email sudah ada
-        $query_check = "SELECT email FROM users WHERE email = ?";
-        $stmt_check = mysqli_prepare($conn, $query_check);
-        mysqli_stmt_bind_param($stmt_check, "s", $email);
+        // ============================
+        //  REDIRECT BERDASARKAN ROLE
+        // ============================
 
-        if (mysqli_stmt_execute($stmt_check)) {
-            mysqli_stmt_store_result($stmt_check);
-            if (mysqli_stmt_num_rows($stmt_check) > 0) {
-                $_SESSION['register_error'] = 'Email sudah terdaftar. Silakan gunakan email lain.';
-                header('Location: /docutrack/public/2');
-                exit;
-            }
+        switch ($role_text) {
+            case 'verifikator':
+                header('Location: /docutrack/public/verifikator/dashboard');
+                break;
+
+            case 'wadir':
+                header('Location: /docutrack/public/wadir/dashboard');
+                break;
+
+            case 'ppk':
+                header('Location: /docutrack/public/ppk/dashboard');
+                break;
+
+            case 'bendahara':
+                header('Location: /docutrack/public/bendahara/dashboard');
+                break;
+
+            case 'admin':
+                header('Location: /docutrack/public/admin/dashboard');
+                break;
+            
+            case 'super-admin':
+                header('Location: /docutrack/public/super_admin/dashboard');
+                break;
+
+            default:
+                header('Location: /docutrack/public/');
+                break;
         }
 
-        // Tambah user ke database
-        $query = "INSERT INTO users (nama_lengkap, email, password, role_id) VALUES (?, ?, ?, ?)";
-        $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "sssi", $nama_lengkap, $email, $password_hashed, $role_id);
-
-        if (mysqli_stmt_execute($stmt)) {
-            $_SESSION['register_success'] = 'Registrasi berhasil! Silakan login.';
-            header('Location: /docutrack/public/login');
-        } else {
-            $_SESSION['register_error'] = 'Gagal registrasi. Silakan coba lagi.';
-            header('Location: /docutrack/public/3');
-        }
         exit;
     }
 
 
-    /**
-     * Menghandle logout
-     */
+    // =====================================================
+    // ==================== LOGOUT ==========================
+    // =====================================================
 
     public function logout() {
         session_destroy();

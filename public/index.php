@@ -338,12 +338,61 @@ switch ($main_route) {
         }
         break;
 
-    // --- Rute BENDAHARA (Dilindungi Middleware) ---
+    // --- Rute BENDAHARA ---
     case 'bendahara':
-        AuthMiddleware::check();
-        BendaharaMiddleware::check();
-        echo "Halaman Bendahara (Dalam Pengembangan)";
-        // ... (Tambahkan switch $sub_route untuk bendahara) ...
+        // AuthMiddleware::check();      // Uncomment jika middleware sudah aktif
+        // BendaharaMiddleware::check(); // Uncomment jika middleware sudah aktif
+        
+        $base_bendahara_path = '/bendahara';
+        
+        switch ($sub_route) {
+            case 'index': 
+            case 'dashboard': 
+                require_once '../src/controllers/Bendahara/DashboardController.php';
+                $controller = new BendaharaDashboardController(); 
+                $controller->index();
+                break;
+
+            case 'pencairan-dana': 
+                require_once '../src/controllers/Bendahara/PencairandanaController.php';
+                $controller = new BendaharaPencairandanaController(); 
+                $controller->index();
+                break;
+
+            case 'pengajuan-lpj': 
+                require_once '../src/controllers/Bendahara/PengajuanlpjController.php';
+                $controller = new BendaharaPengajuanlpjController(); 
+                $controller->index();
+                break;
+            
+            case 'riwayat-verifikasi': 
+                require_once '../src/controllers/Bendahara/RiwayatverifikasiController.php';
+                $controller = new BendaharaRiwayatverifikasiController(); 
+                $controller->index();
+                break;
+            
+            default:
+                not_found("Halaman Bendahara tidak ditemukan.");
+        }
+        break; 
+
+    case 'super_admin':
+        // AuthMiddleware::check();      // Uncomment jika middleware sudah aktif
+        // BendaharaMiddleware::check(); // Uncomment jika middleware sudah aktif
+        
+        $base_super_admin_path = '/super_admin';
+        
+        switch ($sub_route) {
+            case 'index': 
+            case 'dashboard': 
+                require_once '../src/controllers/Super_Admin/DashboardController.php';
+                $controller = new SuperadminDashboardController(); 
+                $controller->index();
+                break;
+
+            default:
+                not_found("Halaman Super Admin tidak ditemukan.");
+        }
         break; 
 
     // --- Jika Rute Utama Tidak Dikenali ---

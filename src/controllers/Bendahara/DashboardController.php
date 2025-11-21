@@ -1,27 +1,19 @@
 <?php
-// File: src/controllers/Admin/DashboardController.php
+// File: src/controllers/Bendahara/DashboardController.php
 
 require_once '../src/core/Controller.php';
 // (Nanti, load model Anda di sini)
 // require_once '../src/models/Usulan.php'; 
 // require_once '../src/models/Lpj.php'; 
 
-class AdminDashboardController extends Controller {
+class BendaharaDashboardController extends Controller {
     
     public function index($data_dari_router = []) {
         
         // --- TODO: Ganti dengan data asli dari Model ---
 
         // 1. Data Stats (Ringkasan)
-        $stats = ['total' => 15, 'disetujui' => 10, 'ditolak' => 2, 'menunggu' => 3];
-
-        // 2. Data Progres Bar (Contoh)
-        $tahapan_kak = ['Pengajuan', 'Validasi', 'ACC WD', 'ACC PPK', 'Dana Cair', 'LPJ'];
-        $tahap_sekarang_kak = 'ACC PPK';
-        $icons_kak = [ 'Pengajuan' => 'fa-file-alt', 'Validasi' => 'fa-check-double', 'ACC WD' => 'fa-user-check', 'ACC PPK' => 'fa-stamp', 'Dana Cair' => 'fa-wallet', 'LPJ' => 'fa-file-invoice-dollar' ];
-        $tahapan_lpj = ['Pengajuan', 'Validasi', 'ACC WD', 'ACC PPK', 'Selesai'];
-        $tahap_sekarang_lpj = 'Validasi';
-        $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Validasi' => 'fa-check-double', 'ACC WD' => 'fa-user-graduate', 'ACC PPK' => 'fa-gavel', 'Selesai' => 'fa-flag-checkered' ];
+        $stats = ['total' => 15, 'danaDiberikan' => 10, 'ditolak' => 2, 'menunggu' => 3];
 
         // 3. Data List KAK (SEMUA STATUS: Menunggu, Revisi, Disetujui, Ditolak)
         // $usulanModel = new Usulan();
@@ -42,7 +34,7 @@ class AdminDashboardController extends Controller {
         'nama_mahasiswa' => 'Siti Aminah',
         'nim' => '461701002',
         'jurusan' => 'Desain Grafis',
-        'status' => 'Disetujui', // Test filter: Disetujui (Warna Hijau)
+        'status' => 'Dana Diberikan', // Test filter: Disetujui (Warna Hijau)
         'pengusul' => 'UKM Multimedia'
     ],
     [
@@ -60,7 +52,7 @@ class AdminDashboardController extends Controller {
         'nama_mahasiswa' => 'Joko Susilo',
         'nim' => '431701004',
         'jurusan' => 'Manajemen',
-        'status' => 'Ditolak', // Test filter: Ditolak (Warna Merah)
+        'status' => 'Dana Diberikan', // Test filter: Ditolak (Warna Merah)
         'pengusul' => 'Komunitas Gaming'
     ],
     [
@@ -79,7 +71,7 @@ class AdminDashboardController extends Controller {
         'nim' => '461701006',
         'jurusan' => 'Desain Grafis',
         'tanggal_pengajuan' => date('Y-m-d', strtotime('-1 days')),
-        'status' => 'Disetujui',
+        'status' => 'Dana Diberikan',
         'pengusul' => 'UKM Seni'
     ],
     ];
@@ -152,18 +144,12 @@ class AdminDashboardController extends Controller {
         // --- Akhir Data Dummy ---
 
         $data = array_merge($data_dari_router, [
-            'title' => 'Admin Dashboard',
+            'title' => 'Bendahara Dashboard',
             'stats' => $stats,
-            'tahapan_kak' => $tahapan_kak,
-            'tahap_sekarang_kak' => $tahap_sekarang_kak,
-            'icons_kak' => $icons_kak,
-            'tahapan_lpj' => $tahapan_lpj,
-            'tahap_sekarang_lpj' => $tahap_sekarang_lpj,
-            'icons_lpj' => $icons_lpj,
             'list_kak' => $list_kak_dummy,
             'list_lpj' => $list_lpj_dummy
         ]);
 
-        $this->view('pages/admin/dashboard', $data, 'app'); 
+        $this->view('pages/bendahara/dashboard', $data, 'bendahara'); 
     }
 }

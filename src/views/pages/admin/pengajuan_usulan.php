@@ -295,5 +295,5 @@ if (!isset($antrian_kak)) {
 // Script eksternal akan dimuat oleh footer.php, jadi kita letakkan script spesifik halaman di sini.
 // Pastikan file footer.php memuat helpers.js dan flatpickr.js
 ?>
-<script src="/docutrack/public/assets/js/page-scripts/pengajuan-usulan.js">
+<script src="/docutrack/public/assets/js/admin/pengajuan-usulan.js">
 </script>

@@ -14,7 +14,7 @@ class AdminPengajuanKegiatanController extends Controller {
      * Nanti, Anda akan mengganti ini dengan panggilan ke Model Anda.
      */
     private $list_kegiatan_all = [
-        1 => [
+        102 => [
             'id' => 1, 'nama' => 'Seminar Nasional', 'pengusul' => 'User A', 'status' => 'Disetujui', 
             'kode_mak' => '123.45.67', 'komentar' => [], 'komentar_penolakan' => '',
             'kak' => ['nama_pengusul' => 'User A', 'nama_kegiatan' => 'Seminar Nasional', 'gambaran_umum' => 'Gambaran seminar...', 'penerima_manfaat' => 'Mahasiswa'],
@@ -22,7 +22,7 @@ class AdminPengajuanKegiatanController extends Controller {
             'indikator' => [['bulan' => 'Oktober', 'nama' => 'Peserta Hadir', 'target' => 100]],
             'rab' => ['Belanja Barang' => [['id'=>1, 'uraian'=>'Snack', 'rincian'=>'Box', 'volume'=>100, 'satuan'=>'Box', 'harga'=>15000]]]
         ],
-        2 => [
+        103 => [
             'id' => 2, 'nama' => 'Workshop BEM', 'pengusul' => 'User B', 'status' => 'Revisi', 
             'kode_mak' => '', 'komentar' => ['rab_belanja_jasa' => 'Harga sewa sound system terlalu mahal.'], 'komentar_penolakan' => '',
             'kak' => ['nama_pengusul' => 'User B', 'nama_kegiatan' => 'Workshop BEM', 'gambaran_umum' => 'Gambaran workshop...', 'penerima_manfaat' => 'Anggota BEM'],
@@ -30,7 +30,7 @@ class AdminPengajuanKegiatanController extends Controller {
             'indikator' => [['bulan' => 'November', 'nama' => 'Peserta Workshop', 'target' => 50]],
             'rab' => ['Belanja Jasa' => [['id'=>2, 'uraian'=>'Sewa Sound System', 'rincian'=>'Sewa 1 hari', 'volume'=>1, 'satuan'=>'Hari', 'harga'=>500000]]]
         ],
-        3 => [
+        105 => [
             'id' => 3, 'nama' => 'Lomba Cerdas Cermat', 'pengusul' => 'User C', 'status' => 'Menunggu', 
             'kode_mak' => '', 'komentar' => [], 'komentar_penolakan' => '',
             'kak' => ['nama_pengusul' => 'User C', 'nama_kegiatan' => 'Lomba Cerdas Cermat', 'gambaran_umum' => 'Gambaran lomba...', 'penerima_manfaat' => 'Siswa SMA'],
@@ -38,7 +38,7 @@ class AdminPengajuanKegiatanController extends Controller {
             'indikator' => [['bulan' => 'Desember', 'nama' => 'Jumlah Tim', 'target' => 30]],
             'rab' => ['Belanja Hadiah' => [['id'=>4, 'uraian'=>'Piala', 'rincian'=>'Set Piala', 'volume'=>3, 'satuan'=>'Set', 'harga'=>250000]]]
         ],
-        4 => [
+        104 => [
             'id' => 4, 'nama' => 'Kulum', 'pengusul' => 'User D', 'status' => 'Ditolak', 
             'kode_mak' => '', 'komentar' => [], 'komentar_penolakan' => 'Anggaran tidak sesuai SBM. Harap ajukan ulang.',
             'kak' => ['nama_pengusul' => 'User D', 'nama_kegiatan' => 'Kulum', 'gambaran_umum' => 'Gambaran Kulum...', 'penerima_manfaat' => 'Umum'],

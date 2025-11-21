@@ -20,7 +20,7 @@ class AdminPengajuanLpjController extends Controller {
         $list_lpj_dummy = [
             ['id' => 1, 'nama' => 'Seminar Nasional', 'pengusul' => 'User A', 'status' => 'Setuju'],
             ['id' => 2, 'nama' => 'Workshop BEM', 'pengusul' => 'User B', 'status' => 'Revisi'],
-            ['id' => 7, 'nama' => 'Workshop UI/UX', 'pengusul' => 'User D', 'status' => 'Menunggu'],
+            ['id' => 7,'nama' => 'Nama Kegiatan','nama_mahasiswa' => 'Nama Lengkap Mahasiswa','nim' => '1234567890','jurusan' => 'Teknik Informatika','tanggal_pengajuan' => '2024-01-15 14:30:00','status' => 'menunggu'],
         ];
         // --- Akhir Data Dummy ---
 

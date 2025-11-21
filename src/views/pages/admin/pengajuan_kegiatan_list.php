@@ -179,4 +179,4 @@ if (!isset($list_kegiatan)) {
 // Letakkan script eksternal di sini agar dimuat di akhir halaman, sebelum body ditutup oleh footer
 // Ini adalah praktik yang lebih baik daripada meletakkan <script> di dalam <main>
 ?>
-<script src="/docutrack/public/assets/js/page-scripts/pengajuan-kegiatan.js"></script>
+<script src="/docutrack/public/assets/js/admin/pengajuan-kegiatan.js"></script>
