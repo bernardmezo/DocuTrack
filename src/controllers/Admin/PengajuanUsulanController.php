@@ -2,35 +2,54 @@
 // File: src/controllers/Admin/PengajuanUsulanController.php
 
 require_once '../src/core/Controller.php';
-// require_once '../src/models/Usulan.php';
+// 1. Load Model Admin
+require_once '../src/model/adminModel.php';
 
 class AdminPengajuanUsulanController extends Controller {
 
     public function index($data_dari_router = []) {
         
-        // --- TODO: Ganti dengan data asli dari Model ---
-        // $usulanModel = new Usulan();
-        // Filter data: Ambil KAK yang butuh aksi (bukan yang sudah 'Disetujui')
-        // $antrian_kak = $usulanModel->getKakButuhAksi(); 
+        // 2. Instansiasi Model
+        $modelAdmin = new adminModel();
 
-        // Data dummy (HANYA Menunggu, Revisi, Ditolak)
-        $antrian_kak_dummy = [
-            ['id' => 2, 'nama' => 'Workshop BEM', 'pengusul' => 'User B', 'status' => 'Revisi'],
-            ['id' => 3, 'nama' => 'Lomba Cerdas Cermat', 'pengusul' => 'User C', 'status' => 'Menunggu'],
-            ['id' => 4, 'nama' => 'Kulum', 'pengusul' => 'User D', 'status' => 'Ditolak'],
-        ];
-        // --- Akhir Data Dummy ---
+        // 3. Ambil Data Real dari Database
+        // Fungsi ini akan me-return array yang strukturnya sudah cocok dengan View
+        // (key: 'id', 'nama', 'pengusul', 'status')
+        $antrian_kak = $modelAdmin->getAntrianKAK();
 
+        // 4. Kirim data ke View
         $data = array_merge($data_dari_router, [
             'title' => 'Pengajuan Usulan KAK',
-            // Data ini digunakan oleh tabel antrian di 'pengajuan_usulan.php'
-            'antrian_kak' => $antrian_kak_dummy 
+            'antrian_kak' => $antrian_kak 
         ]);
 
-        // Panggil view form (yang juga berisi tabel antrian)
+        // Panggil view
         $this->view('pages/admin/pengajuan_usulan', $data, 'app'); 
     }
 
-    // Nanti Anda akan punya method 'store' untuk menyimpan data form
-    // public function store() { /* ... */ }
+    // Tambahkan method ini di dalam Class
+    public function store() {
+        // 1. Cek apakah methodnya POST
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /docutrack/public/admin/pengajuan-usulan');
+            exit;
+        }
+
+        // 2. Panggil Model
+        $modelAdmin = new adminModel();
+
+        // 3. Kirim seluruh data $_POST ke Model untuk disimpan
+        // Hasilnya true (berhasil) atau false (gagal)
+        $berhasil = $modelAdmin->simpanPengajuan($_POST);
+
+        if ($berhasil) {
+            // Set pesan sukses (opsional, pakai Session Flash message nanti)
+            // Redirect kembali ke halaman antrian
+            header('Location: /docutrack/public/admin/pengajuan-usulan?status=success');
+        } else {
+            // Redirect error
+            header('Location: /docutrack/public/admin/pengajuan-usulan?status=error');
+        }
+        exit;
+    }
 }

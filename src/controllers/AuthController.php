@@ -2,266 +2,140 @@
 // File: src/controllers/AuthController.php
 
 require_once '../src/core/Controller.php';
-// require_once '../src/models/User.php'; // (Nanti Anda akan pakai ini)
-include __DIR__ . '/../model/conn.php'; // Koneksi database
+// 1. Panggil Model Login
+require_once '../src/model/LoginModel.php';
 
 class AuthController extends Controller {
 
-    private $conn;
-
     public function __construct() {
-        include __DIR__ . '/../model/conn.php';
-        $this->conn = $conn;
+        // Constructor kosong
     }
-    /**
-     * Menampilkan halaman login (saat ini di-handle popup).
-     * Jika diakses langsung, redirect ke landing page.
-     */
+
     public function index() {
         header('Location: /docutrack/public/'); 
         exit;
     }
 
-    /**
-     * Memproses data login dari form popup
-     */
-
-    // --- LOGIN MULTI-ROLE ---
+    // =====================================================
+    // ===============  LOGIN REAL DATABASE  ===============
+    // =====================================================
 
     public function handleLogin() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /docutrack/public/');
             exit;
         }
+        
+        // 1. Ambil input dari form
+        $email      = trim($_POST['login_email'] ?? '');
+        $password   = trim($_POST['login_password'] ?? '');
+        // Role yang dipilih user di dropdown (opsional, kita validasi nanti)
+        $role_input = strtolower(trim($_POST['login_role'] ?? '')); // bakal ga dipake pas middleware di apus
 
-        // Ambil input dari form login
-        $email = trim($_POST['login_email'] ?? '');
-        $password = trim($_POST['login_password'] ?? '');
-        $role_text = strtolower(trim($_POST['login_role'] ?? '')); // ubah biar huruf kecil semua agar konsisten
-
+        // 2. Validasi Input Kosong
         if (empty($email) || empty($password)) {
             $_SESSION['login_error'] = 'Email dan password harus diisi.';
             header('Location: /docutrack/public/');
             exit;
         }
 
-        // Cek apakah email terdaftar
-        // $query = "SELECT id, nama_lengkap, email, password, role_id FROM users WHERE email = ?";
-        // $stmt = mysqli_prepare($this->conn, $query);
-        // mysqli_stmt_bind_param($stmt, "s", $email);
-        // mysqli_stmt_execute($stmt);
-        // $result = mysqli_stmt_get_result($stmt);
+        // 3. Panggil Model & Cari User
+        $loginModel = new LoginModel();
+        $user = $loginModel->getUserByEmail($email);
 
-        // --- SIMULASI DATABASE USER (Ganti dengan Model Anda nanti) ---
-        
-        // $userModel = new User();
-        // $user = $userModel->findByEmail($email);
-        
-        // Data Dummy untuk Multi-Role
-        $users_db = [
-            'admin@example.com' => [
-                'id' => 1,
-                'password' => 'password123', 
-                'nama' => 'Admin Docutrack',
-                'role' => 'admin'
-            ],
-            'verifikator@example.com' => [
-                'id' => 2,
-                'password' => 'password123',
-                'nama' => 'Putra Yopan (Verifikator)',
-                'role' => 'verifikator'
-            ],
-            'wadir@example.com' => [
-                'id' => 3,
-                'password' => 'password123',
-                'nama' => 'Wakil Direktur',
-                'role' => 'wadir'
-            ],
-            'ppk@example.com' => [
-                'id' => 4,
-                'password' => 'password123',
-                'nama' => 'Pejabat PPK',
-                'role' => 'ppk'
-            ]
-        ];
-
-        // --- Logika Login Multi-Role ---
-
-        if (isset($users_db[$email])) {
-            $user = $users_db[$email];
-
-            // 2. Cek password (Di aplikasi nyata, gunakan password_verify())
-            if ($password === $user['password']) {
-                
-                // --- LOGIN BERHASIL ---
-                unset($_SESSION['login_error']);
-
-                // 3. Set Session
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['nama'];
-                $_SESSION['user_role'] = $user['role']; // <-- INI YANG PENTING
-
-                switch ($role_text) {
-                    // case 'super-admin':
-                    //     header('Location: /docutrack/public/admin/dashboard');
-                    //     break;
-                    case 'verifikator':
-                        header('Location: /docutrack/public/verifikator/dashboard');
-                        break;
-                    case 'wadir':
-                        header('Location: /docutrack/public/wadir/dashboard');
-                        break;
-                    case 'ppk':
-                        header('Location: /docutrack/public/ppk/dashboard');
-                        break;
-                    case 'bendahara':
-                        header('Location: /docutrack/public/bendahara/dashboard');
-                        break;
-                    case 'admin':
-                        header('Location: /docutrack/public/admin/dashboard');
-                        break;
-                    default:
-                        header('Location: /docutrack/public/');
-                        break;
-                }
-
-                exit;
-            } else {
-                $_SESSION['login_error'] = 'Password salah.';
-            } 
-        } else {
-            $_SESSION['login_error'] = 'Email tidak ditemukan.';
-        }
-
-        // BAKAL DI PAKE KETIKA DESIGN DASHBOARD SUDAH JADI
-
-        // if ($user = mysqli_fetch_assoc($result)) {
-        //     // Cek password dengan password_verify()
-        //     if ($password == $user['password']) {
-                
-        //         // Bersihkan error sebelumnya
-        //         unset($_SESSION['login_error']);
-
-        //         // Set session login
-        //         $_SESSION['user_id'] = $user['id'];
-        //         $_SESSION['user_name'] = $user['nama_lengkap'];
-        //         $_SESSION['user_email'] = $user['email'];
-        //         $_SESSION['user_role_id'] = $user['role_id'];
-        //         $_SESSION['user_role'] = $role_text;
-
-        //         // Redirect sesuai role
-        //         switch ($role_text) {
-        //             // case 'super-admin':
-        //             //     header('Location: /docutrack/public/admin/dashboard');
-        //             //     break;
-        //             case 'verifikator':
-        //                 header('Location: /docutrack/public/verifikator/dashboard');
-        //                 break;
-        //             case 'wadir':
-        //                 header('Location: /docutrack/public/wadir/dashboard');
-        //                 break;
-        //             case 'ppk':
-        //                 header('Location: /docutrack/public/ppk/dashboard');
-        //                 break;
-        //             case 'bendahara':
-        //                 header('Location: /docutrack/public/bendahara/dashboard');
-        //                 break;
-        //             case 'admin':
-        //                 header('Location: /docutrack/public/admin/dashboard');
-        //                 break;
-        //             default:
-        //                 header('Location: /docutrack/public/');
-        //                 break;
-        //         }
-
-        //         exit; // Penting: hentikan eksekusi setelah redirect
-
-        //     } else {
-        //         // Password salah
-        //         $_SESSION['login_error'] = 'Password salah.';
-        //     }
-        // } else {
-        //     // Email tidak ditemukan
-        //     $_SESSION['login_error'] = 'Email tidak ditemukan.';
-        // }
-
-        // Jika gagal login, kembali ke halaman utama
-        header('Location: /docutrack/public/');
-        exit;
-    }
-
-        // -- REGITRASI USER BARU --
-
-        public function handleRegister() {
-        global $conn; // gunakan koneksi dari conn.php
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        // 4. Cek Apakah User Ditemukan?
+        if (!$user) {
+            $_SESSION['login_error'] = 'Email tidak terdaftar.';
             header('Location: /docutrack/public/');
             exit;
         }
 
-        // Ambil data dari form
-        $nama_lengkap = $_POST['register_nama_lengkap'] ?? null;
-        $email = $_POST['register_email'] ?? null;
-        $password = $_POST['register_password'] ?? null;
-        $role_text = strtolower(trim($_POST['register_role'] ?? '')); // ubah jadi huruf kecil agar konsisten
+        // 5. Verifikasi Password
+        // PENTING: Di database asli, password HARUS di-hash pakai password_hash()
+        // Kita gunakan password_verify() untuk mencocokkan input dengan hash di DB.
+        
+        $password_valid = false;
 
-        // Validasi input kosong
-        if (empty($nama_lengkap) || empty($email) || empty($password) || empty($role_text)) {
-            $_SESSION['login_error'] = 'Data registrasi tidak boleh kosong.';
-            header('Location: /docutrack/public/1');
+        // Cek A: Jika database menggunakan Hash (Recommended)
+        if (password_verify($password, $user['password'])) {
+            $password_valid = true;
+        } 
+        // Cek B: (FALLBACK) Jika database masih pakai text polos (HANYA UNTUK DEVELOPMENT)
+        // Hapus bagian 'elseif' ini jika nanti password di DB sudah di-hash semua.
+        elseif ($password === $user['password']) {
+            $password_valid = true;
+        }
+
+        if (!$password_valid) {
+            $_SESSION['login_error'] = 'Password salah.';
+            header('Location: /docutrack/public/');
             exit;
         }
 
-        // Mapping role ke ID
-        $role_map = [
-            'super-admin' => 1,
-            'verifikator' => 2,
-            'wadir' => 3,
-            'ppk' => 4,
-            'bendahara' => 5,
-            'user' => 6
-        ];
+        // 6. Validasi Role (PENTING!)
+        // Pastikan role yang dipilih di form SESUAI dengan role asli user di database.
+        // Nama kolom dari Model tadi adalah 'namaRole'
+        $db_role = strtolower($user['namaRole']); // misal: 'verifikator'
 
-        // Default ke user jika role tidak dikenali
-        $role_id = $role_map[$role_text] ?? 6;
-
-        // Hash password
-        $password_hashed = password_hash($password, PASSWORD_BCRYPT);
-
-        // Cek apakah email sudah ada
-        $query_check = "SELECT email FROM users WHERE email = ?";
-        $stmt_check = mysqli_prepare($conn, $query_check);
-        mysqli_stmt_bind_param($stmt_check, "s", $email);
-
-        if (mysqli_stmt_execute($stmt_check)) {
-            mysqli_stmt_store_result($stmt_check);
-            if (mysqli_stmt_num_rows($stmt_check) > 0) {
-                $_SESSION['register_error'] = 'Email sudah terdaftar. Silakan gunakan email lain.';
-                header('Location: /docutrack/public/2');
-                exit;
-            }
+        // Jika user memilih role di dropdown, kita cek kecocokannya.
+        // Jika role_input kosong (misal user lupa pilih), kita bisa otomatis pakai role dari DB.
+        if (!empty($role_input) && $role_input !== $db_role) {
+            $_SESSION['login_error'] = "Akun ini tidak terdaftar sebagai " . ucfirst($role_input);
+            header('Location: /docutrack/public/');
+            exit;
         }
 
-        // Tambah user ke database
-        $query = "INSERT INTO users (nama_lengkap, email, password, role_id) VALUES (?, ?, ?, ?)";
-        $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "sssi", $nama_lengkap, $email, $password_hashed, $role_id);
+        // ============================
+        //  LOGIN BERHASIL
+        // ============================
 
-        if (mysqli_stmt_execute($stmt)) {
-            $_SESSION['register_success'] = 'Registrasi berhasil! Silakan login.';
-            header('Location: /docutrack/public/login');
-        } else {
-            $_SESSION['register_error'] = 'Gagal registrasi. Silakan coba lagi.';
-            header('Location: /docutrack/public/3');
+        unset($_SESSION['login_error']);
+
+        // Simpan data ke Session (Sesuaikan dengan key dari LoginModel)
+        $_SESSION['user_id']       = $user['userId'];      // Dari query: u.userId
+        $_SESSION['user_name']     = $user['nama'];        // Dari query: u.nama
+        $_SESSION['user_role']     = $db_role;             // Dari query: r.nama_role
+        $_SESSION['user_jurusan']  = $user['nama_jurusan'];// Dari query: j.nama_jurusan (Opsional)
+
+        // ============================
+        //  REDIRECT BERDASARKAN ROLE ASLI
+        // ============================
+
+        switch ($db_role) {
+            case 'verifikator':
+                header('Location: /docutrack/public/verifikator/dashboard');
+                break;
+
+            case 'wadir':
+                header('Location: /docutrack/public/wadir/dashboard');
+                break;
+
+            case 'ppk':
+                header('Location: /docutrack/public/ppk/dashboard');
+                break;
+
+            case 'bendahara':
+                header('Location: /docutrack/public/bendahara/dashboard');
+                break;
+
+            case 'admin':
+                header('Location: /docutrack/public/admin/dashboard');
+                break;
+            
+            case 'super-admin':
+                header('Location: /docutrack/public/super_admin/dashboard');
+                break;
+
+            default:
+                // Jika role tidak dikenali, lempar error atau ke halaman umum
+                $_SESSION['login_error'] = 'Role pengguna tidak valid.';
+                session_destroy(); // Hapus sesi agar aman
+                header('Location: /docutrack/public/');
+                break;
         }
+
         exit;
     }
-
-
-    /**
-     * Menghandle logout
-     */
 
     public function logout() {
         session_destroy();

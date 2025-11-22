@@ -2,7 +2,7 @@
 $host = 'localhost';
 $user = 'root';
 $pass = '';
-$db = 'db_docutrack';
+$db   = 'db_docutrack2';
 
 $conn = mysqli_connect($host, $user, $pass, $db);
 
@@ -15,4 +15,3 @@ if (!$conn) {
     // Set karakter set ke UTF-8
     mysqli_set_charset($conn, 'utf8');
 }
-?>
