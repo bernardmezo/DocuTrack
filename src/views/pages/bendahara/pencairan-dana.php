@@ -1,6 +1,5 @@
 <?php
-// File: src/views/pages/admin/pencairan-dana.php
-if (!isset($antrian_kak)) { $antrian_kak = [['id' => 1, 'nama' => 'Contoh Revisi', 'pengusul' => 'User (Dummy)', 'status' => 'Revisi']]; }
+// File: src/views/pages/bendahara/pencairan-dana.php
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -18,15 +17,19 @@ if (!isset($antrian_kak)) { $antrian_kak = [['id' => 1, 'nama' => 'Contoh Revisi
                 <div class="flex flex-col sm:flex-row gap-3">
                     
                     <div class="relative">
-                        <select id="filter-jurusan-kak" class="pl-10 pr-10 py-2 border border-gray-300  rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400">
-                            <option value="">Semua Jurusan</option>
-                            <option value="Teknik Informatika">Teknik Informatika</option>
-                            <option value="Sistem Informasi">Sistem Informasi</option>
-                            <option value="Manajemen">Manajemen</option>
-                            <option value="Akuntansi">Akuntansi</option>
-                            <option value="Desain Grafis">Desain Grafis</option>
+                        <select id="filter-jurusan-kak"
+                                style="color: #374151 !important; font-size: 14px !important; min-width: 280px !important;"
+                                class="pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="" selected style="color: #374151 !important;">Semua Jurusan</option>
+                            <option value="Teknik Informatika dan Komputer" style="color: #374151 !important;">Teknik Informatika dan Komputer</option>
+                            <option value="Akuntansi" style="color: #374151 !important;">Akuntansi</option>
+                            <option value="Administrasi Niaga" style="color: #374151 !important;">Administrasi Niaga</option>
+                            <option value="Teknik Sipil" style="color: #374151 !important;">Teknik Sipil</option>
+                            <option value="Teknik Mesin" style="color: #374151 !important;">Teknik Mesin</option>
+                            <option value="Teknik Elektro" style="color: #374151 !important;">Teknik Elektro</option>
+                            <option value="Teknik Grafika dan Penerbitan" style="color: #374151 !important;">Teknik Grafika dan Penerbitan</option>
                         </select>
-                        <i class="fas fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <i class="fas fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"></i>
                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
                     </div>
                     

@@ -72,11 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.nama.toLowerCase().includes(searchTerm) ||
                     (item.pengusul && item.pengusul.toLowerCase().includes(searchTerm)) ||
                     (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
+                    (item.prodi && item.prodi.toLowerCase().includes(searchTerm)) ||
                     item.nim.toLowerCase().includes(searchTerm);
                     
                 const matchStatus = !statusFilter || 
                     item.status.toLowerCase() === statusFilter;
                     
+                // Filter jurusan - akan menampilkan semua prodi dari jurusan tersebut
                 const matchJurusan = !jurusanFilter || 
                     item.jurusan === jurusanFilter;
                 
@@ -114,19 +116,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const badges = {
                 'disetujui': 'text-green-700 bg-green-100 border border-green-200',
                 'dana diberikan': 'text-green-700 bg-green-300 border border-green-200',
-                'setuju': 'text-green-700 bg-green-100 border border-green-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
-                'menunggu': 'text-gray-700 bg-gray-100 border border-gray-200'
+                'menunggu': 'text-blue-700 bg-blue-100 border border-blue-200',
+                'telah direvisi': 'text-purple-700 bg-purple-100 border border-purple-200'
             };
             
             const icons = {
                 'disetujui': 'fa-check-circle',
                 'dana diberikan': 'fa-money-check-alt',
-                'setuju': 'fa-check-circle',
                 'ditolak': 'fa-times-circle',
-                'revisi': 'fa-edit',
-                'menunggu': 'fa-clock'
+                'revisi': 'fa-pencil-alt',
+                'menunggu': 'fa-hourglass-half',
+                'telah direvisi': 'fa-edit'
             };
             
             return `<span class='px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${badges[statusLower] || badges['menunggu']}'>
@@ -135,64 +137,51 @@ document.addEventListener('DOMContentLoaded', function() {
             </span>`;
         }
         
-        calculateDeadline(item) {
-            if (this.config.type !== 'lpj') return '';
-            
-            const status = item.status.toLowerCase();
-            
-            // Hanya hitung deadline jika status 'setuju'
-            if (status !== 'setuju') {
-                return '<span class="text-gray-400 text-xs italic">Menunggu Persetujuan</span>';
+        getTenggatDisplay(tenggatLpj, status) {
+            if (!tenggatLpj || tenggatLpj === null || tenggatLpj === '') {
+                return '<span class="text-gray-500 italic text-sm">Belum Ada Tenggat</span>';
             }
             
-            const tglPengajuan = new Date(item.tanggal_pengajuan);
-            const deadline = new Date(tglPengajuan);
-            deadline.setDate(deadline.getDate() + 14);
-            
+            // Parse tanggal dengan benar
+            const tenggatDate = new Date(tenggatLpj.replace(' ', 'T'));
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            deadline.setHours(0, 0, 0, 0);
+            tenggatDate.setHours(0, 0, 0, 0);
             
-            const diffTime = deadline - today;
-            const sisaHari = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffTime = tenggatDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            let badgeClass, icon, textStatus;
+            let badgeClass = '';
+            let icon = '';
+            let text = '';
             
-            if (sisaHari < 0) {
+            if (diffDays < 0) {
                 badgeClass = 'bg-red-100 text-red-700';
                 icon = 'fa-exclamation-circle';
-                textStatus = `Terlewat ${Math.abs(sisaHari)} hari`;
-            } else if (sisaHari === 0) {
-                badgeClass = 'bg-red-100 text-red-700';
-                icon = 'fa-bell';
-                textStatus = 'Hari Ini!';
-            } else if (sisaHari <= 3) {
+                text = 'Terlambat ' + Math.abs(diffDays) + ' hari';
+            } else if (diffDays === 0) {
                 badgeClass = 'bg-orange-100 text-orange-700';
-                icon = 'fa-hourglass-end';
-                textStatus = `Sisa ${sisaHari} hari`;
-            } else if (sisaHari <= 7) {
-                badgeClass = 'bg-blue-100 text-blue-700';
-                icon = 'fa-hourglass-half';
-                textStatus = `Sisa ${sisaHari} hari`;
+                icon = 'fa-clock';
+                text = 'Hari ini';
+            } else if (diffDays <= 3) {
+                badgeClass = 'bg-orange-100 text-orange-700';
+                icon = 'fa-clock';
+                text = diffDays + ' hari lagi';
+            } else if (diffDays <= 7) {
+                badgeClass = 'bg-yellow-100 text-yellow-700';
+                icon = 'fa-clock';
+                text = diffDays + ' hari lagi';
             } else {
-                badgeClass = 'bg-green-100 text-green-700';
+                badgeClass = 'bg-blue-100 text-blue-700';
                 icon = 'fa-calendar-check';
-                textStatus = `Sisa ${sisaHari} hari`;
+                text = diffDays + ' hari lagi';
             }
             
-            const deadlineDisplay = deadline.toLocaleDateString('id-ID', { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric' 
-            });
-            
             return `
-                <div class="flex flex-col gap-1">
-                    <span class="text-sm font-medium text-gray-700">${deadlineDisplay}</span>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass} w-fit">
-                        <i class="fas ${icon}"></i> ${textStatus}
-                    </span>
-                </div>
+                <span class="${badgeClass} px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1.5">
+                    ${icon ? `<i class="fas ${icon}"></i>` : ''}
+                    ${text}
+                </span>
             `;
         }
         
@@ -202,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const pageData = this.filteredData.slice(start, end);
             
             // Tentukan colspan berdasarkan tipe tabel
-            const colspan = this.config.type === 'lpj' ? '6' : '6';
+            const colspan = this.config.type === 'lpj' ? '6' : '5';
             
             if (pageData.length === 0) {
                 this.tbody.innerHTML = `
@@ -226,6 +215,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Nama mahasiswa - gunakan nama_mahasiswa untuk LPJ, pengusul untuk KAK
                 const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
                 
+                // Prodi - tampilkan prodi, bukan jurusan
+                const prodi = item.prodi || item.jurusan || '-';
+                
                 // Format tanggal pengajuan
                 let tglPengajuanDisplay = '-';
                 if (item.tanggal_pengajuan) {
@@ -237,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Untuk tabel LPJ - tambahkan kolom deadline
+                // Untuk tabel LPJ - tambahkan kolom tenggat
                 if (this.config.type === 'lpj') {
                     return `
                         <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
@@ -245,11 +237,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
                                 <div class="flex flex-col">
                                     <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(item.jurusan)}</span>
+                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
                                 </div>
                             </td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.calculateDeadline(item)}</td>
+                            <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                                 <div class='flex gap-2'>
@@ -262,18 +254,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         </tr>
                     `;
                 } else {
-                    // Untuk tabel KAK - tampilkan tanggal pengajuan dan jurusan
+                    // Untuk tabel KAK - tanpa kolom prodi
                     return `
                         <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
                             <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
                                 <div class="flex flex-col">
                                     <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(item.jurusan)}</span>
+                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
                                 </div>
                             </td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${this.escapeHtml(item.jurusan)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                                 <div class='flex gap-2'>
@@ -404,46 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
             filterStatusId: 'filter-status-lpj',
             filterJurusanId: 'filter-jurusan-lpj',
             resetBtnId: 'reset-filter-lpj',
-            viewUrl: '/docutrack/public/admin/pengajuan-lpj/show/'
+            viewUrl: '/docutrack/public/bendahara/pengajuan-lpj/show/'
         })
-    };
-    
-    // Delete function
-    window.deleteItem = function(id, type) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: 'Apakah Anda yakin?',
-                text: "Data yang dihapus tidak dapat dikembalikan!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Ya, hapus!',
-                cancelButtonText: 'Batal',
-                customClass: {
-                    popup: 'rounded-xl',
-                    confirmButton: 'rounded-lg',
-                    cancelButton: 'rounded-lg'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Add your delete logic here
-                    Swal.fire({
-                        title: 'Terhapus!',
-                        text: 'Data berhasil dihapus.',
-                        icon: 'success',
-                        confirmButtonColor: '#3b82f6',
-                        customClass: {
-                            popup: 'rounded-xl',
-                            confirmButton: 'rounded-lg'
-                        }
-                    });
-                }
-            });
-        } else {
-            if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-                alert('Data berhasil dihapus!');
-            }
-        }
     };
 });

@@ -1,14 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Data dari PHP
     const dataLPJ = window.dataLPJ;
-    
-    // Configuration
     const ITEMS_PER_PAGE = 5;
     
-    // Table Manager Class
     class TableManager {
-        constructor(data, tableId, config) {
+        constructor(data, config) {
             this.allData = data;
             this.filteredData = data;
             this.currentPage = 1;
@@ -23,6 +19,17 @@ document.addEventListener('DOMContentLoaded', function() {
             this.filterJurusan = document.getElementById(config.filterJurusanId);
             this.resetBtn = document.getElementById(config.resetBtnId);
             
+            console.log('TableManager initialized with:', {
+                dataCount: this.allData.length,
+                elements: {
+                    tbody: !!this.tbody,
+                    pagination: !!this.paginationContainer,
+                    search: !!this.searchInput,
+                    filterJurusan: !!this.filterJurusan,
+                    resetBtn: !!this.resetBtn
+                }
+            });
+            
             this.init();
         }
         
@@ -32,80 +39,133 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         attachEventListeners() {
-            // Search
-            this.searchInput.addEventListener('input', () => {
-                this.currentPage = 1;
-                this.applyFilters();
-            });
+            if (this.searchInput) {
+                this.searchInput.addEventListener('input', () => {
+                    this.currentPage = 1;
+                    this.applyFilters();
+                });
+            }
             
-            // Filter Jurusan
-            this.filterJurusan.addEventListener('change', () => {
-                this.currentPage = 1;
-                this.applyFilters();
-            });
+            if (this.filterJurusan) {
+                this.filterJurusan.addEventListener('change', () => {
+                    this.currentPage = 1;
+                    this.applyFilters();
+                });
+            }
             
-            // Reset
-            this.resetBtn.addEventListener('click', () => {
-                this.searchInput.value = '';
-                this.filterJurusan.value = '';
-                this.currentPage = 1;
-                this.applyFilters();
-            });
+            if (this.resetBtn) {
+                this.resetBtn.addEventListener('click', () => {
+                    if (this.searchInput) this.searchInput.value = '';
+                    if (this.filterJurusan) this.filterJurusan.value = '';
+                    this.currentPage = 1;
+                    this.applyFilters();
+                });
+            }
         }
         
         applyFilters() {
-    const searchTerm = this.searchInput.value.toLowerCase();
-    const jurusanFilter = this.filterJurusan.value;
+            const searchTerm = this.searchInput.value.toLowerCase();
+            const jurusanFilter = this.filterJurusan.value;
 
-    this.filteredData = this.allData.filter(item => {
-        const matchSearch = !searchTerm || 
-            item.nama.toLowerCase().includes(searchTerm) ||
-            (item.pengusul && item.pengusul.toLowerCase().includes(searchTerm)) ||
-            (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
-            item.nim.toLowerCase().includes(searchTerm);
-        
-        const matchJurusan = !jurusanFilter || 
-            item.jurusan === jurusanFilter;
-        
-        return matchSearch && matchJurusan;
-    });
+            this.filteredData = this.allData.filter(item => {
+                const matchSearch = !searchTerm || 
+                    item.nama.toLowerCase().includes(searchTerm) ||
+                    (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
+                    item.nim.toLowerCase().includes(searchTerm) ||
+                    (item.jurusan && item.jurusan.toLowerCase().includes(searchTerm)) ||
+                    (item.prodi && item.prodi.toLowerCase().includes(searchTerm));
+                
+                const matchJurusan = !jurusanFilter || 
+                    item.jurusan === jurusanFilter;
+                
+                return matchSearch && matchJurusan;
+            });
 
-    // Highlight jurusan
-    if (jurusanFilter) {
-        this.filterJurusan.style.borderColor = '#10b981';
-    } else {
-        this.filterJurusan.style.borderColor = '';
-    }
+            // Highlight filters
+            if (jurusanFilter) {
+                this.filterJurusan.style.borderColor = '#10b981';
+            } else {
+                this.filterJurusan.style.borderColor = '';
+            }
 
-    // Highlight search
-    if (searchTerm) {
-        this.searchInput.style.borderColor = '#10b981';
-    } else {
-        this.searchInput.style.borderColor = '';
-    }
-    
-    this.render();
-}
-
+            if (searchTerm) {
+                this.searchInput.style.borderColor = '#10b981';
+            } else {
+                this.searchInput.style.borderColor = '';
+            }
+            
+            this.render();
+        }
         
         getStatusBadge(status) {
             const statusLower = status.toLowerCase();
             const badges = {
-                'setuju': 'text-green-700 bg-green-100 border border-green-200',
-                'revisi': 'text-orange-700 bg-orange-100 border border-orange-200',
-                'menunggu': 'text-gray-700 bg-gray-100 border border-gray-200'
+                'menunggu': 'text-blue-700 bg-blue-100',
+                'telah direvisi': 'text-purple-700 bg-purple-100',
+                'revisi': 'text-yellow-700 bg-yellow-100',
+                'disetujui': 'text-green-700 bg-green-100'
             };
             
             const icons = {
-                'setuju': 'fa-check-circle',
-                'revisi': 'fa-exclamation-triangle',
-                'menunggu': 'fa-clock'
+                'menunggu': 'fa-hourglass-half',
+                'telah direvisi': 'fa-edit',
+                'revisi': 'fa-pencil-alt',
+                'disetujui': 'fa-check-circle'
             };
             
-            return `<span class='px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${badges[statusLower] || badges['menunggu']}'>
+            return `<span class='px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1.5 ${badges[statusLower] || badges['menunggu']}'>
                 <i class='fas ${icons[statusLower] || 'fa-question-circle'}'></i>
                 ${status}
             </span>`;
+        }
+        
+        getTenggatDisplay(tenggatLpj, status) {
+            if (!tenggatLpj || tenggatLpj === null || tenggatLpj === '') {
+                return '<span class="text-gray-500 italic text-sm">Belum Ada Tenggat</span>';
+            }
+            
+            // Parse tanggal dengan benar - tambahkan T untuk format ISO
+            const tenggatDate = new Date(tenggatLpj.replace(' ', 'T'));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            tenggatDate.setHours(0, 0, 0, 0);
+            
+            const diffTime = tenggatDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let badgeClass = '';
+            let icon = '';
+            let text = '';
+            
+            if (diffDays < 0) {
+                badgeClass = 'bg-red-100 text-red-700';
+                icon = 'fa-exclamation-circle';
+                text = 'Terlambat ' + Math.abs(diffDays) + ' hari';
+            } else if (diffDays === 0) {
+                badgeClass = 'bg-orange-100 text-orange-700';
+                icon = 'fa-clock';
+                text = 'Hari ini';
+            } else if (diffDays <= 3) {
+                badgeClass = 'bg-orange-100 text-orange-700';
+                icon = 'fa-clock';
+                text = diffDays + ' hari lagi';
+            } else if (diffDays <= 7) {
+                badgeClass = 'bg-yellow-100 text-yellow-700';
+                icon = 'fa-clock';
+                text = diffDays + ' hari lagi';
+            } else {
+                // Untuk sisa hari > 7 hari
+                badgeClass = 'bg-blue-100 text-blue-700';
+                icon = 'fa-calendar-check';
+                text = diffDays + ' hari lagi';
+            }
+            
+            return `
+                <span class="${badgeClass} px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1.5">
+                    ${icon ? `<i class="fas ${icon}"></i>` : ''}
+                    ${text}
+                </span>
+            `;
         }
         
         renderTable() {
@@ -132,10 +192,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rowNumber = start + index + 1;
                 const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
                 
-                // Nama mahasiswa
-                const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
+                const namaMahasiswa = item.nama_mahasiswa || 'N/A';
+                const prodi = item.prodi || 'N/A';
                 
-                // Format tanggal pengajuan
                 let tglPengajuanDisplay = '-';
                 if (item.tanggal_pengajuan) {
                     const tglPengajuan = new Date(item.tanggal_pengajuan);
@@ -146,45 +205,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Format tenggat LPJ
-                let tenggatDisplay = '-';
-                if (item.tenggat_lpj) {
-                    const tenggat = new Date(item.tenggat_lpj);
-                    tenggatDisplay = tenggat.toLocaleDateString('id-ID', { 
-                        day: '2-digit', 
-                        month: 'short', 
-                        year: 'numeric' 
-                    });
-                    
-                    // Check if overdue
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    tenggat.setHours(0, 0, 0, 0);
-                    
-                    if (tenggat < today && item.status.toLowerCase() === 'menunggu') {
-                        tenggatDisplay = `<span class="text-red-600 font-semibold">${tenggatDisplay} <i class="fas fa-exclamation-circle"></i></span>`;
-                    }
-                }
-                
                 return `
                     <tr class='${rowClass} hover:bg-green-50/50 transition-colors duration-150'>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                        <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
-                            <div class="flex flex-col">
-                                <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}) - ${this.escapeHtml(item.jurusan)}</span>
+                        <td class='px-6 py-4 text-sm text-gray-800'>
+                            <div class="flex flex-col gap-1">
+                                <span class="font-semibold text-gray-900">${this.escapeHtml(item.nama)}</span>
+                                <span class="text-xs text-gray-500">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
                             </div>
                         </td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
-                        <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tenggatDisplay}</td>
+                        <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                            <div class='flex gap-2'>
-                                <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                                   class='bg-green-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition-colors'>
-                                    Review
-                                </a>
-                            </div>
+                            <a href="${this.config.viewUrl}${item.id}?ref=lpj" 
+                               class='bg-green-600 text-white px-4 py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-1.5'>
+                                Review
+                            </a>
                         </td>
                     </tr>
                 `;
@@ -207,7 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let buttons = [];
             
-            // Previous button
             buttons.push(`
                 <button onclick="window.lpjTable.goToPage(${this.currentPage - 1})" 
                         ${this.currentPage === 1 ? 'disabled' : ''} 
@@ -219,7 +255,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             `);
             
-            // Page numbers with ellipsis logic
             for (let i = 1; i <= totalPages; i++) {
                 if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
                     buttons.push(`
@@ -236,7 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Next button
             buttons.push(`
                 <button onclick="window.lpjTable.goToPage(${this.currentPage + 1})" 
                         ${this.currentPage === totalPages ? 'disabled' : ''} 
@@ -271,7 +305,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = page;
                 this.render();
                 
-                // Smooth scroll to table
                 const section = this.tbody.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -280,10 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initialize LPJ table and expose it globally
-    window.lpjTable = new TableManager(dataLPJ, 'table-lpj', {
-        type: 'lpj',
-        color: 'green',
+    window.lpjTable = new TableManager(dataLPJ, {
         tbodyId: 'tbody-lpj',
         paginationId: 'pagination-lpj',
         showingId: 'showing-lpj',
@@ -291,6 +321,6 @@ document.addEventListener('DOMContentLoaded', function() {
         searchId: 'search-lpj',
         filterJurusanId: 'filter-jurusan-lpj',
         resetBtnId: 'reset-filter-lpj',
-        viewUrl: '/docutrack/public/admin/pengajuan-lpj/show/'
+        viewUrl: '/docutrack/public/bendahara/pengajuan-lpj/show/'
     });
 });

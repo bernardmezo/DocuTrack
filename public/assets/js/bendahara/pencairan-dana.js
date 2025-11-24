@@ -1,7 +1,47 @@
 document.addEventListener('DOMContentLoaded', function() {
     
-    // Data dari PHP
-    const dataKAK = window.dataKAK;
+    // Data dari PHP - Filter hanya status Menunggu
+    const dataKAK = window.dataKAK.filter(item => item.status === 'Menunggu');
+
+    // --- MAPPING DATA JURUSAN & PRODI PNJ ---
+    const mapJurusanProdiPNJ = {
+        "Teknik Informatika dan Komputer": [
+            "Teknik Informatika", "Teknik Multimedia Digital", "Teknik Multimedia Jaringan", "Teknologi Industri Cetak Kemasan", "TIK"
+        ],
+        "Akuntansi": [
+            "Akuntansi", "Keuangan dan Perbankan", "Manajemen Keuangan", "Akuntansi Keuangan"
+        ],
+        "Administrasi Niaga": [
+            "Administrasi Bisnis", "MICE", "Bahasa Inggris untuk Komunikasi Bisnis", "Manajemen Pemasaran"
+        ],
+        "Teknik Sipil": [
+            "Teknik Sipil", "Konstruksi Gedung", "Konstruksi Sipil", "Jalan dan Jembatan"
+        ],
+        "Teknik Mesin": [
+            "Teknik Mesin", "Teknik Konversi Energi", "Alat Berat", "Manufaktur"
+        ],
+        "Teknik Elektro": [
+            "Teknik Telekomunikasi", "Teknik Otomasi Listrik Industri", "Broadband Multimedia", "Instrumentasi dan Kontrol Industri"
+        ],
+        "Teknik Grafika dan Penerbitan": [
+            "Teknik Grafika", "Penerbitan", "Desain Grafis", "Teknologi Industri Cetak Kemasan"
+        ]
+    };
+
+    // Helper: Cek apakah sebuah prodi termasuk dalam jurusan yang dipilih
+    function isProdiInJurusan(namaProdi, selectedJurusan) {
+        if (!namaProdi || !selectedJurusan) return false;
+        
+        // 1. Cek langsung jika data backend sudah mengirim field 'jurusan' yang sesuai
+        if (namaProdi === selectedJurusan) return true;
+
+        // 2. Cek via mapping array
+        const daftarProdi = mapJurusanProdiPNJ[selectedJurusan];
+        if (daftarProdi) {
+            return daftarProdi.some(p => namaProdi.toLowerCase().includes(p.toLowerCase()));
+        }
+        return false;
+    }
     
     // Configuration
     const ITEMS_PER_PAGE = 5;
@@ -54,54 +94,52 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         applyFilters() {
-    const searchTerm = this.searchInput.value.toLowerCase();
-    const jurusanFilter = this.filterJurusan.value;
+            const searchTerm = this.searchInput.value.toLowerCase();
+            const selectedJurusan = this.filterJurusan.value; 
 
-    this.filteredData = this.allData.filter(item => {
-        const matchSearch = !searchTerm || 
-            item.nama.toLowerCase().includes(searchTerm) ||
-            (item.pengusul && item.pengusul.toLowerCase().includes(searchTerm)) ||
-            (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
-            item.nim.toLowerCase().includes(searchTerm);
-        
-        const matchJurusan = !jurusanFilter || 
-            item.jurusan === jurusanFilter;
-        
-        return matchSearch && matchJurusan;
-    });
+            this.filteredData = this.allData.filter(item => {
+                // 1. Filter Pencarian Text
+                const matchSearch = !searchTerm || 
+                    item.nama.toLowerCase().includes(searchTerm) ||
+                    (item.pengusul && item.pengusul.toLowerCase().includes(searchTerm)) ||
+                    (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
+                    item.nim.toLowerCase().includes(searchTerm);
+                
+                // 2. Filter Jurusan PNJ
+                let matchJurusan = true;
+                if (selectedJurusan) {
+                    if (item.jurusan === selectedJurusan) {
+                        matchJurusan = true;
+                    } 
+                    else if (item.prodi) {
+                        matchJurusan = isProdiInJurusan(item.prodi, selectedJurusan);
+                    }
+                    else {
+                        matchJurusan = false;
+                    }
+                }
+                
+                return matchSearch && matchJurusan;
+            });
 
-    // Highlight jurusan
-    if (jurusanFilter) {
-        this.filterJurusan.style.borderColor = '#10b981';
-    } else {
-        this.filterJurusan.style.borderColor = '';
-    }
-
-    // Highlight search
-    if (searchTerm) {
-        this.searchInput.style.borderColor = '#10b981';
-    } else {
-        this.searchInput.style.borderColor = '';
-    }
-    
-    this.render();
-}
-
+            this.filterJurusan.style.borderColor = selectedJurusan ? '#10b981' : '';
+            this.searchInput.style.borderColor = searchTerm ? '#10b981' : '';
+            
+            this.render();
+        }
         
         getStatusBadge(status) {
             const statusLower = status.toLowerCase();
             const badges = {
                 'dana diberikan': 'text-green-700 bg-green-100 border border-green-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
-                'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
-                'menunggu': 'text-gray-700 bg-gray-100 border border-gray-200'
+                'menunggu': 'text-blue-700 bg-blue-100 border border-blue-200'
             };
             
             const icons = {
                 'dana diberikan': 'fa-check-circle',
                 'ditolak': 'fa-times-circle',
-                'revisi': 'fa-exclamation-triangle',
-                'menunggu': 'fa-clock'
+                'menunggu': 'fa-hourglass-half'
             };
             
             return `<span class='px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${badges[statusLower] || badges['menunggu']}'>
@@ -134,10 +172,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rowNumber = start + index + 1;
                 const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
                 
-                // Nama mahasiswa - gunakan nama_mahasiswa untuk LPJ, pengusul untuk KAK
                 const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
                 
-                // Format tanggal pengajuan
+                // Ambil Nama Prodi (Prioritas field 'prodi', fallback ke 'jurusan')
+                const displayProdi = item.prodi || item.jurusan || '-';
+
                 let tglPengajuanDisplay = '-';
                 if (item.tanggal_pengajuan) {
                     const tglPengajuan = new Date(item.tanggal_pengajuan);
@@ -148,22 +187,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
+                // PERUBAHAN TAMPILAN DISINI:
+                // Format: Nama (NIM) - Prodi
                 return `
                     <tr class='${rowClass} hover:bg-blue-50/50 transition-colors duration-150'>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
                         <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
                             <div class="flex flex-col">
-                                <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}) - ${this.escapeHtml(item.jurusan)}</span>
+                                <span class="font-medium text-gray-900">${this.escapeHtml(item.nama)}</span>
+                                <span class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-user-graduate mr-1 text-gray-400"></i>
+                                    ${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}) - ${this.escapeHtml(displayProdi)}
+                                </span>
                             </div>
                         </td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                             <div class='flex gap-2'>
-                                <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                                   class='bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors'>
-                                    Review
+                                <a href="${this.config.viewUrl}${item.id}?ref=pencairan-dana" 
+                                   class='bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-sm'>
+                                    <i class='fas fa-eye text-xs'></i>
+                                    <span class='hidden sm:inline'>Review</span>
                                 </a>
                             </div>
                         </td>
@@ -173,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -200,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             `);
             
-            // Page numbers with ellipsis logic
+            // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
                     buttons.push(`
@@ -251,8 +297,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (page >= 1 && page <= totalPages) {
                 this.currentPage = page;
                 this.render();
-                
-                // Smooth scroll to table
                 const section = this.tbody.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -261,7 +305,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initialize KAK table and expose it globally
     window.kakTable = new TableManager(dataKAK, 'table-kak', {
         type: 'kak',
         color: 'blue',
