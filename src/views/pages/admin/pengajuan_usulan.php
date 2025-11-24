@@ -1,276 +1,145 @@
 <?php
 // File: src/views/pages/admin/pengajuan_usulan.php
-
-// Variabel $antrian_kak diasumsikan dikirim dari AdminPengajuanUsulanController
-if (!isset($antrian_kak)) {
-    // Data dummy untuk tampilan jika controller belum mengirim
-    $antrian_kak = [
-        ['id' => 1, 'nama' => 'Seminar Nasional', 'pengusul' => 'Putra (NIM), Prodi', 'status' => 'Menunggu'],
-        ['id' => 2, 'nama' => 'Seminar BEM', 'pengusul' => 'Yopan (NIM), Prodi', 'status' => 'Revisi'],
-        ['id' => 3, 'nama' => 'Kulum', 'pengusul' => 'Bernadya (NIM), Prodi', 'status' => 'Menunggu'],
-        ['id' => 4, 'nama' => 'Seminar Himatik', 'pengusul' => 'Fidel (NIM), Prodi', 'status' => 'Menunggu'],
-        ['id' => 5, 'nama' => 'Disnatalis', 'pengusul' => 'Anton (NIM), Prodi', 'status' => 'Disetujui'],
-        ['id' => 6, 'nama' => 'Seminar Expektik', 'pengusul' => 'Bambang (NIM), Prodi', 'status' => 'Ditolak'],
-    ];
-}
 ?>
 
 <style>
-    /* Fix untuk Dropdown - Tambahkan ke file CSS utama atau di <style> tag */
-
-/* Pastikan select element selalu terlihat */
-select {
-    color: #1f2937 !important; /* text-gray-800 */
-    background-color: #ffffff !important; /* bg-white */
-}
-
-/* Option default (placeholder) warna abu-abu */
-select option[value=""],
-select option[disabled] {
-    color: #9ca3af !important; /* text-gray-400 */
-}
-
-/* Option yang bisa dipilih warna hitam */
-select option:not([value=""]):not([disabled]) {
-    color: #1f2937 !important; /* text-gray-800 */
-    background-color: #ffffff !important;
-}
-
-/* Saat option dipilih */
-select:valid {
-    color: #1f2937 !important; /* text-gray-800 */
-}
-
-/* Saat focus */
-select:focus {
-    color: #1f2937 !important;
-    background-color: #ffffff !important;
-}
-
-/* Untuk browser yang mendukung :has */
-select:has(option[value=""]:checked) {
-    color: #9ca3af !important;
-}
-
-select:has(option[value]:not([value=""]):checked) {
-    color: #1f2937 !important;
-}
-
-/* Firefox specific fix */
-@-moz-document url-prefix() {
+    /* Fix untuk Dropdown Styling */
     select {
         color: #1f2937 !important;
-    }
-    
-    select option {
-        color: #1f2937 !important;
-    }
-}
-
-/* Safari specific fix */
-@supports (-webkit-appearance: none) {
-    select {
+        background-color: #ffffff !important;
         -webkit-appearance: none;
-        color: #1f2937 !important;
+        appearance: none;
     }
-}
+    select option[value=""], select option[disabled] { color: #9ca3af !important; }
+    select option:not([value=""]):not([disabled]) { color: #1f2937 !important; }
+    
+    /* Firefox fix */
+    @-moz-document url-prefix() { select { color: #1f2937 !important; } }
 </style>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
-    <section id="queue-section" class="bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8 transition-opacity duration-500 ease-out">
-        
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-5 border-b border-gray-200 gap-4">
-            <h2 class="text-xl md:text-2xl font-semibold text-gray-800 flex-shrink-0">Antrian Pengajuan KAK</h2>
-            
-            <div class="relative w-full md:w-80">
-                <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 peer-focus-within:text-blue-600 transition-colors duration-200"></i>
-                <input type="text" id="search-kak-input" placeholder="Cari Nama Kegiatan..."
-                       class="peer w-full pl-10 pr-4 py-2.5 text-sm text-gray-800 bg-gray-50 rounded-full border border-gray-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm"
-                       aria-label="Cari Kegiatan">
-            </div>
-            </div>
-        
-        <div class="overflow-x-auto max-h-96 border border-gray-100 rounded-lg">
-            <table class="w-full min-w-[700px]">
-                <thead class="bg-gray-50 sticky top-0 z-10">
-                    <tr>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nama Kegiatan</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nama Pengusul</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    <?php
-                        if (!empty($antrian_kak)):
-                            $nomor = 1;
-                            foreach ($antrian_kak as $item):
-                                $status_class = match (strtolower($item['status'] ?? '')) {
-                                     'disetujui' => 'text-green-600 bg-green-100',
-                                     'ditolak' => 'text-red-600 bg-red-100',
-                                     'revisi' => 'text-yellow-700 bg-yellow-100',
-                                     default => 'text-gray-600 bg-gray-100',
-                                };
-                    ?>
-                                <tr class='hover:bg-gray-50 transition-colors'>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-700 font-medium'><?= $nomor++; ?>.</td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-800 font-medium'><?= htmlspecialchars($item['nama'] ?? 'N/A'); ?></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-600'><?= htmlspecialchars($item['pengusul'] ?? 'N/A'); ?></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-xs font-semibold'><span class='px-3 py-1 rounded-full <?= $status_class; ?>'><?= htmlspecialchars($item['status'] ?? 'N/A'); ?></span></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm font-medium'>
-                                        <div class='flex gap-2 items-center'>
-                                            <button class='bg-blue-100 text-blue-700 px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-200 transition-colors'>Lihat</button>
-                                            <button class='bg-red-100 text-red-700 px-2 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-medium hover:bg-red-200 transition-colors'><i class='fas fa-trash'></i></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                    <?php
-                            endforeach;
-                        else:
-                    ?>
-                        <tr>
-                            <td colspan="5" class="text-center py-10 text-gray-500 italic">Belum ada data pengajuan dalam antrian.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="flex flex-col sm:flex-row justify-between items-center mt-7 pt-5 border-t border-gray-100 gap-4">
-            <button class="flex items-center justify-center gap-2 bg-gray-100 text-gray-500 px-5 py-2.5 rounded-lg text-sm font-medium w-full sm:w-auto cursor-not-allowed" disabled>
-                <i class="fas fa-arrow-left text-xs"></i> Kembali
-            </button>
-            <button type="button" id="start-form-btn" class="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300 w-full sm:w-auto">
-                Lanjut Isi Form
-                <i class="fas fa-arrow-right text-xs"></i>
-            </button>
-        </div>
-    </section>
-
-    <section id="form-section" class="hidden transition-opacity duration-500 ease-out opacity-0">
+    <section id="form-section" class="transition-opacity duration-500 ease-out">
 
         <div id="stepper-container" class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden mb-8">
-            </div>
+        </div>
 
         <div class="form-content-wrapper relative min-h-[500px]">
 
-            <div id="form-tahap-1" class="form-step inactive">
-    <section class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden">
-        <div class="mb-8">
-            <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">Input Data Pengusul/Pelaksana</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <!-- Nama Pengusul -->
-                <div class="relative">
-                    <label for="nama_pengusul_step1" class="block text-sm font-medium text-gray-700 mb-2">Nama Pengusul</label>
-                    <input required type="text" id="nama_pengusul_step1" name="nama_pengusul_step1" 
-                           class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
-                           placeholder="Masukkan nama pengusul">
-                </div>
+            <div id="form-tahap-1" class="form-step active">
+                <section class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden">
+                    <div class="mb-8">
+                        <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6 text-center">Input Data Pengusul/Pelaksana</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            
+                            <div class="relative">
+                                <label for="nama_pengusul_step1" class="block text-sm font-medium text-gray-700 mb-2">Nama Pengusul</label>
+                                <input required type="text" id="nama_pengusul_step1" name="nama_pengusul_step1" 
+                                    class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
+                                    placeholder="Masukkan nama pengusul">
+                            </div>
 
-                <!-- NIM/NIP -->
-                <div class="relative">
-                    <label for="nim_nip" class="block text-sm font-medium text-gray-700 mb-2">NIM/NIP</label>
-                    <input required type="text" id="nim_nip" name="nim_nip" 
-                           class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
-                           placeholder="Masukkan NIM atau NIP">
-                </div>
+                            <div class="relative">
+                                <label for="nim_nip" class="block text-sm font-medium text-gray-700 mb-2">NIM/NIP</label>
+                                <input required type="text" id="nim_nip" name="nim_nip" 
+                                    class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
+                                    placeholder="Masukkan NIM atau NIP">
+                            </div>
 
-                <!-- Jurusan -->
-                <div class="relative">
-                    <label for="jurusan" class="block text-sm font-medium text-gray-700 mb-2">Jurusan</label>
-                    <div class="relative">
-                        <select required id="jurusan" name="jurusan" 
-                                class="block w-full px-4 py-3.5 pr-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600 cursor-pointer">
-                            <option value="" disabled selected class="text-gray-500">Pilih Jurusan</option>
-                            <option value="Teknik Informatika" class="text-gray-800">Teknik Informatika</option>
-                            <option value="Teknik Elektro" class="text-gray-800">Teknik Elektro</option>
-                            <option value="Teknik Mesin" class="text-gray-800">Teknik Mesin</option>
-                            <option value="Teknik Sipil" class="text-gray-800">Teknik Sipil</option>
-                            <option value="Akuntansi" class="text-gray-800">Akuntansi</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400"></i>
+                            <div class="relative">
+                                <label for="jurusan" class="block text-sm font-medium text-gray-700 mb-2">Jurusan</label>
+                                <div class="relative">
+                                    <select required id="jurusan" name="jurusan" onchange="updateProdi()"
+                                        class="block w-full px-4 py-3.5 pr-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600 cursor-pointer">
+                                        <option value="" disabled selected class="text-gray-500">Pilih Jurusan</option>
+                                        <option value="Teknik Sipil">Teknik Sipil</option>
+                                        <option value="Teknik Mesin">Teknik Mesin</option>
+                                        <option value="Teknik Elektro">Teknik Elektro</option>
+                                        <option value="Teknik Informatika dan Komputer">Teknik Informatika dan Komputer</option>
+                                        <option value="Teknik Grafika dan Penerbitan">Teknik Grafika dan Penerbitan</option>
+                                        <option value="Akuntansi">Akuntansi</option>
+                                        <option value="Administrasi Niaga">Administrasi Niaga</option>
+                                        <option value="Pascasarjana">Pascasarjana</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative">
+                                <label for="prodi" class="block text-sm font-medium text-gray-700 mb-2">Prodi</label>
+                                <div class="relative">
+                                    <select required id="prodi" name="prodi" disabled
+                                        class="block w-full px-4 py-3.5 pr-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600 disabled:bg-gray-100 disabled:text-gray-400 cursor-pointer">
+                                        <option value="">Pilih Jurusan Terlebih Dahulu</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-2 relative">
+                                <label for="nama_kegiatan_step1" class="block text-sm font-medium text-gray-700 mb-2">Nama Kegiatan</label>
+                                <input required type="text" id="nama_kegiatan_step1" name="nama_kegiatan_step1" 
+                                    class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
+                                    placeholder="Masukkan nama kegiatan">
+                            </div>
+
+                            <div class="md:col-span-2 relative">
+                                <label for="wadir_tujuan" class="block text-sm font-medium text-gray-700 mb-2">Wadir Tujuan</label>
+                                <div class="relative">
+                                    <select required id="wadir_tujuan" name="wadir_tujuan" 
+                                        class="block w-full px-4 py-3.5 pr-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600 cursor-pointer">
+                                        <option value="">Pilih Wadir Tujuan</option>
+                                        <option value="Wadir 1">Wadir 1 - Akademik</option>
+                                        <option value="Wadir 2">Wadir 2 - Umum & Keuangan</option>
+                                        <option value="Wadir 3">Wadir 3 - Kemahasiswaan</option>
+                                        <option value="Wadir 4">Wadir 4 - Kerjasama & Hubungan Luar</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
-                </div>
 
-                <!-- Prodi -->
-                <div class="relative">
-                    <label for="prodi" class="block text-sm font-medium text-gray-700 mb-2">Prodi</label>
-                    <div class="relative">
-                        <select required id="prodi" name="prodi" 
-                                class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600">
-                            <option value="">Pilih Prodi</option>
-                            <option value="D4 Teknik Informatika dan Komputer">D4 Teknik Informatika dan Komputer</option>
-                            <option value="Teknik Elektro">D4 Teknik Elektro</option>
-                            <option value="D3 Teknik Multimedia Digital">D3 Teknik Multimedia Digital</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400"></i>
-                        </div>
+                    <div class="flex flex-col sm:flex-row justify-end items-center mt-10 pt-6 border-t border-gray-200 gap-4">
+                        <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300" data-target-step="2" data-direction="next">
+                            <span class="btn-text">Lanjut</span>
+                            <i class="fas fa-arrow-right btn-icon text-xs"></i>
+                        </button>
                     </div>
-                </div>
-
-                <!-- Nama Kegiatan -->
-                <div class="md:col-span-2 relative">
-                    <label for="nama_kegiatan_step1" class="block text-sm font-medium text-gray-700 mb-2">Nama Kegiatan</label>
-                    <input required type="text" id="nama_kegiatan_step1" name="nama_kegiatan_step1" 
-                           class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600" 
-                           placeholder="Masukkan nama kegiatan">
-                </div>
-
-                <!-- Wadir Tujuan -->
-                <div class="md:col-span-2 relative">
-                    <label for="wadir_tujuan" class="block text-sm font-medium text-gray-700 mb-2">Wadir Tujuan</label>
-                    <div class="relative">
-                        <select required id="wadir_tujuan" name="wadir_tujuan" 
-                                class="block w-full px-4 py-3.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-2 focus:border-blue-600 focus:ring-blue-600">
-                            <option value="">Pilih Wadir Tujuan</option>
-                            <option value="Wadir 1">Wadir 1 - Akademik</option>
-                            <option value="Wadir 2">Wadir 2 - Umum & Keuangan</option>
-                            <option value="Wadir 3">Wadir 3 - Kemahasiswaan</option>
-                            <option value="Wadir 4">Wadir 4 - Kerjasama & Hubungan Luar</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
-        </div>
-
-        <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
-            <button type="button" id="back-to-queue-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all">
-                <i class="fas fa-arrow-left text-xs"></i> Kembali ke Antrian
-            </button>
-            <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300" data-target-step="2" data-direction="next">
-                <span class="btn-text">Lanjut</span>
-                <i class="fas fa-arrow-right btn-icon text-xs"></i>
-            </button>
-        </div>
-    </section>
-</div>
 
             <div id="form-tahap-2" class="form-step inactive">
                 <section class="bg-white p-4 md:p-8 rounded-2xl shadow-lg overflow-hidden">
-                    <form id="kak-form-element" action="#" method="POST" onsubmit="event.preventDefault(); /* Handle submit via JS */">
+                    <form id="kak-form-element" action="#" method="POST" onsubmit="event.preventDefault();">
 
                         <div class="mb-8 animate-reveal" style="animation-delay: 0.1s;">
                             <h2 class="text-lg md:text-xl font-semibold text-gray-800 pb-3 mb-5 border-b border-gray-200">Informasi Dasar Kegiatan</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div class="relative">
-                                    <i class="fas fa-user absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
-                                    <input required type="text" id="nama_pengusul" name="nama_pengusul" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                    <i class="fas fa-user absolute top-3.5 left-3 text-gray-500 peer-focus:text-blue-600 pointer-events-none z-10"></i>
+                                    <input required readonly type="text" id="nama_pengusul" name="nama_pengusul" 
+                                           class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-600 bg-gray-100 rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer cursor-not-allowed" 
+                                           placeholder=" ">
                                     <label for="nama_pengusul" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Nama Pengusul</label>
                                 </div>
+
                                 <div class="relative">
-                                    <i class="fas fa-clipboard-list absolute top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
-                                    <input required type="text" id="nama_kegiatan_kak" name="nama_kegiatan" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                    <i class="fas fa-clipboard-list absolute top-3.5 left-3 text-gray-500 peer-focus:text-blue-600 pointer-events-none z-10"></i>
+                                    <input required readonly type="text" id="nama_kegiatan_kak" name="nama_kegiatan" 
+                                           class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-600 bg-gray-100 rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer cursor-not-allowed" 
+                                           placeholder=" ">
                                     <label for="nama_kegiatan_kak" class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Nama Kegiatan</label>
                                 </div>
+
                                 <div class="md:col-span-2 relative">
                                     <i class="fas fa-align-left absolute top-4 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
                                     <textarea required id="gambaran_umum_kak" name="gambaran_umum" rows="5" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "></textarea>
@@ -310,53 +179,9 @@ select:has(option[value]:not([value=""]):checked) {
                             </div>
                         </div>
 
-                        <div class="animate-reveal" style="animation-delay: 0.3s;">
-                            <h2 class="text-lg md:text-xl font-semibold text-gray-800 pb-3 mb-5 border-b border-gray-200">Indikator Kinerja</h2>
-                            <div class="hidden md:grid grid-cols-8 gap-4 mb-2 text-sm font-medium text-gray-500">
-                                <div class="col-span-2">Bulan</div><div class="col-span-4">Indikator Keberhasilan</div><div class="col-span-1">Target (%)</div><div class="col-span-1">Aksi</div>
-                            </div>
-                            <div id="indikator-container" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-8 gap-4 items-start md:items-center repeater-row-indikator border md:border-transparent border-gray-100 rounded-lg p-3 md:p-0 mb-3 md:mb-0">
-                                    <div class="col-span-1 md:col-span-2 select-wrapper pb-4">
-                                        <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Bulan</label>
-                                        <div class="relative">
-                                            <i class="fas fa-calendar-alt absolute top-1/2 -translate-y-1/2 left-3 text-gray-400 transition-colors duration-300 peer-focus-within:text-blue-600 pointer-events-none z-10"></i>
-                                            <select required name="indikator_bulan[]" class="floating-select block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" onchange="this.setAttribute('filled', this.value !== '' ? 'true' : 'false')">
-                                                <option value="" selected></option> <option value="1">Januari</option> <option value="2">Februari</option> <option value="3">Maret</option> <option value="4">April</option> <option value="5">Mei</option> <option value="6">Juni</option> <option value="7">Juli</option> <option value="8">Agustus</option> <option value="9">September</option> <option value="10">Oktober</option> <option value="11">November</option> <option value="12">Desember</option>
-                                            </select>
-                                            <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Pilih Bulan</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-span-1 md:col-span-4 pb-4">
-                                        <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Indikator</label>
-                                        <div class="relative">
-                                            <i class="fas fa-clipboard-check absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i>
-                                            <input required type="text" name="indikator_nama[]" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
-                                            <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Indikator Keberhasilan</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-span-1 md:col-span-1 pb-4">
-                                        <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Target (%)</label>
-                                        <div class="relative">
-                                            <i class="fas fa-bullseye absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i>
-                                            <input required type="number" min="0" max="100" name="indikator_target[]" class="block w-full px-4 py-3.5 pl-10 pr-7 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
-                                            <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Target</label>
-                                            <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none text-sm">%</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-span-1 md:col-span-1 text-right md:text-center mt-2 md:mt-0 pt-3 md:pt-0">
-                                        <button type="button" class="text-gray-400 cursor-not-allowed" disabled><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" id="tambah-indikator" class="mt-4 bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-blue-600 transition-all duration-300 flex items-center gap-2 text-sm">
-                                <i class="fas fa-plus"></i> Tambah Indikator
-                            </button>
-                        </div>
-
                         <div class="flex flex-col sm:flex-row justify-between items-center mt-12 pt-6 border-t border-gray-200 gap-4">
                             <button type="button" class="btn-kembali btn-nav w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="1" data-direction="prev">
-                                <i class="fas fa-arrow-left text-xs"></i> Kembali ke Antrian
+                                <i class="fas fa-arrow-left text-xs"></i> Kembali
                             </button>
                             <button type="button" class="btn-nav btn-lanjut w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 transition-all duration-300" data-target-step="3" data-direction="next">
                                 <span class="btn-text">Lanjut</span>
@@ -370,14 +195,62 @@ select:has(option[value]:not([value=""]):checked) {
             <div id="form-tahap-3" class="form-step inactive">
                  <div class="bg-white rounded-lg shadow-lg p-4 md:p-10">
                      <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-6">Indikator Kinerja Utama & Renstra</h2>
+                     
+                     <div class="animate-reveal" style="animation-delay: 0.3s;">
+                        <h2 class="text-lg md:text-xl font-semibold text-gray-800 pb-3 mb-5 border-b border-gray-200">Indikator Kinerja</h2>
+                        <div class="hidden md:grid grid-cols-8 gap-4 mb-2 text-sm font-medium text-gray-500">
+                            <div class="col-span-2">Bulan</div><div class="col-span-4">Indikator Keberhasilan</div><div class="col-span-1">Target (%)</div><div class="col-span-1">Aksi</div>
+                        </div>
+                        <div id="indikator-container" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-8 gap-4 items-start md:items-center repeater-row-indikator border md:border-transparent border-gray-100 rounded-lg p-3 md:p-0 mb-3 md:mb-0">
+                                <div class="col-span-1 md:col-span-2 select-wrapper pb-4">
+                                    <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Bulan</label>
+                                    <div class="relative">
+                                        <i class="fas fa-calendar-alt absolute top-1/2 -translate-y-1/2 left-3 text-gray-400 transition-colors duration-300 peer-focus-within:text-blue-600 pointer-events-none z-10"></i>
+                                        <select required name="indikator_bulan[]" class="floating-select block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" onchange="this.setAttribute('filled', this.value !== '' ? 'true' : 'false')">
+                                            <option value="" selected></option> <option value="1">Januari</option> <option value="2">Februari</option> <option value="3">Maret</option> <option value="4">April</option> <option value="5">Mei</option> <option value="6">Juni</option> <option value="7">Juli</option> <option value="8">Agustus</option> <option value="9">September</option> <option value="10">Oktober</option> <option value="11">November</option> <option value="12">Desember</option>
+                                        </select>
+                                        <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Pilih Bulan</label>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 md:col-span-4 pb-4">
+                                    <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Indikator</label>
+                                    <div class="relative">
+                                        <i class="fas fa-clipboard-check absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i>
+                                        <input required type="text" name="indikator_nama[]" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                        <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Indikator Keberhasilan</label>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 md:col-span-1 pb-4">
+                                    <label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Target (%)</label>
+                                    <div class="relative">
+                                        <i class="fas fa-bullseye absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i>
+                                        <input required type="number" min="0" max="100" name="indikator_target[]" class="block w-full px-4 py-3.5 pl-10 pr-7 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" ">
+                                        <label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Target</label>
+                                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none text-sm">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 md:col-span-1 text-right md:text-center mt-2 md:mt-0 pt-3 md:pt-0">
+                                    <button type="button" class="text-gray-400 cursor-not-allowed" disabled><i class="fas fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="tambah-indikator" class="mt-4 bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-blue-600 transition-all duration-300 flex items-center gap-2 text-sm">
+                            <i class="fas fa-plus"></i> Tambah Indikator
+                        </button>
+                    </div>
+
                      <input type="hidden" id="indikator_kinerja_hidden" name="indikator_kinerja" value="">
-                     <label for="open-indicator-modal-btn" class="text-sm font-medium text-gray-700">Indikator yang Dipilih:</label>
-                     <div id="indicator-display-area" class="mt-2 flex flex-wrap items-center gap-2 p-3 min-h-[60px] w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 transition-colors">
-                         <span id="indicator-tags-container" class="contents"></span>
-                         <button type="button" id="open-indicator-modal-btn" class="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 flex-shrink-0">
-                             <i class="fas fa-plus-circle"></i> Tambah atau Ubah
-                         </button>
+                     <div class="mt-8 pt-6 border-t border-gray-200">
+                         <label for="open-indicator-modal-btn" class="text-sm font-medium text-gray-700">IKU (Indikator Kinerja Utama) yang Dipilih:</label>
+                         <div id="indicator-display-area" class="mt-2 flex flex-wrap items-center gap-2 p-3 min-h-[60px] w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 transition-colors">
+                             <span id="indicator-tags-container" class="contents"></span>
+                             <button type="button" id="open-indicator-modal-btn" class="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 flex-shrink-0">
+                                 <i class="fas fa-plus-circle"></i> Tambah atau Ubah
+                             </button>
+                         </div>
                      </div>
+
                      <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                         <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="2" data-direction="prev">
                             <i class="fas fa-arrow-left btn-icon"></i> <span class="btn-text">Kembali</span>
@@ -405,14 +278,16 @@ select:has(option[value]:not([value=""]):checked) {
                              </div>
                          </div>
                       </div>
+                      
                       <div class="rab-main flex flex-col md:flex-row gap-4 md:gap-6">
                          <div class="category-sidebar flex-shrink-0 w-full md:w-60 bg-gray-50 rounded-lg p-2.5 overflow-x-auto whitespace-nowrap md:overflow-visible md:whitespace-normal" id="category-sidebar">
                              <div class="flex md:flex-col gap-2 md:gap-0">
-                                </div>
+                               </div>
                          </div>
                          <div class="rab-content flex-grow" id="rab-content">
-                            </div>
+                           </div>
                       </div>
+
                        <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                           <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="3" data-direction="prev">
                               <i class="fas fa-arrow-left btn-icon"></i> <span class="btn-text">Kembali</span>
@@ -425,6 +300,7 @@ select:has(option[value]:not([value=""]):checked) {
             </div>
 
         </div>
+
         <div class="grand-total-container flex justify-between items-center bg-white p-4 md:p-6 rounded-lg shadow-lg mt-8 hidden">
             <h3 class="text-lg md:text-xl font-bold text-gray-800">Grand Total</h3>
             <span class="text-xl md:text-2xl font-bold text-blue-600" id="grand-total-display">RP 0</span>
@@ -441,7 +317,7 @@ select:has(option[value]:not([value=""]):checked) {
          <div class="p-4">
             <input type="search" id="indicator-search-input" placeholder="Cari indikator..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <div id="indicator-list-container" class="mt-4 max-h-60 overflow-y-auto modal-list pr-2">
-            </div>
+                </div>
          </div>
          <div class="flex justify-end p-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
             <button id="done-indicator-modal-btn" class="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-all">Selesai</button>
@@ -451,8 +327,6 @@ select:has(option[value]:not([value=""]):checked) {
 </main>
 
 <?php
-// Script eksternal akan dimuat oleh footer.php, jadi kita letakkan script spesifik halaman di sini.
-// Pastikan file footer.php memuat helpers.js dan flatpickr.js
+// Script eksternal
 ?>
-<script src="/docutrack/public/assets/js/admin/pengajuan-usulan.js">
-</script>
+<script src="/docutrack/public/assets/js/admin/pengajuan-usulan.js"></script>

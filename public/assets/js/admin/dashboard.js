@@ -72,11 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     item.nama.toLowerCase().includes(searchTerm) ||
                     (item.pengusul && item.pengusul.toLowerCase().includes(searchTerm)) ||
                     (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
+                    (item.prodi && item.prodi.toLowerCase().includes(searchTerm)) ||
                     item.nim.toLowerCase().includes(searchTerm);
                     
                 const matchStatus = !statusFilter || 
                     item.status.toLowerCase() === statusFilter;
                     
+                // Filter berdasarkan JURUSAN (bukan prodi)
                 const matchJurusan = !jurusanFilter || 
                     item.jurusan === jurusanFilter;
                 
@@ -85,18 +87,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Highlight filter Status
             if (statusFilter) {
-                this.filterStatus.style.color = '#000';
+                this.filterStatus.style.fontWeight = '500';
+                this.filterStatus.style.borderColor = '#3b82f6';
             } else {
-                this.filterStatus.style.backgroundColor = '';
-                this.filterStatus.style.color = '';
+                this.filterStatus.style.fontWeight = 'normal';
+                this.filterStatus.style.borderColor = '';
             }
 
             // Highlight filter Jurusan
             if (jurusanFilter) {
-                this.filterJurusan.style.color = '#000';
+                this.filterJurusan.style.fontWeight = '500';
+                this.filterJurusan.style.borderColor = '#3b82f6';
             } else {
-                this.filterJurusan.style.backgroundColor = '';
-                this.filterJurusan.style.color = '';
+                this.filterJurusan.style.fontWeight = 'normal';
+                this.filterJurusan.style.borderColor = '';
             }
 
             // Highlight search input
@@ -116,7 +120,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'setuju': 'text-green-700 bg-green-100 border border-green-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
-                'menunggu': 'text-gray-700 bg-gray-100 border border-gray-200'
+                'menunggu': 'text-gray-700 bg-gray-100 border border-gray-200',
+                'menunggu_upload': 'text-orange-700 bg-orange-100 border border-orange-200'
             };
             
             const icons = {
@@ -124,12 +129,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 'setuju': 'fa-check-circle',
                 'ditolak': 'fa-times-circle',
                 'revisi': 'fa-edit',
-                'menunggu': 'fa-clock'
+                'menunggu': 'fa-clock',
+                'menunggu_upload': 'fa-upload'
+            };
+            
+            const displayText = {
+                'disetujui': 'Disetujui',
+                'setuju': 'Disetujui',
+                'ditolak': 'Ditolak',
+                'revisi': 'Revisi',
+                'menunggu': 'Menunggu',
+                'menunggu_upload': 'Perlu Upload'
             };
             
             return `<span class='px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${badges[statusLower] || badges['menunggu']}'>
                 <i class='fas ${icons[statusLower] || 'fa-question-circle'}'></i>
-                ${status}
+                ${displayText[statusLower] || status}
             </span>`;
         }
         
@@ -138,8 +153,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const status = item.status.toLowerCase();
             
-            // Hanya hitung deadline jika status 'setuju'
-            if (status !== 'setuju') {
+            // Untuk status menunggu_upload
+            if (status === 'menunggu_upload') {
+                return '<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 border border-orange-200 text-orange-700"><i class="fas fa-upload"></i><span>Perlu Upload Bukti</span></span>';
+            }
+            
+            // Hanya hitung deadline jika status 'setuju' atau 'disetujui'
+            if (status !== 'setuju' && status !== 'disetujui') {
                 return '<span class="text-gray-400 text-xs italic">Menunggu Persetujuan</span>';
             }
             
@@ -178,19 +198,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 textStatus = `Sisa ${sisaHari} hari`;
             }
             
-            const deadlineDisplay = deadline.toLocaleDateString('id-ID', { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric' 
-            });
-            
             return `
-                <div class="flex flex-col gap-1">
-                    <span class="text-sm font-medium text-gray-700">${deadlineDisplay}</span>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass} w-fit">
-                        <i class="fas ${icon}"></i> ${textStatus}
-                    </span>
-                </div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClass} w-fit">
+                    <i class="fas ${icon}"></i> ${textStatus}
+                </span>
             `;
         }
         
@@ -199,8 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const end = start + this.itemsPerPage;
             const pageData = this.filteredData.slice(start, end);
             
-            // Tentukan colspan berdasarkan tipe tabel
-            const colspan = this.config.type === 'lpj' ? '6' : '6';
+            // KAK = 5 kolom, LPJ = 6 kolom
+            const colspan = this.config.type === 'lpj' ? '6' : '5';
             
             if (pageData.length === 0) {
                 this.tbody.innerHTML = `
@@ -221,10 +232,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rowNumber = start + index + 1;
                 const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
                 
-                // Nama mahasiswa - gunakan nama_mahasiswa untuk LPJ, pengusul untuk KAK
                 const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
                 
-                // Format tanggal pengajuan
+                // PERUBAHAN UTAMA: Tampilkan PRODI di kolom
+                const prodi = item.prodi || item.jurusan || 'N/A';
+                
                 let tglPengajuanDisplay = '-';
                 if (item.tanggal_pengajuan) {
                     const tglPengajuan = new Date(item.tanggal_pengajuan);
@@ -235,15 +247,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Untuk tabel LPJ - tambahkan kolom deadline
+                // Tentukan label tombol berdasarkan status
+                let buttonLabel = 'Review';
+                const status = item.status.toLowerCase();
+                if (this.config.type === 'lpj' && status === 'menunggu_upload') {
+                    buttonLabel = 'Upload Bukti';
+                }
+                
                 if (this.config.type === 'lpj') {
+                    // TABEL LPJ - 6 KOLOM (No, Nama Kegiatan, Tgl Pengajuan, Tenggat LPJ, Status, Aksi)
                     return `
                         <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
                             <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
                                 <div class="flex flex-col">
                                     <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(item.jurusan)}</span>
+                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
                                 </div>
                             </td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
@@ -253,25 +272,24 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class='flex gap-2'>
                                     <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
                                        class='bg-${this.config.color}-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors'>
-                                        Review
+                                        ${buttonLabel}
                                     </a>
                                 </div>
                             </td>
                         </tr>
                     `;
                 } else {
-                    // Untuk tabel KAK - tampilkan tanggal pengajuan dan jurusan
+                    // TABEL KAK - 5 KOLOM (No, Nama Kegiatan, Tgl Pengajuan, Status, Aksi)
                     return `
                         <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
                             <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
                                 <div class="flex flex-col">
                                     <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(item.jurusan)}</span>
+                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
                                 </div>
                             </td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${this.escapeHtml(item.jurusan)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                                 <div class='flex gap-2'>
@@ -303,7 +321,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let buttons = [];
             
-            // Previous button
             buttons.push(`
                 <button onclick="tableManagers.${this.config.type}.goToPage(${this.currentPage - 1})" 
                         ${this.currentPage === 1 ? 'disabled' : ''} 
@@ -315,7 +332,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             `);
             
-            // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
                     buttons.push(`
@@ -332,7 +348,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Next button
             buttons.push(`
                 <button onclick="tableManagers.${this.config.type}.goToPage(${this.currentPage + 1})" 
                         ${this.currentPage === totalPages ? 'disabled' : ''} 
@@ -367,7 +382,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = page;
                 this.render();
                 
-                // Smooth scroll to table
                 const section = this.tbody.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -389,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             filterStatusId: 'filter-status-kak',
             filterJurusanId: 'filter-jurusan-kak',
             resetBtnId: 'reset-filter-kak',
-            viewUrl: '/docutrack/public/admin/pengajuan-kegiatan/show/'
+            viewUrl: '/docutrack/public/admin/detail-kak/show/'
         }),
         lpj: new TableManager(dataLPJ, 'table-lpj', {
             type: 'lpj',
@@ -406,7 +420,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
     };
     
-    // Delete function
     window.deleteItem = function(id, type) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -425,7 +438,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Add your delete logic here
                     Swal.fire({
                         title: 'Terhapus!',
                         text: 'Data berhasil dihapus.',
@@ -444,6 +456,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
-    
-    
 });

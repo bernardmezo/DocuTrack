@@ -1,13 +1,5 @@
 <?php
 // File: src/views/pages/admin/dashboard.php
-if (!isset($antrian_kak)) { $antrian_kak = [['id' => 1, 'nama' => 'Contoh Revisi', 'pengusul' => 'User (Dummy)', 'status' => 'Revisi']]; }
-if (!isset($stats)) { $stats = ['total'=>0, 'disetujui'=>0, 'ditolak'=>0, 'menunggu'=>0]; }
-if (!isset($tahapan_kak)) { $tahapan_kak = ['Pengajuan', 'Validasi', 'ACC WD', 'ACC PPK', 'Dana Cair', 'LPJ']; }
-if (!isset($tahap_sekarang_kak)) { $tahap_sekarang_kak = 'Pengajuan'; }
-if (!isset($icons_kak)) { $icons_kak = [ 'Pengajuan' => 'fa-file-alt', 'Validasi' => 'fa-check-double', 'ACC WD' => 'fa-user-check', 'ACC PPK' => 'fa-stamp', 'Dana Cair' => 'fa-wallet', 'LPJ' => 'fa-file-invoice-dollar' ]; }
-if (!isset($tahapan_lpj)) { $tahapan_lpj = ['Pengajuan', 'Validasi', 'ACC WD', 'ACC PPK', 'Selesai']; }
-if (!isset($tahap_sekarang_lpj)) { $tahap_sekarang_lpj = 'Pengajuan'; }
-if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Validasi' => 'fa-check-double', 'ACC WD' => 'fa-user-graduate', 'ACC PPK' => 'fa-gavel', 'Selesai' => 'fa-flag-checkered' ]; }
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -17,7 +9,7 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
         <div class="relative group p-6 rounded-xl shadow-md overflow-hidden text-white bg-gradient-to-br from-blue-400 to-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 transition-all duration-300 ease-out">
             <div class="absolute inset-0 z-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.5)_4px,rgba(255,255,255,0.5)_5px)] [background-size:10px_10px]"></div>
             <div class="relative z-10 flex justify-between items-center">
-                <div><h3 class="text-5xl font-bold mb-1"><?php echo htmlspecialchars($stats['total'] ?? count($list_kak)); ?></h3><p class="text-sm font-medium opacity-80">Total Usulan</p></div>
+                <div><h3 class="text-5xl font-bold mb-1"><?php echo htmlspecialchars($stats['total'] ?? 0); ?></h3><p class="text-sm font-medium opacity-80">Total Usulan</p></div>
                 <div class="p-3 rounded-full bg-white/10 opacity-80 group-hover:opacity-100 transition-opacity"><i class="fas fa-layer-group fa-xl"></i></div>
             </div>
         </div>
@@ -44,8 +36,10 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
         </div>
     </section>
 
-<div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 flex flex-col justify-center min-h-[200px]"> 
+    <!-- Progress Workflow Sections -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+        <!-- Alur KAK -->
+        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 min-h-0"> 
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <span class="w-1 h-6 bg-blue-500 rounded-full"></span>
@@ -54,28 +48,43 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
                 <span class="text-xs font-medium px-2 py-1 bg-blue-50 text-blue-600 rounded-md border border-blue-100">Live Status</span>
             </div>
             
-            <div class="relative px-2"> 
+            <div class="relative px-2 pt-2 pb-10"> 
                 <?php
                     $posisi_sekarang_kak = array_search($tahap_sekarang_kak, $tahapan_kak); 
                     if ($posisi_sekarang_kak === false) $posisi_sekarang_kak = 0;
                     $total_langkah_kak = count($tahapan_kak) - 1;
                     $lebar_progress_kak = $total_langkah_kak > 0 ? ($posisi_sekarang_kak / $total_langkah_kak) * 100 : 0;
                 ?>
-                <div class="absolute top-1/2 left-0 w-full h-1.5 bg-gray-100 rounded-full -translate-y-1/2 z-0"></div>
-                <div class="absolute top-1/2 left-0 h-1.5 bg-blue-500 rounded-full -translate-y-1/2 z-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: <?php echo $lebar_progress_kak; ?>%;"></div> 
+                
+                <!-- Progress Bar Background -->
+                <div class="absolute top-[24px] left-0 w-full h-1.5 bg-gray-200 rounded-full z-0"></div>
+                
+                <!-- Progress Bar Fill -->
+                <div class="absolute top-[24px] left-0 h-1.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full z-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+                     style="width: <?php echo $lebar_progress_kak; ?>%;"></div> 
 
+                <!-- Progress Steps -->
                 <div class="relative z-10 flex justify-between w-full">
                     <?php foreach ($tahapan_kak as $index => $nama_tahap): 
-                        $is_completed = $index <= $posisi_sekarang_kak;
+                        $is_completed = $index < $posisi_sekarang_kak;
                         $is_active = $index == $posisi_sekarang_kak;
-                        $circle_class = $is_completed ? 'bg-blue-500 border-blue-500 text-white shadow-md shadow-blue-200' : 'bg-white border-gray-300 text-gray-300';
-                        if ($is_active) $circle_class .= ' ring-4 ring-blue-100 scale-110';
+                        
+                        if ($is_active) {
+                            $circle_class = 'bg-blue-500 border-blue-500 text-white shadow-lg ring-4 ring-blue-100 scale-110';
+                            $text_class = 'text-blue-700 font-bold';
+                        } elseif ($is_completed) {
+                            $circle_class = 'bg-blue-500 border-blue-500 text-white shadow-md';
+                            $text_class = 'text-blue-600 font-medium';
+                        } else {
+                            $circle_class = 'bg-white border-2 border-gray-300 text-gray-400';
+                            $text_class = 'text-gray-400';
+                        }
                     ?>
-                    <div class="flex flex-col items-center group cursor-pointer transition-transform hover:-translate-y-1">
-                        <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 <?php echo $circle_class; ?>"> 
+                    <div class="flex flex-col items-center group transition-transform hover:-translate-y-1">
+                        <div class="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 <?php echo $circle_class; ?>"> 
                             <i class="fas <?php echo $icons_kak[$nama_tahap] ?? 'fa-circle'; ?> text-sm"></i> 
                         </div>
-                        <span class="mt-2 text-[10px] md:text-xs font-medium text-center max-w-[70px] leading-tight <?php echo $is_completed ? 'text-blue-700' : 'text-gray-400'; ?>">
+                        <span class="mt-4 text-[10px] md:text-xs text-center max-w-[80px] leading-tight <?php echo $text_class; ?>">
                             <?php echo htmlspecialchars($nama_tahap); ?>
                         </span> 
                     </div>
@@ -84,7 +93,8 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
             </div> 
         </section>
 
-        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 flex flex-col justify-center min-h-[200px]">
+        <!-- Alur LPJ -->
+        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100 min-h-[240px]">
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <span class="w-1 h-6 bg-green-500 rounded-full"></span>
@@ -93,33 +103,48 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
                 <span class="text-xs font-medium px-2 py-1 bg-green-50 text-green-600 rounded-md border border-green-100">Live Status</span>
             </div>
 
-            <div class="relative px-2"> 
+            <div class="relative px-2 pb-8"> 
                 <?php
                     $posisi_sekarang_lpj = array_search($tahap_sekarang_lpj, $tahapan_lpj);
                     if ($posisi_sekarang_lpj === false) $posisi_sekarang_lpj = 0;
                     $total_langkah_lpj = count($tahapan_lpj) - 1;
                     $lebar_progress_lpj = $total_langkah_lpj > 0 ? ($posisi_sekarang_lpj / $total_langkah_lpj) * 100 : 0;
                 ?>
-                 <div class="absolute top-1/2 left-0 w-full h-1.5 bg-gray-100 rounded-full -translate-y-1/2 z-0"></div>
-                 <div class="absolute top-1/2 left-0 h-1.5 bg-green-500 rounded-full -translate-y-1/2 z-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]" style="width: <?php echo $lebar_progress_lpj; ?>%;"></div> 
+                
+                <!-- Progress Bar Background -->
+                <div class="absolute top-[22px] left-0 w-full h-1.5 bg-gray-200 rounded-full z-0"></div>
+                
+                <!-- Progress Bar Fill -->
+                <div class="absolute top-[22px] left-0 h-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-full z-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]" 
+                     style="width: <?php echo $lebar_progress_lpj; ?>%;"></div> 
  
-                 <div class="relative z-10 flex justify-between w-full">
-                     <?php foreach ($tahapan_lpj as $index => $nama_tahap): 
-                         $is_completed = $index <= $posisi_sekarang_lpj;
-                         $is_active = $index == $posisi_sekarang_lpj;
-                         $circle_class = $is_completed ? 'bg-green-500 border-green-500 text-white shadow-md shadow-green-200' : 'bg-white border-gray-300 text-gray-300';
-                         if ($is_active) $circle_class .= ' ring-4 ring-green-100 scale-110';
-                     ?>
-                     <div class="flex flex-col items-center group cursor-pointer transition-transform hover:-translate-y-1">
-                         <div class="w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-300 <?php echo $circle_class; ?>"> 
-                             <i class="fas <?php echo $icons_lpj[$nama_tahap] ?? 'fa-circle'; ?> text-sm"></i> 
-                         </div>
-                         <span class="mt-2 text-[10px] md:text-xs font-medium text-center max-w-[70px] leading-tight <?php echo $is_completed ? 'text-green-700' : 'text-gray-400'; ?>">
-                             <?php echo htmlspecialchars($nama_tahap); ?>
-                         </span> 
-                     </div>
-                     <?php endforeach; ?>
-                 </div>
+                <!-- Progress Steps -->
+                <div class="relative z-10 flex justify-between w-full">
+                    <?php foreach ($tahapan_lpj as $index => $nama_tahap): 
+                        $is_completed = $index < $posisi_sekarang_lpj;
+                        $is_active = $index == $posisi_sekarang_lpj;
+                        
+                        if ($is_active) {
+                            $circle_class = 'bg-green-500 border-green-500 text-white shadow-lg ring-4 ring-green-100 scale-110';
+                            $text_class = 'text-green-700 font-bold';
+                        } elseif ($is_completed) {
+                            $circle_class = 'bg-green-500 border-green-500 text-white shadow-md';
+                            $text_class = 'text-green-600 font-medium';
+                        } else {
+                            $circle_class = 'bg-white border-2 border-gray-300 text-gray-400';
+                            $text_class = 'text-gray-400';
+                        }
+                    ?>
+                    <div class="flex flex-col items-center group transition-transform hover:-translate-y-1">
+                        <div class="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 <?php echo $circle_class; ?>"> 
+                            <i class="fas <?php echo $icons_lpj[$nama_tahap] ?? 'fa-circle'; ?> text-sm"></i> 
+                        </div>
+                        <span class="mt-4 text-[10px] md:text-xs text-center max-w-[80px] leading-tight <?php echo $text_class; ?>">
+                            <?php echo htmlspecialchars($nama_tahap); ?>
+                        </span> 
+                    </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </section>
     </div>
@@ -136,25 +161,26 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
                 <!-- Filter Controls -->
                 <div class="flex flex-col sm:flex-row gap-3">
                     <div class="relative">
-                        <select id="filter-status-kak" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400">
-                            <option value="">Semua Status</option>
-                            <option value="disetujui">Disetujui</option>
-                            <option value="ditolak">Ditolak</option>
-                            <option value="revisi">Revisi</option>
-                            <option value="menunggu">Menunggu</option>
+                        <select id="filter-status-kak" style="color: #111827; background-color: #ffffff;" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400">
+                            <option value="" class="text-gray-500">Semua Status</option>
+                            <option value="disetujui" class="text-gray-700">Disetujui</option>
+                            <option value="ditolak" class="text-gray-700">Ditolak</option>
+                            <option value="revisi" class="text-gray-700">Revisi</option>
+                            <option value="menunggu" class="text-gray-700">Menunggu</option>
                         </select>
                         <i class="fas fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
                     </div>
                     
                     <div class="relative">
-                        <select id="filter-jurusan-kak" class="pl-10 pr-10 py-2 border border-gray-300  rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400">
-                            <option value="">Semua Jurusan</option>
-                            <option value="Teknik Informatika">Teknik Informatika</option>
-                            <option value="Sistem Informasi">Sistem Informasi</option>
-                            <option value="Manajemen">Manajemen</option>
-                            <option value="Akuntansi">Akuntansi</option>
-                            <option value="Desain Grafis">Desain Grafis</option>
+                        <select id="filter-jurusan-kak" style="color: #111827; background-color: #ffffff;" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400">
+                            <option value="" class="text-gray-500">Semua Jurusan</option>
+                            <option value="Teknik Informatika dan Komputer" class="text-gray-700">Teknik Informatika dan Komputer</option>
+                            <option value="Teknik Grafika dan Penerbitan" class="text-gray-700">Teknik Grafika dan Penerbitan</option>
+                            <option value="Teknik Elektro" class="text-gray-700">Teknik Elektro</option>
+                            <option value="Administrasi Niaga" class="text-gray-700">Administrasi Niaga</option>
+                            <option value="Akuntansi" class="text-gray-700">Akuntansi</option>
+                            <option value="Teknik Mesin" class="text-gray-700">Teknik Mesin</option>
                         </select>
                         <i class="fas fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
@@ -181,7 +207,6 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">No</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Kegiatan</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Tgl. Pengajuan</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Jurusan</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Aksi</th>
                     </tr>
@@ -215,24 +240,26 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
                 <!-- Filter Controls -->
                 <div class="flex flex-col sm:flex-row gap-3">
                     <div class="relative">
-                        <select id="filter-status-lpj" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-green-400">
-                            <option value="">Semua Status</option>
-                            <option value="setuju">Setuju</option>
-                            <option value="revisi">Revisi</option>
-                            <option value="menunggu">Menunggu</option>
+                        <select id="filter-status-lpj" style="color: #111827; background-color: #ffffff;" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-green-400">
+                            <option value="" class="text-gray-500">Semua Status</option>
+                            <option value="menunggu_upload" class="text-gray-700">Perlu Upload</option>
+                            <option value="menunggu" class="text-gray-700">Menunggu</option>
+                            <option value="revisi" class="text-gray-700">Revisi</option>
+                            <option value="setuju" class="text-gray-700">Setuju</option>
                         </select>
                         <i class="fas fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
                     </div>
                     
                     <div class="relative">
-                        <select id="filter-jurusan-lpj" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-green-400">
-                            <option value="">Semua Jurusan</option>
-                            <option value="Teknik Informatika">Teknik Informatika</option>
-                            <option value="Sistem Informasi">Sistem Informasi</option>
-                            <option value="Manajemen">Manajemen</option>
-                            <option value="Akuntansi">Akuntansi</option>
-                            <option value="Desain Grafis">Desain Grafis</option>
+                        <select id="filter-jurusan-lpj" style="color: #111827; background-color: #ffffff;" class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-green-400">
+                            <option value="" class="text-gray-500">Semua Jurusan</option>
+                            <option value="Teknik Informatika dan Komputer" class="text-gray-700">Teknik Informatika dan Komputer</option>
+                            <option value="Teknik Grafika dan Penerbitan" class="text-gray-700">Teknik Grafika dan Penerbitan</option>
+                            <option value="Teknik Elektro" class="text-gray-700">Teknik Elektro</option>
+                            <option value="Administrasi Niaga" class="text-gray-700">Administrasi Niaga</option>
+                            <option value="Teknik Mesin" class="text-gray-700">Teknik Mesin</option>
+                            <option value="Sistem Informasi" class="text-gray-700">Sistem Informasi</option>
                         </select>
                         <i class="fas fa-graduation-cap absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
                         <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
@@ -288,5 +315,3 @@ if (!isset($icons_lpj)) { $icons_lpj = [ 'Pengajuan' => 'fa-file-invoice', 'Vali
     window.dataLPJ = <?= json_encode($list_lpj) ?>;
 </script>
 <script src="/docutrack/public/assets/js/admin/dashboard.js"></script>
-
-
