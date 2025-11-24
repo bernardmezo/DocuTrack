@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 // File: src/views/pages/verifikator/monitoring.php
 
 if (!isset($list_proposal)) { $list_proposal = []; }
@@ -146,4 +146,4 @@ $total_langkah = count($tahapan_all) - 1;
         }
         searchInput?.addEventListener('input', filterTable);
     });
-</script>
+</script> -->
