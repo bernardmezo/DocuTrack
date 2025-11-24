@@ -44,25 +44,6 @@
                 </label>
             </div>
 
-            <div class="input-group relative mb-8">
-                <label for="register-role" 
-                       class="absolute left-0 top-[-20px] text-xs text-white">
-                    Role
-                </label>
-                <select id="register-role" name="login_role" required 
-                        class="w-full border-b-2 border-white/50 bg-transparent py-2.5 text-lg text-white outline-none focus:border-white appearance-none">
-                    <option value="admin" class="bg-gray-800 text-white">Admin</option>
-                    <option value="ppk" class="bg-gray-800 text-white">PPK</option>
-                    <option value="bendahara" class="bg-gray-800 text-white">Bendahara</option>
-                    <option value="wadir" class="bg-gray-800 text-white">Wadir</option>
-                    <option value="verifikator" class="bg-gray-800 text-white">verifikator</option>
-                    <option value="super-admin" class="bg-gray-800 text-white">Super Admin</option>
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
-                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
-            </div>
-
             <div class="checkbox-group mb-8 flex items-center text-sm text-white">
                 <input type="checkbox" id="show-password" class="mr-2.5 h-4 w-4 rounded border-gray-300 text-accent-teal focus:ring-accent-teal">
                 <label for="show-password">Show Password</label>
@@ -72,9 +53,9 @@
                 Login
             </button>
         </form>
-        </div>
-
     </div>
+
+</div>
 
 <script>
     // Pastikan script ini dijalankan setelah DOM siap
@@ -101,7 +82,6 @@
                 // Hanya tutup jika target klik adalah container background-nya, BUKAN kartu di dalamnya
                 if (e.target === popupContainer) {
                     popupContainer.classList.add('hidden');
-                    // Tidak perlu menyembunyikan loginCard secara eksplisit karena sudah di dalam container
                 }
             });
         }

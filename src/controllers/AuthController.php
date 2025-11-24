@@ -30,9 +30,8 @@ class AuthController extends Controller {
         }
 
         // Ambil input dari form login
-        $email      = trim($_POST['login_email'] ?? '');
-        $password   = trim($_POST['login_password'] ?? '');
-        $role_text  = strtolower(trim($_POST['login_role'] ?? ''));
+        $email    = trim($_POST['login_email'] ?? '');
+        $password = trim($_POST['login_password'] ?? '');
 
         if (empty($email) || empty($password)) {
             $_SESSION['login_error'] = 'Email dan password harus diisi.';
@@ -89,7 +88,7 @@ class AuthController extends Controller {
         // ============================
 
         if (!isset($users_db[$email])) {
-            $_SESSION['login_error'] = 'Email tidak ditemukan.';
+            $_SESSION['login_error'] = 'Email atau password salah.';
             header('Location: /docutrack/public/');
             exit;
         }
@@ -97,7 +96,7 @@ class AuthController extends Controller {
         $user = $users_db[$email];
 
         if ($password !== $user['password']) {
-            $_SESSION['login_error'] = 'Password salah.';
+            $_SESSION['login_error'] = 'Email atau password salah.';
             header('Location: /docutrack/public/');
             exit;
         }
@@ -113,10 +112,10 @@ class AuthController extends Controller {
         $_SESSION['user_role'] = $user['role'];
 
         // ============================
-        //  REDIRECT BERDASARKAN ROLE
+        //  REDIRECT BERDASARKAN ROLE (OTOMATIS)
         // ============================
 
-        switch ($role_text) {
+        switch ($user['role']) {
             case 'verifikator':
                 header('Location: /docutrack/public/verifikator/dashboard');
                 break;
