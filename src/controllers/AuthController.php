@@ -48,37 +48,43 @@ class AuthController extends Controller {
                 'id' => 1,
                 'password' => 'password123',
                 'nama' => 'Admin Docutrack',
-                'role' => 'admin'
+                'role' => 'admin',
+                'email' => 'admin@example.com'
             ],
             'verifikator@example.com' => [
                 'id' => 2,
                 'password' => 'password123',
-                'nama' => 'Putra Yopan (Verifikator)',
-                'role' => 'verifikator'
+                'nama' => 'Putra Yopan',
+                'role' => 'verifikator',
+                'email' => 'verifikator@example.com'
             ],
             'wadir@example.com' => [
                 'id' => 3,
                 'password' => 'password123',
                 'nama' => 'Wakil Direktur',
-                'role' => 'wadir'
+                'role' => 'wadir',
+                'email' => 'wadir@example.com'
             ],
             'ppk@example.com' => [
                 'id' => 4,
                 'password' => 'password123',
                 'nama' => 'Pejabat PPK',
-                'role' => 'ppk'
+                'role' => 'ppk',
+                'email' => 'ppk@example.com'
             ],
             'bendahara@example.com' => [
                 'id' => 5,
                 'password' => 'password123',
                 'nama' => 'Bendahara',
-                'role' => 'bendahara'
+                'role' => 'bendahara',
+                'email' => 'bendahara@example.com'
             ],
             'superadmin@example.com' => [
                 'id' => 6,
                 'password' => 'password123',
                 'nama' => 'Super Admin',
-                'role' => 'super-admin'
+                'role' => 'super-admin',
+                'email' => 'superadmin@example.com'
             ]
         ];
 
@@ -107,6 +113,18 @@ class AuthController extends Controller {
 
         unset($_SESSION['login_error']);
 
+        // SIMPAN KE FORMAT BARU (user_data)
+        $_SESSION['user_data'] = [
+            'id'            => $user['id'],
+            'username'      => $user['nama'],  // ✅ LANGSUNG GUNAKAN NAMA DARI DATABASE
+            'email'         => $email,
+            'role'          => $user['role'],
+            'profile_image' => 'https://ui-avatars.com/api/?name=' . urlencode($user['nama']) . '&background=0D8ABC&color=fff&size=150',
+            'header_bg'     => 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
+            'created_at'    => date('Y-m-d')
+        ];
+
+        // TETAP SIMPAN FORMAT LAMA UNTUK KOMPATIBILITAS
         $_SESSION['user_id']   = $user['id'];
         $_SESSION['user_name'] = $user['nama'];
         $_SESSION['user_role'] = $user['role'];

@@ -12,6 +12,49 @@ function isActive($current, $target) {
         ? 'nav-link-base nav-link-active'
         : 'nav-link-base nav-link-inactive';
 }
+
+// ============================================
+// LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
+// ============================================
+
+// 1. Ambil data dari session 'user_data' (Format baru dari Controller)
+$userData = $_SESSION['user_data'] ?? [];
+
+// 2. Tentukan Nama (Prioritas: Data Baru -> Session Lama -> Default)
+$userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
+
+// 3. Tentukan Role
+$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'bendahara';
+
+// 4. Tentukan Foto Profile
+$defaultImage = 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=0D8ABC&color=fff&size=150';
+$userImage = $userData['profile_image'] ?? $_SESSION['profile_image'] ?? $defaultImage;
+
+// 5. Tentukan Background Header (BARU - jika ada)
+$headerBg = $userData['header_bg'] ?? 'linear-gradient(to left, #17A18A, #006A9A, #114177)';
+
+
+// ============================================
+// TENTUKAN LINK AKUN BERDASARKAN ROLE
+// ============================================
+switch (strtolower($userRole)) {
+    case 'verifikator':
+        $akun_link = '/docutrack/public/verifikator/akun';
+        break;
+    case 'wadir':
+        $akun_link = '/docutrack/public/wadir/akun';
+        break;
+    case 'ppk':
+        $akun_link = '/docutrack/public/ppk/akun';
+        break;
+    case 'bendahara':
+        $akun_link = '/docutrack/public/bendahara/akun';
+        break;
+    case 'super administrator': // Menangani format dari dummy data
+    case 'super_admin':
+        $akun_link = '/docutrack/public/super_admin/akun';
+        break;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -97,41 +140,30 @@ function isActive($current, $target) {
                     <!-- Profile Dropdown -->
                     <div class="relative">
                         <div id="profile-menu-button" class="flex items-center gap-3 cursor-pointer group">
-                             <div class="w-10 h-10 rounded-full bg-cover ring-2 ring-offset-2 ring-offset-[#0A4A7F] ring-white"
-                                  style="background-image: url('https://via.placeholder.com/150/B0BEC5/FFFFFF/?text=PY')">
+                             <div class="w-10 h-10 rounded-full bg-cover bg-center ring-2 ring-offset-2 ring-offset-[#0A4A7F] ring-white"
+                                  style="background-image: url('<?php echo htmlspecialchars($userImage); ?>')">
                              </div>
+                             
                              <div class="hidden sm:block">
-                                  <div class="font-semibold text-sm text-white"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Nama User'); ?></div>
-                                  <div class="text-xs text-gray-300"><?php echo htmlspecialchars(ucfirst($_SESSION['user_role'] ?? 'Role')); // Tampilkan role ?></div>
+                                  <div class="font-semibold text-sm text-white"><?php echo htmlspecialchars($userName); ?></div>
+                                  <div class="text-xs text-gray-300"><?php echo htmlspecialchars($userRole); ?></div>
                              </div>
                         </div>
-                        <!-- Menu Dropdown -->
+                        
                         <div id="profile-menu" class="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-xl py-2 z-50 hidden border border-gray-100">
-                             <a href="#" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> Akun Saya <i class="fas fa-cog text-gray-400"></i></a>
-                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> Logout <i class="fas fa-sign-out-alt text-gray-400"></i></a>
+                             <a href="<?php echo $akun_link; ?>" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                 <span>Akun Saya</span>
+                                 <i class="fas fa-user-circle text-gray-400"></i>
+                             </a>
+                             <hr class="my-1 border-gray-200">
+                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                 <span>Logout</span>
+                                 <i class="fas fa-sign-out-alt text-red-400"></i>
+                             </a>
                         </div>
                     </div>
-
-                    <!-- Tombol Hamburger (Mobile) -->
-                    <button id="mobile-bendahara-menu-button" class="md:hidden p-2 rounded-md text-gray-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-admin-menu" aria-expanded="false">
-                        <span class="sr-only">Buka menu utama</span>
-                        <!-- Ikon Hamburger -->
-                        <svg id="hamburger-bendahara-icon" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
-                        <!-- Ikon Close (X) -->
-                        <svg id="close-bendahara-icon" class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
                 </div>
             </header>
-
-            <!-- Panel Navigasi Mobile -->
-            <div id="mobile-bendahara-menu" class="md:hidden hidden max-w-7xl mx-auto pt-4 pb-2">
-                <div class="px-2 space-y-1">
-                    <a href="/docutrack/public/bendahara/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
-                    <a href="/docutrack/public/admin/pengajuan-usulan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium bg-white/10 text-white"><i class="fas fa-file-signature text-sm w-5 text-center"></i> Pengajuan Usulan</a>
-                    <a href="/docutrack/public/admin/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
-                    <a href="/docutrack/public/admin/pengajuan-lpj" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-book-open text-sm w-5 text-center"></i> Pengajuan LPJ</a>
-                </div>
-            </div>
         </div> <!-- Akhir top-section -->
 
     <!-- Konten utama halaman dimulai di sini (akan ditutup oleh footer.php) -->

@@ -12,6 +12,50 @@ function isActive($current, $target) {
         ? 'nav-link-base nav-link-active'
         : 'nav-link-base nav-link-inactive';
 }
+
+// ============================================
+// LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
+// ============================================
+
+// 1. Ambil data dari session 'user_data' (Format baru dari Controller)
+$userData = $_SESSION['user_data'] ?? [];
+
+// 2. Tentukan Nama (Prioritas: Data Baru -> Session Lama -> Default)
+$userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
+
+// 3. Tentukan Role
+$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'admin';
+
+// 4. Tentukan Foto Profile
+$defaultImage = 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=0D8ABC&color=fff&size=150';
+$userImage = $userData['profile_image'] ?? $_SESSION['profile_image'] ?? $defaultImage;
+
+// 5. Tentukan Background Header (BARU - jika ada)
+$headerBg = $userData['header_bg'] ?? 'linear-gradient(to left, #17A18A, #006A9A, #114177)';
+
+// ============================================
+// TENTUKAN LINK AKUN BERDASARKAN ROLE
+// ============================================
+switch (strtolower($userRole)) {
+    case 'verifikator':
+        $akun_link = '/docutrack/public/verifikator/akun';
+        break;
+    case 'wadir':
+        $akun_link = '/docutrack/public/wadir/akun';
+        break;
+    case 'ppk':
+        $akun_link = '/docutrack/public/ppk/akun';
+        break;
+    case 'bendahara':
+        $akun_link = '/docutrack/public/bendahara/akun';
+        break;
+    case 'super administrator': // Menangani format dari dummy data
+    case 'super_admin':
+        $akun_link = '/docutrack/public/super_admin/akun';
+        break;
+    default: // admin
+        $akun_link = '/docutrack/public/admin/akun';
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -97,18 +141,26 @@ function isActive($current, $target) {
                     <!-- Profile Dropdown -->
                     <div class="relative">
                         <div id="profile-menu-button" class="flex items-center gap-3 cursor-pointer group">
-                             <div class="w-10 h-10 rounded-full bg-cover ring-2 ring-offset-2 ring-offset-[#0A4A7F] ring-white"
-                                  style="background-image: url('https://via.placeholder.com/150/B0BEC5/FFFFFF/?text=PY')">
+                             <div class="w-10 h-10 rounded-full bg-cover bg-center ring-2 ring-offset-2 ring-offset-[#0A4A7F] ring-white"
+                                  style="background-image: url('<?php echo htmlspecialchars($userImage); ?>')">
                              </div>
+                             
                              <div class="hidden sm:block">
-                                  <div class="font-semibold text-sm text-white"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'Nama User'); ?></div>
-                                  <div class="text-xs text-gray-300"><?php echo htmlspecialchars(ucfirst($_SESSION['user_role'] ?? 'Role')); // Tampilkan role ?></div>
+                                  <div class="font-semibold text-sm text-white"><?php echo htmlspecialchars($userName); ?></div>
+                                  <div class="text-xs text-gray-300"><?php echo htmlspecialchars($userRole); ?></div>
                              </div>
                         </div>
-                        <!-- Menu Dropdown -->
+                        
                         <div id="profile-menu" class="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-xl py-2 z-50 hidden border border-gray-100">
-                             <a href="#" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> Akun Saya <i class="fas fa-cog text-gray-400"></i></a>
-                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"> Logout <i class="fas fa-sign-out-alt text-gray-400"></i></a>
+                             <a href="<?php echo $akun_link; ?>" class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+                                 <span>Akun Saya</span>
+                                 <i class="fas fa-user-circle text-gray-400"></i>
+                             </a>
+                             <hr class="my-1 border-gray-200">
+                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                 <span>Logout</span>
+                                 <i class="fas fa-sign-out-alt text-red-400"></i>
+                             </a>
                         </div>
                     </div>
 

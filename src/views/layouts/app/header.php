@@ -20,17 +20,18 @@ function isActive($current, $target) {
 // 1. Ambil data dari session 'user_data' (Format baru dari Controller)
 $userData = $_SESSION['user_data'] ?? [];
 
-// 2. Tentukan Nama (Prioritas: Data Baru -> Session Lama -> Dummy)
-$userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'Alexander Pierce';
+// 2. Tentukan Nama (Prioritas: Data Baru -> Session Lama -> Default)
+$userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
 
 // 3. Tentukan Role
-$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'admin'; // Default lowercase untuk switch case di bawah
+$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'admin';
 
 // 4. Tentukan Foto Profile
-// URL Default sesuai dummy controller
-$defaultImage = 'https://ui-avatars.com/api/?name=Alexander+Pierce&background=0D8ABC&color=fff&size=150';
-// Cek apakah ada upload custom, atau gunakan default
+$defaultImage = 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=0D8ABC&color=fff&size=150';
 $userImage = $userData['profile_image'] ?? $_SESSION['profile_image'] ?? $defaultImage;
+
+// 5. Tentukan Background Header (BARU - jika ada)
+$headerBg = $userData['header_bg'] ?? 'linear-gradient(to left, #17A18A, #006A9A, #114177)';
 
 
 // ============================================

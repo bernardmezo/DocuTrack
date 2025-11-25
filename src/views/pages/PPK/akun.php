@@ -1,10 +1,10 @@
 <?php
-// File: src/views/pages/admin/akun.php
+// File: src/views/pages/ppk/akun.php
 // Pastikan $user sudah di-set dari controller
 $user = $user ?? [
-    'username' => $_SESSION['username'] ?? 'Admin TIK',
+    'username' => $_SESSION['username'] ?? 'PPK',
     'email' => $_SESSION['email'] ?? '',
-    'role' => $_SESSION['role'] ?? 'Admin',
+    'role' => $_SESSION['role'] ?? 'PPK',
     'profile_image' => $_SESSION['profile_image'] ?? 'https://via.placeholder.com/150/333333/FFFFFF/?text=AT',
     'created_at' => $_SESSION['created_at'] ?? date('Y-m-d')
 ];
@@ -139,7 +139,7 @@ $formattedDate = $date->format('l, j F Y');
         <div class="max-w-7xl mx-auto">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <form id="profileForm" action="/docutrack/public/admin/akun/update" method="POST" enctype="multipart/form-data" class="contents lg:col-span-2">
+                <form id="profileForm" action="/docutrack/public/ppk/akun/update" method="POST" enctype="multipart/form-data" class="contents lg:col-span-2">
                     
                     <div class="lg:col-span-2">
                         
