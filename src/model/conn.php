@@ -2,9 +2,9 @@
 $host = 'localhost';
 $user = 'root';
 $pass = '';
-$db   = 'docutrack_db';
+$db   = 'db_docutrack2';
 
-// $conn = mysqli_connect($host, $user, $pass, $db);
+$conn = mysqli_connect($host, $user, $pass, $db);
 
 if (!$conn) {
     // Catat detail error ke log server (jangan tampilkan detail ke user)
