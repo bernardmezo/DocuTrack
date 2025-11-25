@@ -1,15 +1,70 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // ===================================
+    // DATA PRODI PNJ (BARU DITAMBAHKAN)
+    // ===================================
+    const dataProdiPNJ = {
+        "Teknik Sipil": [
+            "D3 Konstruksi Gedung",
+            "D3 Konstruksi Sipil",
+            "D4 Perancangan Jalan dan Jembatan",
+            "D4 Manajemen Konstruksi"
+        ],
+        "Teknik Mesin": [
+            "D3 Teknik Mesin",
+            "D3 Teknik Konversi Energi",
+            "D3 Alat Berat",
+            "D4 Pembangkit Tenaga Listrik",
+            "D4 Teknologi Rekayasa Manufaktur",
+            "D4 Teknologi Rekayasa Konversi Energi",
+            "D4 Teknologi Rekayasa Perawatan Alat Berat"
+        ],
+        "Teknik Elektro": [
+            "D3 Teknik Listrik",
+            "D3 Teknik Elektronika Industri",
+            "D3 Teknik Telekomunikasi",
+            "D4 Teknik Instrumentasi dan Kontrol Industri",
+            "D4 Teknik Otomasi Listrik Industri",
+            "D4 Broadband Multimedia"
+        ],
+        "Teknik Informatika dan Komputer": [
+            "D4 Teknik Informatika",
+            "D4 Teknik Multimedia Digital",
+            "D4 Teknik Multimedia dan Jaringan",
+            "D1 Teknik Komputer dan Jaringan"
+        ],
+        "Teknik Grafika dan Penerbitan": [
+            "D3 Teknik Grafika",
+            "D3 Penerbitan (Jurnalistik)",
+            "D4 Desain Grafis",
+            "D4 Teknologi Industri Cetak Kemasan"
+        ],
+        "Akuntansi": [
+            "D3 Akuntansi",
+            "D3 Keuangan dan Perbankan",
+            "D4 Akuntansi Keuangan",
+            "D4 Keuangan dan Perbankan Syariah",
+            "D4 Manajemen Keuangan"
+        ],
+        "Administrasi Niaga": [
+            "D3 Administrasi Bisnis",
+            "D4 Administrasi Bisnis Terapan",
+            "D4 Meeting, Incentive, Convention, and Exhibition (MICE)",
+            "D4 Bahasa Inggris untuk Komunikasi Bisnis dan Profesional"
+        ],
+        "Pascasarjana": [
+            "S2 Magister Terapan Teknik Elektro",
+            "S2 Magister Terapan Rekayasa Teknologi Manufaktur"
+        ]
+    };
+
+    // ===================================
     // TEMPLATE STEPPER (4 STEPS)
     // ===================================
     const stepperTemplates = {
         1: `<nav aria-label="Progress"><ol role="list" class="relative z-0 flex items-center justify-between w-full max-w-4xl mx-auto"><div class="absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 bg-gray-200 -z-10"></div><div class="stepper-line absolute left-0 top-6 w-0 -translate-y-1/2 h-1.5 -z-10 transition-all duration-700 ease-out bg-gradient-to-r from-blue-500 to-cyan-400 line-flow-animation"></div><li class="relative"><a href="#" class="group" aria-current="step"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-white ring-4 ring-blue-500 shadow-xl shadow-blue-500/50 transition-all duration-300"><span class="font-bold md:font-extrabold text-xl md:text-2xl bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">1</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-bold text-blue-600">Data Pengusul</span><span class="block text-[10px] md:text-xs text-blue-500">Sedang diisi</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">2</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Kerangka Acuan</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">3</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Indikator Kinerja</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">4</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Rincian Anggaran</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li></ol></nav>`,
-        
         2: `<nav aria-label="Progress"><ol role="list" class="relative z-0 flex items-center justify-between w-full max-w-4xl mx-auto"><div class="absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 bg-gray-200 -z-10"></div><div class="stepper-line absolute left-0 top-6 w-1/3 -translate-y-1/2 h-1.5 -z-10 transition-all duration-700 ease-out bg-gradient-to-r from-blue-500 to-cyan-400 line-flow-animation"></div><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300"><i class="fas fa-check text-lg md:text-xl"></i></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-semibold text-gray-700">Data Pengusul</span><span class="block text-[10px] md:text-xs text-gray-500">Selesai</span></div></div></a></li><li class="relative"><a href="#" class="group" aria-current="step"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-white ring-4 ring-blue-500 shadow-xl shadow-blue-500/50 transition-all duration-300"><span class="font-bold md:font-extrabold text-xl md:text-2xl bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">2</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-bold text-blue-600">Kerangka Acuan</span><span class="block text-[10px] md:text-xs text-blue-500">Sedang diisi</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">3</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Indikator Kinerja</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">4</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Rincian Anggaran</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li></ol></nav>`,
-        
         3: `<nav aria-label="Progress"><ol role="list" class="relative z-0 flex items-center justify-between w-full max-w-4xl mx-auto"><div class="absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 bg-gray-200 -z-10"></div><div class="stepper-line absolute left-0 top-6 w-2/3 -translate-y-1/2 h-1.5 -z-10 transition-all duration-700 ease-out bg-gradient-to-r from-blue-500 to-cyan-400 line-flow-animation"></div><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300"><i class="fas fa-check text-lg md:text-xl"></i></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-semibold text-gray-700">Data Pengusul</span><span class="block text-[10px] md:text-xs text-gray-500">Selesai</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300"><i class="fas fa-check text-lg md:text-xl"></i></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-semibold text-gray-700">Kerangka Acuan</span><span class="block text-[10px] md:text-xs text-gray-500">Selesai</span></div></div></a></li><li class="relative"><a href="#" class="group" aria-current="step"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-white ring-4 ring-blue-500 shadow-xl shadow-blue-500/50 transition-all duration-300"><span class="font-bold md:font-extrabold text-xl md:text-2xl bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">3</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-bold text-blue-600">Indikator Kinerja</span><span class="block text-[10px] md:text-xs text-blue-500">Sedang diisi</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">4</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Rincian Anggaran</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li></ol></nav>`,
-        
         4: `<nav aria-label="Progress"><ol role="list" class="relative z-0 flex items-center justify-between w-full max-w-4xl mx-auto"><div class="absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 bg-gray-200 -z-10"></div><div class="stepper-line absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 -z-10 transition-all duration-700 ease-out bg-gradient-to-r from-blue-500 to-cyan-400 line-flow-animation"></div><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300"><i class="fas fa-check text-lg md:text-xl"></i></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-semibold text-gray-700">Data Pengusul</span><span class="block text-[10px] md:text-xs text-gray-500">Selesai</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300"><i class="fas fa-check text-lg md:text-xl"></i></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-semibold text-gray-700">Kerangka Acuan</span><span class="block text-[10px] md:text-xs text-gray-500">Selesai</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white ring-4 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300"><i class="fas fa-check text-lg md:text-xl"></i></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-semibold text-gray-700">Indikator Kinerja</span><span class="block text-[10px] md:text-xs text-gray-500">Selesai</span></div></div></a></li><li class="relative"><a href="#" class="group" aria-current="step"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-white ring-4 ring-blue-500 shadow-xl shadow-blue-500/50 transition-all duration-300"><span class="font-bold md:font-extrabold text-xl md:text-2xl bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">4</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-bold text-blue-600">Rincian Anggaran</span><span class="block text-[10px] md:text-xs text-blue-500">Sedang diisi</span></div></div></a></li></ol></nav>`
     };
 
@@ -17,102 +72,60 @@ document.addEventListener('DOMContentLoaded', () => {
     // TEMPLATE REPEATER KAK
     // ===================================
     const tahapanTemplateHTML = `<div class="flex items-center gap-2 md:gap-3 repeater-row-tahapan border border-transparent p-3 mb-3"><span class="tahapan-number text-gray-500 font-medium pt-3 flex-shrink-0"></span><div class="relative flex-grow"><i class="fas fa-flag absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i><input required type="text" name="tahapan[]" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "><label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Tahapan Pelaksanaan</label></div><button type="button" class="text-red-500 hover:text-red-700 pt-3 remove-row-btn transition-colors flex-shrink-0"><i class="fas fa-trash pointer-events-none"></i></button></div>`;
-    
+
     const indikatorTemplateHTML = `<div class="grid grid-cols-1 md:grid-cols-8 gap-4 items-start md:items-center repeater-row-indikator border md:border-transparent border-gray-100 rounded-lg p-3 md:p-0 mb-3 md:mb-0"><div class="col-span-1 md:col-span-2 select-wrapper pb-4"><label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Bulan</label><div class="relative"><i class="fas fa-calendar-alt absolute top-1/2 -translate-y-1/2 left-3 text-gray-400 transition-colors duration-300 peer-focus-within:text-blue-600 pointer-events-none z-10"></i><select required name="indikator_bulan[]" class="floating-select block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" onchange="this.setAttribute('filled', this.value !== '' ? 'true' : 'false')"><option value="" selected></option><option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8">Agustus</option><option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option></select><label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Pilih Bulan</label></div></div><div class="col-span-1 md:col-span-4 pb-4"><label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Indikator</label><div class="relative"><i class="fas fa-clipboard-check absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i><input required type="text" name="indikator_nama[]" class="block w-full px-4 py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "><label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Indikator Keberhasilan</label></div></div><div class="col-span-1 md:col-span-1 pb-4"><label class="block md:hidden text-xs font-medium text-gray-500 mb-1">Target (%)</label><div class="relative"><i class="fas fa-bullseye absolute top-3.5 left-3 text-gray-400 transition-colors duration-300 peer-focus:text-blue-600 pointer-events-none"></i><input required type="number" min="0" max="100" name="indikator_target[]" class="block w-full px-4 py-3.5 pl-10 pr-7 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" "><label class="absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Target</label><span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 pointer-events-none text-sm">%</span></div></div><div class="col-span-1 md:col-span-1 text-right md:text-center mt-2 md:mt-0 pt-3 md:pt-0"><button type="button" class="text-red-500 hover:text-red-700 remove-row-btn transition-colors"><i class="fas fa-trash pointer-events-none"></i></button></div></div>`;
 
     // ===================================
     // ELEMEN DOM UTAMA
     // ===================================
-    const queueSection = document.getElementById('queue-section');
-    const formSection = document.getElementById('form-section');
-    const startFormBtn = document.getElementById('start-form-btn');
-    const backToQueueBtn = document.getElementById('back-to-queue-btn');
     let currentStep = 1;
     const stepperContainer = document.getElementById('stepper-container');
     const formSteps = document.querySelectorAll('.form-step');
     const kakFormElement = document.getElementById('kak-form-element');
 
-    // ===================================
-    // LOGIKA PENCARIAN TABEL
-    // ===================================
-    const searchInputKAK = document.getElementById('search-kak-input');
-    const tableBodyKAK = document.querySelector('#queue-section tbody');
-    const tableRowsKAK = tableBodyKAK ? Array.from(tableBodyKAK.querySelectorAll('tr')) : [];
-    let emptyRow = tableBodyKAK ? tableBodyKAK.querySelector('td[colspan="5"]') : null;
-
-    function filterKakTable() {
-        if (!searchInputKAK) return;
-        const filterText = searchInputKAK.value.toLowerCase().trim();
-        let hasVisibleRows = false;
-
-        tableRowsKAK.forEach(row => {
-            if (row.cells.length === 1 && row.cells[0].getAttribute('colspan') === '5') {
-                return;
-            }
-
-            const nameCell = row.cells[1];
-            if (nameCell) {
-                const name = nameCell.textContent.toLowerCase();
-                const isMatch = name.includes(filterText);
-                row.style.display = isMatch ? '' : 'none';
-                if (isMatch) {
-                    hasVisibleRows = true;
-                }
-            }
-        });
-
-        if (emptyRow) {
-            emptyRow.parentElement.style.display = hasVisibleRows ? 'none' : '';
-        }
-    }
-    searchInputKAK?.addEventListener('input', filterKakTable);
+    // Inisialisasi Stepper langsung saat Load
+    renderStepper(currentStep);
 
     // ===================================
-    // LOGIKA NAVIGASI (Antrian <-> Form)
+    // LOGIKA JURUSAN & PRODI (BARU)
     // ===================================
-    if (startFormBtn && queueSection && formSection && backToQueueBtn && formSteps.length > 0) {
-        startFormBtn.addEventListener('click', () => {
-            queueSection.classList.add('animate-fade-out', 'pointer-events-none');
-            formSection.style.opacity = '0';
-            formSection.classList.remove('hidden');
+    function setupJurusanProdi() {
+        const jurusanSelect = document.getElementById('jurusan');
+        const prodiSelect = document.getElementById('prodi');
 
-            setTimeout(() => {
-                queueSection.classList.add('hidden');
-                queueSection.classList.remove('animate-fade-out', 'pointer-events-none');
+        if (!jurusanSelect || !prodiSelect) return;
 
-                formSteps.forEach((step, index) => {
-                    step.classList.toggle('active', index === 0);
-                    step.classList.toggle('inactive', index !== 0);
+        jurusanSelect.addEventListener('change', function() {
+            const selectedJurusan = this.value;
+
+            // Kosongkan pilihan prodi saat ini
+            prodiSelect.innerHTML = '<option value="" disabled selected>Pilih Prodi</option>';
+
+            if (selectedJurusan && dataProdiPNJ[selectedJurusan]) {
+                // Aktifkan dropdown prodi
+                prodiSelect.disabled = false;
+                prodiSelect.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+                prodiSelect.classList.add('bg-white', 'text-gray-800', 'cursor-pointer');
+
+                // Isi dropdown dengan prodi yang sesuai
+                dataProdiPNJ[selectedJurusan].forEach(function(prodi) {
+                    const option = document.createElement("option");
+                    option.value = prodi;
+                    option.text = prodi;
+                    prodiSelect.appendChild(option);
                 });
-                currentStep = 1;
-                renderStepper(currentStep);
-                document.querySelector('.grand-total-container')?.classList.add('hidden');
-
-                formSection.classList.add('animate-fade-in');
-                formSection.style.opacity = '1';
-
-                setTimeout(() => formSection.classList.remove('animate-fade-in'), 500);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 500);
-        });
-
-        backToQueueBtn.addEventListener('click', () => {
-            formSection.classList.add('animate-fade-out', 'pointer-events-none');
-            setTimeout(() => {
-                formSection.classList.add('hidden');
-                formSection.classList.remove('animate-fade-out', 'pointer-events-none', 'opacity-0');
-                formSection.style.opacity = '';
-
-                queueSection.classList.remove('hidden');
-                queueSection.classList.add('animate-fade-in');
-
-                currentStep = 1;
-
-                setTimeout(() => queueSection.classList.remove('animate-fade-in'), 500);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }, 500);
+            } else {
+                // Jika tidak ada jurusan dipilih, disable prodi
+                prodiSelect.disabled = true;
+                prodiSelect.innerHTML = '<option value="">Pilih Jurusan Terlebih Dahulu</option>';
+                prodiSelect.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+                prodiSelect.classList.remove('bg-white', 'text-gray-800', 'cursor-pointer');
+            }
         });
     }
+
+    // Panggil fungsi setup untuk Jurusan/Prodi
+    setupJurusanProdi();
 
     // ===================================
     // LOGIKA STEPPER FORM
@@ -213,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===================================
     document.querySelectorAll('.btn-nav').forEach(button => {
         // --- TOMBOL SUBMIT (Step Terakhir) ---
-        // ... kode sebelumnya ...
         if (button.getAttribute('type') === 'submit') {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -221,32 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (validateStep(4)) {
                     const namaKegiatanInput = document.getElementById('nama_kegiatan_kak');
                     const namaKegiatan = namaKegiatanInput ? namaKegiatanInput.value.trim() : 'Kegiatan Ini';
-
-                    // ============================================================
-                    // PERUBAHAN DI SINI: PERSIAPAN DATA SEBELUM SUBMIT
-                    // ============================================================
-                    
-                    // 1. Pastikan IKU sudah masuk ke hidden input (Logika ini sudah ada di kodemu, kita pastikan lagi)
-                    const hiddenInputIKU = document.getElementById('indikator_kinerja_hidden');
-                    // (Kode renderTags() di bawahmu sudah otomatis mengisi ini, jadi aman)
-
-                    // 2. Serialisasi Data RAB (budgetData) ke JSON
-                    // Hapus input hidden lama jika ada (untuk mencegah duplikasi saat klik ganda)
-                    const existingRabInput = document.getElementById('rab_json_data');
-                    if (existingRabInput) existingRabInput.remove();
-
-                    // Buat input hidden baru untuk RAB
-                    const rabInput = document.createElement('input');
-                    rabInput.type = 'hidden';
-                    rabInput.name = 'rab_json'; // Nama ini akan dipanggil di PHP ($_POST['rab_json'])
-                    rabInput.id = 'rab_json_data';
-                    rabInput.value = JSON.stringify(budgetData); // Ubah object JS jadi String JSON
-                    
-                    // Masukkan ke dalam form
-                    if (kakFormElement) {
-                        kakFormElement.appendChild(rabInput);
-                    }
-                    // ============================================================
 
                     // Tampilkan Popup Kustom
                     Swal.fire({
@@ -275,8 +261,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             return;
         }
-
-// ... kode selanjutnya ...
 
         // --- TOMBOL NAVIGASI BIASA ---
         button.addEventListener('click', () => {
@@ -482,14 +466,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTags();
 
     // ===================================
-    // LOGIKA FORM RAB (Tahap 4)
+    // LOGIKA FORM RAB (Tahap 4 - MODIFIED)
     // ===================================
+    // Data Structure Updated for double volume (vol1, sat1, vol2, sat2)
     let budgetData = {
         "Belanja Barang": [
-            { id: Date.now(), uraian: 'Konsumsi Rapat', rincian: 'Snack Box', satuan: 'Box', volume: 50, harga: 15000 }
+            { id: Date.now(), uraian: 'Konsumsi Rapat', rincian: 'Snack Box', vol1: 50, sat1: 'Org', vol2: 3, sat2: 'Kali', harga: 15000 }
         ],
         "Belanja Jasa": [
-            { id: Date.now() + 1, uraian: 'Sewa Peralatan', rincian: 'Sewa Sound System', satuan: 'Hari', volume: 2, harga: 500000 }
+            { id: Date.now() + 1, uraian: 'Sewa Peralatan', rincian: 'Sewa Sound System', vol1: 1, sat1: 'Paket', vol2: 2, sat2: 'Hari', harga: 500000 }
         ],
         "Belanja Perjalanan": []
     };
@@ -513,27 +498,99 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarContent.innerHTML = '';
         if (categories.length === 0) { sidebarContent.innerHTML = '<p class="p-3 text-sm text-gray-500 italic text-center w-full">Klik "Tambah Kategori".</p>'; activeCategory = null; return; }
         if (!activeCategory || !budgetData[activeCategory]) { activeCategory = categories[0]; }
-        categories.forEach(cn => { const isA = cn === activeCategory ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 md:border-transparent'; const iC = getIconForCategory(cn); sidebarContent.innerHTML += `<div class="
-            -item flex-shrink-0 flex items-center gap-2 p-2 md:p-3 rounded-lg cursor-pointer ${isA} transition-colors duration-150 md:justify-between" data-category-name="${cn}"><div class="flex items-center gap-2 md:gap-3 overflow-hidden"><i class="fas ${iC} w-4 text-center flex-shrink-0"></i><span class="text-xs md:text-sm truncate" title="${cn}">${cn}</span></div><button type="button" class="actions text-gray-400 hover:text-red-500 ml-1 md:ml-2 flex-shrink-0 p-1 rounded hover:bg-red-100" title="Hapus Kategori"><i class="fas fa-trash-alt text-xs pointer-events-none"></i></button></div>`; });
+        categories.forEach(cn => { const isA = cn === activeCategory ? 'bg-blue-100 text-blue-700 font-semibold shadow-sm' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 md:border-transparent'; const iC = getIconForCategory(cn); sidebarContent.innerHTML += `<div class="category-sidebar-item flex-shrink-0 flex items-center gap-2 p-2 md:p-3 rounded-lg cursor-pointer ${isA} transition-colors duration-150 md:justify-between" data-category-name="${cn}"><div class="flex items-center gap-2 md:gap-3 overflow-hidden"><i class="fas ${iC} w-4 text-center flex-shrink-0"></i><span class="text-xs md:text-sm truncate" title="${cn}">${cn}</span></div><button type="button" class="actions text-gray-400 hover:text-red-500 ml-1 md:ml-2 flex-shrink-0 p-1 rounded hover:bg-red-100" title="Hapus Kategori"><i class="fas fa-trash-alt text-xs pointer-events-none"></i></button></div>`; });
     }
 
     function renderRabContent() {
         if (!rabContent) return;
         if (!activeCategory || !budgetData[activeCategory]) { rabContent.innerHTML = '<div class="p-10 text-center text-gray-500 bg-gray-50 rounded-lg italic">Pilih atau buat kategori, lalu klik "Tambah baris".</div>'; calculateTotals(); return; }
         const items = budgetData[activeCategory]; const iC = getIconForCategory(activeCategory); let trHTML = '';
-        if (items.length > 0) { items.forEach(i => { trHTML += `<tr data-item-id="${i.id}" class="animate-reveal" style="animation-duration: 0.3s;"><td><input type="text" class="uraian w-full p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.uraian || ''}" placeholder="Cth: Konsumsi"></td><td><input type="text" class="rincian w-full p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.rincian || ''}" placeholder="Cth: Snack Box"></td><td><input type="text" class="satuan w-24 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.satuan || ''}" placeholder="Cth: Box"></td><td><input type="number" min="0" class="volume w-20 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.volume || 1}"></td><td><input type="number" min="0" class="harga w-32 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.harga || 0}" placeholder="0"></td><td class="total text-sm font-semibold text-gray-800 whitespace-nowrap px-2"></td><td class="action-icons text-center"><button type="button" class="delete-row-btn text-gray-400 hover:text-red-500 cursor-pointer p-1 rounded hover:bg-red-100" title="Hapus Baris"><i class="fas fa-trash-alt pointer-events-none"></i></button></td></tr>`; }); }
-        else { trHTML = '<tr><td colspan="7"><div class="p-6 text-center text-gray-500 bg-gray-50 rounded-lg italic">Klik "Tambah baris".</div></td></tr>'; }
-        rabContent.innerHTML = `<div class="accordion-item border border-gray-200 rounded-lg overflow-hidden animate-fade-in" style="animation-duration: 0.5s;"><header class="flex items-center p-4 bg-white border-b border-gray-200"><div class="accordion-icon flex-shrink-0 w-10 h-10 rounded-full grid place-items-center bg-blue-100 text-blue-600 mr-4"><i class="fas ${iC}"></i></div><div class="accordion-title"><h3 class="text-base font-semibold text-gray-900">${activeCategory}</h3><p id="subtotal-header" class="text-xs text-gray-500"></p></div></header><div class="accordion-content p-4"><div class="overflow-x-auto"><table class="rab-entry-table w-full min-w-[700px]"><thead><tr class="bg-gray-100"><th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[25%]">Uraian</th><th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[30%]">Rincian</th><th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[10%]">Satuan</th><th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[10%]">Volume</th><th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[15%]">Harga (RP)</th><th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase">Total</th><th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Aksi</th></tr></thead><tbody id="rab-table-body" class="divide-y divide-gray-100">${trHTML}</tbody></table></div></div><footer class="accordion-footer flex justify-between items-center p-4 bg-gray-50 border-t border-gray-200"><div class="subtotal text-sm font-semibold text-gray-600">Subtotal Kategori: <span id="subtotal-display" class="text-gray-900"></span></div><div class="footer-actions flex items-center gap-4"><button type="button" class="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-center text-white rounded-lg transition-all bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-sm hover:shadow-md" id="add-row-btn"><i class="fas fa-plus"></i> Tambah baris</button></div></footer></div>`; calculateTotals();
+        
+        if (items.length > 0) { 
+            items.forEach(i => { 
+                // Using vol1, sat1, vol2, sat2
+                trHTML += `<tr data-item-id="${i.id}" class="animate-reveal" style="animation-duration: 0.3s;">
+                    <td><input type="text" class="uraian w-full p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.uraian || ''}" placeholder="Uraian"></td>
+                    <td><input type="text" class="rincian w-full p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.rincian || ''}" placeholder="Rincian"></td>
+                    <td><input type="number" min="0" class="vol1 w-16 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.vol1 || 1}" placeholder="1"></td>
+                    <td><input type="text" class="sat1 w-16 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.sat1 || ''}" placeholder="Org"></td>
+                    <td><input type="number" min="0" class="vol2 w-16 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.vol2 || 1}" placeholder="1"></td>
+                    <td><input type="text" class="sat2 w-16 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.sat2 || ''}" placeholder="Kali"></td>
+                    <td><input type="number" min="0" class="harga w-28 p-2 border border-gray-200 rounded-md text-sm text-gray-800 bg-white" value="${i.harga || 0}" placeholder="0"></td>
+                    <td class="total text-sm font-semibold text-gray-800 whitespace-nowrap px-2"></td>
+                    <td class="action-icons text-center"><button type="button" class="delete-row-btn text-gray-400 hover:text-red-500 cursor-pointer p-1 rounded hover:bg-red-100" title="Hapus Baris"><i class="fas fa-trash-alt pointer-events-none"></i></button></td>
+                </tr>`; 
+            }); 
+        } else { 
+            trHTML = '<tr><td colspan="9"><div class="p-6 text-center text-gray-500 bg-gray-50 rounded-lg italic">Klik "Tambah baris".</div></td></tr>'; 
+        }
+
+        // Updated Table Header with 2 Volumes/Units
+        rabContent.innerHTML = `<div class="accordion-item border border-gray-200 rounded-lg overflow-hidden animate-fade-in" style="animation-duration: 0.5s;">
+            <header class="flex items-center p-4 bg-white border-b border-gray-200">
+                <div class="accordion-icon flex-shrink-0 w-10 h-10 rounded-full grid place-items-center bg-blue-100 text-blue-600 mr-4"><i class="fas ${iC}"></i></div>
+                <div class="accordion-title"><h3 class="text-base font-semibold text-gray-900">${activeCategory}</h3><p id="subtotal-header" class="text-xs text-gray-500"></p></div>
+            </header>
+            <div class="accordion-content p-4">
+                <div class="overflow-x-auto">
+                    <table class="rab-entry-table w-full min-w-[800px]">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[20%]">Uraian</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[20%]">Rincian</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[7%]">Vol 1</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[7%]">Sat 1</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[7%]">Vol 2</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[7%]">Sat 2</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase w-[15%]">Harga (RP)</th>
+                                <th class="p-2 text-left text-xs font-semibold text-gray-600 uppercase">Total</th>
+                                <th class="p-2 text-center text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rab-table-body" class="divide-y divide-gray-100">${trHTML}</tbody>
+                    </table>
+                </div>
+            </div>
+            <footer class="accordion-footer flex justify-between items-center p-4 bg-gray-50 border-t border-gray-200">
+                <div class="subtotal text-sm font-semibold text-gray-600">Subtotal Kategori: <span id="subtotal-display" class="text-gray-900"></span></div>
+                <div class="footer-actions flex items-center gap-4"><button type="button" class="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-center text-white rounded-lg transition-all bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-sm hover:shadow-md" id="add-row-btn"><i class="fas fa-plus"></i> Tambah baris</button></div>
+            </footer>
+        </div>`; 
+        calculateTotals();
     }
 
     function calculateTotals() {
         let grandTotal = 0; let activeSub = 0;
-        for (const cn in budgetData) { let catTotal = 0; budgetData[cn].forEach(i => { catTotal += (i.volume || 0) * (i.harga || 0); }); if (cn === activeCategory) activeSub = catTotal; grandTotal += catTotal; }
+        for (const cn in budgetData) { 
+            let catTotal = 0; 
+            budgetData[cn].forEach(i => { 
+                const v1 = parseFloat(i.vol1) || 0;
+                const v2 = parseFloat(i.vol2) || 1; // Default vol2 to 1 if empty so it doesn't zero out results
+                const p = parseFloat(i.harga) || 0;
+                catTotal += v1 * v2 * p; 
+            }); 
+            if (cn === activeCategory) activeSub = catTotal; 
+            grandTotal += catTotal; 
+        }
         const format = (v) => (typeof formatRupiah === 'function') ? formatRupiah(v) : `RP ${v.toLocaleString('id-ID')}`;
         const subD = document.getElementById('subtotal-display'); if (subD) subD.textContent = format(activeSub);
         const subH = document.getElementById('subtotal-header'); if (subH) subH.textContent = `Subtotal: ${format(activeSub)}`;
         if (grandTotalDisplay) grandTotalDisplay.textContent = format(grandTotal);
-        const curRC = document.getElementById('rab-content'); if (curRC) { curRC.querySelectorAll('#rab-table-body tr[data-item-id]').forEach(r => { const vI = r.querySelector('.volume'); const hI = r.querySelector('.harga'); const tC = r.querySelector('.total'); if (vI && hI && tC) { const v = parseFloat(vI.value) || 0; const h = parseFloat(hI.value) || 0; tC.textContent = format(v * h); } }); }
+        const curRC = document.getElementById('rab-content'); 
+        if (curRC) { 
+            curRC.querySelectorAll('#rab-table-body tr[data-item-id]').forEach(r => { 
+                const v1I = r.querySelector('.vol1'); 
+                const v2I = r.querySelector('.vol2'); 
+                const hI = r.querySelector('.harga'); 
+                const tC = r.querySelector('.total'); 
+                if (v1I && v2I && hI && tC) { 
+                    const v1 = parseFloat(v1I.value) || 0; 
+                    const v2 = parseFloat(v2I.value) || 1; // Default logic here too for display
+                    const h = parseFloat(hI.value) || 0; 
+                    tC.textContent = format(v1 * v2 * h); 
+                } 
+            }); 
+        }
     }
 
     if (rabSidebar && addCategoryToggleBtnRAB && categoryPopupRAB && createCategoryBtnRAB && newCategoryNameInputRAB && rabContent && grandTotalDisplay) {
@@ -543,8 +600,29 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryPopupRAB.addEventListener('click', (e) => e.stopPropagation());
         createCategoryBtnRAB.addEventListener('click', () => { const n = newCategoryNameInputRAB.value.trim(); if (n && !budgetData[n]) { budgetData[n] = []; activeCategory = n; renderRabSidebar(); renderRabContent(); newCategoryNameInputRAB.value = ''; categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); } else if (!n) alert("Nama tidak boleh kosong."); else alert("Nama sudah ada."); });
         newCategoryNameInputRAB.addEventListener('keypress', (e) => { if (e.key === 'Enter') createCategoryBtnRAB.click(); });
-        rabContent.addEventListener('click', (e) => { if (e.target.closest('#add-row-btn')) { if (!activeCategory) { alert("Pilih atau buat kategori dulu."); return; } budgetData[activeCategory].push({ id: Date.now(), uraian: '', rincian: '', satuan: '', volume: 1, harga: 0 }); renderRabContent(); } if (e.target.closest('.delete-row-btn')) { const r = e.target.closest('tr'); if (!r || !r.dataset.itemId) return; const id = parseInt(r.dataset.itemId); budgetData[activeCategory] = budgetData[activeCategory].filter(i => i.id !== id); renderRabContent(); } });
-        rabContent.addEventListener('input', (e) => { const t = e.target; const r = t.closest('tr'); if (!r || !r.dataset.itemId) return; const id = parseInt(r.dataset.itemId); const pM = { 'uraian': 'uraian', 'rincian': 'rincian', 'satuan': 'satuan', 'volume': 'volume', 'harga': 'harga' }; const p = Object.keys(pM).find(k => t.classList.contains(k)); const i = budgetData[activeCategory]?.find(item => item.id === id); if (i && p) { i[p] = t.type === 'number' ? (parseFloat(t.value) || 0) : t.value; calculateTotals(); } });
+        rabContent.addEventListener('click', (e) => { if (e.target.closest('#add-row-btn')) { if (!activeCategory) { alert("Pilih atau buat kategori dulu."); return; } budgetData[activeCategory].push({ id: Date.now(), uraian: '', rincian: '', vol1: 1, sat1: '', vol2: 1, sat2: '', harga: 0 }); renderRabContent(); } if (e.target.closest('.delete-row-btn')) { const r = e.target.closest('tr'); if (!r || !r.dataset.itemId) return; const id = parseInt(r.dataset.itemId); budgetData[activeCategory] = budgetData[activeCategory].filter(i => i.id !== id); renderRabContent(); } });
+        // Updated Event Listener for mapped inputs
+        rabContent.addEventListener('input', (e) => { 
+            const t = e.target; 
+            const r = t.closest('tr'); 
+            if (!r || !r.dataset.itemId) return; 
+            const id = parseInt(r.dataset.itemId); 
+            
+            // Mapping classes to data properties
+            const pM = { 'uraian': 'uraian', 'rincian': 'rincian', 'vol1': 'vol1', 'sat1': 'sat1', 'vol2': 'vol2', 'sat2': 'sat2', 'harga': 'harga' }; 
+            const p = Object.keys(pM).find(k => t.classList.contains(k)); 
+            
+            const i = budgetData[activeCategory]?.find(item => item.id === id); 
+            if (i && p) { 
+                // Handle numbers vs text
+                if (t.type === 'number') {
+                    i[p] = parseFloat(t.value); // Keep empty or 0 logic inside calc
+                } else {
+                    i[p] = t.value;
+                }
+                calculateTotals(); 
+            } 
+        });
     }
 
 });

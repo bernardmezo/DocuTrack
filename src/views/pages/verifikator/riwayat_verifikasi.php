@@ -1,169 +1,327 @@
 <?php
 // File: src/views/pages/verifikator/riwayat_verifikasi.php
 
-if (!isset($list_riwayat)) { $list_riwayat = []; } // Pastikan variabel ada
+if (!isset($list_riwayat)) { $list_riwayat = []; }
+if (!isset($jurusan_list)) { $jurusan_list = []; }
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-[70px] max-w-7xl mx-auto w-full">
 
-    <section id="riwayat-list" class="stage-content bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8">
+    <section id="riwayat-list" class="bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8 flex flex-col">
         
         <div class="mb-6 pb-5 border-b border-gray-200">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Verifikasi</h2>
-            <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda proses (Disetujui, Ditolak, atau Revisi).</p>
+            <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda proses (Disetujui, Revisi, atau Ditolak).</p>
         </div>
 
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-            
-            <div class="flex-shrink-0 w-full md:w-auto p-1 bg-gray-100 rounded-full flex items-center space-x-1">
-                <button type="button" class="riwayat-filter-tab active-tab" data-status="Semua">
-                    Semua
-                </button>
-                <button type="button" class="riwayat-filter-tab" data-status="Disetujui">
-                    Disetujui
-                </button>
-                <button type="button" class="riwayat-filter-tab" data-status="Revisi">
-                    Direvisi
-                </button>
-                <button type="button" class="riwayat-filter-tab" data-status="Ditolak">
-                    Ditolak
-                </button>
-            </div>
-
-            <div class="relative w-full md:w-80">
-                <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 peer-focus-within:text-blue-600 transition-colors duration-200"></i>
+        <div class="flex flex-col lg:flex-row gap-3 mb-6">
+            <div class="relative flex-1">
+                <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 z-10"></i>
                 <input type="text" id="search-riwayat-input" placeholder="Cari Nama Kegiatan..."
-                       class="peer w-full pl-10 pr-4 py-2.5 text-sm text-gray-800 bg-gray-50 rounded-full border border-gray-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm"
-                       aria-label="Cari Riwayat">
+                       class="w-full pl-11 pr-4 py-2.5 text-sm text-gray-900 font-medium bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm hover:border-gray-400"
+                       aria-label="Cari Kegiatan">
+            </div>
+            
+            <div class="relative w-full lg:w-60">
+                <i class="fas fa-filter absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 pointer-events-none z-10"></i>
+                <select id="filter-status" 
+                        style="color: #374151 !important;"
+                        class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
+                    <option value="" style="color: #374151 !important; font-weight: 600;">Semua Status</option>
+                    <option value="disetujui" style="color: #374151 !important; font-weight: 600;">Disetujui</option>
+                    <option value="revisi" style="color: #374151 !important; font-weight: 600;">Revisi</option>
+                    <option value="ditolak" style="color: #374151 !important; font-weight: 600;">Ditolak</option>
+                </select>
+                <i class="fas fa-chevron-down absolute top-1/2 right-4 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
+            </div>
+            
+            <div class="relative w-full lg:w-80">
+                <i class="fas fa-graduation-cap absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 pointer-events-none z-10"></i>
+                <select id="filter-jurusan" 
+                        style="color: #374151 !important;"
+                        class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
+                    <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
+                    <?php 
+                    sort($jurusan_list);
+                    foreach ($jurusan_list as $jurusan): 
+                    ?>
+                        <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" 
+                                style="color: #374151 !important; font-weight: 600;">
+                            <?php echo htmlspecialchars($jurusan); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <i class="fas fa-chevron-down absolute top-1/2 right-4 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
             </div>
         </div>
         
-        <div class="overflow-x-auto max-h-96 border border-gray-100 rounded-lg">
-            <table class="w-full min-w-[700px]">
+        <div class="overflow-x-auto border border-gray-100 rounded-lg">
+            <table class="w-full min-w-[900px]">
                 <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nama Kegiatan</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nama Pengusul</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Tgl. Verifikasi</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">No</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Kegiatan & Pengusul</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Tgl. Verifikasi</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="riwayat-table-body" class="divide-y divide-gray-100">
-                    <?php
-                        if (!empty($list_riwayat)):
-                            $nomor = 1;
-                            foreach ($list_riwayat as $item):
-                                $status_text = htmlspecialchars($item['status'] ?? 'N/A');
-                                $status_class = match (strtolower($status_text)) {
-                                     'disetujui' => 'text-green-700 bg-green-100',
-                                     'revisi' => 'text-yellow-700 bg-yellow-100',
-                                     'ditolak' => 'text-red-700 bg-red-100',
-                                     default => 'text-gray-600 bg-gray-100',
-                                };
-                    ?>
-                                <tr class='riwayat-row hover:bg-gray-50 transition-colors' data-status="<?php echo $status_text; ?>">
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-700'><?php echo $nomor++; ?>.</td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-900 font-medium'><?php echo htmlspecialchars($item['nama'] ?? 'N/A'); ?></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-600'><?php echo htmlspecialchars($item['pengusul'] ?? 'N/A'); ?></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm text-gray-600'><?php echo htmlspecialchars($item['tgl_verifikasi'] ?? 'N/A'); ?></td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-xs font-semibold'>
-                                        <span class='px-3 py-1 rounded-full <?php echo $status_class; ?>'><?php echo $status_text; ?></span>
-                                    </td>
-                                    <td class='px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm font-medium'>
-                                        <div class='flex gap-2 items-center'>
-                                            <a href="/docutrack/public/verifikator/telaah/show/<?php echo $item['id'] ?? ''; ?>?ref=riwayat" 
-                                               class='bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors'>
-                                               Detail
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                    <?php
-                            endforeach;
-                        else:
-                    ?>
-                        <tr id="empty-row">
-                            <td colspan="6" class="text-center py-10 text-gray-500 italic">Tidak ada riwayat verifikasi.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
+                    </tbody>
             </table>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-4 mt-4">
+            <div id="pagination-info" class="text-sm text-gray-600"></div>
+            <div id="pagination-riwayat" class="flex gap-2"></div>
         </div>
         
     </section>
 </main>
 
-<style>
-    .riwayat-filter-tab {
-        @apply px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent -mb-px
-               hover:text-blue-600 hover:border-blue-600 transition-colors duration-200;
-    }
-    .riwayat-filter-tab.active-tab {
-        @apply text-blue-600 border-blue-600 font-semibold;
-    }
-</style>
+<script>
+    window.riwayatData = <?php echo json_encode(array_values($list_riwayat)); ?>;
+</script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const searchInput = document.getElementById('search-riwayat-input');
-        const filterTabs = document.querySelectorAll('.riwayat-filter-tab');
-        const tableBody = document.getElementById('riwayat-table-body');
-        const allRows = tableBody ? Array.from(tableBody.querySelectorAll('tr.riwayat-row')) : [];
-        const emptyRow = document.getElementById('empty-row');
-        let currentStatusFilter = 'Semua'; // Default filter
+document.addEventListener('DOMContentLoaded', function() {
+    // Elemen DOM
+    const searchInput = document.getElementById('search-riwayat-input');
+    const filterStatus = document.getElementById('filter-status');
+    const filterJurusan = document.getElementById('filter-jurusan');
+    const tableBody = document.getElementById('riwayat-table-body');
+    const paginationContainer = document.getElementById('pagination-riwayat');
+    const paginationInfo = document.getElementById('pagination-info');
+    
+    // Data & State
+    const allData = window.riwayatData || [];
+    const ITEMS_PER_PAGE = 5;
+    let filteredData = [...allData];
+    let currentPage = 1;
 
-        function runFilter() {
-            const searchText = searchInput.value.toLowerCase().trim();
-            const filterStatus = currentStatusFilter.toLowerCase(); // <-- Ubah filter jadi lowercase
-            let hasVisibleRows = false;
-
-            allRows.forEach(row => {
-                const status = row.dataset.status.toLowerCase();
-                const namaKegiatan = row.cells[1].textContent.toLowerCase();
-
-                // --- PERBAIKAN LOGIKA DI SINI ---
-                // Cek filter status (sekarang keduanya lowercase)
-                const statusMatch = (filterStatus === 'semua') || (status === filterStatus);
-                // --- AKHIR PERBAIKAN ---
-
-                // 2. Cek Filter Search
-                const searchMatch = (searchText === '') || namaKegiatan.includes(searchText);
-
-                // 3. Tampilkan jika keduanya cocok
-                if (statusMatch && searchMatch) {
-                    row.style.display = '';
-                    hasVisibleRows = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+    // Apply filters
+    function applyFilters() {
+        const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const statusFilter = filterStatus ? filterStatus.value.toLowerCase() : '';
+        const jurusanFilter = filterJurusan ? filterJurusan.value.toLowerCase() : '';
+        
+        filteredData = allData.filter(item => {
+            const nama = (item.nama || '').toLowerCase();
+            const pengusul = (item.pengusul || '').toLowerCase();
+            const status = (item.status || '').toLowerCase();
             
-            // Tampilkan pesan "kosong" jika tidak ada hasil
-            if (emptyRow) {
-                emptyRow.style.display = hasVisibleRows ? 'none' : '';
-            }
-        }
-
-        // Event Listener untuk Search Bar
-        searchInput?.addEventListener('input', runFilter);
-
-        // Event Listener untuk Filter Tabs
-        filterTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Hapus 'active' dari tab lain
-                filterTabs.forEach(t => t.classList.remove('active-tab'));
-                // Tambah 'active' ke tab ini
-                tab.classList.add('active-tab');
-                // Set filter status
-                currentStatusFilter = tab.dataset.status; // Ambil 'Semua' (tetap uppercase)
-                // Jalankan filter
-                runFilter();
-            });
+            // PENTING: Filter tetap menggunakan JURUSAN INDUK
+            const jurusan = (item.jurusan || '').toLowerCase();
+            
+            const searchMatch = !searchText || nama.includes(searchText) || pengusul.includes(searchText);
+            const statusMatch = !statusFilter || status === statusFilter;
+            
+            // Logic: Jika filter kosong (semua jurusan) ATAU jurusan item sama dengan filter
+            const jurusanMatch = !jurusanFilter || jurusan === jurusanFilter;
+            
+            return searchMatch && statusMatch && jurusanMatch;
         });
         
-        // Jalankan filter saat halaman dimuat (untuk menyembunyikan baris 'empty' jika ada data)
-        runFilter(); 
+        currentPage = 1;
+        render();
+    }
+
+    // Render table
+    function render() {
+        if (!tableBody) return;
+        
+        const totalItems = filteredData.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const pageData = filteredData.slice(start, end);
+        
+        // Render rows
+        if (pageData.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-10 text-center text-gray-500 italic">
+                        ${allData.length === 0 ? 'Tidak ada riwayat verifikasi.' : 'Data tidak ditemukan.'}
+                    </td>
+                </tr>`;
+        } else {
+            tableBody.innerHTML = pageData.map((item, index) => {
+                const no = start + index + 1;
+                const tgl = formatDate(item.tgl_verifikasi);
+                const statusLower = (item.status || '').toLowerCase();
+                
+                // Status badge styling
+                let statusClass = 'text-gray-600 bg-gray-100';
+                let statusIcon = 'fas fa-question-circle';
+                
+                if (statusLower === 'disetujui') {
+                    statusClass = 'text-green-700 bg-green-100';
+                    statusIcon = 'fas fa-check-circle';
+                } else if (statusLower === 'revisi') {
+                    statusClass = 'text-yellow-700 bg-yellow-100';
+                    statusIcon = 'fas fa-sync-alt';
+                } else if (statusLower === 'ditolak') {
+                    statusClass = 'text-red-700 bg-red-100';
+                    statusIcon = 'fas fa-times-circle';
+                }
+
+                // TAMPILAN PRODI (ANAK), BUKAN JURUSAN (INDUK)
+                // Fallback ke jurusan jika prodi kosong
+                const displayProdi = item.prodi ? item.prodi : (item.jurusan || '-');
+                
+                return `
+                <tr class="bg-white hover:bg-gray-50 transition-colors">
+                    <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-700">${no}.</td>
+                    <td class="px-6 py-5 text-sm">
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-gray-900 mb-1">${escapeHtml(item.nama || '')}</span>
+                            <span class="text-gray-600 text-xs">
+                                ${escapeHtml(item.pengusul || '')}
+                                <span class="text-gray-500">(${escapeHtml(item.nim || '-')})</span>
+                            </span>
+                            <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                <i class="fas fa-graduation-cap mr-1"></i>${escapeHtml(displayProdi)}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-calendar-check text-blue-500 text-xs"></i>
+                            ${tgl}
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-xs font-semibold">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${statusClass}">
+                            <i class="${statusIcon}"></i>
+                            ${escapeHtml(item.status || 'N/A')}
+                        </span>
+                    </td>
+                    <td class="px-6 py-5 whitespace-nowrap text-sm font-medium">
+                        <a href="/docutrack/public/verifikator/telaah/show/${item.id}?ref=riwayat-verifikasi" 
+                           class="bg-blue-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+                           <i class="fas fa-eye"></i>
+                           Detail
+                        </a>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        // Render pagination info
+        if (paginationInfo) {
+            const showingFrom = totalItems > 0 ? start + 1 : 0;
+            const showingTo = totalItems > 0 ? Math.min(end, totalItems) : 0;
+            paginationInfo.innerHTML = `Menampilkan <span class="font-semibold">${showingFrom}</span> s.d. <span class="font-semibold">${showingTo}</span> dari <span class="font-semibold">${totalItems}</span> hasil`;
+        }
+        
+        // Render pagination buttons
+        renderPagination(totalPages);
+    }
+
+    // Render pagination buttons
+    function renderPagination(totalPages) {
+        if (!paginationContainer) return;
+        
+        if (totalPages <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        
+        // Previous button
+        const prevDisabled = currentPage === 1;
+        html += `<button class="pagination-btn px-4 py-2 rounded-md text-sm font-medium transition-colors 
+            ${prevDisabled ? 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
+            data-page="${currentPage - 1}" ${prevDisabled ? 'disabled' : ''}>
+            <i class="fas fa-chevron-left mr-1"></i> Sebelumnya
+        </button>`;
+        
+        // Page numbers with ellipsis
+        const start_page = Math.max(1, currentPage - 2);
+        const end_page = Math.min(totalPages, currentPage + 2);
+        
+        if (start_page > 1) {
+            html += `<button class="pagination-btn px-3 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50" 
+                data-page="1">1</button>`;
+            if (start_page > 2) {
+                html += `<span class="px-3 py-2 text-sm text-gray-500">...</span>`;
+            }
+        }
+        
+        for (let i = start_page; i <= end_page; i++) {
+            const isActive = i === currentPage;
+            html += `<button class="pagination-btn px-3 py-2 rounded-md text-sm font-medium transition-colors 
+                ${isActive ? 'bg-blue-600 text-white' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
+                data-page="${i}">${i}</button>`;
+        }
+        
+        if (end_page < totalPages) {
+            if (end_page < totalPages - 1) {
+                html += `<span class="px-3 py-2 text-sm text-gray-500">...</span>`;
+            }
+            html += `<button class="pagination-btn px-3 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50" 
+                data-page="${totalPages}">${totalPages}</button>`;
+        }
+        
+        // Next button
+        const nextDisabled = currentPage === totalPages;
+        html += `<button class="pagination-btn px-4 py-2 rounded-md text-sm font-medium transition-colors 
+            ${nextDisabled ? 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
+            data-page="${currentPage + 1}" ${nextDisabled ? 'disabled' : ''}>
+            Selanjutnya <i class="fas fa-chevron-right ml-1"></i>
+        </button>`;
+        
+        paginationContainer.innerHTML = html;
+    }
+
+    // Helper: Format date
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        } catch (e) {
+            return dateStr;
+        }
+    }
+
+    // Helper: Escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Event: Search input
+    let debounceTimer;
+    searchInput?.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 300);
     });
+
+    // Event: Filter status
+    filterStatus?.addEventListener('change', applyFilters);
+    
+    // Event: Filter jurusan
+    filterJurusan?.addEventListener('change', applyFilters);
+    
+    // Event: Pagination click
+    paginationContainer?.addEventListener('click', function(e) {
+        const btn = e.target.closest('.pagination-btn');
+        if (btn && !btn.disabled) {
+            const page = parseInt(btn.dataset.page);
+            if (page >= 1 && page !== currentPage) {
+                currentPage = page;
+                render();
+                // Scroll to top of table
+                tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    });
+    
+    // Initial render
+    render();
+});
 </script>

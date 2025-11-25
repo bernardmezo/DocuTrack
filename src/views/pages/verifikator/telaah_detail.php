@@ -20,25 +20,39 @@ $rab_data = $rab_data ?? [];
 $kode_mak = $kode_mak ?? '';
 $back_url = $back_url ?? '/docutrack/public/verifikator/dashboard'; 
 
+// Data tambahan yang sama dengan admin
+$surat_pengantar = $kegiatan_data['surat_pengantar'] ?? '';
+$tanggal_mulai = $kegiatan_data['tanggal_mulai'] ?? '';
+$tanggal_selesai = $kegiatan_data['tanggal_selesai'] ?? '';
+$surat_pengantar_url = $surat_pengantar_url ?? '';
+
 if (!function_exists('formatRupiah')) {
-    function formatRupiah($angka) { return "RP " . number_format($angka ?? 0, 0, ',', '.'); }
+    function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
 }
 
 // --- 2. FUNGSI HELPER (KHUSUS VERIFIKATOR) ---
 function showCommentIcon($field_name, $komentar_list, $is_revisi, $is_telah_direvisi) {
     if (($is_revisi || $is_telah_direvisi) && isset($komentar_list[$field_name])) {
         $comment = htmlspecialchars($komentar_list[$field_name]);
-        echo "<span class='komentar-tooltip-trigger relative ml-2' title='Komentar: {$comment}'>";
-        echo " <i class='fas fa-comment-dots text-yellow-500 text-base cursor-help'></i>";
+        echo "<span class='comment-icon-wrapper relative inline-flex items-center ml-2 group'>";
+        echo "<span class='comment-icon flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 border-2 border-yellow-400 cursor-pointer transition-all duration-300 hover:bg-yellow-200 hover:scale-110 hover:shadow-lg hover:shadow-yellow-200'>";
+        echo "<i class='fas fa-comment-dots text-yellow-600 text-sm group-hover:animate-pulse'></i>";
+        echo "</span>";
+        echo "<span class='comment-tooltip invisible group-hover:visible opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 z-50'>";
+        echo "<span class='flex items-center gap-2 text-yellow-400 font-semibold mb-1'><i class='fas fa-exclamation-circle'></i> Catatan Revisi</span>";
+        echo "<span class='block text-gray-200 leading-relaxed'>{$comment}</span>";
+        echo "<span class='absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-gray-900'></span>";
+        echo "</span>";
         echo "</span>";
     }
 }
+
 function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi_status) {
-    if ($is_menunggu_status || $is_telah_direvisi_status) { // Hanya tampil jika status menunggu/telah direvisi
+    if ($is_menunggu_status || $is_telah_direvisi_status) { 
         echo "<div id='comment-box-{$field_name}' class='comment-box hidden mt-2 animate-reveal'>";
         echo "  <label for='comment-{$field_name}' class='text-xs font-semibold text-yellow-800'>Catatan Revisi untuk bagian ini:</label>";
-        echo "  <textarea id='comment-{$field_name}' name='komentar[{$field_name}]' rows='2' 
-                 class='mt-1 block w-full text-sm text-gray-800 bg-yellow-50 rounded-lg border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500' 
+        echo "  <textarea id='comment-{$field_name}' name='komentar[{$field_name}]' rows='3' 
+                 class='mt-1 block w-full text-sm text-gray-800 bg-yellow-50 rounded-lg border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 py-2.5 leading-relaxed resize-none' 
                  placeholder='Tulis catatan revisi di sini...'></textarea>";
         echo "</div>";
     }
@@ -97,40 +111,104 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         
         <form id="form-verifikasi" action="#" method="POST">
             
-            <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
-                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">1. Kerangka Acuan Kegiatan (KAK)</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-                    <div class="md:col-span-1">
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">
-                            Nama Pengusul
-                            <?php showCommentIcon('nama_pengusul', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200 flex items-center gap-2">
+                    1. Kerangka Acuan Kegiatan (KAK)
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            Nama Pengusul <?php showCommentIcon('nama_pengusul', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                         </label>
-                        <p class="text-sm text-gray-900 p-3 bg-gray-100 rounded-lg border border-gray-200 mt-1"><?php echo htmlspecialchars($kegiatan_data['nama_pengusul'] ?? 'N/A'); ?></p>
+                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium text-sm <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nama_pengusul']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                            <?= htmlspecialchars($kegiatan_data['nama_pengusul'] ?? '-') ?>
+                        </div>
                         <?php if (!$is_ditolak) render_comment_box('nama_pengusul', $is_menunggu, $is_telah_direvisi); ?>
                     </div>
-                    <div class="md:col-span-1">
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">
-                            Nama Kegiatan
-                            <?php showCommentIcon('nama_kegiatan', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            NIM Pengusul <?php showCommentIcon('nim_pengusul', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                         </label>
-                        <p class="text-sm text-gray-900 p-3 bg-gray-100 rounded-lg border border-gray-200 mt-1"><?php echo htmlspecialchars($kegiatan_data['nama_kegiatan'] ?? 'N/A'); ?></p>
-                        <?php if (!$is_ditolak) render_comment_box('nama_kegiatan', $is_menunggu, $is_telah_direvisi); ?>
+                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium text-sm <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nim_pengusul']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                            <?= htmlspecialchars($kegiatan_data['nim_pengusul'] ?? '-') ?>
+                        </div>
+                        <?php if (!$is_ditolak) render_comment_box('nim_pengusul', $is_menunggu, $is_telah_direvisi); ?>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">
-                            Gambaran Umum
-                            <?php showCommentIcon('gambaran_umum', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            Nama Penanggung Jawab <?php showCommentIcon('nama_penanggung_jawab', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                         </label>
-                        <p class="text-sm text-gray-900 p-3 bg-gray-100 rounded-lg border border-gray-200 mt-1 min-h-[50px] leading-relaxed <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['gambaran_umum']) ? 'ring-2 ring-yellow-400' : ''; ?>"><?php echo htmlspecialchars($kegiatan_data['gambaran_umum'] ?? 'N/A'); ?></p>
-                        <?php if (!$is_ditolak) render_comment_box('gambaran_umum', $is_menunggu, $is_telah_direvisi); ?>
+                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium text-sm <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nama_penanggung_jawab']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                            <?= htmlspecialchars($kegiatan_data['nama_penanggung_jawab'] ?? '-') ?>
+                        </div>
+                         <?php if (!$is_ditolak) render_comment_box('nama_penanggung_jawab', $is_menunggu, $is_telah_direvisi); ?>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">
-                            Penerima Manfaat
-                            <?php showCommentIcon('penerima_manfaat', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            NIM/NIP Penanggung Jawab <?php showCommentIcon('nip_penanggung_jawab', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                         </label>
-                        <p class="text-sm text-gray-900 p-3 bg-gray-100 rounded-lg border border-gray-200 mt-1 min-h-[50px] leading-relaxed <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['penerima_manfaat']) ? 'ring-2 ring-yellow-400' : ''; ?>"><?php echo htmlspecialchars($kegiatan_data['penerima_manfaat'] ?? 'N/A'); ?></p>
-                        <?php if (!$is_ditolak) render_comment_box('penerima_manfaat', $is_menunggu, $is_telah_direvisi); ?>
+                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium text-sm <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nip_penanggung_jawab']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                            <?= htmlspecialchars($kegiatan_data['nip_penanggung_jawab'] ?? '-') ?>
+                        </div>
+                         <?php if (!$is_ditolak) render_comment_box('nip_penanggung_jawab', $is_menunggu, $is_telah_direvisi); ?>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Nama Kegiatan <?php showCommentIcon('nama_kegiatan', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+                    </label>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nama_kegiatan']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                        <?= htmlspecialchars($kegiatan_data['nama_kegiatan'] ?? '-') ?>
+                    </div>
+                    <?php if (!$is_ditolak) render_comment_box('nama_kegiatan', $is_menunggu, $is_telah_direvisi); ?>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Gambaran Umum <?php showCommentIcon('gambaran_umum', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+                    </label>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed min-h-[100px] <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['gambaran_umum']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                        <?= nl2br(htmlspecialchars($kegiatan_data['gambaran_umum'] ?? '-')) ?>
+                    </div>
+                    <?php if (!$is_ditolak) render_comment_box('gambaran_umum', $is_menunggu, $is_telah_direvisi); ?>
+                </div>
+
+                <div class="mb-8">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Penerima Manfaat <?php showCommentIcon('penerima_manfaat', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+                    </label>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['penerima_manfaat']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                        <?= nl2br(htmlspecialchars($kegiatan_data['penerima_manfaat'] ?? '-')) ?>
+                    </div>
+                     <?php if (!$is_ditolak) render_comment_box('penerima_manfaat', $is_menunggu, $is_telah_direvisi); ?>
+                </div>
+
+                <div class="border-t border-gray-200 pt-6 mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-5 pb-2">Strategi Pencapaian Keluaran</h4>
+                    
+                    <div class="mb-6">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            Metode Pelaksanaan <?php showCommentIcon('metode_pelaksanaan', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+                        </label>
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed min-h-[80px] <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['metode_pelaksanaan']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                            <?= nl2br(htmlspecialchars($kegiatan_data['metode_pelaksanaan'] ?? '-')) ?>
+                        </div>
+                        <?php if (!$is_ditolak) render_comment_box('metode_pelaksanaan', $is_menunggu, $is_telah_direvisi); ?>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                            Tahapan Kegiatan <?php showCommentIcon('tahapan_kegiatan', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
+                        </label>
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 text-gray-700 text-sm leading-relaxed min-h-[100px] <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['tahapan_kegiatan']) ? 'ring-2 ring-yellow-400' : ''; ?>">
+                            <?= nl2br(htmlspecialchars($kegiatan_data['tahapan_kegiatan'] ?? '-')) ?>
+                        </div>
+                        <?php if (!$is_ditolak) render_comment_box('tahapan_kegiatan', $is_menunggu, $is_telah_direvisi); ?>
                     </div>
                 </div>
             </div>
@@ -202,32 +280,43 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                         <?php showCommentIcon($rab_comment_key, $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                     </h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi[$rab_comment_key]) ? 'ring-2 ring-yellow-400' : ''; ?>">
-                        <table class="w-full min-w-[700px]">
+                        <table class="w-full min-w-[900px]">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Uraian</th>
                                     <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Rincian</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Volume & Satuan</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Harga Satuan</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Total</th>
+                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Vol 1</th>
+                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Sat 1</th>
+                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Vol 2</th>
+                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Sat 2</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Harga (Rp)</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Total</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
                                 <?php foreach ($items as $item): 
-                                    $total_item = ($item['volume'] ?? 0) * ($item['harga'] ?? 0);
+                                    $vol1 = $item['vol1'] ?? 0;
+                                    $sat1 = $item['sat1'] ?? '';
+                                    $vol2 = $item['vol2'] ?? 1;
+                                    $sat2 = $item['sat2'] ?? '';
+                                    $harga = $item['harga'] ?? 0;
+                                    $total_item = $vol1 * $vol2 * $harga;
                                     $subtotal += $total_item;
                                 ?>
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?php echo htmlspecialchars($item['uraian'] ?? ''); ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?php echo htmlspecialchars($item['rincian'] ?? ''); ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-700"><?php echo htmlspecialchars($item['volume'] ?? 0); ?> <?php echo htmlspecialchars($item['satuan'] ?? ''); ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-700"><?php echo formatRupiah($item['harga'] ?? 0); ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-800 font-medium"><?php echo formatRupiah($total_item); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo $vol1; ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo htmlspecialchars($sat1); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo $vol2; ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo htmlspecialchars($sat2); ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-700 text-right"><?php echo number_format($harga, 0, ',', '.'); ?></td>
+                                    <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right"><?php echo formatRupiah($total_item); ?></td>
                                 </tr>
                                 <?php endforeach; $grand_total_rab += $subtotal; ?>
                                 <tr class="bg-gray-50 font-semibold">
-                                    <td colspan="4" class="px-4 py-2 text-right text-sm text-gray-800">Subtotal</td>
-                                    <td class="px-4 py-2 text-sm text-gray-900"><?php echo formatRupiah($subtotal); ?></td>
+                                    <td colspan="7" class="px-4 py-2 text-right text-sm text-gray-800">Subtotal</td>
+                                    <td class="px-4 py-2 text-sm text-gray-900 text-right"><?php echo formatRupiah($subtotal); ?></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -248,12 +337,58 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 </div>
             </div>
 
+            <?php if ($is_disetujui): ?>
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-800 pb-3 mb-6 border-b border-gray-200">Rincian Rancangan Kegiatan</h3>
+                
+                <div class="mb-6">
+                    <label class="text-sm font-semibold text-gray-700 mb-2 block">Surat Pengantar</label>
+                    <div class="relative max-w-sm">
+                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
+                            <span class="text-sm text-gray-800">
+                                <?= !empty($surat_pengantar) ? htmlspecialchars($surat_pengantar) : '-'; ?>
+                            </span>
+                            <?php if (!empty($surat_pengantar)): ?>
+                                <a href="<?= htmlspecialchars($surat_pengantar_url); ?>" target="_blank" class="text-blue-600 hover:text-blue-700">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            <?php else: ?>
+                                <i class="fas fa-file-alt text-gray-400"></i>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-sm font-semibold text-gray-700 mb-3 block">Kurun Waktu Pelaksanaan</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
+                            <div>
+                                <span class="text-xs text-gray-500 block">Tanggal Mulai</span>
+                                <span class="text-sm text-gray-800 font-medium">
+                                    <?= !empty($tanggal_mulai) ? date('d M Y', strtotime($tanggal_mulai)) : '-'; ?>
+                                </span>
+                            </div>
+                            <i class="fas fa-calendar-alt text-gray-400"></i>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
+                            <div>
+                                <span class="text-xs text-gray-500 block">Tanggal Selesai</span>
+                                <span class="text-sm text-gray-800 font-medium">
+                                    <?= !empty($tanggal_selesai) ? date('d M Y', strtotime($tanggal_selesai)) : '-'; ?>
+                                </span>
+                            </div>
+                            <i class="fas fa-calendar-alt text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <div id="mak-section" class="mt-8 pt-6 border-t border-gray-200 animate-reveal 
                 <?php echo ($is_disetujui) ? 'block' : 'hidden'; ?>" 
                 style="<?php echo (($is_menunggu || $is_telah_direvisi) && !$is_ditolak) ? 'opacity: 0; max-height: 0px; overflow: hidden; transform: translateY(-10px); transition: all 0.4s ease-out;' : 'animation-delay: 500ms;'; ?>"
                 >
-                
                 <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
                     Kode Mata Anggaran Kegiatan (MAK)
                     <?php showCommentIcon('kode_mak', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
@@ -273,7 +408,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             </div>
 
             <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
-                
                 <a href="<?php echo htmlspecialchars($back_url); ?>" 
                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-0.5">
                     <i class="fas fa-arrow-left text-xs"></i> Kembali
@@ -311,12 +445,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                              Batal
                         </button>
                     </div>
-
-                <?php else: // (Status 'Disetujui', 'Ditolak', 'Revisi') ?>
-                    <button type="button" id="btn-lihat-riwayat" 
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-100 transition-all duration-300 transform hover:-translate-y-0.5">
-                        <i class="fas fa-history text-xs"></i> Lihat Riwayat
-                    </button>
                 <?php endif; ?>
                  </div>
             </div>
@@ -334,7 +462,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
 
         // --- 2. Fallback Fungsi formatRupiah ---
         if (typeof formatRupiah !== 'function') {
-            window.formatRupiah = (angka) => `RP ${new Intl.NumberFormat('id-ID').format(angka || 0)}`;
+            window.formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka || 0)}`;
         }
         
         // --- 3. Logika Floating Label ---
@@ -376,7 +504,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         const btnKirimRevisi = document.getElementById('btn-kirim-revisi');
         const btnTolak = document.getElementById('btn-tolak');
         const btnSetujui = document.getElementById('btn-setujui-usulan');
-        const btnLihatRiwayat = document.getElementById('btn-lihat-riwayat');
         
         const reviewActions = document.getElementById('review-actions'); 
         const approvalActions = document.getElementById('approval-actions'); 
@@ -471,7 +598,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 icon: 'warning',
                 customClass: { popup: 'swal-konfirmasi' },
                 showCancelButton: true,
-                confirmButtonColor: '#F59E0B', // Kuning
+                confirmButtonColor: '#F59E0B',
                 cancelButtonColor: '#6B7280',
                 confirmButtonText: 'Ya, Kirim Revisi',
                 cancelButtonText: 'Batal'
@@ -498,7 +625,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 icon: 'error',
                 customClass: { popup: 'swal-konfirmasi' },
                 showCancelButton: true,
-                confirmButtonColor: '#EF4444', // Merah
+                confirmButtonColor: '#EF4444',
                 cancelButtonColor: '#6B7280',
                 confirmButtonText: 'Ya, Tolak Usulan',
                 cancelButtonText: 'Batal'
@@ -532,7 +659,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 icon: 'success',
                 customClass: { popup: 'swal-konfirmasi' },
                 showCancelButton: true,
-                confirmButtonColor: '#16A34A', // Hijau
+                confirmButtonColor: '#16A34A',
                 cancelButtonColor: '#6B7280',
                 confirmButtonText: 'Ya, Setujui!',
                 cancelButtonText: 'Batal'
@@ -541,25 +668,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                     Swal.fire({ title: 'Menyetujui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     formVerifikasi.submit();
                 }
-            });
-        });
-
-        // --- Event Listener untuk Tombol Lihat Riwayat ---
-         btnLihatRiwayat?.addEventListener('click', () => {
-            const riwayatHtml = `
-                <ul class="list-disc list-inside text-left text-gray-600 space-y-2">
-                    <li><span class="font-semibold text-green-600">[26 Okt 2025]</span> Disetujui oleh <strong>Verifikator</strong>.</li>
-                    <li><span class="font-semibold text-yellow-600">[25 Okt 2025]</span> Dikembalikan untuk revisi.</li>
-                    <li><span class="font-semibold text-gray-600">[24 Okt 2025]</span> Diajukan oleh <strong>Admin (Putra Yopan)</strong>.</li>
-                </ul>
-            `;
-            Swal.fire({
-                title: 'Riwayat Verifikasi',
-                html: riwayatHtml,
-                icon: 'info',
-                customClass: { popup: 'swal-konfirmasi' },
-                confirmButtonColor: '#3B82F6',
-                confirmButtonText: 'Tutup'
             });
         });
         
