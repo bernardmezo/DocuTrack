@@ -159,13 +159,11 @@ if (!isset($list_users)) {
 
 </main>
 
-<!-- Toast Notification Container -->
 <div id="toast-container" class="fixed top-6 right-6 z-[60] flex flex-col gap-3 w-auto max-w-md">
 </div>
 
-<!-- Modal Tambah/Edit User -->
-<div id="modal-user" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 transform transition-all">
+<div id="modal-user" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 my-8 transform transition-all">
         <div class="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 id="modal-title" class="text-xl font-bold text-gray-800">Tambah User Baru</h3>
             <button id="modal-close" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -181,14 +179,14 @@ if (!isset($list_users)) {
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap *</label>
                     <input type="text" id="user-nama" required
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400"
                            placeholder="Dr. Nama Lengkap">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
                     <input type="email" id="user-email" required
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400"
                            placeholder="email@pnj.ac.id">
                 </div>
             </div>
@@ -198,7 +196,7 @@ if (!isset($list_users)) {
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Role *</label>
                     <select id="user-role" required
                             class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 cursor-pointer">
-                        <option value="">Pilih Role</option>
+                        <option value="" disabled selected hidden class="text-gray-400">Pilih Role</option>
                         <option value="Pengusul">Pengusul</option>
                         <option value="Verifikator">Verifikator</option>
                         <option value="PPK">PPK</option>
@@ -211,7 +209,7 @@ if (!isset($list_users)) {
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Jurusan *</label>
                     <select id="user-jurusan" required
                             class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 cursor-pointer">
-                        <option value="">Pilih Jurusan</option>
+                        <option value="" disabled selected hidden class="text-gray-400">Pilih Jurusan</option>
                         <option value="Teknik Informatika dan Komputer">Teknik Informatika & Komputer</option>
                         <option value="Teknik Sipil">Teknik Sipil</option>
                         <option value="Teknik Mesin">Teknik Mesin</option>
@@ -223,25 +221,86 @@ if (!isset($list_users)) {
                     </select>
                 </div>
             </div>
+
+            <div id="add-mode-fields" class="space-y-4 pt-2 border-t border-gray-100">
+                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Keamanan Akun</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
+                        <input type="password" id="add-password" 
+                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                               placeholder="******">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Konfirmasi Password *</label>
+                        <input type="password" id="add-confirm-password" 
+                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                               placeholder="******">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Kode Keamanan (Captcha) *</label>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="flex items-center gap-2">
+                            <div id="captcha-preview" class="select-none bg-gray-100 border border-gray-300 rounded-lg px-6 py-2.5 text-xl font-mono font-bold tracking-widest text-gray-700 text-center w-32 relative overflow-hidden">
+                                <div class="absolute inset-0 w-full h-full opacity-20 bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,#000_2px,#000_3px)]"></div>
+                                <span class="relative z-10" id="captcha-text">ABCD</span>
+                            </div>
+                            <button type="button" id="refresh-captcha" class="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Refresh Captcha">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <input type="text" id="captcha-input" 
+                               class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 uppercase"
+                               placeholder="Masukkan kode di atas">
+                    </div>
+                </div>
+            </div>
+
+            <div id="edit-mode-fields" class="space-y-4 pt-2 border-t border-gray-100 hidden">
+                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Ubah Password (Opsional)</h4>
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Password Lama (Admin) *</label>
+                    <input type="password" id="edit-old-password" 
+                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                           placeholder="Masukkan password Anda untuk verifikasi">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password Baru</label>
+                        <input type="password" id="edit-new-password" 
+                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                               placeholder="Kosongkan jika tidak diubah">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Konfirmasi Password</label>
+                        <input type="password" id="edit-confirm-password" 
+                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
+                               placeholder="Ulangi password baru">
+                    </div>
+                </div>
+            </div>
             
-            <!-- Status Field (Hanya muncul saat Edit) -->
-            <div id="status-field" class="hidden">
+            <div id="status-field" class="hidden pt-2 border-t border-gray-100">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Status *</label>
                 <div class="flex gap-4">
-                    <label class="flex items-center gap-2 cursor-pointer">
+                    <label class="flex items-center gap-2 cursor-pointer bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all">
                         <input type="radio" name="status" value="Aktif" checked
                                class="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-400/50">
-                        <span class="text-sm text-gray-700">Aktif</span>
+                        <span class="text-sm text-gray-700 font-medium">Aktif</span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
+                    <label class="flex items-center gap-2 cursor-pointer bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition-all">
                         <input type="radio" name="status" value="Tidak Aktif"
                                class="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-400/50">
-                        <span class="text-sm text-gray-700">Tidak Aktif</span>
+                        <span class="text-sm text-gray-700 font-medium">Tidak Aktif</span>
                     </label>
                 </div>
             </div>
             
-            <div class="flex gap-3 pt-4">
+            <div class="flex gap-3 pt-4 border-t border-gray-100 mt-4">
                 <button type="button" id="modal-cancel"
                         class="flex-1 px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all">
                     Batal
@@ -255,7 +314,6 @@ if (!isset($list_users)) {
     </div>
 </div>
 
-<!-- Modal Hapus User -->
 <div id="modal-delete" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 transform transition-all">
         <div class="p-6 text-center">
@@ -297,6 +355,30 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalDelete = document.getElementById('modal-delete');
     const formUser = document.getElementById('form-user');
     const modalTitle = document.getElementById('modal-title');
+
+    // Fields Groups
+    const addModeFields = document.getElementById('add-mode-fields');
+    const editModeFields = document.getElementById('edit-mode-fields');
+    const statusField = document.getElementById('status-field');
+
+    // Captcha Elements
+    const captchaTextEl = document.getElementById('captcha-text');
+    const captchaInputEl = document.getElementById('captcha-input');
+    const refreshCaptchaBtn = document.getElementById('refresh-captcha');
+    let currentCaptcha = '';
+
+    // Generate Random Captcha
+    function generateCaptcha() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let result = "";
+        for (let i = 0; i < 5; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        currentCaptcha = result;
+        captchaTextEl.textContent = result.split('').join(' '); // Add spacing for look
+    }
+
+    refreshCaptchaBtn.addEventListener('click', generateCaptcha);
     
     function updateStatistics(data) {
         const total = data.length;
@@ -421,9 +503,28 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('btn-tambah-user').addEventListener('click', () => {
         modalTitle.textContent = 'Tambah User Baru';
         formUser.reset();
+        
+        // Reset Dropdowns to placeholder
+        document.getElementById('user-role').value = "";
+        document.getElementById('user-jurusan').value = "";
+
         document.getElementById('user-id').value = '';
         document.getElementById('is-edit-mode').value = 'false';
-        document.getElementById('status-field').classList.add('hidden');
+        
+        // UI Toggles
+        statusField.classList.add('hidden');
+        addModeFields.classList.remove('hidden');
+        editModeFields.classList.add('hidden');
+        
+        // Require Add Mode Fields
+        document.getElementById('add-password').setAttribute('required', '');
+        document.getElementById('add-confirm-password').setAttribute('required', '');
+        document.getElementById('captcha-input').setAttribute('required', '');
+        
+        // Remove Require Edit Mode Fields
+        document.getElementById('edit-old-password').removeAttribute('required');
+
+        generateCaptcha();
         openModal(modalUser);
     });
     
@@ -433,14 +534,29 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!user) return;
         
         modalTitle.textContent = 'Edit User';
+        formUser.reset();
+        
         document.getElementById('user-id').value = user.id;
         document.getElementById('is-edit-mode').value = 'true';
         document.getElementById('user-nama').value = user.nama;
         document.getElementById('user-email').value = user.email;
         document.getElementById('user-role').value = user.role;
         document.getElementById('user-jurusan').value = user.jurusan;
+        
         document.querySelector(`input[name="status"][value="${user.status}"]`).checked = true;
-        document.getElementById('status-field').classList.remove('hidden');
+        
+        // UI Toggles
+        statusField.classList.remove('hidden');
+        addModeFields.classList.add('hidden');
+        editModeFields.classList.remove('hidden');
+
+        // Remove Require Add Mode Fields
+        document.getElementById('add-password').removeAttribute('required');
+        document.getElementById('add-confirm-password').removeAttribute('required');
+        document.getElementById('captcha-input').removeAttribute('required');
+
+        // Require Old Password for Security
+        document.getElementById('edit-old-password').setAttribute('required', '');
         
         openModal(modalUser);
     };
@@ -468,6 +584,41 @@ document.addEventListener('DOMContentLoaded', function() {
         const userId = document.getElementById('user-id').value;
         const isEditMode = document.getElementById('is-edit-mode').value === 'true';
         
+        // --- VALIDATION LOGIC ---
+        if (!isEditMode) {
+            // Validate Add Mode
+            const pass = document.getElementById('add-password').value;
+            const confirm = document.getElementById('add-confirm-password').value;
+            const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
+
+            if (pass !== confirm) {
+                showToast('Password dan Konfirmasi Password tidak cocok!', 'error');
+                return;
+            }
+
+            if (captchaInput.replace(/\s/g, '') !== currentCaptcha) {
+                showToast('Kode Captcha salah!', 'error');
+                generateCaptcha();
+                document.getElementById('captcha-input').value = '';
+                return;
+            }
+        } else {
+            // Validate Edit Mode
+            const oldPass = document.getElementById('edit-old-password').value;
+            const newPass = document.getElementById('edit-new-password').value;
+            const confirmNew = document.getElementById('edit-confirm-password').value;
+
+            if (oldPass === "") {
+                 showToast('Masukkan password admin untuk konfirmasi!', 'error');
+                 return;
+            }
+            
+            if (newPass !== "" && newPass !== confirmNew) {
+                showToast('Password baru tidak cocok!', 'error');
+                return;
+            }
+        }
+
         const userData = {
             nama: document.getElementById('user-nama').value,
             email: document.getElementById('user-email').value,

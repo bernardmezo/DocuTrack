@@ -497,32 +497,29 @@ switch ($main_route) {
     break;
 
     case 'super_admin':
-        // AuthMiddleware::check();      // Uncomment jika middleware sudah aktif
-        // BendaharaMiddleware::check(); // Uncomment jika middleware sudah aktif
-        
-        $base_super_admin_path = '/super_admin';
-        
-        switch ($sub_route) {
-            case 'index': 
-            case 'dashboard': 
-                require_once '../src/controllers/Super_Admin/DashboardController.php';
-                $controller = new SuperadminDashboardController(); 
-                $controller->index();
-                break;
+    AuthMiddleware::check(); // ✅ Aktifkan
+    // SuperAdminMiddleware::check(); // Opsional jika sudah dibuat
+    
+    $base_super_admin_path = '/super_admin';
+    
+    switch ($sub_route) {
+        case 'index': 
+        case 'dashboard': 
+            require_once '../src/controllers/Super_Admin/DashboardController.php';
+            $controller = new SuperadminDashboardController(); 
+            $controller->index(['active_page' => $base_super_admin_path . '/dashboard']);
+            break;
 
-            // ============================================
-            // RUTE AKUN SAYA - SUPER ADMIN
-            // ============================================
-            case 'akun':
-                require_once '../src/controllers/Super_Admin/AkunController.php';
-                $controller = new SuperAdminAkunController();
-                
-                if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $controller->update();
-                } else {
-                    $controller->index(['active_page' => $base_super_admin_path . '/akun']);
-                }
-                break;
+        case 'akun':
+            require_once '../src/controllers/Super_Admin/AkunController.php';
+            $controller = new SuperadminAkunController();
+            
+            if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->update();
+            } else {
+                $controller->index(['active_page' => $base_super_admin_path . '/akun']);
+            }
+            break;
             // ============================================
 
             case 'kelola-akun': 

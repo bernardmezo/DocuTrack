@@ -1,5 +1,5 @@
 <?php
-// File: src/views/layouts/bendahara/header.php
+// File: src/views/layouts/super_admin/header.php
 // Pastikan session sudah dimulai (biasanya sudah dimulai di index.php)
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -37,6 +37,9 @@ $headerBg = $userData['header_bg'] ?? 'linear-gradient(to left, #17A18A, #006A9A
 // TENTUKAN LINK AKUN BERDASARKAN ROLE
 // ============================================
 switch (strtolower($userRole)) {
+    case 'admin':
+        $akun_link = '/docutrack/public/admin/akun';
+        break;
     case 'verifikator':
         $akun_link = '/docutrack/public/verifikator/akun';
         break;
@@ -49,12 +52,12 @@ switch (strtolower($userRole)) {
     case 'bendahara':
         $akun_link = '/docutrack/public/bendahara/akun';
         break;
-    case 'super administrator': // Menangani format dari dummy data
-    case 'super_admin':
+    case 'super-admin':
         $akun_link = '/docutrack/public/super_admin/akun';
         break;
-    default: // admin
-        $akun_link = '/docutrack/public/admin/akun';
+    default:
+        $akun_link = '/docutrack/public/'; // Fallback ke home
+        break;
 }
 ?>
 <!DOCTYPE html>
@@ -65,7 +68,6 @@ switch (strtolower($userRole)) {
     <!-- Judul Halaman Dinamis -->
     <title><?php echo htmlspecialchars($title ?? 'Docutrack Bendahara'); ?></title>
 
-    <!-- Link Font Poppins (Untuk Admin) -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
@@ -174,16 +176,6 @@ switch (strtolower($userRole)) {
                     </button>
                 </div>
             </header>
-
-            <!-- Panel Navigasi Mobile -->
-            <div id="mobile-bendahara-menu" class="md:hidden hidden max-w-7xl mx-auto pt-4 pb-2">
-                <div class="px-2 space-y-1">
-                    <a href="/docutrack/public/bendahara/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
-                    <a href="/docutrack/public/admin/pengajuan-usulan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium bg-white/10 text-white"><i class="fas fa-file-signature text-sm w-5 text-center"></i> Pengajuan Usulan</a>
-                    <a href="/docutrack/public/admin/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
-                    <a href="/docutrack/public/admin/pengajuan-lpj" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-book-open text-sm w-5 text-center"></i> Pengajuan LPJ</a>
-                </div>
-            </div>
         </div> <!-- Akhir top-section -->
 
     <!-- Konten utama halaman dimulai di sini (akan ditutup oleh footer.php) -->

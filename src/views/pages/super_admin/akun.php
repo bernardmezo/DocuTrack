@@ -1,10 +1,10 @@
 <?php
-// File: src/views/pages/verifikator/akun.php
+// File: src/views/pages/super_admin/akun.php
 // Pastikan $user sudah di-set dari controller
 $user = $user ?? [
     'username' => $_SESSION['username'] ?? 'Maha Admin',
     'email' => $_SESSION['email'] ?? '',
-    'role' => $_SESSION['role'] ?? 'Super Admin',
+    'role' => $_SESSION['role'] ?? 'super-admin',
     'profile_image' => $_SESSION['profile_image'] ?? 'https://via.placeholder.com/150/333333/FFFFFF/?text=AT',
     'created_at' => $_SESSION['created_at'] ?? date('Y-m-d')
 ];

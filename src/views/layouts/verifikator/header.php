@@ -30,7 +30,7 @@ $userData = $_SESSION['user_data'] ?? [];
 $userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
 
 // 3. Tentukan Role
-$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'admin';
+$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'verifikator';
 
 // 4. Tentukan Foto Profile
 $defaultImage = 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=0D8ABC&color=fff&size=150';
@@ -159,39 +159,8 @@ switch (strtolower($userRole)) {
                              </a>
                         </div>
                     </div>
-
-                <!-- Mobile Toggle -->
-                <button id="mobile-admin-menu-button" class="md:hidden p-2">
-                    <svg id="hamburger-admin-icon" class="block h-6 w-6"><path /></svg>
-                    <svg id="close-admin-icon" class="hidden h-6 w-6"><path /></svg>
-                </button>
             </div>
         </header>
-
-        <!-- Menu Mobile -->
-        <div id="mobile-admin-menu" class="md:hidden hidden max-w-7xl mx-auto pt-4 pb-2">
-            <div class="px-2 space-y-1">
-
-                <a href="/docutrack/public/verifikator/dashboard"
-                   class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium 
-                   <?= strpos($current, '/docutrack/public/verifikator/dashboard') === 0 ? 'bg-white/10 text-white' : 'text-gray-200 hover:bg-white/10 hover:text-white' ?>">
-                    <i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard
-                </a>
-
-                <a href="/docutrack/public/verifikator/pengajuan-telaah"
-                   class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium 
-                   <?= strpos($current, '/docutrack/public/verifikator/pengajuan-telaah') === 0 ? 'bg-white/10 text-white' : 'text-gray-200 hover:bg-white/10 hover:text-white' ?>">
-                    <i class="fas fa-file-import text-sm w-5 text-center"></i> Pengajuan Telaah
-                </a>
-
-                <a href="/docutrack/public/verifikator/riwayat-verifikasi"
-                   class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium 
-                   <?= strpos($current, '/docutrack/public/verifikator/riwayat-verifikasi') === 0 ? 'bg-white/10 text-white' : 'text-gray-200 hover:bg-white/10 hover:text-white' ?>">
-                    <i class="fas fa-history text-sm w-5 text-center"></i> Riwayat Verifikasi
-                </a>
-
-            </div>
-        </div>
 
     </div>
 </div>

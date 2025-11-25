@@ -31,7 +31,7 @@ $userData = $_SESSION['user_data'] ?? [];
 $userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
 
 // 3. Tentukan Role
-$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'admin';
+$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'wadir';
 
 // 4. Tentukan Foto Profile
 $defaultImage = 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=0D8ABC&color=fff&size=150';
