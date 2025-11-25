@@ -9,21 +9,23 @@ class AdminPengajuanUsulanController extends Controller {
 
     public function index($data_dari_router = []) {
         
-        // 2. Instansiasi Model
-        $modelAdmin = new adminModel();
+        // --- MODIFIKASI: BYPASS PENGAMBILAN DATA ---
+        
+        // 1. Kita tidak menginstansiasi Model di sini
+        // $modelAdmin = new adminModel(); 
 
-        // 3. Ambil Data Real dari Database
-        // Fungsi ini akan me-return array yang strukturnya sudah cocok dengan View
-        // (key: 'id', 'nama', 'pengusul', 'status')
-        $antrian_kak = $modelAdmin->getAntrianKAK();
+        // 2. Kita set $antrian_kak menjadi array kosong
+        // Ini penting agar view tidak error saat mencoba loop data
+        $antrian_kak = []; 
 
-        // 4. Kirim data ke View
+        // 3. Kirim data ke View
         $data = array_merge($data_dari_router, [
             'title' => 'Pengajuan Usulan KAK',
             'antrian_kak' => $antrian_kak 
         ]);
 
-        // Panggil view
+        // 4. Panggil view
+        // Halaman akan tampil, tapi tabel antrian akan kosong (tertulis "Belum ada data")
         $this->view('pages/admin/pengajuan_usulan', $data, 'app'); 
     }
 

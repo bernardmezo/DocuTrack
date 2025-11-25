@@ -9,17 +9,15 @@ class AdminDashboardController extends Controller {
     
     public function index($data_dari_router = []) {
         
-        // 2. Instansiasi Model
-        $model = new ModelAdmin();
+        $model = new adminModel();
 
-        // 3. Ambil Data Real dari Database
-        // Data Statistik (Kartu di atas)
+        // 1. ambil data statisti card (buat kartu yang diatas)
         $stats = $model->getDashboardStats(); 
         
-        // Data Tabel List KAK
+        // 2. ambil list lengkap kak
         $list_kak = $model->getDashboardKAK(); 
         
-        // Data Tabel List LPJ
+        // 3. ambil list lengkap lpj
         $list_lpj = $model->getDashboardLPJ(); 
 
         // -------------------------------------------------------
@@ -28,7 +26,7 @@ class AdminDashboardController extends Controller {
         
         // Alur KAK
         $tahapan_kak = ['Pengajuan', 'Validasi', 'ACC PPK', 'ACC WD', 'Dana Cair'];
-        $tahap_sekarang_kak = 'ACC WD'; // Nanti bisa dibuat dinamis per user/kegiatan jika perlu
+        $tahap_sekarang_kak = 'Pengajuan'; // Nanti bisa dibuat dinamis per user/kegiatan jika perlu
         $icons_kak = [ 
             'Pengajuan' => 'fa-file-alt', 
             'Validasi' => 'fa-check-double', 

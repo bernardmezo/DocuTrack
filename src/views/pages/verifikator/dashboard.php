@@ -2,7 +2,7 @@
 // File: src/views/pages/verifikator/dashboard.php
 
 // Ambil data dari controller
-$stats = $stats ?? ['total' => 0, 'disetujui' => 0, 'ditolak' => 0, 'pending' => 0];
+// $stats = $stats ?? ['total' => 0, 'disetujui' => 0, 'ditolak' => 0, 'pending' => 0];
 $list_usulan = $list_usulan ?? [];
 $jurusan_list = $jurusan_list ?? [];
 ?>

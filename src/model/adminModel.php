@@ -1,7 +1,7 @@
 <?php
 // File: src/models/adminModel.php
 
-class ModelAdmin {
+class adminModel {
     private $db;
 
     public function __construct() {
@@ -10,12 +10,14 @@ class ModelAdmin {
         if (isset($conn)) {
             $this->db = $conn;
         } else {
-            die("Error: Koneksi database gagal di ModelAdmin.");
+            die("Error: Koneksi database gagal di adminModel.");
         }
     }
 
     /**
+     * ====================================================
      * 1. MENGAMBIL DATA STATISTIK (KARTU ATAS DASHBOARD)
+     * ====================================================
      */
     public function getDashboardStats() {
         // Menghitung total berdasarkan statusUtamaId di tbl_kegiatan
@@ -29,7 +31,7 @@ class ModelAdmin {
                     SUM(CASE WHEN statusUtamaId = 3 THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN statusUtamaId = 4 THEN 1 ELSE 0 END) as ditolak,
                     SUM(CASE WHEN statusUtamaId = 1 OR statusUtamaId = 2 THEN 1 ELSE 0 END) as menunggu
-                  FROM tbl_kegiatan";
+                FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
         if ($result) {
@@ -39,7 +41,9 @@ class ModelAdmin {
     }
 
     /**
+     * ====================================================
      * 2. MENGAMBIL LIST KAK (UNTUK TABEL KAK)
+     * ====================================================
      */
     public function getDashboardKAK() {
         // Mengambil data kegiatan join dengan status
@@ -58,9 +62,9 @@ class ModelAdmin {
                     -- Ambil nama status dari tabel relasi tbl_status_utama
                     s.namaStatusUsulan as status
 
-                  FROM tbl_kegiatan k
-                  LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                  ORDER BY k.createdAt DESC";
+                FROM tbl_kegiatan k
+                LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
+                ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
         $data = [];
@@ -80,7 +84,9 @@ class ModelAdmin {
     }
 
     /**
+     * ====================================================
      * 3. MENGAMBIL LIST LPJ (UNTUK TABEL LPJ)
+     * ====================================================
      */
     public function getDashboardLPJ() {
         // Mengambil data dari tbl_lpj dan join ke tbl_kegiatan untuk info detail
@@ -122,42 +128,144 @@ class ModelAdmin {
         return $data;
     }
 
-    // --- FUNCTION SIMPAN PENGAJUAN (DARI SEBELUMNYA) ---
+    /**
+     * ====================================================
+     * 4. BUAT NGAMBIL DETAIL KAK TERTENTU
+     * ====================================================
+     */
+
+    // 1. ambil detail KAK
+    public function getDetailKegiatan($kegiatanId) {
+        $query = "SELECT 
+                    k.*, 
+                    kak.*, -- Mengambil semua kolom dari tbl_kak (kakId, iku, gambaranUmum, dll)
+                    s.namaStatusUsulan as status_text
+                  FROM tbl_kegiatan k
+                  -- Gunakan JOIN karena setiap kegiatan pasti punya KAK (one-to-one)
+                  JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                  LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
+                  WHERE k.kegiatanId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        return mysqli_fetch_assoc($result);
+    }
+
+    // 2. ambil Indikator KAK
+    public function getIndikatorByKAK($kakId) {
+        $query = "SELECT 
+                    bulan, 
+                    indikatorKeberhasilan as nama, 
+                    targetPersen as target 
+                FROM tbl_indikator_kak 
+                WHERE kakId = ?";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kakId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    // 3. ambil tahapan pelaksanaan
+    public function getTahapanByKAK($kakId) {
+        $query = "SELECT namaTahapan FROM tbl_tahapan_pelaksanaan WHERE kakId = ? ORDER BY tahapanId ASC";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kakId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row['namaTahapan'];
+        }
+        return $data; // Mengembalikan array string sederhana
+    }
+
+    // 4. ambil RAB (di grup dengan kategoti)
+    public function getRABByKAK($kakId) {
+        $query = "SELECT 
+                    r.*, 
+                    cat.namaKategori 
+                FROM tbl_rab r
+                JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                WHERE r.kakId = ?
+                ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kakId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            // Kita group data berdasarkan nama kategori agar sesuai struktur View
+            // Format View: ['Belanja Barang' => [item1, item2], 'Jasa' => [item3]]
+            
+            // Pecah volume/satuan jika digabung (Optional, tergantung cara simpan sebelumnya)
+            // Jika di DB volume cuma 1 kolom, kita akali agar view tidak error
+            $row['vol1'] = $row['volume']; // Mapping sementara
+            $row['sat1'] = $row['satuan'];
+            
+            // Masukkan ke array group
+            $data[$row['namaKategori']][] = $row;
+        }
+        return $data;
+    }
+
+    // 5. ambil komentar revisi (kalo ada)
+    public function getKomentarTerbaru($kegiatanId) {
+        // Mengambil komentar dari revisi terakhir
+        // Query ini mengasumsikan struktur tabel revisi_comment yang terhubung ke history
+        // Jika belum ada fitur komentar aktif, return array kosong dulu
+        
+        /* $query = "SELECT targetKolom, komentarRevisi FROM tbl_revisi_comment ...";
+        */
+        
+        return []; // Placeholder: Return kosong dulu agar tidak error
+    }
+
+    /**
+     * ====================================================
+     * 5. BUAT INSERT KAK LENGKAP
+     * ====================================================
+     */
     public function simpanPengajuan($data) {
+        // $data adalah isi dari $_POST
+
         // 1. Mulai Transaksi
         mysqli_begin_transaction($this->db);
 
         try {
-            // A. INSERT KE tbl_kegiatan
-            $jurusan       = $data['jurusan'] ?? ''; 
-            $prodi         = $data['prodi'] ?? '';   
-            $nama_pengusul = $data['nama_pengusul_step1'] ?? ''; 
+            // ==========================================
+            // A. INSERT KE tbl_kegiatan (Tabel Induk)
+            // ==========================================
+            $nama_pengusul = $data['nama_pengusul'] ?? '';
             $nim           = $data['nim_nip'] ?? '';
-            $nama_kegiatan = $data['nama_kegiatan_step1'] ?? '';
-            $wadir_tujuan  = $data['wadir_tujuan'] ?? null; 
+            $jurusan       = $data['jurusan'] ?? '';
+            $prodi         = $data['prodi'] ?? '';
+            $nama_kegiatan = $data['nama_kegiatan_step1'] ?? ''; // Pastikan key sesuai form (step1)
             $user_id       = $_SESSION['user_id'] ?? 0;
             $tgl_sekarang  = date('Y-m-d H:i:s');
-            $status_awal   = 1; // ID Status Awal (Menunggu)
+            $status_awal   = 1; 
+            $wadir_tujuan  = $data['wadir_tujuan'] ?? null; 
 
             $queryKegiatan = "INSERT INTO tbl_kegiatan 
-            (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, wadirTujuan, createdAt)
+            (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, createdAt, wadirTujuan)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
             $stmt = mysqli_prepare($this->db, $queryKegiatan);
-            
-            // Kode binding: ssssisiiBs -> sssisiis
-            // nama(s), prodi(s), pemilik(s), nim(s), user(i), jurusan(s), status(i), wadir(i), tgl(s)
-            mysqli_stmt_bind_param($stmt, "ssssisiis", 
-                $nama_kegiatan, 
-                $prodi,          
-                $nama_pengusul, 
-                $nim, 
-                $user_id, 
-                $jurusan,        
-                $status_awal, 
-                $wadir_tujuan, 
-                $tgl_sekarang
-            );
+            // Bind: s=string, i=integer
+            mysqli_stmt_bind_param($stmt, "ssssisisi", $nama_kegiatan, $prodi, $nama_pengusul, $nim, $user_id, $jurusan, $status_awal, $tgl_sekarang, $wadir_tujuan);
             
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception("Gagal insert kegiatan: " . mysqli_error($this->db));
@@ -166,87 +274,111 @@ class ModelAdmin {
             $kegiatanId = mysqli_insert_id($this->db);
             mysqli_stmt_close($stmt);
 
-            // B. INSERT KE tbl_kak
-            $iku           = $data['indikator_kinerja'] ?? '';
+
+            // ==========================================
+            // B. INSERT KE tbl_kak (Anak dari Kegiatan)
+            // ==========================================
+            $iku           = $data['indikator_kinerja'] ?? 'Belum pilih';
             $gambaran_umum = $data['gambaran_umum'] ?? '';
             $penerima      = $data['penerima_manfaat'] ?? '';
             $metode        = $data['metode_pelaksanaan'] ?? '';
             $tgl_only      = date('Y-m-d');
             
-            // Perhatikan nama kolom 'penerimaManfaat' vs 'penerimaMaanfaat' di DB
-            // Di sini saya pakai 'penerimaManfaat' (ejaan benar), sesuaikan jika DB typo
             $queryKAK = "INSERT INTO tbl_kak 
-                (kegiatanId, iku, gambaranUmum, penerimaManfaat, metodePelaksanaan, tglPembuatan)
+                (kegiatanId, iku, gambaranUmum, penerimaMaanfaat, metodePelaksanaan, tglPembuatan)
                 VALUES (?, ?, ?, ?, ?, ?)";
 
             $stmt = mysqli_prepare($this->db, $queryKAK);
-            mysqli_stmt_bind_param($stmt, "isssss", $kegiatanId, $iku, $gambaran_umum, $penerima, $metode, $tgl_only);
+            mysqli_stmt_bind_param(
+                $stmt, "isssss", $kegiatanId, $iku, $gambaran_umum, $penerima, $metode, $tgl_only
+            );
 
             if (!mysqli_stmt_execute($stmt)) {
-                 throw new Exception("Gagal insert KAK: " . mysqli_error($this->db));
+                throw new Exception("Gagal insert KAK: " . mysqli_error($this->db));
             }
+
             $kakId = mysqli_insert_id($this->db);
             mysqli_stmt_close($stmt);
 
-            // C. INSERT TAHAPAN PELAKSANAAN
+
+            // ==========================================
+            // C. INSERT TAHAPAN PELAKSANAAN (Looping)
+            // ==========================================
             if (!empty($data['tahapan']) && is_array($data['tahapan'])) {
                 $queryTahapan = "INSERT INTO tbl_tahapan_pelaksanaan (kakId, namaTahapan) VALUES (?, ?)";
                 $stmt = mysqli_prepare($this->db, $queryTahapan);
+                
                 foreach ($data['tahapan'] as $tahap) {
                     if (!empty($tahap)) {
                         mysqli_stmt_bind_param($stmt, "is", $kakId, $tahap);
-                        if (!mysqli_stmt_execute($stmt)) throw new Exception("Gagal insert tahapan.");
+                        if (!mysqli_stmt_execute($stmt)) {
+                            throw new Exception("Gagal insert tahapan: " . mysqli_error($this->db));
+                        }
                     }
                 }
                 mysqli_stmt_close($stmt);
             }
 
-            // D. INSERT INDIKATOR KAK
+            // ==========================================
+            // D. INSERT INDIKATOR (Looping)
+            // ==========================================
             if (!empty($data['indikator_nama']) && is_array($data['indikator_nama'])) {
                 $queryIndikator = "INSERT INTO tbl_indikator_kak (kakId, bulan, indikatorKeberhasilan, targetPersen) VALUES (?, ?, ?, ?)";
                 $stmt = mysqli_prepare($this->db, $queryIndikator);
+                
                 $count = count($data['indikator_nama']);
+                
                 for ($i = 0; $i < $count; $i++) {
                     $bulan  = $data['indikator_bulan'][$i] ?? '';
                     $nama   = $data['indikator_nama'][$i] ?? '';
                     $target = $data['indikator_target'][$i] ?? '';
+                    
                     if (!empty($nama)) {
                         mysqli_stmt_bind_param($stmt, "isss", $kakId, $bulan, $nama, $target);
-                        if (!mysqli_stmt_execute($stmt)) throw new Exception("Gagal insert indikator.");
+                        if (!mysqli_stmt_execute($stmt)) {
+                            throw new Exception("Gagal insert indikator: " . mysqli_error($this->db));
+                        }
                     }
                 }
                 mysqli_stmt_close($stmt);
             }
 
-            // E. INSERT RAB & KATEGORI
-            $rab_json = $data['rab_json'] ?? '[]'; 
+            // ==========================================
+            // E. INSERT RAB & KATEGORI RAB (BARU)
+            // ==========================================
+            $rab_json = $data['rab_data'] ?? '[]'; 
             $budgetData = json_decode($rab_json, true);
 
             if (!empty($budgetData) && is_array($budgetData)) {
+                
                 $queryKategori = "INSERT INTO tbl_kategori_rab (namaKategori) VALUES (?)";
-                // Asumsi kolom tbl_rab: kakId, kategoriId, uraian, rincian, satuan, volume, harga, totalHarga
-                // Sesuai ERD, tabel RAB memiliki kolom-kolom tersebut
                 $queryItemRAB  = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, satuan, volume, harga, totalHarga) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 foreach ($budgetData as $namaKategori => $items) {
                     if (empty($items)) continue; 
 
-                    // 1. Cek Kategori
+                    // 1. Cek / Insert Kategori
                     $kategoriId = 0;
+                    
                     $checkKat = mysqli_prepare($this->db, "SELECT kategoriRabId FROM tbl_kategori_rab WHERE namaKategori = ? LIMIT 1");
                     mysqli_stmt_bind_param($checkKat, "s", $namaKategori);
                     mysqli_stmt_execute($checkKat);
                     $resKat = mysqli_stmt_get_result($checkKat);
+                    
                     if ($rowKat = mysqli_fetch_assoc($resKat)) {
                         $kategoriId = $rowKat['kategoriRabId'];
-                    }
+                    } 
+                    
+                    // [PENTING] Tutup statement cek kategori SEBELUM membuat statement baru untuk insert
                     mysqli_stmt_close($checkKat); 
 
-                    // Insert Kategori Baru jika belum ada
+                    // Jika tidak ditemukan, Insert Baru
                     if ($kategoriId == 0) {
                         $stmtKat = mysqli_prepare($this->db, $queryKategori);
                         mysqli_stmt_bind_param($stmtKat, "s", $namaKategori);
-                        if (!mysqli_stmt_execute($stmtKat)) throw new Exception("Gagal insert kategori.");
+                        if (!mysqli_stmt_execute($stmtKat)) {
+                            throw new Exception("Gagal insert kategori RAB: " . mysqli_error($this->db));
+                        }
                         $kategoriId = mysqli_insert_id($this->db);
                         mysqli_stmt_close($stmtKat);
                     }
@@ -256,35 +388,37 @@ class ModelAdmin {
                     foreach ($items as $item) {
                         $uraian  = $item['uraian'] ?? '';
                         $rincian = $item['rincian'] ?? '';
-                        
-                        // Logika Volume Ganda (Vol1 * Vol2) jika diperlukan, atau pakai Vol1 saja
-                        // Di ERD kolom volume cuma satu. Kita bisa kalikan vol1 * vol2 atau simpan vol1 saja.
-                        // Di sini saya asumsikan vol1 * vol2 = total volume
-                        $vol1 = floatval($item['vol1'] ?? 1);
-                        $vol2 = floatval($item['vol2'] ?? 1);
-                        $volumeFinal = $vol1 * $vol2;
-                        
-                        // Satuan gabungan (misal: "Org/Kali") atau sat1 saja
-                        $satuan  = ($item['sat1'] ?? '') . '/' . ($item['sat2'] ?? '');
-                        
+                        $satuan  = $item['satuan'] ?? '';
+                        $volume  = floatval($item['volume'] ?? 0);
                         $harga   = floatval($item['harga'] ?? 0);
-                        $total   = $volumeFinal * $harga;
+                        $total   = $volume * $harga;
 
-                        // Bind: iisssddd (i=int, s=string, d=double/decimal)
-                        mysqli_stmt_bind_param($stmtItem, "iisssddd", $kakId, $kategoriId, $uraian, $rincian, $satuan, $volumeFinal, $harga, $total);
-                        if (!mysqli_stmt_execute($stmtItem)) throw new Exception("Gagal insert item RAB.");
+                        mysqli_stmt_bind_param($stmtItem, "iisssddd", $kakId, $kategoriId, $uraian, $rincian, $satuan, $volume, $harga, $total);
+                        if (!mysqli_stmt_execute($stmtItem)) {
+                            throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
+                        }
                     }
                     mysqli_stmt_close($stmtItem);
                 }
             }
 
-            // F. COMMIT
+            // ==========================================
+            // F. SELESAI - COMMIT TRANSAKSI
+            // ==========================================
             mysqli_commit($this->db);
             return true;
 
         } catch (Exception $e) {
+            // Jika ada ERROR satu saja, batalkan semua perubahan (Rollback)
             mysqli_rollback($this->db);
+            // Log error untuk developer
+            var_dump($e->getMessage()); 
+            die();
             error_log("Gagal Simpan Pengajuan: " . $e->getMessage());
+            
+            // (Opsional) Uncomment ini jika ingin melihat pesan error di layar saat debugging
+            // echo "DEBUG ERROR: " . $e->getMessage(); die;
+            
             return false;
         }
     }
