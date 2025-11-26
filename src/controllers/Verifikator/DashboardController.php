@@ -38,8 +38,28 @@ class VerifikatorDashboardController extends Controller {
         ];
         
         // Daftar Jurusan Unik (Untuk Dropdown Filter)
-        $jurusan_list = array_unique(array_column($list_usulan, 'jurusan'));
-        sort($jurusan_list);
+        // Ambil dari master table tbl_jurusan lewat model jika tersedia,
+        // jika kosong gunakan fallback dari list_usulan (kolom 'jurusan').
+        $jurusan_list = [];
+        $jurusan_rows = $model->getListJurusan();
+
+        if (!empty($jurusan_rows)) {
+            // Map ke nama jurusan; coba beberapa kemungkinan nama kolom yang umum
+            $jurusan_list = array_map(function($r) {
+                if (isset($r['nama_jurusan'])) return $r['namaJurusan'];
+                // fallback: ambil nilai pertama non-empty pada row
+                foreach ($r as $v) { if ($v !== null && $v !== '') return $v; }
+                return null;
+            }, $jurusan_rows);
+            
+            // normalisasi: hapus null/empty, unik, urutkan
+            $jurusan_list = array_values(array_filter(array_unique($jurusan_list), fn($v) => $v !== null && $v !== ''));
+            sort($jurusan_list);
+        } else {
+            // fallback ke cara lama: ambil kolom 'jurusan' dari data usulan
+            $jurusan_list = array_unique(array_column($list_usulan, 'jurusan'));
+            sort($jurusan_list);
+        }
         
         $data = array_merge($data_dari_router, [
             'title' => 'Dashboard Verifikator',
@@ -50,6 +70,6 @@ class VerifikatorDashboardController extends Controller {
             'total_pages' => 1
         ]);
 
-        $this->view('pages/verifikator/dashboard', $data, 'verifikator'); 
+        $this->view('pages/verifikator/dashboard', $data, 'verifikator');
     }
 }

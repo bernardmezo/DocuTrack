@@ -180,7 +180,44 @@ Class verifikatorModel {
         mysqli_stmt_bind_param($stmt, "ii", $statusId, $kegiatanId);
         return mysqli_stmt_execute($stmt);
     }
-}
+
+    /**
+     * ====================================================
+     * 5. DAFTAR JURUSAN BUAT DIPAKE FILTER
+     * ====================================================
+     */
+
+    public function getListJurusan() {
+        $query = "SELECT * FROM tbl_jurusan j";
+        $stmt = mysqli_prepare($this->db, $query);
+        
+        // Error handling: cek jika prepare gagal
+        if (!$stmt) {
+            error_log('Prepare failed: ' . mysqli_error($this->db));
+            return [];
+        }
+        
+        // Execute query
+        if (!mysqli_stmt_execute($stmt)) {
+            error_log('Execute failed: ' . mysqli_stmt_error($stmt));
+            mysqli_stmt_close($stmt);
+            return [];
+        }
+        
+        // Ambil result set dari statement (PENTING: gunakan mysqli_stmt_get_result)
+        $result = mysqli_stmt_get_result($stmt);
+        $jurusan = [];
+
+        // Fetch semua baris
+        while ($row = mysqli_fetch_assoc($result)) {
+            $jurusan[] = $row;
+        }
+        
+        // Bersihkan statement
+        mysqli_stmt_close($stmt);
+        return $jurusan;
+    }
+}   
 
 
 ?>
