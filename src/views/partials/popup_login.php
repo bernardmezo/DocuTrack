@@ -1,4 +1,5 @@
-<div id="popup-container" class="popup-container fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm hidden">
+<!-- popup_login.php - VERSI DIPERBAIKI -->
+<div id="popup-login" class="popup-container fixed inset-0 z-[1000] hidden items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
 
     <div id="login-card" class="form-card w-full max-w-md rounded-2xl bg-white/10 p-6 shadow-2xl backdrop-blur-lg md:p-10 border border-white/20">
         <h2 class="mb-8 text-center text-3xl font-bold text-white">Log In</h2>
@@ -10,7 +11,6 @@
             <div class="mb-4 rounded bg-red-100 p-3 text-center text-sm text-red-700">
                 <?php 
                     echo htmlspecialchars($_SESSION['login_error']); 
-                    // Hapus pesan setelah ditampilkan agar tidak muncul lagi saat refresh
                     unset($_SESSION['login_error']); 
                 ?>
             </div>
@@ -58,47 +58,15 @@
 </div>
 
 <script>
-    // Pastikan script ini dijalankan setelah DOM siap
     document.addEventListener('DOMContentLoaded', () => {
-        // --- Ambil elemen ---
-        const popupContainer = document.getElementById('popup-container');
-        const loginCard = document.getElementById('login-card');
         const showPasswordCheckbox = document.getElementById('show-password');
         const loginPasswordInput = document.getElementById('login-password');
-        const openLoginBtn = document.getElementById('open-login-btn'); // Tombol di header
 
-        // --- 1. MEMBUKA POPUP ---
-        if (openLoginBtn && popupContainer && loginCard) {
-            openLoginBtn.addEventListener('click', (event) => {
-                event.preventDefault(); // Mencegah link default jika tombolnya <a>
-                popupContainer.classList.remove('hidden'); 
-                loginCard.classList.remove('hidden'); // Pastikan kartu login terlihat
-            });
-        }
-        
-        // --- 2. MENUTUP POPUP SAAT KLIK BACKGROUND ---
-        if (popupContainer && loginCard) {
-            popupContainer.addEventListener('click', (e) => {
-                // Hanya tutup jika target klik adalah container background-nya, BUKAN kartu di dalamnya
-                if (e.target === popupContainer) {
-                    popupContainer.classList.add('hidden');
-                }
-            });
-        }
-
-        // --- 3. LOGIKA "SHOW PASSWORD" ---
+        // Toggle Show Password
         if (showPasswordCheckbox && loginPasswordInput) {
             showPasswordCheckbox.addEventListener('change', () => {
                 loginPasswordInput.type = showPasswordCheckbox.checked ? 'text' : 'password';
             });
         }
-        
-        // --- 4. (Opsional) Menutup Popup dengan Tombol Escape ---
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && popupContainer && !popupContainer.classList.contains('hidden')) {
-                 popupContainer.classList.add('hidden');
-            }
-        });
-
-    }); // Akhir DOMContentLoaded
+    });
 </script>

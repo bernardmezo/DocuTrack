@@ -3,128 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $title ?? 'Docutrack PNJ'; // Ambil title dari controller ?></title>
+    <title><?php echo $title ?? 'Docutrack PNJ - Sistem Pengajuan TOR & Kegiatan'; ?></title>
     
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <link href="/docutrack/public/assets/css/output.css" rel="stylesheet"> 
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    </head>
-<body>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        /* Gradient Background */
+        .hero-gradient {
+            background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 25%, #0d9488 50%, #0f766e 75%, #115e59 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated Wave */
+        @keyframes wave {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            50% { transform: translateX(-25px) translateY(-25px); }
+        }
+        
+        .wave-bg {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1%, transparent 2%);
+            background-size: 50px 50px;
+            animation: wave 20s linear infinite;
+        }
 
-    <header class="main-header bg-transparent p-4 fixed w-full top-0 z-1000 transition-all duration-400 ease-in-out">
-        <div class="container max-w-6xl mx-auto px-8 flex justify-between md:justify-center items-center relative">
+        @keyframes glassExpand {
+            0% {
+                width: 50px;             /* Mulai dari lebar kecil */
+                opacity: 0;              /* Tidak terlihat */
+                transform: translateY(-20px) scale(0.9); /* Sedikit di atas dan kecil */
+                border-radius: 50px;     /* Sangat bulat saat kecil */
+            }
+            60% {
+                width: 100%;             /* Melebar penuh tapi belum stabil */
+                transform: translateY(0) scale(1);
+                border-radius: 16px;     /* Mulai mengotak */
+            }
+            100% {
+                width: 100%;             /* Lebar normal */
+                opacity: 1;              /* Terlihat jelas */
+                border-radius: 1rem;     /* Kembali ke rounded-2xl (16px) */
+            }
+        }
+
+        /* 2. Animasi Isi Konten (Logo & Menu) */
+        /* Muncul setelah kacanya selesai melebar */
+        @keyframes contentFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Kelas untuk memanggil animasi */
+        .animate-glass-load {
+            /* Durasi 1.2 detik, easing yang smooth */
+            animation: glassExpand 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .animate-content-load {
+            opacity: 0; /* Sembunyi dulu */
+            /* Delay 0.5 detik (tunggu kaca melebar dulu), durasi 0.8s */
+            animation: contentFadeIn 0.8s ease-out 0.6s forwards;
+        }
+        
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Cards Hover Effect */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        /* Smooth Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Timeline Styles */
+        .timeline-line {
+            background: linear-gradient(to right, #3b82f6 0%, #22c55e 100%);
+        }
+        
+        .timeline-vertical {
+            background: linear-gradient(to bottom, #3b82f6 0%, #22c55e 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Navigation - Style Sesuai Contoh -->
+    <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out py-4" id="mainNavbar">
+        <div class="max-w-7xl mx-auto px-4">
             
-            <button class="menu-toggle group md:hidden z-1001" aria-label="Toggle navigation">
-                <div class="hamburger-icon space-y-1.5">
-                    <span class="block w-6 h-0.5 bg-white transition-all duration-300 ease-in-out group-[.active]:rotate-45 group-[.active]:translate-y-2"></span>
-                    <span class="block w-6 h-0.5 bg-white transition-all duration-300 ease-in-out group-[.active]:opacity-0"></span>
-                    <span class="block w-6 h-0.5 bg-white transition-all duration-300 ease-in-out group-[.active]:-rotate-45 group-[.active]:-translate-y-2"></span>
+            <div id="navbarInner" class="transition-all duration-500 ease-in-out px-8 py-4 flex items-center justify-between
+                bg-transparent rounded-none border-transparent
+                ">
+                
+                <div class="flex items-center gap-2">
+                    <a href="/docutrack/public/">
+                            <svg width="195" height="47" viewBox="0 0 195 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Kode SVG Anda di sini... -->
+                                <g filter="url(#filter0_d_194_31)"><path d="M179.658 26.2678C174.418 24.2673 168.504 26.2678 166.917 27.1013C172.632 26.625 173.585 27.1013 178.586 29.3638C185.139 32.3283 189.104 26.1884 190.136 24.0054C188.787 25.2358 184.897 28.2682 179.658 26.2678Z" fill="white" stroke="white" stroke-width="0.341658"/><path d="M176.085 30.555C171.227 28.2687 168.305 27.7368 167.393 28.0543C169.536 29.7214 174.085 33.4127 177.99 34.3653C181.896 35.3179 186.405 32.5395 188.231 30.0786C185.968 31.6663 180.943 32.8412 176.085 30.555Z" fill="white" stroke="white" stroke-width="0.341658"/><path d="M180.149 21.1713C174.482 19.2149 168.93 23.8971 166.95 26.1927C168.071 24.8985 171.909 22.6991 178.292 24.2551C184.675 25.8111 188.749 22.1279 189.998 20.2702C189.304 20.6662 186.106 23.2277 180.149 21.1713Z" fill="white" stroke="white" stroke-width="0.341658"/><ellipse cx="183.468" cy="13.527" rx="4.64394" ry="4.64394" fill="#FF0000"/><path d="M4.39161 10.9131H13.753C16.3724 10.9131 18.6274 11.3914 20.5179 12.3481C22.4084 13.3047 23.8547 14.6827 24.8569 16.4821C25.8591 18.2815 26.3602 20.434 26.3602 22.9395C26.3602 25.445 25.8591 27.6088 24.8569 29.431C23.8775 31.2304 22.4425 32.6084 20.552 33.565C18.6615 34.5217 16.3952 35 13.753 35H4.39161V10.9131ZM13.3772 30.6951C18.5021 30.6951 21.0645 28.1099 21.0645 22.9395C21.0645 17.7918 18.5021 15.218 13.3772 15.218H9.72147V30.6951H13.3772ZM38.1029 35.2733C36.3262 35.2733 34.766 34.9203 33.4221 34.2142C32.0783 33.4853 31.0419 32.4717 30.313 31.1734C29.5842 29.8524 29.2197 28.3035 29.2197 26.5269C29.2197 24.7503 29.5842 23.2128 30.313 21.9145C31.0419 20.5934 32.0783 19.5798 33.4221 18.8737C34.766 18.1676 36.3262 17.8146 38.1029 17.8146C39.8795 17.8146 41.4397 18.1676 42.7836 18.8737C44.1274 19.5798 45.1638 20.5934 45.8927 21.9145C46.6215 23.2128 46.986 24.7503 46.986 26.5269C46.986 28.3035 46.6215 29.8524 45.8927 31.1734C45.1638 32.4717 44.1274 33.4853 42.7836 34.2142C41.4397 34.9203 39.8795 35.2733 38.1029 35.2733ZM38.1029 31.3443C40.6083 31.3443 41.8611 29.7385 41.8611 26.5269C41.8611 24.9097 41.5308 23.7025 40.8703 22.9053C40.2325 22.1081 39.31 21.7095 38.1029 21.7095C35.5974 21.7095 34.3446 23.3153 34.3446 26.5269C34.3446 29.7385 35.5974 31.3443 38.1029 31.3443ZM58.1203 35.2733C55.387 35.2733 53.2346 34.4989 51.6629 32.9501C50.0913 31.4012 49.3055 29.2943 49.3055 26.6294C49.3055 24.8755 49.6813 23.3381 50.433 22.017C51.1846 20.6731 52.2438 19.6368 53.6104 18.9079C54.977 18.179 56.56 17.8146 58.3594 17.8146C59.5894 17.8146 60.7738 18.0082 61.9127 18.3954C63.0515 18.7599 63.974 19.2609 64.6801 19.8987L63.3135 23.4178C62.6529 22.8939 61.9241 22.4953 61.1269 22.222C60.3524 21.9259 59.5894 21.7778 58.8378 21.7778C57.4939 21.7778 56.4462 22.1764 55.6945 22.9736C54.9656 23.7708 54.6012 24.9553 54.6012 26.5269C54.6012 28.0985 54.9656 29.2943 55.6945 30.1143C56.4462 30.9115 57.4939 31.3101 58.8378 31.3101C59.5894 31.3101 60.3524 31.1734 61.1269 30.9001C61.9241 30.604 62.6529 30.194 63.3135 29.6701L64.6801 33.2234C63.9285 33.8611 62.9718 34.3622 61.8102 34.7267C60.6486 35.0911 59.4186 35.2733 58.1203 35.2733ZM83.1686 18.2246V35H78.1463V32.6084C77.6224 33.4739 76.9277 34.1345 76.0621 34.59C75.2194 35.0456 74.2627 35.2733 73.1922 35.2733C71.0739 35.2733 69.4909 34.6925 68.4432 33.5309C67.4182 32.3465 66.9057 30.5698 66.9057 28.201V18.2246H72.0647V28.3035C72.0647 29.3057 72.2697 30.046 72.6797 30.5243C73.1125 31.0026 73.7616 31.2418 74.6272 31.2418C75.6294 31.2418 76.438 30.9001 77.0529 30.2168C77.6907 29.5335 78.0096 28.6338 78.0096 27.5177V18.2246H83.1686ZM96.4204 31.4809C96.9443 31.4809 97.491 31.4468 98.0604 31.3784L97.7871 35.1367C97.1265 35.2278 96.466 35.2733 95.8054 35.2733C93.2544 35.2733 91.3867 34.7153 90.2022 33.5992C89.0406 32.4831 88.4598 30.7862 88.4598 28.5085V22.0853H85.2824V18.2246H88.4598V13.3047H93.6188V18.2246H97.8212V22.0853H93.6188V28.4743C93.6188 30.4787 94.5527 31.4809 96.4204 31.4809ZM112.332 22.0512L109.428 22.3587C107.993 22.4953 106.979 22.9053 106.387 23.5886C105.795 24.2492 105.499 25.1375 105.499 26.2536V35H100.34V18.2246H105.294V21.0603C106.137 19.1243 107.879 18.0651 110.521 17.8829L112.025 17.7804L112.332 22.0512ZM121.501 17.8146C124.007 17.8146 125.852 18.4068 127.036 19.5912C128.243 20.7756 128.847 22.6092 128.847 25.0919V35H123.961V32.5059C123.619 33.3714 123.05 34.0547 122.253 34.5558C121.456 35.0342 120.522 35.2733 119.451 35.2733C118.312 35.2733 117.276 35.0456 116.342 34.59C115.431 34.1345 114.702 33.4967 114.155 32.6767C113.632 31.8567 113.37 30.9457 113.37 29.9435C113.37 28.7135 113.677 27.7455 114.292 27.0394C114.93 26.3333 115.943 25.8208 117.333 25.5019C118.722 25.183 120.624 25.0236 123.039 25.0236H123.927V24.4086C123.927 23.4064 123.71 22.7003 123.278 22.2903C122.845 21.8803 122.093 21.6753 121.023 21.6753C120.203 21.6753 119.292 21.8234 118.289 22.1195C117.287 22.4156 116.331 22.8256 115.42 23.3495L114.053 19.8987C115.01 19.3065 116.183 18.8168 117.572 18.4296C118.984 18.0196 120.294 17.8146 121.501 17.8146ZM120.579 31.7201C121.581 31.7201 122.389 31.3898 123.004 30.7293C123.619 30.046 123.927 29.169 123.927 28.0985V27.5177H123.346C121.501 27.5177 120.203 27.6657 119.451 27.9618C118.722 28.2579 118.358 28.7932 118.358 29.5676C118.358 30.1826 118.563 30.6951 118.973 31.1051C119.406 31.5151 119.941 31.7201 120.579 31.7201ZM140.699 35.2733C137.966 35.2733 135.813 34.4989 134.241 32.9501C132.67 31.4012 131.884 29.2943 131.884 26.6294C131.884 24.8755 132.26 23.3381 133.011 22.017C133.763 20.6731 134.822 19.6368 136.189 18.9079C137.556 18.179 139.139 17.8146 140.938 17.8146C142.168 17.8146 143.352 18.0082 144.491 18.3954C145.63 18.7599 146.553 19.2609 147.259 19.8987L145.892 23.4178C145.231 22.8939 144.503 22.4953 143.705 22.222C142.931 21.9259 142.168 21.7778 141.416 21.7778C140.072 21.7778 139.025 22.1764 138.273 22.9736C137.544 23.7708 137.18 24.9553 137.18 26.5269C137.18 28.0985 137.544 29.2943 138.273 30.1143C139.025 30.9115 140.072 31.3101 141.416 31.3101C142.168 31.3101 142.931 31.1734 143.705 30.9001C144.503 30.604 145.231 30.194 145.892 29.6701L147.259 33.2234C146.507 33.8611 145.55 34.3622 144.389 34.7267C143.227 35.0911 141.997 35.2733 140.699 35.2733ZM161.169 35L154.746 27.5177V35H149.587V10.9131H154.746V25.3994L160.93 18.2588H167.08L160.041 26.2536L167.49 35H161.169Z" fill="#33ABA0"/></g><defs><filter id="filter0_d_194_31" x="0.391602" y="8.88306" width="193.899" height="34.3904" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/><feOffset dy="4"/><feGaussianBlur stdDeviation="2"/><feComposite in2="hardAlpha" operator="out"/><feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/><feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_194_31"/><feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_194_31" result="shape"/></filter></defs></svg>
+                        </a>
                 </div>
-            </button>
-
-            <nav class="main-nav hidden md:flex flex-col md:flex-row items-center absolute md:relative top-full left-0 w-full md:w-auto 
-                         bg-primary-dark-green/70 backdrop-blur-lg md:bg-transparent md:backdrop-blur-none 
-                         shadow-lg md:shadow-none p-4 md:p-0 transition-all duration-300 ease-in-out">
-                <ul class="flex flex-col md:flex-row list-none w-full md:w-auto text-center gap-4 md:gap-0 md:items-center">
-                    <li class="md:mx-[25px]">
-                        <a href="#hero" class="text-white font-normal text-base py-1 relative after:content-[''] after:absolute after:w-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-accent-teal after:transition-all after:duration-200 after:ease-in-out hover:after:w-full">HOME</a>
-                    </li>
-                    <li class="md:mx-[25px]">
-                        <a href="#about" class="text-white font-normal text-base py-1 relative after:content-[''] after:absolute after:w-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-accent-teal after:transition-all after:duration-200 after:ease-in-out hover:after:w-full">ABOUT</a>
-                    </li>
-                    <li class="md:mx-[25px]"> 
-                        <a href="/docutrack/public/login" id="open-login-btn" class="btn-brilliant"> 
-                            LOGIN
-                        </a>
-                    </li>
-                    <li class="md:mx-[25px]"> 
-                        <a href="/docutrack/public" id="open-register-btn" class="btn-brilliant"> 
-                            REGISTER
-                        </a>
-                    </li>
-                </ul>
-            </nav>
+                
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#home" class="text-white hover:text-teal-200 transition font-medium tracking-wide text-shadow-sm">HOME</a>
+                    <a href="#about" class="text-white hover:text-teal-200 transition font-medium tracking-wide text-shadow-sm">ABOUT</a>
+                    <a href="#detail" class="text-white hover:text-teal-200 transition font-medium tracking-wide text-shadow-sm">DETAIL</a>
+                    <a href="#proses" class="text-white hover:text-teal-200 transition font-medium tracking-wide text-shadow-sm">PROSES</a>
+                </div>
+            </div>
         </div>
-    </header>
-
-    <main>
-    <?php
-        include '../src/views/partials/popup_login.php'; 
-        include '../src/views/partials/popup_regitser.php';
-    ?>
+    </nav>
 
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-
-        // 1. Logika Scroll Header
-        const header = document.querySelector('.main-header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                header.classList.add('bg-primary-dark-green/70', 'backdrop-blur-lg', 'shadow-xl');
-                header.classList.remove('bg-transparent');
-            } else {
-                header.classList.remove('bg-primary-dark-green/70', 'backdrop-blur-lg', 'shadow-xl');
-                header.classList.add('bg-transparent');
-            }
-        });
-
-        // 2. Logika Toggle Menu
-        const menuToggle = document.querySelector('.menu-toggle');
-        const mainNav = document.querySelector('.main-nav');
-        if (menuToggle && mainNav) { // Tambahkan pengecekan
-            menuToggle.addEventListener('click', () => {
-                mainNav.classList.toggle('hidden');
-                mainNav.classList.toggle('flex');
-                menuToggle.classList.toggle('active');
-            });
-        }
-
-        // 3. Logika Scroll Animation Timeline
-        const timelineContainer = document.querySelector('.timeline-container');
-        const timelineItems = document.querySelectorAll('.timeline-item');
-        let processedItems = 0;
-
-        // Sembunyikan item awal
-        timelineItems.forEach((item) => {
-            item.classList.add('hidden'); 
-        });
-
-        const observerOptions = { root: null, rootMargin: '0px', threshold: 0.3 };
-
-        const timelineObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && entry.target.classList.contains('timeline-item')) {
-                    const item = entry.target;
-                    observer.unobserve(item); 
-                    
-                    setTimeout(() => { // Tambah delay sedikit
-                        item.classList.remove('hidden');
-                        item.classList.add('show');
-                        
-                        processedItems++;
-                        const percentage = (processedItems / timelineItems.length) * 100;
-                        
-                        if (timelineContainer) {
-                            timelineContainer.style.setProperty('--line-height-progress', `${percentage}%`);
-                        }
-                    }, 200); // delay 200ms
-                }
-            });
-        }, observerOptions);
         
-        // Mulai mengamati
-        timelineItems.forEach((item) => {
-            timelineObserver.observe(item);
-        });
-        
-        // Set garis awal ke 0%
-        if (timelineContainer) {
-            timelineContainer.style.setProperty('--line-height-progress', '0%');
-        }
-    });
     </script>
-</body>
-</html>
+
+    <main>
