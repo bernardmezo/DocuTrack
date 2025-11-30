@@ -435,6 +435,9 @@ function displayValue($value, $placeholder = 'Belum diisi') {
         
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
         const formWadir = document.getElementById('form-Wadir-approval');
+
+        // [PENTING] Ambil ID Kegiatan dari PHP untuk menyusun URL Action
+        const kegiatanId = "<?php echo $id ?? ''; ?>"; 
         
         // --- Event Listener Tombol Setujui (Wadir) ---
         const btnSetujuiWadir = document.getElementById('btn-setujui-Wadir');
@@ -466,14 +469,17 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             didOpen: () => Swal.showLoading() 
                         });
                         
-                        // TODO: Ganti action form untuk Wadir Setuju
-                        // formWadir.action = '/docutrack/public/wadir/telaah/approve';
-                        formWadir.submit();
+                        // Delay 1.5 detik sebelum submit
+                        setTimeout(() => {
+                            formWadir.action = `/docutrack/public/wadir/telaah/approve/${kegiatanId}`;
+                            formWadir.submit();
+                        }, 1500);
                     }
                 });
             } else {
                 // Fallback jika SweetAlert tidak tersedia
                 if (confirm(`Apakah Anda yakin ingin menyetujui usulan "${namaKegiatan}"?`)) {
+                    formWadir.action = `/docutrack/public/wadir/telaah/approve/${kegiatanId}`;
                     formWadir.submit();
                 }
             }

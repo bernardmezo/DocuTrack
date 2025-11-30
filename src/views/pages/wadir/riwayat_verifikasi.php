@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             tableBody.innerHTML = pageData.map((item, index) => {
                 const no = start + index + 1;
-                const tgl = formatDate(item.tgl_verifikasi);
+                const tgl = formatDate(item.tanggal_pengajuan);
                 
                 // TAMPILAN KOLOM: PRODI (ANAK)
                 const displayProdi = item.prodi || item.jurusan;
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
                         <div class="flex items-center gap-2">
                             <i class="fas fa-calendar-check text-green-500 text-xs"></i>
-                            ${tgl}
+                            ${item.tgl}
                         </div>
                     </td>
                     <td class="px-6 py-5 whitespace-nowrap text-xs font-semibold">

@@ -12,7 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // 2. Muat File Inti & Middleware
 // -----------------------------------------------------------------
-require_once '../src/core/Controller.php'; // Base Controller
+// require_once '../src/core/Controller.php'; // Base Controller
 // Muat semua middleware di awal
 require_once '../src/middleware/AuthMiddleware.php';
 require_once '../src/middleware/RegisterMiddleware.php';
@@ -105,19 +105,6 @@ switch ($main_route) {
         }
         break;
     
-    case 'register':
-        
-        require_once '../src/controllers/AuthController.php';
-        $controller = new AuthController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->handleRegister();
-        } else {
-            // Jika akses GET ke /login, redirect ke home (karena pakai popup)
-            header('Location: /docutrack/public/');
-            exit;
-        }
-        break;
-
     case 'logout':
         require_once '../src/controllers/AuthController.php';
         $controller = new AuthController();
@@ -173,19 +160,39 @@ switch ($main_route) {
             case 'pengajuan-usulan':
                 require_once '../src/controllers/Admin/PengajuanUsulanController.php';
                 $controller = new AdminPengajuanUsulanController(); 
-                $controller->index(['active_page' => $base_admin_path . '/pengajuan-usulan']);
+
+                // DISINI LOGIKANYA:
+                // Router mengecek, apakah ada kata 'store' di potongan URL ke-3 ($param1)?
+                if (isset($param1) && $param1 === 'store') {
+                    
+                    // JIKA ADA 'store', panggil fungsi penyimpanan
+                    $controller->store(); 
+
+                } else {
+                    // JIKA TIDAK ADA (cuma /pengajuan-usulan), tampilkan halaman list biasa
+                    $controller->index(['active_page' => $base_admin_path . '/pengajuan-usulan']);
+                }
                 break;
 
             case 'pengajuan-kegiatan':
                 require_once '../src/controllers/Admin/PengajuanKegiatanController.php';
                 $controller = new AdminPengajuanKegiatanController(); 
                 
-                // Cek apakah ini rute 'show' (e.g., /admin/pengajuan-kegiatan/show/123)
-                if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    // Panggil method show() dengan ID
+                // 1. Cek Rute untuk Submit Form Rincian (BARU)
+                // URL: /admin/pengajuan-kegiatan/submit-rincian
+                if (isset($param1) && $param1 === 'submitRincian') {
+                    $controller->submitRincian();
+                }
+
+                // 2. Cek Rute 'show' (Detail/Form View)
+                // URL: /admin/pengajuan-kegiatan/show/{id}
+                elseif (isset($param1) && $param1 === 'show' && isset($param2)) {
                     $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
-                } else {
-                    // Jika tidak, panggil method index() (halaman list)
+                } 
+                
+                // 3. Default: Halaman List
+                // URL: /admin/pengajuan-kegiatan
+                else {
                     $controller->index(['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
                 }
                 break;
@@ -255,10 +262,23 @@ switch ($main_route) {
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
                     // Rute: /verifikator/telaah/show/[ID]
                     $controller->show($param2, ['active_page' => $base_verifikator_path . '/pengajuan-telaah']);
+                    
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    // Rute: /verifikator/telaah/approve/[ID]
+                    $controller->approve($param2);
+
+                } elseif (isset($param1) && $param1 === 'reject' && isset($param2)) {
+                    // Rute: /verifikator/telaah/reject/[ID]
+                    $controller->reject($param2);
+
+                } elseif (isset($param1) && $param1 === 'revise' && isset($param2)) {
+                    // Rute: /verifikator/telaah/revise/[ID]
+                    $controller->revise($param2);
+
                 } else {
                     // Fallback jika hanya /verifikator/telaah
                     $controller->index(['active_page' => $base_verifikator_path . '/pengajuan-telaah']);
-                }
+                }   
                 break;
             // --- AKHIR RUTE TELAAN ---
 
@@ -316,6 +336,8 @@ switch ($main_route) {
                 $controller = new WadirTelaahController();
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
                     $controller->show($param2, ['active_page' => $base_wadir_path . '/pengajuan-kegiatan']);
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    $controller->approve($param2);
                 } else {
                     header('Location: /docutrack/public/wadir/dashboard');
                 }
@@ -404,6 +426,11 @@ switch ($main_route) {
                     $ref = $_GET['ref'] ?? 'dashboard';
                     $active_page = $base_ppk_path . '/' . $ref;
                     $controller->show($param2, ['active_page' => $active_page]);
+
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    // RUTE BARU: /ppk/telaah/approve/[ID]
+                    $controller->approve($param2); 
+
                 } else {
                     header('Location: /docutrack/public/ppk/dashboard'); // Fallback
                 }

@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ===================================
-    // TEMPLATE STEPPER (4 STEPS)
+    // TEMPLATE STEPPER (4 STEPS)   
     // ===================================
     const stepperTemplates = {
         1: `<nav aria-label="Progress"><ol role="list" class="relative z-0 flex items-center justify-between w-full max-w-4xl mx-auto"><div class="absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 bg-gray-200 -z-10"></div><div class="stepper-line absolute left-0 top-6 w-0 -translate-y-1/2 h-1.5 -z-10 transition-all duration-700 ease-out bg-gradient-to-r from-blue-500 to-cyan-400 line-flow-animation"></div><li class="relative"><a href="#" class="group" aria-current="step"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-white ring-4 ring-blue-500 shadow-xl shadow-blue-500/50 transition-all duration-300"><span class="font-bold md:font-extrabold text-xl md:text-2xl bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">1</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-bold text-blue-600">Data Pengusul</span><span class="block text-[10px] md:text-xs text-blue-500">Sedang diisi</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">2</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Kerangka Acuan</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">3</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Indikator Kinerja</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">4</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Rincian Anggaran</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li></ol></nav>`,
@@ -254,6 +254,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                 allowOutsideClick: false,
                                 didOpen: () => { Swal.showLoading(); }
                             });
+
+                            // ===========================================
+                            // TAMBAHANIN: KONVERSI BUDGET DATA KE JSON
+                            // ===========================================
+                            const rabInput = document.getElementById('rab_data_input');
+                            if (rabInput) {
+                                // Ubah object JS jadi string JSON
+                                rabInput.value = JSON.stringify(budgetData);
+                            }
+
                             if (kakFormElement) kakFormElement.submit();
                         }
                     });
@@ -612,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const pM = { 'uraian': 'uraian', 'rincian': 'rincian', 'vol1': 'vol1', 'sat1': 'sat1', 'vol2': 'vol2', 'sat2': 'sat2', 'harga': 'harga' }; 
             const p = Object.keys(pM).find(k => t.classList.contains(k)); 
             
-            const i = budgetData[activeCategory]?.find(item => item.id === id); 
+            const i = budgetData[activeCategory]?.find(item => item.id === id);
             if (i && p) { 
                 // Handle numbers vs text
                 if (t.type === 'number') {

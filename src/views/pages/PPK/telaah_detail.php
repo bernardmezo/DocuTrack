@@ -6,6 +6,10 @@ $status = $status ?? 'Menunggu';
 
 // Status Boolean
 $is_disetujui = (strtolower($status) === 'disetujui');
+
+// [PERBAIKAN DI SINI]
+// PPK menerima dokumen dengan status 'Menunggu' (karena posisi baru pindah ke PPK)
+// Jadi kita cek apakah statusnya 'menunggu', bukan 'disetujui verifikator'
 $is_menunggu = (strtolower($status) === 'menunggu');
 
 // Data Payload
@@ -401,16 +405,16 @@ function displayValue($value, $placeholder = 'Belum diisi') {
             <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                 
                 <a href="<?php echo htmlspecialchars($back_url); ?>" 
-                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-0.5">
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-0.5">
                     <i class="fas fa-arrow-left text-xs"></i> Kembali
                 </a>
-                 
+                
                 <div class="flex flex-col sm:flex-row-reverse gap-4 w-full sm:w-auto">
                 
                 <?php if ($is_menunggu): ?>
                     <button type="button" id="btn-setujui-PPK" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg">
-                         <i class="fas fa-check-double"></i> Setujui Usulan
+                        <i class="fas fa-check-double"></i> Setujui Usulan
                     </button>
                 
                 <?php elseif ($is_disetujui): ?>
@@ -433,11 +437,17 @@ function displayValue($value, $placeholder = 'Belum diisi') {
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         
+        // Ambil Data dari PHP
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
+        
+        // [PENTING] Ambil ID Kegiatan dari PHP untuk URL action
+        const kegiatanId = "<?php echo $id ?? ''; ?>"; 
+        
         const formPPK = document.getElementById('form-PPK-approval');
         
         // --- Event Listener Tombol Setujui (PPK) ---
         const btnSetujuiPPK = document.getElementById('btn-setujui-PPK');
+        
         btnSetujuiPPK?.addEventListener('click', (e) => {
             e.preventDefault();
             
@@ -466,14 +476,17 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             didOpen: () => Swal.showLoading() 
                         });
                         
-                        // TODO: Ganti action form untuk PPK Setuju
-                        // formPPK.action = '/docutrack/public/ppk/telaah/approve';
+                        // [PERBAIKAN UTAMA DI SINI]
+                        // Set URL Action secara dinamis ke route 'approve'
+                        formPPK.action = `/docutrack/public/ppk/telaah/approve/${kegiatanId}`;
+                        
                         formPPK.submit();
                     }
                 });
             } else {
-                // Fallback jika SweetAlert tidak tersedia
+                // Fallback
                 if (confirm(`Apakah Anda yakin ingin menyetujui usulan "${namaKegiatan}"?`)) {
+                    formPPK.action = `/docutrack/public/ppk/telaah/approve/${kegiatanId}`;
                     formPPK.submit();
                 }
             }

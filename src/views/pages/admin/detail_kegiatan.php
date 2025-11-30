@@ -1,8 +1,7 @@
 <?php
 // File: src/views/pages/admin/rincian_kegiatan.php
 
-$data = $kegiatan_data ?? [];
-$kegiatan_id = $kegiatan_id ?? 1;
+$id = $kegiatan_id?? 1;
 ?>
 
 <main class="main-content font-poppins p-6 md:p-6 -mt-18 max-w-4xl mx-auto w-full relative z-10">
@@ -13,12 +12,12 @@ $kegiatan_id = $kegiatan_id ?? 1;
             <h1 class="text-xl font-semibold text-slate-800 tracking-tight">Lengkapi Rincian</h1>
             <p class="text-sm text-slate-500 mt-2 leading-relaxed">
                 Anda sedang mengisi data untuk kegiatan: <br>
-                <span class="text-blue-600 font-medium text-base"><?php echo htmlspecialchars($nama); ?></span>
+                <!-- <span class="text-blue-600 font-medium text-base"><?php echo htmlspecialchars($namaKeg); ?></span> -->
             </p>
         </div>
         
-        <form id="rincian-kegiatan-form" action="#" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="kegiatan_id" value="<?php echo htmlspecialchars($kegiatan_id); ?>">
+        <form id="rincian-kegiatan-form" action="/docutrack/public/admin/pengajuan-kegiatan/submitRincian" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="kegiatan_id" value="<?php echo htmlspecialchars($id); ?>">
 
             <div class="px-8 py-8 space-y-8">
                 
@@ -212,21 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }).then((result) => {
                         if (result.dismiss === Swal.DismissReason.timer) {
-                            const Toast = Swal.mixin({
-                                toast: true, position: 'top-end', showConfirmButton: false,
-                                timer: 3000, timerProgressBar: true,
-                                didOpen: (toast) => {
-                                    toast.addEventListener('mouseenter', Swal.stopTimer)
-                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
-                                },
-                                customClass: {
-                                    popup: 'rounded-xl font-poppins border-l-4 border-emerald-500 shadow-lg',
-                                    title: 'text-slate-800 font-semibold'
-                                }
-                            });
-                            Toast.fire({ icon: 'success', title: 'Data Berhasil Disimpan' }).then(() => {
-                                window.location.href = '/docutrack/public/admin/pengajuan-kegiatan'; 
-                            });
+                            form.submit();
                         }
                     });
                 }
