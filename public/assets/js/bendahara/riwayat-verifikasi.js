@@ -212,13 +212,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // PERUBAHAN TAMPILAN: PRODI DISAMPING NIM (ABU-ABU)
+                // PERUBAHAN TAMPILAN: PRODI DISAMPING NIM (ABU-ABU) + LINK KE DETAIL
                 return `
-                    <tr class='${rowClass} hover:bg-blue-50/50 transition-colors duration-150'>
+                    <tr class='${rowClass} hover:bg-blue-50/50 transition-colors duration-150 cursor-pointer' onclick="window.location.href='/docutrack/public/bendahara/riwayat-verifikasi/show/${item.id}?ref=riwayat-verifikasi'">
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
                         <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
                             <div class="flex flex-col">
-                                <span class="font-medium text-gray-900">${this.escapeHtml(item.nama)}</span>
+                                <span class="font-medium text-gray-900 hover:text-blue-600">${this.escapeHtml(item.nama)}</span>
                                 <span class="text-xs text-gray-500 mt-1">
                                     <i class="fas fa-user-graduate mr-1 text-gray-400"></i>
                                     ${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}) - ${this.escapeHtml(displayProdi)}

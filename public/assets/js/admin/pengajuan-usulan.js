@@ -480,12 +480,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===================================
     // Data Structure Updated for double volume (vol1, sat1, vol2, sat2)
     let budgetData = {
-        "Belanja Barang": [
-            { id: Date.now(), uraian: 'Konsumsi Rapat', rincian: 'Snack Box', vol1: 50, sat1: 'Org', vol2: 3, sat2: 'Kali', harga: 15000 }
-        ],
-        "Belanja Jasa": [
-            { id: Date.now() + 1, uraian: 'Sewa Peralatan', rincian: 'Sewa Sound System', vol1: 1, sat1: 'Paket', vol2: 2, sat2: 'Hari', harga: 500000 }
-        ],
+        "Belanja Barang": [],
+        "Belanja Jasa": [],
         "Belanja Perjalanan": []
     };
     let activeCategory = "Belanja Barang";

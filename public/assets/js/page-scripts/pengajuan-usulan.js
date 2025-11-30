@@ -195,12 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===================================
     // Variabel ini akan menampung semua data RAB
     let budgetData = {
-        "Belanja Barang": [
-             { id: Date.now(), uraian: 'Konsumsi Rapat', rincian: 'Snack Box', satuan: 'Box', volume: 50, harga: 15000 }
-        ],
-        "Belanja Jasa": [
-             { id: Date.now() + 1, uraian: 'Sewa Peralatan', rincian: 'Sewa Sound System', satuan: 'Hari', volume: 2, harga: 500000 }
-        ],
+        "Belanja Barang": [],
+        "Belanja Jasa": [],
         "Belanja Perjalanan": []
     };
     let activeCategory = "Belanja Barang"; // Default
