@@ -2,7 +2,7 @@
 // File: src/views/pages/verifikator/telaah_detail.php (HANYA UNTUK VERIFIKATOR)
 
 // --- 1. Setup Variabel (HANYA UNTUK VERIFIKATOR) ---
-$kegiatanId = $kegiatan_data['kegiatanId'] ?? '';
+$kegiatanId = $kegiatan_data['kegiatanId'] ?? $id ?? '';
 
 $status = $status ?? 'Menunggu';
 $user_role = $user_role ?? 'verifikator'; 
@@ -461,7 +461,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         // --- 1. Ambil Status & Nama dari PHP ---
         const isDisetujui = <?php echo json_encode($is_disetujui); ?>;
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
-        const kegiatanId = <?php echo json_encode($kegiatan_data['kegiatanId']) ??  1; ?>;
+        const kegiatanId = <?php echo json_encode($kegiatanId ?: $id); ?>;
 
         // --- 2. Fallback Fungsi formatRupiah ---
         if (typeof formatRupiah !== 'function') {
@@ -638,12 +638,16 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({ title: 'Ditolak!', text: 'Usulan telah ditolak.', icon: 'success', customClass: { popup: 'swal-loading' } });
+                    Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     
-                    // pas btn-setujui-usulan, ngetriger form action ke reject
+                    // Tambahkan hidden input untuk alasan penolakan (dari SweetAlert input)
+                    const alasanInput = document.createElement('input');
+                    alasanInput.type = 'hidden';
+                    alasanInput.name = 'alasan_penolakan';
+                    alasanInput.value = result.value; // Ambil nilai dari SweetAlert textarea
+                    formVerifikasi.appendChild(alasanInput);
+                    
                     formVerifikasi.action = "/docutrack/public/verifikator/telaah/reject/" + kegiatanId + "?ref=detail";
-
-                    // formVerifikasi.submit();
                     formVerifikasi.submit();
                 }
             });

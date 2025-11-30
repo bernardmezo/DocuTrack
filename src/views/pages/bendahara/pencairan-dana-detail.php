@@ -324,6 +324,24 @@ if (!function_exists('formatRupiah')) {
                             </label>
                         </div>
                     </div>
+                    
+                    <!-- ✅ Input Tanggal Batas LPJ -->
+                    <div class="md:col-span-2">
+                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            Batas Waktu Pengumpulan LPJ <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative mt-1">
+                            <input type="date" 
+                                   id="tenggat_lpj"
+                                   name="tenggat_lpj" 
+                                   min="<?= date('Y-m-d') ?>"
+                                   class="block w-full px-4 py-3 text-sm <?= $status_lower === 'dana diberikan' ? 'bg-gray-100' : '' ?> border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   <?= $status_lower === 'dana diberikan' ? 'readonly' : 'required' ?>>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">
+                            <i class="fas fa-info-circle"></i> Mahasiswa harus mengumpulkan LPJ sebelum tanggal ini
+                        </p>
+                    </div>
                 </div>
             </div>
             <?php endif; ?>
@@ -385,9 +403,9 @@ function formatRupiah(input) {
 function konfirmasiCairkan() {
     const form = document.getElementById('formPencairan');
     const jumlah = document.getElementById('jumlah_dicairkan').value.replace(/\./g, '');
+    const tenggatLpj = document.getElementById('tenggat_lpj').value;
     
-    // LOGIC UPDATE: Validasi batas maksimal dihapus sesuai permintaan
-    
+    // Validasi jumlah
     if (!jumlah || parseInt(jumlah) <= 0) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -402,12 +420,28 @@ function konfirmasiCairkan() {
         return;
     }
     
+    // ✅ Validasi tenggat LPJ
+    if (!tenggatLpj) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Batas LPJ Belum Diisi',
+                text: 'Tanggal batas pengumpulan LPJ wajib diisi!',
+                confirmButtonColor: '#3B82F6'
+            });
+        } else {
+            alert('Tanggal batas pengumpulan LPJ wajib diisi!');
+        }
+        return;
+    }
+    
     const formatted = parseInt(jumlah).toLocaleString('id-ID');
+    const formattedTanggal = new Date(tenggatLpj).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Cairkan Dana?',
-            html: `Apakah Anda yakin akan menyetujui dan mencairkan dana sebesar<br><strong class="text-blue-600">Rp ${formatted}</strong>?<br><br><small class="text-red-600">Tindakan ini tidak dapat dibatalkan.</small>`,
+            html: `Apakah Anda yakin akan menyetujui dan mencairkan dana sebesar<br><strong class="text-blue-600">Rp ${formatted}</strong>?<br><br><small class="text-gray-600">Batas pengumpulan LPJ: <strong>${formattedTanggal}</strong></small><br><br><small class="text-red-600">Tindakan ini tidak dapat dibatalkan.</small>`,
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#3B82F6',
@@ -435,7 +469,7 @@ function konfirmasiCairkan() {
             }
         });
     } else {
-        if (confirm('Apakah Anda yakin akan mencairkan dana sebesar Rp ' + formatted + '?\n\nTindakan ini tidak dapat dibatalkan.')) {
+        if (confirm('Apakah Anda yakin akan mencairkan dana sebesar Rp ' + formatted + '?\nBatas LPJ: ' + formattedTanggal + '\n\nTindakan ini tidak dapat dibatalkan.')) {
             const actionInput = document.createElement('input');
             actionInput.type = 'hidden';
             actionInput.name = 'action';
