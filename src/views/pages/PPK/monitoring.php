@@ -13,7 +13,6 @@ if (!isset($list_jurusan)) { $list_jurusan = []; }
             <p class="text-sm text-gray-500 mt-1">Monitor semua progres pengajuan KAK dan LPJ secara real-time.</p>
         </div>
 
-        <!-- Filter UI -->
         <div class="flex flex-col gap-4 mb-6">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex-shrink-0 w-full md:w-auto p-1 bg-gray-100 rounded-full flex items-center space-x-1 overflow-x-auto">
@@ -48,7 +47,6 @@ if (!isset($list_jurusan)) { $list_jurusan = []; }
             </div>
         </div>
         
-        <!-- Table -->
         <div class="overflow-x-auto">
             <div class="w-full min-w-[900px]">
                 <div class="grid grid-cols-3 gap-4 px-4 py-3 bg-gray-50 rounded-t-lg">
@@ -58,14 +56,13 @@ if (!isset($list_jurusan)) { $list_jurusan = []; }
                 </div>
                 
                 <div id="monitoring-table-body" class="divide-y divide-gray-100 relative min-h-[200px]">
-                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-40 hidden">
+                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-40">
                         <i class="fas fa-spinner fa-spin text-blue-600 text-3xl"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Pagination -->
         <div class="flex flex-col md:flex-row justify-between items-center mt-6 pt-5 border-t border-gray-100">
             <p id="pagination-info" class="text-sm text-gray-600 mb-4 md:mb-0">Menampilkan 0 dari 0 hasil</p>
             <nav id="pagination-nav" class="flex items-center gap-1"></nav>
@@ -89,78 +86,73 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSearch = '';
     let debounceTimer;
 
-    // Progress Bar Visualizer
+    // Render Progress Bar (Sama seperti Wadir)
     function renderProposalProgressJS(tahapSekarang, status) {
-        // Step yang didefinisikan di Frontend
-        const tahapanAll = ['Pengajuan', 'Verifikasi', 'ACC PPK', 'Dana Cair', 'LPJ'];
+        const tahapanAll = ['Pengajuan', 'Verifikasi', 'ACC PPK', 'ACC WD', 'Dana Cair', 'LPJ'];
         
-        const statusLower = (status || '').toLowerCase();
+        const statusLower = status.toLowerCase();
         const isDitolak = (statusLower === 'ditolak');
-        
-        // Cari index tahap sekarang di array
+        const isApproved = (statusLower === 'approved');
+        const isMenunggu = (statusLower === 'menunggu');
+
         let posisiSekarang = tahapanAll.indexOf(tahapSekarang);
-        
-        // Fallback jika string dari DB berbeda sedikit
-        if (posisiSekarang === -1) {
-            if (tahapSekarang === 'Review LPJ') posisiSekarang = 4; // Anggap LPJ
-            else if (tahapSekarang === 'ACC WD') posisiSekarang = 2; 
-            else posisiSekarang = 0; // Default Pengajuan
-        }
+        if (posisiSekarang === -1) posisiSekarang = 0;
         
         const totalLangkah = tahapanAll.length - 1;
-        let lebarBiru = 0;
+        
+        let lebarBiru = 0, lebarMerah = 0, lebarHijau = 0, leftMerah = 0, leftHijau = 0, lebarAktifBiru = 0, leftAktifBiru = 0;
 
         if (posisiSekarang > 0) {
-            lebarBiru = ( (posisiSekarang) / totalLangkah ) * 100;
+            lebarBiru = ( (posisiSekarang - 1) / totalLangkah ) * 100;
         }
 
-        // Warna Bar
-        let barColor = 'bg-blue-500';
         if (isDitolak) {
-            barColor = 'bg-red-500';
-        } else if (tahapSekarang === 'LPJ' || tahapSekarang === 'Selesai') {
-            barColor = 'bg-green-500';
-            lebarBiru = 100;
+            lebarMerah = (1 / totalLangkah) * 100;
+            leftMerah = lebarBiru;
+        } else if (isApproved) {
+            lebarBiru = ( (totalLangkah - 1) / totalLangkah ) * 100;
+            lebarHijau = (1 / totalLangkah) * 100;
+            leftHijau = lebarBiru;
+        } else if (!isMenunggu || posisiSekarang > 0) {
+            lebarAktifBiru = (1 / totalLangkah) * 100;
+            leftAktifBiru = lebarBiru;
         }
 
-        // letakkan garis sedikit lebih rendah (58%) dan nodes sedikit lebih atas (38%),
-        // serta tingkatkan tinggi container ke h-16 sehingga ada ruang untuk label
         let linesHTML = `
-            <div class="absolute left-0 w-full h-1 bg-gray-200 z-0 transform -translate-y-1/4 rounded-full" style="top:58%;"></div>
-            <div class="absolute left-0 h-1 ${barColor} z-10 transform -translate-y-1/2 transition-all duration-500 ease-out rounded-full" style="top:58%; width: ${lebarBiru}%;"></div>
+            <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 z-0 transform -translate-y-1/2"></div>
+            <div class="absolute top-1/2 left-0 h-1 bg-blue-500 z-10 transform -translate-y-1/2 transition-all duration-500 ease-out" style="width: ${lebarBiru}%;"></div>
         `;
+        if (lebarMerah > 0) linesHTML += `<div class="absolute top-1/2 h-1 bg-red-500 z-20 transform -translate-y-1/2" style="left: ${leftMerah}%; width: ${lebarMerah}%;"></div>`;
+        if (lebarHijau > 0) linesHTML += `<div class="absolute top-1/2 h-1 bg-green-500 z-20 transform -translate-y-1/2" style="left: ${leftHijau}%; width: ${lebarHijau}%;"></div>`;
+        if (lebarAktifBiru > 0) linesHTML += `<div class="absolute top-1/2 h-1 bg-blue-500 z-20 transform -translate-y-1/2" style="left: ${leftAktifBiru}%; width: ${lebarAktifBiru}%;"></div>`;
 
         let nodesHTML = '';
         tahapanAll.forEach((namaTahap, index) => {
             const leftPosition = totalLangkah > 0 ? (index / totalLangkah) * 100 : 0;
-            let isCompleted = index <= posisiSekarang;
+            let isCompleted = index < posisiSekarang;
             let isActive = index === posisiSekarang;
-            
-            let nodeClass = 'bg-gray-300 border-gray-300';
-            let textClass = 'text-gray-400';
+            let nodeClass = 'bg-gray-300', textClass = 'text-gray-400';
 
-            if (isCompleted) {
-                if (isDitolak && isActive) {
-                    nodeClass = 'bg-red-500 border-red-500 ring-2 ring-red-200';
-                    textClass = 'text-red-600 font-bold';
-                } else if ((tahapSekarang === 'LPJ') && isActive) {
-                    nodeClass = 'bg-green-500 border-green-500 ring-2 ring-green-200';
-                    textClass = 'text-green-600 font-bold';
-                } else {
-                    nodeClass = 'bg-blue-500 border-blue-500';
-                    textClass = 'text-blue-600';
-                }
+            if (isCompleted) { nodeClass = 'bg-blue-500'; textClass = 'text-blue-600'; }
+            else if (isActive) {
+                if (isDitolak) { nodeClass = 'bg-red-500 ring-4 ring-red-200 scale-110'; textClass = 'text-red-600 font-bold'; }
+                else { nodeClass = 'bg-blue-500 ring-4 ring-blue-200 scale-110'; textClass = 'text-blue-600 font-bold'; }
+            }
+            
+            if (isApproved) {
+                nodeClass = 'bg-blue-500'; textClass = 'text-blue-600';
+                if (namaTahap === 'LPJ') { nodeClass = 'bg-green-500 ring-4 ring-green-200 scale-110'; textClass = 'text-green-600 font-bold'; }
             }
 
             nodesHTML += `
-                <div class='absolute z-20 flex flex-col items-center' style='left: ${leftPosition}%; transform: translateX(-50%); top:38%;'>
-                    <div class='w-3 h-3 rounded-full border ${nodeClass} transition-all duration-300 bg-white'></div>
-                    <span class='absolute -bottom-10 text-[10px] w-24 text-center ${textClass} leading-tight hidden md:block'>${namaTahap}</span>
+                <div class='absolute z-30 flex flex-col items-center' style='left: ${leftPosition}%; transform: translateX(-50%);' title='${namaTahap}'>
+                    <div class='w-4 h-4 rounded-full border-2 border-white ${nodeClass} transition-all duration-300'></div>
+                    <span class='absolute -bottom-5 text-xs w-20 text-center ${textClass} hidden md:block'>${namaTahap}</span>
                 </div>
             `;
         });
         
-        return `<div class="relative w-full h-16 flex items-center mt-2 mb-2 px-2">${linesHTML}${nodesHTML}</div>`;
+        return `<div class="relative w-full h-10 flex items-center">${linesHTML}${nodesHTML}</div>`;
     }
     
     // RENDER TABLE
@@ -168,48 +160,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tableBody) return;
         tableBody.innerHTML = '';
         
-        if (!proposals || proposals.length === 0) {
+        if (proposals.length === 0) {
             tableBody.innerHTML = `<div class="text-center py-10 text-gray-500 italic">Tidak ada proposal yang cocok dengan filter Anda.</div>`;
             return;
         }
 
         let delay = 0;
         proposals.forEach(item => {
-            const statusLower = (item.status || '').toLowerCase();
+            const statusLower = item.status.toLowerCase();
+            let rowClass = 'bg-white', rowStyle = '';
+            
+            if (statusLower === 'approved' || statusLower === 'ditolak') rowStyle = 'opacity-70';
+            else if (statusLower === 'in process' || statusLower === 'menunggu') rowClass = 'bg-blue-50';
             
             const statusClass = {
-                'approved': 'text-green-700 bg-green-100 border-green-200',
-                'disetujui': 'text-green-700 bg-green-100 border-green-200',
-                'ditolak': 'text-red-700 bg-red-100 border-red-200',
-                'in process': 'text-blue-700 bg-blue-100 border-blue-200',
-                'menunggu': 'text-yellow-700 bg-yellow-100 border-yellow-200'
-            }[statusLower] || 'text-gray-700 bg-gray-100 border-gray-200';
+                'approved': 'text-green-700 bg-green-100',
+                'ditolak': 'text-red-700 bg-red-100',
+                'in process': 'text-blue-700 bg-blue-100',
+            }[statusLower] || 'text-yellow-700 bg-yellow-100';
 
-            const displayJurusan = item.prodi ? item.prodi : (item.jurusan || '-');
-            const displayNama = item.nama || 'Tanpa Judul';
-            const displayPengusul = item.nama_lengkap || item.pengusul || 'N/A';
-            const displayNIM = item.nim || '-';
-            
-            // PENTING: Ambil tahap_sekarang dari JSON response
-            const displayTahap = item.tahap_sekarang || 'Pengajuan';
-            const displayStatus = item.status || 'Unknown';
+            // Logic tampilan Prodi (Jika ada, tampilkan prodi. Jika kosong, tampilkan jurusan)
+            const displayJurusan = item.prodi ? item.prodi : item.jurusan;
 
-            delay += 50; 
+            delay += 80;
             
             tableBody.insertAdjacentHTML('beforeend', `
-                <div class='grid grid-cols-3 gap-4 px-4 py-5 items-center transition-colors border-b border-gray-100 hover:bg-gray-50 animate-reveal' style="animation-delay: ${delay}ms;">
+                <div class='monitoring-row grid grid-cols-3 gap-4 px-4 py-5 items-center transition-colors animate-reveal ${rowClass}' style="animation-delay: ${delay}ms; ${rowStyle}">
                     <div>
-                        <p class="text-sm text-gray-900 font-bold line-clamp-2" title="${displayNama}">${displayNama}</p>
-                        <p class="text-xs text-gray-600 mt-1">${displayPengusul} <span class="text-gray-400">(${displayNIM})</span></p>
+                        <p class="text-sm text-gray-900 font-bold">${item.nama}</p>
+                        <p class="text-xs text-gray-600 mt-1">${item.pengusul} <span class="text-gray-400">(${item.nim})</span></p>
                         <p class="text-xs text-gray-500 mt-0.5"><i class="fas fa-graduation-cap mr-1"></i>${displayJurusan}</p>
                     </div>
-                    <div class="px-2">
-                        ${renderProposalProgressJS(displayTahap, displayStatus)}
-                    </div>
+                    <div class="px-2">${renderProposalProgressJS(item.tahap_sekarang, item.status)}</div>
                     <div>
-                        <span class='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${statusClass}'>
-                            ${displayStatus}
-                        </span>
+                        <span class='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusClass}'>${item.status}</span>
                     </div>
                 </div>
             `);
@@ -220,35 +204,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!paginationNav || !paginationInfo) return;
         paginationNav.innerHTML = '';
         
-        paginationInfo.innerHTML = `Menampilkan <span class="font-semibold text-gray-900">${pagination.showingFrom}</span> - <span class="font-semibold text-gray-900">${pagination.showingTo}</span> dari <span class="font-semibold text-gray-900">${pagination.totalItems}</span> data`;
+        paginationInfo.innerHTML = `Menampilkan <span class="font-semibold">${pagination.showingFrom}</span> s.d. <span class="font-semibold">${pagination.showingTo}</span> dari <span class="font-semibold">${pagination.totalItems}</span> hasil`;
         
         if (pagination.totalPages <= 1) return;
 
-        // Prev Button
-        paginationNav.innerHTML += `
-            <button class="pagination-btn w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
-                data-page="${pagination.currentPage - 1}" ${pagination.currentPage === 1 ? 'disabled' : ''}>
-                <i class="fas fa-chevron-left text-xs"></i>
-            </button>`;
+        paginationNav.innerHTML += `<button class="pagination-btn px-3 py-1 rounded-md text-sm ${pagination.currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}" data-page="${pagination.currentPage - 1}" ${pagination.currentPage === 1 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i></button>`;
         
-        // Page Numbers Logic
-        let startPage = Math.max(1, pagination.currentPage - 2);
-        let endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === pagination.currentPage) {
-                paginationNav.innerHTML += `<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-medium shadow-sm cursor-default" disabled>${i}</button>`;
-            } else {
-                paginationNav.innerHTML += `<button class="pagination-btn w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium transition-colors" data-page="${i}">${i}</button>`;
-            }
+        for (let i = 1; i <= pagination.totalPages; i++) {
+            if (i === pagination.currentPage) paginationNav.innerHTML += `<button class="pagination-btn px-3 py-1 rounded-md text-sm font-medium bg-blue-600 text-white" data-page="${i}" disabled>${i}</button>`;
+            else paginationNav.innerHTML += `<button class="pagination-btn px-3 py-1 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100" data-page="${i}">${i}</button>`;
         }
         
-        // Next Button
-        paginationNav.innerHTML += `
-            <button class="pagination-btn w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors" 
-                data-page="${pagination.currentPage + 1}" ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}>
-                <i class="fas fa-chevron-right text-xs"></i>
-            </button>`;
+        paginationNav.innerHTML += `<button class="pagination-btn px-3 py-1 rounded-md text-sm ${pagination.currentPage === pagination.totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}" data-page="${pagination.currentPage + 1}" ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}><i class="fas fa-chevron-right"></i></button>`;
     }
 
     async function fetchData() {
@@ -258,42 +225,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const response = await fetch(url);
-            
-            // Cek jika response bukan OK
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `Server Error: ${response.status}`);
-            }
-            
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             renderTable(data.proposals);
             renderPagination(data.pagination);
         } catch (error) {
             console.error('Fetch error:', error);
-            if(tableBody) tableBody.innerHTML = `<div class="text-center py-10 text-red-500 italic flex flex-col items-center"><i class="fas fa-exclamation-triangle text-2xl mb-2"></i>Gagal memuat data: ${error.message}</div>`;
+            if(tableBody) tableBody.innerHTML = `<div class="text-center py-10 text-red-500 italic">Gagal memuat data.</div>`;
         } finally {
             if (loadingSpinner) loadingSpinner.classList.add('hidden');
         }
     }
 
-    // Event Listeners
     searchInput?.addEventListener('input', () => {
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => { 
-            currentPage = 1; 
-            currentSearch = searchInput.value; 
-            fetchData(); 
-        }, 500);
+        debounceTimer = setTimeout(() => { currentPage = 1; currentSearch = searchInput.value; fetchData(); }, 500);
     });
 
     filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            filterTabs.forEach(t => t.classList.remove('active-tab', 'bg-blue-600', 'text-white', 'shadow-md'));
-            filterTabs.forEach(t => t.classList.add('text-gray-600'));
-            
-            tab.classList.remove('text-gray-600');
-            tab.classList.add('active-tab', 'bg-blue-600', 'text-white', 'shadow-md');
-            
+            filterTabs.forEach(t => t.classList.remove('active-tab'));
+            tab.classList.add('active-tab');
             currentPage = 1;
             currentStatus = tab.dataset.status.toLowerCase();
             fetchData();
@@ -308,23 +260,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     paginationNav?.addEventListener('click', (e) => {
         const button = e.target.closest('.pagination-btn');
-        if (button && !button.disabled) { 
-            currentPage = parseInt(button.dataset.page); 
-            fetchData(); 
-        }
+        if (button && !button.disabled) { currentPage = parseInt(button.dataset.page); fetchData(); }
     });
     
-    // Initial Load
     fetchData();
 });
 </script>
 
 <style>
 .riwayat-filter-tab {
-    @apply px-4 py-2 text-sm font-medium text-gray-600 rounded-full transition-all duration-200 whitespace-nowrap border border-transparent;
+    @apply px-4 py-2 text-sm font-medium text-gray-600 rounded-full transition-all duration-200 whitespace-nowrap;
 }
 .riwayat-filter-tab:hover {
     @apply bg-gray-200;
+}
+.riwayat-filter-tab.active-tab {
+    @apply bg-blue-600 text-white shadow-md;
 }
 @keyframes reveal {
     from { opacity: 0; transform: translateY(10px); }
@@ -333,5 +284,18 @@ document.addEventListener('DOMContentLoaded', () => {
 .animate-reveal {
     animation: reveal 0.4s ease-out forwards;
     opacity: 0;
+}
+/* Dropdown styling */
+#filter-jurusan {
+    color: #1f2937 !important;
+    background-color: #ffffff !important;
+}
+#filter-jurusan option {
+    color: #1f2937 !important;
+    background-color: #ffffff !important;
+    padding: 8px 12px;
+}
+#filter-jurusan:focus {
+    color: #1f2937 !important;
 }
 </style>

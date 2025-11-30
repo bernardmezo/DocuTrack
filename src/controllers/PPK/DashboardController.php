@@ -13,6 +13,13 @@ class PPKDashboardController extends Controller {
 
         // 2. Ambil Data Real dari Database
         $stats = $model->getDashboardStats();
+
+        $stats = [
+            'total' => $stats['total'],
+            'disetujui' => $stats['disetujui'],
+            'menunggu' => $stats['menunggu']
+        ];
+
         $list_usulan_all = $model->getDashboardKAK();
 
         // 3. LOGIKA FILTER JURUSAN (Tetap dipertahankan di sisi Controller/PHP)

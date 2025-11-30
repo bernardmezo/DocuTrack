@@ -20,21 +20,11 @@ class VerifikatorDashboardController extends Controller {
 
         $list_usulan = $model->getDashboardKAK();
 
-        
-        // Hitung statistik
-        $total = count($list_usulan);
-        $disetujui = count(array_filter($list_usulan, fn($u) => strtolower($u['status']) === 'disetujui'));
-        $ditolak = count(array_filter($list_usulan, fn($u) => strtolower($u['status']) === 'ditolak'));
-        $pending = count(array_filter($list_usulan, function($u) {
-            $s = strtolower($u['status']);
-            return $s === 'menunggu' || $s === 'telah direvisi';
-        }));
-        
         $stats = [
-            'total' => $total,
-            'disetujui' => $disetujui,
-            'ditolak' => $ditolak,
-            'pending' => $pending
+            'total' => $stats['total'],
+            'disetujui' => $stats['disetujui'],
+            'ditolak' => $stats['ditolak'],
+            'pending' => $stats['pending']
         ];
         
         // Daftar Jurusan Unik (Untuk Dropdown Filter)

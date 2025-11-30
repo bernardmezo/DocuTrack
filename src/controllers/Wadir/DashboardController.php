@@ -13,6 +13,13 @@ class WadirDashboardController extends Controller {
 
         // 2. Ambil Data Real
         $stats = $model->getDashboardStats();
+
+        $stats = [
+            'total' => $stats['total'],
+            'disetujui'=> $stats['disetujui'],
+            'menunggu'=> $stats['menunggu']
+        ];
+
         $list_usulan_all = $model->getDashboardKAK(); // Hanya ambil yg posisiId = 3
 
         // 3. Filter Jurusan

@@ -20,24 +20,11 @@ class wadirModel {
         // ID ROLE: 3=Wadir, 5=Bendahara
         
         $query = "SELECT 
-                    COUNT(*) as total,
+                    SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as total,
                     -- Disetujui Wadir: Jika posisi sudah di Bendahara (5)
-                    SUM(CASE 
-                        WHEN posisiId = 5 AND statusUtamaId != 4 THEN 1 
-                        ELSE 0 
-                    END) as disetujui,
-                    
-                    -- Ditolak
-                    SUM(CASE 
-                        WHEN statusUtamaId = 4 THEN 1 
-                        ELSE 0 
-                    END) as ditolak,
-
+                    SUM(CASE WHEN posisiId = 5 AND statusUtamaId != 4 THEN 1 ELSE 0 END) as disetujui,
                     -- Menunggu: Sedang di meja Wadir (Posisi = 3)
-                    SUM(CASE 
-                        WHEN posisiId = 3 THEN 1 
-                        ELSE 0 
-                    END) as menunggu
+                    SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as menunggu
 
                 FROM tbl_kegiatan";   
         
@@ -173,6 +160,118 @@ class wadirModel {
             while ($r = mysqli_fetch_assoc($result)) $data[] = $r; 
         }
         return $data;
+    }
+
+    /**
+     * ====================================================
+     * 6. MONITORING DATA (SAMA DENGAN PPK)
+     * ====================================================
+     */
+    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter) {
+        $offset = ($page - 1) * $perPage;
+        
+        // Base Query
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.createdAt as tanggal,
+                    k.posisiId,
+                    k.statusUtamaId,
+                    
+                    -- MAPPING PROGRESS (Sesuai Flowchart)
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.posisiId = 1 THEN 'Pengajuan'    
+                        WHEN k.posisiId = 2 THEN 'Verifikasi'   
+                        WHEN k.posisiId = 4 THEN 'ACC PPK'      
+                        WHEN k.posisiId = 3 THEN 'ACC WD'       -- Konsisten dengan JS ('ACC WD')
+                        WHEN k.posisiId = 5 THEN 'Dana Cair'    
+                        ELSE 'Unknown'
+                    END as tahap_sekarang,
+
+                    -- Status Label
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.posisiId = 5 THEN 'Approved'
+                        ELSE 'In Process'
+                    END as status
+
+                  FROM tbl_kegiatan k
+                  WHERE 1=1 ";
+        
+        // Filter Search
+        if (!empty($search)) {
+            $search = mysqli_real_escape_string($this->db, $search);
+            $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
+        }
+
+        // Filter Status
+        if ($statusFilter !== 'semua') {
+            if ($statusFilter === 'ditolak') {
+                $query .= " AND k.statusUtamaId = 4";
+            } elseif ($statusFilter === 'approved') {
+                $query .= " AND k.posisiId = 5";
+            } elseif ($statusFilter === 'menunggu') {
+                $query .= " AND k.posisiId = 3"; // Menunggu di meja Wadir
+            } elseif ($statusFilter === 'in process') {
+                $query .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+            }
+        }
+
+        // Filter Jurusan
+        if ($jurusanFilter !== 'semua') {
+            $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
+            $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
+        }
+
+        // Hitung Total Data
+        $countQuery = str_replace("SELECT \n                    k.kegiatanId as id,", "SELECT COUNT(*) as total", $query);
+        // Simplifikasi count query untuk performa (opsional, tapi string replace di atas kadang rawan jika select kompleks)
+        $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
+        // Re-apply logic (Simpelnya ambil logic WHERE saja jika mau)
+        // Untuk amannya, copy logic WHERE di atas:
+        if (!empty($search)) { $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')"; }
+        if ($statusFilter !== 'semua') {
+             if ($statusFilter === 'ditolak') $countQuery .= " AND k.statusUtamaId = 4";
+             elseif ($statusFilter === 'approved') $countQuery .= " AND k.posisiId = 5";
+             elseif ($statusFilter === 'menunggu') $countQuery .= " AND k.posisiId = 3";
+             elseif ($statusFilter === 'in process') $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+        }
+        if ($jurusanFilter !== 'semua') { $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'"; }
+
+        $query .= " ORDER BY k.createdAt DESC LIMIT $perPage OFFSET $offset";
+
+        $totalResult = mysqli_query($this->db, $countQuery);
+        $totalItems = ($totalResult) ? mysqli_fetch_assoc($totalResult)['total'] : 0;
+
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+
+        return [
+            'data' => $data,
+            'totalItems' => $totalItems
+        ];
+    }
+
+    public function getListJurusanDistinct() {
+        $query = "SELECT DISTINCT jurusanPenyelenggara as jurusan FROM tbl_kegiatan WHERE jurusanPenyelenggara IS NOT NULL AND jurusanPenyelenggara != '' ORDER BY jurusanPenyelenggara ASC";
+        $result = mysqli_query($this->db, $query);
+        $list = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $list[] = $row['jurusan'];
+            }
+        }
+        return $list;
     }
 }
 ?>

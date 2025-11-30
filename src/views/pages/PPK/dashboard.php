@@ -2,7 +2,7 @@
 // File: src/views/pages/PPK/dashboard.php
 
 // Ambil data yang dikirim dari PPKDashboardController
-$stats = $stats ?? ['total' => 0, 'disetujui' => 0, 'menunggu' => 0];
+$stats = $stats;
 $list_usulan = $list_usulan ?? [];
 $current_page = $current_page ?? 1;
 $total_pages = $total_pages ?? 1;

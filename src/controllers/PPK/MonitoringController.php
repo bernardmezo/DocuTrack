@@ -25,9 +25,10 @@ class PPKMonitoringController extends Controller {
 
         try {
             $page = (int)($_GET['page'] ?? 1);
-            $status_filter = strtolower($_GET['status'] ?? 'semua');
-            $jurusan_filter = $_GET['jurusan'] ?? 'semua';
-            $search_text = trim($_GET['search'] ?? '');
+            // decodeURIComponent untuk menangani spasi atau karakter khusus di URL
+            $status_filter = isset($_GET['status']) ? strtolower(urldecode($_GET['status'])) : 'semua';
+            $jurusan_filter = isset($_GET['jurusan']) ? urldecode($_GET['jurusan']) : 'semua';
+            $search_text = isset($_GET['search']) ? trim(urldecode($_GET['search'])) : '';
             $per_page = 5;
 
             $model = new ppkModel();
@@ -35,10 +36,13 @@ class PPKMonitoringController extends Controller {
             // Panggil Fungsi dari Model
             $result = $model->getMonitoringData($page, $per_page, $search_text, $status_filter, $jurusan_filter);
 
-            $proposals = $result['data'];
-            $total_items = $result['totalItems'];
-            $total_pages = max(1, ceil($total_items / $per_page));
+            // Pastikan result memiliki key 'data' dan 'totalItems'
+            $proposals = $result['data'] ?? [];
+            $total_items = $result['totalItems'] ?? 0;
             
+            $total_pages = ($total_items > 0) ? ceil($total_items / $per_page) : 1;
+            
+            // Hitung range data yang ditampilkan
             $offset = ($page - 1) * $per_page;
             $showingFrom = $total_items > 0 ? $offset + 1 : 0;
             $showingTo = $total_items > 0 ? min($offset + count($proposals), $total_items) : 0;

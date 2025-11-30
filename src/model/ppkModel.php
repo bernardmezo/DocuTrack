@@ -27,9 +27,9 @@ class ppkModel {
         // 4 = Ditolak
         
         $query = "SELECT 
-                    COUNT(*) as total,
-                    SUM(CASE WHEN statusUtamaId = 3 THEN 1 ELSE 0 END) as disetujui,
-                    SUM(CASE WHEN statusUtamaId = 1 OR statusUtamaId = 2 THEN 1 ELSE 0 END) as menunggu
+                    sum(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as total,
+                    SUM(CASE WHEN posisiId IN (3, 5) THEN 1 ELSE 0 END) as disetujui,
+                    SUM(CASE WHEN posisiId = 4 OR posisiId = 2 THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
@@ -225,6 +225,122 @@ class ppkModel {
             }
         }
         return $data;
+    }
+
+    /**
+     * ====================================================
+     * 6. MONITORING DATA (Untuk Halaman Monitoring)
+     * ====================================================
+     */
+    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter) {
+        $offset = ($page - 1) * $perPage;
+        
+        // Base Query
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.createdAt as tanggal,
+                    k.posisiId,
+                    k.statusUtamaId,
+                    
+                    -- MAPPING PROGRESS BERDASARKAN POSISI ID
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak' 
+                        WHEN k.posisiId = 1 THEN 'Pengajuan'    -- Di Admin
+                        WHEN k.posisiId = 2 THEN 'Verifikasi'   -- Di Verifikator
+                        WHEN k.posisiId = 4 THEN 'ACC PPK'      -- Di PPK
+                        WHEN k.posisiId = 3 THEN 'ACC WD'    -- Di Wadir
+                        WHEN k.posisiId = 5 THEN 'Dana Cair'    -- Di Bendahara
+                        ELSE 'Unknown'
+                    END as tahap_sekarang,
+
+                    -- Status Label
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.posisiId = 5 THEN 'Approved'
+                        ELSE 'In Process'
+                    END as status
+
+                  FROM tbl_kegiatan k
+                  WHERE 1=1 ";
+        
+        // Filter Search
+        if (!empty($search)) {
+            $search = mysqli_real_escape_string($this->db, $search);
+            $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
+        }
+
+        // Filter Status
+        if ($statusFilter !== 'semua') {
+            if ($statusFilter === 'ditolak') {
+                $query .= " AND k.statusUtamaId = 4";
+            } elseif ($statusFilter === 'approved') {
+                $query .= " AND k.posisiId = 5";
+            } elseif ($statusFilter === 'menunggu') {
+                $query .= " AND k.posisiId = 4"; // Menunggu di meja PPK
+            } elseif ($statusFilter === 'in process') {
+                $query .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+            }
+        }
+
+        // Filter Jurusan
+        if ($jurusanFilter !== 'semua') {
+            $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
+            $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
+        }
+
+        // Hitung Total Data (Untuk Pagination)
+        $countQuery = str_replace("SELECT \n                    k.kegiatanId as id,", "SELECT COUNT(*) as total", $query);
+        // Hapus bagian column yang panjang di count query agar valid SQL (simple regex replace or substr if needed, but manual replacement above is safer logic structure, simplified here:)
+        $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
+        // Re-apply filters to count query (Copy paste logic above or restructure code, for brevity I'll rewrite logic inside logic)
+        if (!empty($search)) { $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')"; }
+        if ($statusFilter !== 'semua') {
+             if ($statusFilter === 'ditolak') $countQuery .= " AND k.statusUtamaId = 4";
+             elseif ($statusFilter === 'approved') $countQuery .= " AND k.posisiId = 5";
+             elseif ($statusFilter === 'menunggu') $countQuery .= " AND k.posisiId = 4";
+             elseif ($statusFilter === 'in process') $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+        }
+        if ($jurusanFilter !== 'semua') { $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'"; }
+
+
+        // Order & Limit
+        $query .= " ORDER BY k.createdAt DESC LIMIT $perPage OFFSET $offset";
+
+        // Execute Count
+        $totalResult = mysqli_query($this->db, $countQuery);
+        $totalItems = ($totalResult) ? mysqli_fetch_assoc($totalResult)['total'] : 0;
+
+        // Execute Main Query
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+
+        return [
+            'data' => $data,
+            'totalItems' => $totalItems
+        ];
+    }
+
+    // Helper untuk Filter Dropdown
+    public function getListJurusanDistinct() {
+        $query = "SELECT DISTINCT jurusanPenyelenggara as jurusan FROM tbl_kegiatan WHERE jurusanPenyelenggara IS NOT NULL AND jurusanPenyelenggara != '' ORDER BY jurusanPenyelenggara ASC";
+        $result = mysqli_query($this->db, $query);
+        $list = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $list[] = $row['jurusan'];
+            }
+        }
+        return $list;
     }
 }
 ?>
