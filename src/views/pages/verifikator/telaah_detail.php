@@ -2,6 +2,8 @@
 // File: src/views/pages/verifikator/telaah_detail.php (HANYA UNTUK VERIFIKATOR)
 
 // --- 1. Setup Variabel (HANYA UNTUK VERIFIKATOR) ---
+$kegiatanId = $kegiatan_data['kegiatanId'] ?? '';
+
 $status = $status ?? 'Menunggu';
 $user_role = $user_role ?? 'verifikator'; 
 
@@ -459,6 +461,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         // --- 1. Ambil Status & Nama dari PHP ---
         const isDisetujui = <?php echo json_encode($is_disetujui); ?>;
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
+        const kegiatanId = <?php echo json_encode($kegiatan_data['kegiatanId']) ??  1; ?>;
 
         // --- 2. Fallback Fungsi formatRupiah ---
         if (typeof formatRupiah !== 'function') {
@@ -605,6 +608,10 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'Mengirim...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                    // pas btn-kirim-revisi diklik, akan mengarahkan ke route revise di index
+                    formVerifikasi.action = "/docutrack/public/verifikator/telaah/revise/" + kegiatanId + "?ref=detail";
+
                     formVerifikasi.submit();
                 }
             });
@@ -632,7 +639,12 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             }).then((result) => {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'Ditolak!', text: 'Usulan telah ditolak.', icon: 'success', customClass: { popup: 'swal-loading' } });
+                    
+                    // pas btn-setujui-usulan, ngetriger form action ke reject
+                    formVerifikasi.action = "/docutrack/public/verifikator/telaah/reject/" + kegiatanId + "?ref=detail";
+
                     // formVerifikasi.submit();
+                    formVerifikasi.submit();
                 }
             });
         });
@@ -665,7 +677,12 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 cancelButtonText: 'Batal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire({ title: 'Menyetujui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    Swal.fire({ title: 'Menyetujui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });                    
+                    
+                    // pas btn-setujui-usulan diklik, akan mengarahkan ke route approve di index
+                    formVerifikasi.action = "/docutrack/public/verifikator/telaah/approve/" + kegiatanId + "?ref=detail";
+
+                    // pas btn-setujui-usulan, ngetriger form action ke approve
                     formVerifikasi.submit();
                 }
             });

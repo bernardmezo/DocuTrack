@@ -20,6 +20,8 @@ class VerifikatorTelaahController extends Controller {
         // Fungsi ini sudah mengambil kolom id, nama, pengusul, status, tanggal, dll.
         $all_usulan = $model->getDashboardKAK();
 
+        $allJuru = $model->getListJurusan();
+
         // 3. Filter Data (Hanya ambil yang butuh aksi Verifikator)
         // Status: 'Menunggu' (Baru masuk) atau 'Telah Direvisi' (Balikan dari Admin)
         $list_usulan = [];
@@ -68,6 +70,10 @@ class VerifikatorTelaahController extends Controller {
         $this->view('pages/verifikator/pengajuan_telaah', $data, 'verifikator');
     }
 
+    /**
+        * METHOD: show($id)
+        * nampilkan detail telaah(KAK) buat satu usulan berdasarkan ID. 
+    */ 
     public function show($id, $data_dari_router = []) {
         $ref = $_GET['ref'] ?? '';
         $base_url = "/docutrack/public/verifikator";
@@ -110,6 +116,7 @@ class VerifikatorTelaahController extends Controller {
 
         // Siapkan array kegiatan_data sesuai nama variabel di View
         $kegiatan_data = [
+            'kegiatanId' => $dataDB['kegiatanId'],
             'nama_pengusul' => $dataDB['pemilikKegiatan'],
             'nim_pengusul' => $dataDB['nimPelaksana'],
             'nama_penanggung_jawab' => $dataDB['namaPenanggungJawab'] ?? '-',
@@ -151,8 +158,10 @@ class VerifikatorTelaahController extends Controller {
         $this->view('pages/verifikator/telaah_detail', $data, 'verifikator');
     }
 
-    // --- ACTION BUTTONS (UPDATE KE DB) ---
-
+    /** 
+     * METHOD: approve($id)
+     * buat menyetujui usulan dengan ID tertentu.
+     */
     public function approve($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $kode_mak = $_POST['kode_mak'] ?? '';
@@ -165,9 +174,13 @@ class VerifikatorTelaahController extends Controller {
                 exit;
             }
         }
-        header('Location: /docutrack/public/verifikator/telaah/show/'.$id);
+        header('Location: /docutrack/public/verifikator/telaah/show/'.$id.'?ref=dashboard');
     }
 
+    /** 
+     * METHOD: reject
+     *  buat nolak usulan dengan ID tertentu.
+     */
     public function reject($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new verifikatorModel();
@@ -179,6 +192,10 @@ class VerifikatorTelaahController extends Controller {
         }
     }
 
+    /**
+     * METHOD: revise($id)
+     * buat mengirim usulan yang udah direvisi dengan ID tertentu.
+     */
     public function revise($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new verifikatorModel();

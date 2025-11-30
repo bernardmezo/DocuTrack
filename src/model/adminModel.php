@@ -28,7 +28,7 @@ class adminModel {
         
         $query = "SELECT 
                     COUNT(*) as total,
-                    SUM(CASE WHEN statusUtamaId = 3 THEN 1 ELSE 0 END) as disetujui,
+                    SUM(CASE WHEN statusUtamaId = 5 THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN statusUtamaId = 4 THEN 1 ELSE 0 END) as ditolak,
                     SUM(CASE WHEN statusUtamaId = 1 OR statusUtamaId = 2 THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
@@ -58,12 +58,14 @@ class adminModel {
                     k.jurusanPenyelenggara as jurusan,
                     CONCAT(k.pemilikKegiatan, ' (', k.nimPelaksana, '), ', k.prodiPenyelenggara) as pengusul,
                     k.createdAt as tanggal_pengajuan,
+                    k.posisiId as posisi,
                     
                     -- Ambil nama status dari tabel relasi tbl_status_utama
                     s.namaStatusUsulan as status
 
                 FROM tbl_kegiatan k
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
+                JOIN tbl_role r ON k.posisiId = r.roleId
                 ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
@@ -208,15 +210,7 @@ class adminModel {
         
         $data = [];
         while ($row = mysqli_fetch_assoc($result)) {
-            // Kita group data berdasarkan nama kategori agar sesuai struktur View
-            // Format View: ['Belanja Barang' => [item1, item2], 'Jasa' => [item3]]
             
-            // Pecah volume/satuan jika digabung (Optional, tergantung cara simpan sebelumnya)
-            // Jika di DB volume cuma 1 kolom, kita akali agar view tidak error
-            $row['vol1'] = $row['volume']; // Mapping sementara
-            $row['sat1'] = $row['satuan'];
-            
-            // Masukkan ke array group
             $data[$row['namaKategori']][] = $row;
         }
         return $data;
@@ -352,7 +346,7 @@ class adminModel {
             if (!empty($budgetData) && is_array($budgetData)) {
                 
                 $queryKategori = "INSERT INTO tbl_kategori_rab (namaKategori) VALUES (?)";
-                $queryItemRAB  = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, satuan, volume, harga, totalHarga) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                $queryItemRAB  = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 
                 foreach ($budgetData as $namaKategori => $items) {
                     if (empty($items)) continue; 
@@ -388,12 +382,28 @@ class adminModel {
                     foreach ($items as $item) {
                         $uraian  = $item['uraian'] ?? '';
                         $rincian = $item['rincian'] ?? '';
-                        $satuan  = $item['satuan'] ?? '';
-                        $volume  = floatval($item['volume'] ?? 0);
+                        
+                        // --- PERBAIKAN LOGIC VOLUME & SATUAN ---
+                        
+                        // Ambil data dari key JS yang baru (vol1, vol2, sat1, sat2)
+                        $vol1 = floatval($item['vol1'] ?? 0);
+                        $vol2 = floatval($item['vol2'] ?? 1); // Default 1 agar perkalian aman
+                        $sat1 = $item['sat1'] ?? '';
+                        $sat2 = $item['sat2'] ?? '';
+
+                        // LOGIKA 1: Jika di database kolom volume cuma satu, kita kalikan totalnya
+                        $volume = $vol1 * $vol2; 
+                        
+                        // Harga Satuan
                         $harga   = floatval($item['harga'] ?? 0);
+                        
+                        // Total Harga
                         $total   = $volume * $harga;
 
-                        mysqli_stmt_bind_param($stmtItem, "iisssddd", $kakId, $kategoriId, $uraian, $rincian, $satuan, $volume, $harga, $total);
+                        // Bind parameter (Pastikan urutan tipe data sesuai dengan query INSERT kamu)
+                        // Query kamu: (kakId, kategoriId, uraian, rincian, satuan, volume, harga, totalHarga)
+                        // Tipe data:  i, i, s, s, s, d, d, d
+                        mysqli_stmt_bind_param($stmtItem, "iissssdddd", $kakId, $kategoriId, $uraian, $rincian, $sat1, $sat2, $vol1, $vol2, $harga, $total);
                         if (!mysqli_stmt_execute($stmtItem)) {
                             throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
                         }
@@ -421,5 +431,74 @@ class adminModel {
             
             return false;
         }
+    }
+
+    /**
+     * ====================================================
+     * 6. TAMBAHAN: UPDATE SURAT PENGANTAR
+     * ====================================================
+     */
+    public function updateSuratPengantar($kegiatanId, $fileName) {
+        // Asumsi kolom di database bernama 'suratPengantar' di tabel 'tbl_kegiatan'
+        $query = "UPDATE tbl_kegiatan SET suratPengantar = ? WHERE kegiatanId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "si", $fileName, $kegiatanId);
+            $result = mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 7. Update Rincian Lengkap (PJ, Tanggal, Surat)
+     */
+    public function updateRincianKegiatan($id, $data, $fileSurat = null) {
+        // $data berisi: ['nama', 'nim', 'tgl_mulai', 'tgl_selesai']
+        
+        if ($fileSurat) {
+            // Jika ada file baru yang diupload, update kolom suratPengantar juga
+            $query = "UPDATE tbl_kegiatan SET 
+                        namaPJ = ?, 
+                        nip = ?, 
+                        tanggalMulai = ?, 
+                        tanggalSelesai = ?, 
+                        suratPengantar = ?,
+                        posisiId = 4
+                      WHERE kegiatanId = ?";
+            
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "sssssi", 
+                $data['namaPj'], 
+                $data['nimNipPj'], 
+                $data['tgl_mulai'], 
+                $data['tgl_selesai'], 
+                $fileSurat, 
+                $id
+            );
+        } else {
+            // Jika TIDAK ada file (hanya update data teks), jangan timpa suratPengantar dengan null
+            $query = "UPDATE tbl_kegiatan SET 
+                        namaPJ = ?, 
+                        nip = ?, 
+                        tanggalMulai = ?, 
+                        tanggalSelesai = ? 
+                      WHERE kegiatanId = ?";
+            
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "ssssi", 
+                $data['namaPJ'], 
+                $data['nimNipPj'], 
+                $data['tgl_mulai'], 
+                $data['tgl_selesai'], 
+                $id
+            );
+        }
+
+        $result = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        return $result;
     }
 }

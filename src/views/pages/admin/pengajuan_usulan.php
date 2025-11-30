@@ -287,6 +287,8 @@
                             <div class="rab-content flex-grow" id="rab-content">
                             </div>
                         </div>
+                        
+                        <input type="hidden" name="rab_data" id="rab_data_input">
 
                         <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                             <button type="button" class="btn-nav btn-kembali w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-center text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:ring-gray-100 transition-all" data-target-step="3" data-direction="prev">

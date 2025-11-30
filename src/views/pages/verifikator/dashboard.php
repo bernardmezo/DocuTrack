@@ -193,6 +193,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         statusClass = 'text-yellow-700 bg-yellow-100'; iconClass = 'fa-exclamation-triangle'; rowClass = 'bg-white'; break;
                     case 'telah direvisi':
                         statusClass = 'text-purple-700 bg-purple-100'; iconClass = 'fa-sync-alt'; rowClass = 'bg-purple-50 font-medium'; break;
+                    case 'disetujui verifikator':
+                        statusClass = 'text-purple-700 bg-purple-100'; iconClass = 'fa-check-double'; rowClass = 'bg-purple-50 font-medium'; break;
                     default:
                         statusClass = 'text-gray-600 bg-gray-100'; iconClass = 'fa-hourglass-half'; rowClass = 'bg-gray-50 font-medium';
                 }

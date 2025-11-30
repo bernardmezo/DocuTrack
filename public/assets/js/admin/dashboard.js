@@ -117,6 +117,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusLower = status.toLowerCase();
             const badges = {
                 'disetujui': 'text-green-700 bg-green-100 border border-green-200',
+
+                // TAMBAHAN BARU: Status Disetujui Verifikator (UNGU)
+                // 'disetujui verifikator': 'text-purple-700 bg-purple-100 border border-purple-200',
+
                 'setuju': 'text-green-700 bg-green-100 border border-green-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
@@ -126,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const icons = {
                 'disetujui': 'fa-check-circle',
+                'disetujui verifikator': 'fa-check-double',
                 'setuju': 'fa-check-circle',
                 'ditolak': 'fa-times-circle',
                 'revisi': 'fa-edit',
@@ -135,6 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const displayText = {
                 'disetujui': 'Disetujui',
+                'disetujui verifikator': 'Disetujui Verifikator', // Teks yang akan tampil
                 'setuju': 'Disetujui',
                 'ditolak': 'Ditolak',
                 'revisi': 'Revisi',

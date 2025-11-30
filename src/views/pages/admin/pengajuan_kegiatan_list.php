@@ -87,15 +87,15 @@ sort($jurusan_list);
                         </td>
 
                         <td class="px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-xs font-semibold">
-                            <span class="px-3 py-1.5 rounded-full text-green-700 bg-green-100 border border-green-200 inline-flex items-center gap-1.5">
+                            <span class="px-3 py-1.5 rounded-full text-purple-700 bg-purple-100 border border-purple-200 inline-flex items-center gap-1.5">
                                 <i class="fas fa-check-circle"></i>
-                                Disetujui
+                                Disetujui Verifikator
                             </span>
                         </td>
 
                         <td class="px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm font-medium">
                             <div class="flex gap-2 items-center">
-                                <a href="/docutrack/public/admin/pengajuan-kegiatan/show/<?php echo $item['id'] ?? 0; ?>?mode=rincian" 
+                                <a href="/docutrack/public/admin/pengajuan-kegiatan/show/<?php echo $item['id'] ?? 0; ?>?mode=rincian"
                                    class="bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors">
                                     Rincian
                                 </a>

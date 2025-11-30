@@ -30,7 +30,7 @@ $jurusan_list = $jurusan_list ?? [];
                     transition-all duration-300 ease-out">
             <div class="absolute inset-0 z-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.5)_4px,rgba(255,255,255,0.5)_5px)] [background-size:10px_10px]"></div>
             <div class="relative z-10 flex justify-between items-center">
-                <div><h3 class="text-5xl font-bold mb-1"><?php echo htmlspecialchars($stats['disetujui']); ?></h3><p class="text-sm font-medium opacity-80">Disetujui</p></div>
+                <div><h3 class="text-5xl font-bold mb-1"><?php echo htmlspecialchars($stats['disetujui']); ?></h3><p class="text-sm font-medium opacity-80">Disetujui verifikator</p></div>
                 <div class="p-3 rounded-full bg-white/10 opacity-80 group-hover:opacity-100 transition-opacity"><i class="fas fa-check-circle fa-xl"></i></div>
             </div>
         </div>
@@ -80,7 +80,7 @@ $jurusan_list = $jurusan_list ?? [];
                             class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
                         <option value="" style="color: #374151 !important; font-weight: 600;">Semua Status</option>
                         <option value="menunggu" style="color: #374151 !important; font-weight: 600;">Menunggu</option>
-                        <option value="disetujui" style="color: #374151 !important; font-weight: 600;">Disetujui</option>
+                        <option value="disetujui verifikator" style="color: #374151 !important; font-weight: 600;">Disetujui Verifikator</option>
                     </select>
                     <i class="fas fa-chevron-down absolute top-1/2 right-4 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
                 </div>
@@ -116,11 +116,11 @@ $jurusan_list = $jurusan_list ?? [];
                             $status_lower = strtolower($status_text);
 
                             $status_class = match ($status_lower) {
-                                'disetujui' => 'text-green-700 bg-green-100',
+                                'disetujui verifikator' => 'text-green-700 bg-green-100',
                                 default => 'text-gray-600 bg-gray-100',
                             };
                             $icon_class = match ($status_lower) {
-                                'disetujui' => 'fas fa-check-circle',
+                                'disetujui verifikator' => 'fas fa-check-circle',
                                 default => 'fas fa-hourglass-half',
                             };
                             
@@ -254,8 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             this.tbody.innerHTML = pageData.map((item, i) => {
                 const no = start + i + 1;
-                const statusClass = (item.status || '').toLowerCase() === 'disetujui' ? 'text-green-700 bg-green-100' : 'text-gray-600 bg-gray-100';
-                const iconClass = (item.status || '').toLowerCase() === 'disetujui' ? 'fa-check-circle' : 'fa-hourglass-half';
+                const statusClass = (item.status || '').toLowerCase() === 'disetujui verifikator' ? 'text-purple-700 bg-purple-100 border border-purple-200' : 'text-gray-600 bg-gray-100';
+                const iconClass = (item.status || '').toLowerCase() === 'disetujui verifikator' ? 'fa-check-circle' : 'fa-hourglass-half';
                 const tgl = item.tanggal_pengajuan ? new Date(item.tanggal_pengajuan).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}) : '-';
 
                 // TAMPILAN KOLOM: MENGGUNAKAN PRODI (item.prodi), bukan item.jurusan
