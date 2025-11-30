@@ -336,6 +336,8 @@ switch ($main_route) {
                 $controller = new WadirTelaahController();
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
                     $controller->show($param2, ['active_page' => $base_wadir_path . '/pengajuan-kegiatan']);
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    $controller->approve($param2);
                 } else {
                     header('Location: /docutrack/public/wadir/dashboard');
                 }

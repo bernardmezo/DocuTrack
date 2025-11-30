@@ -54,7 +54,7 @@ $list_riwayat = $list_riwayat ?? [];
                             </td>
                             <td class="px-6 py-4 text-sm">
                                 <!-- Link ke Detail (Readonly) -->
-                                <a href="/docutrack/public/ppk/telaah/show/<?php echo $item['id']; ?>?ref=riwayat-verifikasi" 
+                                <a href="/docutrack/public/ppk/telaah/show/<?php echo $item['id']; ?>?ref=riwayat-verifikasi"
                                    class="text-blue-600 hover:text-blue-800 font-medium">
                                     Detail
                                 </a>

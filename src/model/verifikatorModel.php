@@ -246,6 +246,50 @@ Class verifikatorModel {
         mysqli_stmt_close($stmt);
         return $jurusan;
     }
+
+    /**
+     * ====================================================
+     * 6. AMBIL DATA RIWAYAT (HISTORY) - BARU
+     * ====================================================
+     * Mengambil data yang SUDAH DIPROSES oleh Verifikator
+     * Logic: Ambil yang statusUtamaId-nya BUKAN 1 (Menunggu)
+     */
+    public function getRiwayat() {
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.createdAt as tanggal_pengajuan,
+                    
+                    -- Status Tampilan
+                    CASE 
+                        WHEN k.posisiId IN (3, 4, 5) AND k.statusUtamaId != 4 THEN 'Disetujui'
+                        WHEN k.statusUtamaId = 2 THEN 'Revisi'
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        ELSE 'Diproses'
+                    END as status
+
+                  FROM tbl_kegiatan k
+                  WHERE 
+                    -- Ambil semua KECUALI yang masih 'Menunggu' (ID 1) di meja Verifikator (Posisi 2)
+                    -- Artinya: Ambil yang sudah Disetujui (3), Revisi (2), atau Ditolak (4)
+                    k.posisiId IN (3, 4, 5)
+                  
+                  ORDER BY k.createdAt DESC";
+
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+        
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+        return $data;
+    }
 }   
 
 
