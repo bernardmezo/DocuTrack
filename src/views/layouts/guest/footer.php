@@ -217,6 +217,144 @@ document.addEventListener('keydown', function(e) {
         closeRegisterPopup();
     }
 });
+
+// const scrollContainer = document.querySelector('.scroll-container');
+//         let autoPlayTriggered = false;
+//         let autoScrollInterval = null;
+        
+//         // Auto-play animation ketika section masuk viewport
+//         const sectionObserver = new IntersectionObserver((entries) => {
+//             entries.forEach(entry => {
+//                 if (entry.isIntersecting && !autoPlayTriggered) {
+//                     autoPlayTriggered = true;
+//                     startAutoPlay();
+//                 }
+//             });
+//         }, {
+//             threshold: 0.3
+//         });
+        
+//         // Observe section proses
+//         const processSection = document.querySelector('#proses');
+//         if (processSection) {
+//             sectionObserver.observe(processSection);
+//         }
+        
+//         // Fungsi auto-play yang smooth
+//         function startAutoPlay() {
+//             const cards = document.querySelectorAll('.process-card');
+//             const timelineLine = document.querySelector('.timeline-line');
+            
+//             // Animate timeline line first
+//             setTimeout(() => {
+//                 if (timelineLine) {
+//                     timelineLine.classList.add('active');
+//                 }
+//             }, 300);
+            
+//             // Animate cards satu per satu dengan delay
+//             cards.forEach((card, index) => {
+//                 setTimeout(() => {
+//                     card.classList.add('active');
+//                 }, 500 + (index * 400));
+//             });
+            
+//             // Auto scroll setelah semua card muncul
+//             setTimeout(() => {
+//                 startAutoScroll();
+//             }, 500 + (cards.length * 400) + 1000);
+//         }
+        
+//         // Auto scroll horizontal yang smooth
+//         function startAutoScroll() {
+//             let scrollPosition = 0;
+//             const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+//             const scrollStep = 350;
+            
+//             autoScrollInterval = setInterval(() => {
+//                 scrollPosition += scrollStep;
+                
+//                 if (scrollPosition >= maxScroll) {
+//                     // Reset ke awal dengan smooth scroll
+//                     setTimeout(() => {
+//                         scrollContainer.scrollTo({
+//                             left: 0,
+//                             behavior: 'smooth'
+//                         });
+//                         scrollPosition = 0;
+//                     }, 2000);
+//                 } else {
+//                     scrollContainer.scrollTo({
+//                         left: scrollPosition,
+//                         behavior: 'smooth'
+//                     });
+//                 }
+//             }, 2500);
+//         }
+        
+//         // Stop auto-scroll saat user interaksi
+//         scrollContainer.addEventListener('touchstart', stopAutoScroll);
+//         scrollContainer.addEventListener('mousedown', stopAutoScroll);
+//         scrollContainer.addEventListener('wheel', stopAutoScroll);
+        
+//         function stopAutoScroll() {
+//             if (autoScrollInterval) {
+//                 clearInterval(autoScrollInterval);
+//                 autoScrollInterval = null;
+//             }
+//         }
+        
+//         // Scroll Animation on manual scroll
+//         scrollContainer.addEventListener('scroll', () => {
+//             const cards = document.querySelectorAll('.process-card');
+//             const containerRect = scrollContainer.getBoundingClientRect();
+            
+//             cards.forEach(card => {
+//                 const cardRect = card.getBoundingClientRect();
+//                 const cardCenter = cardRect.left + cardRect.width / 2;
+//                 const containerCenter = containerRect.left + containerRect.width / 2;
+                
+//                 // Activate card when it's near center of viewport
+//                 if (Math.abs(cardCenter - containerCenter) < containerRect.width / 2) {
+//                     card.classList.add('active');
+//                 }
+//             });
+//         });
+        
+//         // Navigation functions
+//         function scrollLeft() {
+//             stopAutoScroll();
+//             scrollContainer.scrollBy({
+//                 left: -350,
+//                 behavior: 'smooth'
+//             });
+//         }
+        
+//         function scrollRight() {
+//             stopAutoScroll();
+//             scrollContainer.scrollBy({
+//                 left: 350,
+//                 behavior: 'smooth'
+//             });
+//         }
+        
+//         // Intersection Observer for cards
+//         const observerOptions = {
+//             root: scrollContainer,
+//             threshold: 0.5
+//         };
+        
+//         const cardObserver = new IntersectionObserver((entries) => {
+//             entries.forEach(entry => {
+//                 if (entry.isIntersecting) {
+//                     entry.target.classList.add('active');
+//                 }
+//             });
+//         }, observerOptions);
+        
+//         document.querySelectorAll('.process-card').forEach(card => {
+//             cardObserver.observe(card);
+//         });
 </script>
 
 </body>

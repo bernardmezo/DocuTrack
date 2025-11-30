@@ -122,6 +122,73 @@
         .timeline-vertical {
             background: linear-gradient(to bottom, #3b82f6 0%, #22c55e 100%);
         }
+
+        /* .scroll-container {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .process-card {
+            scroll-snap-align: start;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.6s ease-out;
+        }
+        
+        .process-card.from-left {
+            transform: translateX(-100px);
+        }
+        
+        .process-card.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        .timeline-line {
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.8s ease-out;
+        }
+        
+        .timeline-line.active {
+            transform: scaleX(1);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .float-icon {
+            animation: float 3s ease-in-out infinite;
+        }
+    
+        @media (min-width: 768px) {
+            .custom-scrollbar::-webkit-scrollbar {
+                height: 8px;
+                display: block;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: #e5e7eb;
+                border-radius: 10px;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: linear-gradient(to right, #22D3EE, #274B8F);
+                border-radius: 10px;
+            }
+            
+            .custom-scrollbar {
+                scrollbar-width: thin;
+                scrollbar-color: #22D3EE #e5e7eb;
+            }
+        } */
     </style>
 </head>
 <body class="bg-gray-50">
