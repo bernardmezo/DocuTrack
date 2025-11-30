@@ -1,6 +1,11 @@
 <?php
 // File: src/controllers/AuthController.php
 
+// PENTING: Pastikan session sudah dimulai
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once '../src/core/Controller.php';
 // 1. Panggil Model Login
 require_once '../src/model/LoginModel.php';
@@ -72,17 +77,22 @@ class AuthController extends Controller {
             exit;
         }
 
-        // 6. Validasi Role (PENTING!)
-        // Pastikan role yang dipilih di form SESUAI dengan role asli user di database.
-        // Nama kolom dari Model tadi adalah 'namaRole'
-        $db_role = strtolower($user['namaRole']); // misal: 'verifikator'
+        // 6. Normalize & Validasi Role
+        // Normalize role dari database: 'Super Admin' -> 'super-admin', 'Verifikator' -> 'verifikator'
+        $normalized_role = strtolower($user['namaRole']);
+        $normalized_role = str_replace([' ', '_'], '-', $normalized_role);
+        $normalized_role = preg_replace('/--+/', '-', $normalized_role);
 
-        // Jika user memilih role di dropdown, kita cek kecocokannya.
-        // Jika role_input kosong (misal user lupa pilih), kita bisa otomatis pakai role dari DB.
-        if (!empty($role_input) && $role_input !== $db_role) {
-            $_SESSION['login_error'] = "Akun ini tidak terdaftar sebagai " . ucfirst($role_input);
-            header('Location: /docutrack/public/');
-            exit;
+        // Jika user memilih role di dropdown, kita cek kecocokannya (juga normalize input).
+        if (!empty($role_input)) {
+            $normalized_input = strtolower($role_input);
+            $normalized_input = str_replace([' ', '_'], '-', $normalized_input);
+            
+            if ($normalized_input !== $normalized_role) {
+                $_SESSION['login_error'] = "Akun ini tidak terdaftar sebagai " . ucfirst($role_input);
+                header('Location: /docutrack/public/');
+                exit;
+            }
         }
 
         // ============================
@@ -95,8 +105,8 @@ class AuthController extends Controller {
         // 1. Simpan data ke Session (Logic dari branch integrate-db untuk database)
         $_SESSION['user_id']       = $user['userId'];      // Dari query: u.userId
         $_SESSION['user_name']     = $user['nama'];        // Dari query: u.nama
-        $_SESSION['user_role']     = $db_role;             // Dari query: r.nama_role
-        $_SESSION['user_jurusan']  = $user['nama_jurusan'] ?? null; // Dari query: j.nama_jurusan (Opsional)
+        $_SESSION['user_role']     = $normalized_role;     // Normalized: 'verifikator', 'super-admin', dll
+        $_SESSION['user_jurusan']  = $user['namaJurusan'] ?? null; // Dari query: j.namaJurusan
 
         // 2. Simpan data ke Session (Logic dari branch HEAD untuk frontend/design)
         // Menggabungkan data database ke dalam format yang diharapkan oleh view/design lama
@@ -104,7 +114,7 @@ class AuthController extends Controller {
             'id'            => $user['userId'],
             'username'      => $user['nama'],
             'email'         => $email,
-            'role'          => $db_role,
+            'role'          => $normalized_role,
             // Generate gambar profil seperti di branch HEAD agar desain tidak rusak
             'profile_image' => 'https://ui-avatars.com/api/?name=' . urlencode($user['nama']) . '&background=0D8ABC&color=fff&size=150',
             'header_bg'     => 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
@@ -112,10 +122,10 @@ class AuthController extends Controller {
         ];
 
         // ============================
-        //  REDIRECT BERDASARKAN ROLE ASLI
+        //  REDIRECT BERDASARKAN ROLE
         // ============================
 
-        switch ($db_role) {
+        switch ($normalized_role) {
             case 'verifikator':
                 header('Location: /docutrack/public/verifikator/dashboard');
                 break;
@@ -137,13 +147,15 @@ class AuthController extends Controller {
                 break;
             
             case 'super-admin':
+            case 'superadmin': // Fallback jika di DB ditulis tanpa spasi/dash
                 header('Location: /docutrack/public/super_admin/dashboard');
                 break;
 
             default:
-                // Jika role tidak dikenali, lempar error atau ke halaman umum
-                $_SESSION['login_error'] = 'Role pengguna tidak valid.';
-                session_destroy(); // Hapus sesi agar aman
+                // Jika role tidak dikenali, log untuk debugging dan redirect ke landing
+                // JANGAN session_destroy() karena akan menyebabkan loop
+                error_log("DocuTrack Login Warning: Unknown role '{$normalized_role}' for user {$user['email']}");
+                $_SESSION['login_error'] = 'Role pengguna tidak dikenali: ' . htmlspecialchars($user['namaRole']);
                 header('Location: /docutrack/public/');
                 break;
         }

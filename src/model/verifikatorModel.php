@@ -186,23 +186,9 @@ Class verifikatorModel {
      * ====================================================
      */
     
-    // Update Status & Kode MAK (Approve)
-    public function approveUsulan($kegiatanId, $kodeMak) {
-        // Status 3 = Disetujui
-        $nextPosisi = 2; // ID Role verifikator sesuai tbl_role
-        $statusTetap = 1; // ID Status Menunggu
+    // NOTE: Fungsi approveUsulan() dipindahkan ke bawah dengan logic yang benar (estafet ke PPK)
 
-        $query = "UPDATE tbl_kegiatan 
-                SET statusUtamaId = ?, posisiId = ?, buktiMAK = ? 
-                WHERE kegiatanId = ?";
-
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "iisi", $statusTetap, $nextPosisi, $kodeMak, $kegiatanId);
-        return mysqli_stmt_execute($stmt);
-    }
-
-    // Update Status (Reject/Revisi)
-    // Status 2 = Revisi, 4 = Ditolak
+    // Update Status (Reject/Revisi) - Legacy, gunakan rejectUsulan() atau reviseUsulan()
     public function updateStatus($kegiatanId, $statusId) {
         $query = "UPDATE tbl_kegiatan SET statusUtamaId = ? WHERE kegiatanId = ?";
         $stmt = mysqli_prepare($this->db, $query);
@@ -285,6 +271,244 @@ Class verifikatorModel {
         
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Approve Usulan oleh Verifikator
+     * Alur: Verifikator (2) -> PPK (4)
+     * 
+     * @param int $kegiatanId ID Kegiatan
+     * @param string $kodeMak Kode MAK yang diinput Verifikator
+     * @return bool
+     */
+    public function approveUsulan($kegiatanId, $kodeMak) {
+        // =====================================================
+        // LOGIKA ESTAFET YANG BENAR:
+        // Verifikator approve -> Pindah ke PPK (posisiId = 4)
+        // Status tetap Menunggu (1) karena PPK belum proses
+        // =====================================================
+        
+        $currentPosisi = 2;  // Posisi sekarang: Verifikator
+        $nextPosisi = 4;     // ✅ BENAR: Pindah ke PPK
+        $statusMennggu = 1;  // Status: Menunggu (PPK belum proses)
+        $userId = $_SESSION['user_id'] ?? null;
+        
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // 1. Update posisi kegiatan ke PPK
+            $query = "UPDATE tbl_kegiatan 
+                      SET statusUtamaId = ?, posisiId = ?, buktiMAK = ? 
+                      WHERE kegiatanId = ?";
+            
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "iisi", $statusMennggu, $nextPosisi, $kodeMak, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Gagal update kegiatan");
+            }
+            mysqli_stmt_close($stmt);
+            
+            // 2. Catat ke tbl_progress_history
+            $this->insertProgressHistory($kegiatanId, $statusMennggu, $currentPosisi, $nextPosisi, $userId, 'approve');
+            
+            mysqli_commit($this->db);
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("approveUsulan Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Reject Usulan oleh Verifikator
+     * Status berubah ke Ditolak (4), posisi tetap di Verifikator
+     * 
+     * @param int $kegiatanId ID Kegiatan
+     * @param string $alasanPenolakan Komentar alasan ditolak
+     * @return bool
+     */
+    public function rejectUsulan($kegiatanId, $alasanPenolakan = '') {
+        $statusDitolak = 4;
+        $currentPosisi = 2;
+        $userId = $_SESSION['user_id'] ?? null;
+        $roleId = 2; // Role Verifikator
+        
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // 1. Update status jadi Ditolak
+            $query = "UPDATE tbl_kegiatan 
+                      SET statusUtamaId = ? 
+                      WHERE kegiatanId = ?";
+            
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "ii", $statusDitolak, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Gagal update status");
+            }
+            mysqli_stmt_close($stmt);
+            
+            // 2. Catat history
+            $historyId = $this->insertProgressHistory($kegiatanId, $statusDitolak, $currentPosisi, $currentPosisi, $userId, 'reject');
+            
+            // 3. Simpan komentar penolakan
+            if (!empty($alasanPenolakan) && $historyId) {
+                $this->insertRevisiComment($historyId, $userId, $roleId, $alasanPenolakan, null, null);
+            }
+            
+            mysqli_commit($this->db);
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("rejectUsulan Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Revisi Usulan oleh Verifikator
+     * Kembalikan ke Admin (posisiId = 1) dengan status Revisi (2)
+     * 
+     * @param int $kegiatanId ID Kegiatan
+     * @param array $komentarRevisi Array komentar per field [['targetKolom' => 'nama', 'komentar' => '...'], ...]
+     * @return bool
+     */
+    public function reviseUsulan($kegiatanId, $komentarRevisi = []) {
+        $statusRevisi = 2;
+        $currentPosisi = 2;  // Verifikator
+        $backToPosisi = 1;   // Kembalikan ke Admin
+        $userId = $_SESSION['user_id'] ?? null;
+        $roleId = 2;
+        
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // 1. Update status & posisi
+            $query = "UPDATE tbl_kegiatan 
+                      SET statusUtamaId = ?, posisiId = ? 
+                      WHERE kegiatanId = ?";
+            
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "iii", $statusRevisi, $backToPosisi, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Gagal update status");
+            }
+            mysqli_stmt_close($stmt);
+            
+            // 2. Catat history
+            $historyId = $this->insertProgressHistory($kegiatanId, $statusRevisi, $currentPosisi, $backToPosisi, $userId, 'revise');
+            
+            // 3. Simpan SEMUA komentar revisi
+            if (!empty($komentarRevisi) && $historyId) {
+                foreach ($komentarRevisi as $komentar) {
+                    $this->insertRevisiComment(
+                        $historyId, 
+                        $userId, 
+                        $roleId, 
+                        $komentar['komentar'] ?? '',
+                        $komentar['targetTabel'] ?? 'tbl_kegiatan',
+                        $komentar['targetKolom'] ?? null
+                    );
+                }
+            }
+            
+            mysqli_commit($this->db);
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("reviseUsulan Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // =====================================================
+    // HELPER METHODS (Tambahkan di bawah class)
+    // =====================================================
+
+    /**
+     * Insert record ke tbl_progress_history
+     * Schema: progressHistoryId, kegiatanId, statusId, timestamp
+     */
+    private function insertProgressHistory($kegiatanId, $statusId, $fromPosisi, $toPosisi, $userId, $actionType) {
+        $query = "INSERT INTO tbl_progress_history 
+                  (kegiatanId, statusId, timestamp) 
+                  VALUES (?, ?, NOW())";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "ii", $kegiatanId, $statusId);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $insertId = mysqli_insert_id($this->db);
+            mysqli_stmt_close($stmt);
+            return $insertId;
+        }
+        
+        mysqli_stmt_close($stmt);
+        return false;
+    }
+
+    /**
+     * Insert komentar revisi ke tbl_revisi_comment
+     * Schema: revisiCommentId, progressHistoryId, komentarRevisi, targetTabel, targetKolom
+     */
+    private function insertRevisiComment($historyId, $userId, $roleId, $komentar, $targetTabel = null, $targetKolom = null) {
+        $query = "INSERT INTO tbl_revisi_comment 
+                  (progressHistoryId, komentarRevisi, targetTabel, targetKolom) 
+                  VALUES (?, ?, ?, ?)";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "isss", $historyId, $komentar, $targetTabel, $targetKolom);
+        
+        $result = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        
+        return $result;
+    }
+
+    /**
+     * ====================================================
+     * MONITORING: MENGAMBIL DATA PROPOSAL UNTUK MONITORING
+     * ====================================================
+     */
+    public function getProposalMonitoring() {
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as pengusul,
+                    k.jurusanPenyelenggara as jurusan,
+                    s.namaStatusUsulan as status,
+                    p.namaPosisi as tahap_sekarang
+                FROM tbl_kegiatan k
+                LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
+                LEFT JOIN tbl_posisi p ON k.posisiId = p.posisiId
+                ORDER BY k.createdAt DESC";
+        
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+        
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                // Format status dengan huruf kapital awal
+                if (isset($row['status'])) {
+                    $row['status'] = ucfirst(strtolower($row['status']));
+                } else {
+                    $row['status'] = 'Menunggu';
+                }
+                // Format tahap_sekarang
+                if (!isset($row['tahap_sekarang']) || empty($row['tahap_sekarang'])) {
+                    $row['tahap_sekarang'] = 'Admin';
+                }
                 $data[] = $row;
             }
         }

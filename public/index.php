@@ -443,10 +443,10 @@ switch ($main_route) {
 
     // --- Rute BENDAHARA ---
     case 'bendahara':
-    // AuthMiddleware::check();      // Uncomment jika middleware sudah aktif
-    // BendaharaMiddleware::check(); // Uncomment jika middleware sudah aktif
-    
-    $base_bendahara_path = '/bendahara';
+        AuthMiddleware::check();
+        BendaharaMiddleware::check();
+        
+        $base_bendahara_path = '/bendahara';
     
     switch ($sub_route) {
         case 'index': 
@@ -514,8 +514,15 @@ switch ($main_route) {
         
         case 'riwayat-verifikasi': 
             require_once '../src/controllers/Bendahara/RiwayatverifikasiController.php';
-            $controller = new BendaharaRiwayatverifikasiController(); 
-            $controller->index(['active_page' => $base_bendahara_path . '/riwayat-verifikasi']);
+            $controller = new BendaharaRiwayatverifikasiController();
+            
+            if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                // Route: /bendahara/riwayat-verifikasi/show/{id}
+                $controller->show($param2, ['active_page' => $base_bendahara_path . '/riwayat-verifikasi']);
+            } else {
+                // Route: /bendahara/riwayat-verifikasi (list)
+                $controller->index(['active_page' => $base_bendahara_path . '/riwayat-verifikasi']);
+            }
             break;
         
         default:
@@ -524,8 +531,8 @@ switch ($main_route) {
     break;
 
     case 'super_admin':
-        // AuthMiddleware::check();      // Uncomment jika middleware sudah aktif
-        // BendaharaMiddleware::check(); // Uncomment jika middleware sudah aktif
+        AuthMiddleware::check();
+        // SuperAdminMiddleware::check(); // TODO: Buat middleware khusus Super Admin
         
         $base_super_admin_path = '/super_admin';
         

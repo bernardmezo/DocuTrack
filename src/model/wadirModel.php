@@ -120,17 +120,38 @@ class wadirModel {
         // Posisi: Pindah ke Bendahara (ID 5)
         // Status: Reset ke Menunggu (ID 1)
         
-        $nextPosisi = 5; // BENDAHARA
+        $nextPosisi = 5;  // BENDAHARA
         $resetStatus = 1; // Menunggu
+        $statusDisetujui = 3; // Status untuk history
         
-        $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $resetStatus, $kegiatanId);
+        mysqli_begin_transaction($this->db);
         
-        // Catat History (Opsional)
-        // $this->catatHistory($kegiatanId, 3, 'Disetujui Wadir, lanjut Bendahara');
-        
-        return mysqli_stmt_execute($stmt);
+        try {
+            // 1. Update posisi kegiatan ke Bendahara
+            $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $resetStatus, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Gagal update kegiatan");
+            }
+            mysqli_stmt_close($stmt);
+            
+            // 2. Catat ke tbl_progress_history
+            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, ?, NOW())";
+            $stmtHistory = mysqli_prepare($this->db, $historyQuery);
+            mysqli_stmt_bind_param($stmtHistory, "ii", $kegiatanId, $statusDisetujui);
+            mysqli_stmt_execute($stmtHistory);
+            mysqli_stmt_close($stmtHistory);
+            
+            mysqli_commit($this->db);
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("Wadir approveUsulan Error: " . $e->getMessage());
+            return false;
+        }
     }
 
     /**

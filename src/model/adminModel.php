@@ -20,17 +20,18 @@ class adminModel {
      * ====================================================
      */
     public function getDashboardStats() {
-        // Menghitung total berdasarkan statusUtamaId di tbl_kegiatan
-        // Asumsi ID Status: 
-        // 1 = Menunggu, 2 = Revisi (Pending Group)
-        // 3 = Disetujui
-        // 4 = Ditolak
+        // Statistik berdasarkan posisi estafet (lebih akurat)
+        // posisiId: 1=Admin, 2=Verifikator, 4=PPK, 3=Wadir, 5=Bendahara
+        // statusUtamaId: 1=Menunggu, 2=Revisi, 3=Disetujui, 4=Ditolak
         
         $query = "SELECT 
                     COUNT(*) as total,
-                    SUM(CASE WHEN statusUtamaId = 5 THEN 1 ELSE 0 END) as disetujui,
+                    -- Disetujui: Sudah sampai Bendahara dan dana sudah cair
+                    SUM(CASE WHEN posisiId = 5 AND tanggalPencairan IS NOT NULL THEN 1 ELSE 0 END) as disetujui,
+                    -- Ditolak
                     SUM(CASE WHEN statusUtamaId = 4 THEN 1 ELSE 0 END) as ditolak,
-                    SUM(CASE WHEN statusUtamaId = 1 OR statusUtamaId = 2 THEN 1 ELSE 0 END) as menunggu
+                    -- Dalam Proses: Belum ditolak dan belum cair
+                    SUM(CASE WHEN statusUtamaId != 4 AND (posisiId != 5 OR tanggalPencairan IS NULL) THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
@@ -47,7 +48,7 @@ class adminModel {
      */
     public function getDashboardKAK() {
         // Mengambil data kegiatan join dengan status
-        // Menggunakan CONCAT untuk menggabungkan nama pengusul sesuai format tabel dashboard
+        // Status ditampilkan berdasarkan posisi estafet untuk lebih informatif
         
         $query = "SELECT 
                     k.kegiatanId as id,
@@ -59,9 +60,20 @@ class adminModel {
                     CONCAT(k.pemilikKegiatan, ' (', k.nimPelaksana, '), ', k.prodiPenyelenggara) as pengusul,
                     k.createdAt as tanggal_pengajuan,
                     k.posisiId as posisi,
+                    k.statusUtamaId,
                     
-                    -- Ambil nama status dari tabel relasi tbl_status_utama
-                    s.namaStatusUsulan as status
+                    -- Status berdasarkan posisi estafet (lebih informatif)
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.statusUtamaId = 2 THEN 'Revisi'
+                        WHEN k.posisiId = 1 THEN 'Draft'
+                        WHEN k.posisiId = 2 THEN 'Di Verifikator'
+                        WHEN k.posisiId = 4 THEN 'Di PPK'
+                        WHEN k.posisiId = 3 THEN 'Di Wadir'
+                        WHEN k.posisiId = 5 AND k.tanggalPencairan IS NULL THEN 'Di Bendahara'
+                        WHEN k.posisiId = 5 AND k.tanggalPencairan IS NOT NULL THEN 'Dana Cair'
+                        ELSE s.namaStatusUsulan
+                    END as status
 
                 FROM tbl_kegiatan k
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
@@ -73,7 +85,7 @@ class adminModel {
         
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                // Opsional: Memperbaiki format status (Huruf Besar Awal)
+                // Format status dengan huruf besar awal
                 if (isset($row['status'])) {
                     $row['status'] = ucfirst($row['status']); 
                 } else {
@@ -126,6 +138,75 @@ class adminModel {
             while ($row = mysqli_fetch_assoc($result)) {
                 $data[] = $row;
             }
+        }
+        return $data;
+    }
+
+    /**
+     * ====================================================
+     * 3B. MENGAMBIL DETAIL LPJ (UNTUK HALAMAN DETAIL LPJ)
+     * ====================================================
+     */
+    public function getDetailLPJ($lpjId) {
+        $query = "SELECT 
+                    l.*,
+                    k.namaKegiatan as nama_kegiatan,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.kegiatanId,
+                    kak.kakId,
+                    CASE 
+                        WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
+                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                        ELSE 'Menunggu_Upload'
+                    END as status
+                  FROM tbl_lpj l
+                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                  LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                  WHERE l.lpjId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        return mysqli_fetch_assoc($result);
+    }
+
+    /**
+     * ====================================================
+     * 3C. MENGAMBIL RAB ITEMS UNTUK LPJ (DENGAN BUKTI)
+     * ====================================================
+     */
+    public function getRABForLPJ($kakId) {
+        $query = "SELECT 
+                    r.rabItemId as id,
+                    r.uraian,
+                    r.rincian,
+                    r.vol1,
+                    r.sat1,
+                    r.vol2,
+                    r.sat2,
+                    r.harga as harga_satuan,
+                    r.totalHarga as harga_plan,
+                    r.buktiFile as bukti_file,
+                    r.komentarRevisi as komentar,
+                    cat.namaKategori
+                FROM tbl_rab r
+                JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                WHERE r.kakId = ?
+                ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kakId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[$row['namaKategori']][] = $row;
         }
         return $data;
     }
@@ -422,12 +503,7 @@ class adminModel {
             // Jika ada ERROR satu saja, batalkan semua perubahan (Rollback)
             mysqli_rollback($this->db);
             // Log error untuk developer
-            var_dump($e->getMessage()); 
-            die();
             error_log("Gagal Simpan Pengajuan: " . $e->getMessage());
-            
-            // (Opsional) Uncomment ini jika ingin melihat pesan error di layar saat debugging
-            // echo "DEBUG ERROR: " . $e->getMessage(); die;
             
             return false;
         }
