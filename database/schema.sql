@@ -142,7 +142,11 @@ CREATE TABLE `tbl_kegiatan` (
   `suratPengantar` varchar(50) DEFAULT NULL,
   `tanggalMulai` date DEFAULT NULL,
   `tanggalSelesai` date DEFAULT NULL,
-  `posisiId` int(11) NOT NULL DEFAULT 1 COMMENT 'Mengacu pada roleId yang sedang bertugas memproses'
+  `posisiId` int(11) NOT NULL DEFAULT 1 COMMENT 'Mengacu pada roleId yang sedang bertugas memproses',
+  `tanggalPencairan` datetime DEFAULT NULL COMMENT 'Tanggal dana dicairkan oleh Bendahara',
+  `jumlahDicairkan` decimal(15,2) DEFAULT NULL COMMENT 'Jumlah dana yang dicairkan',
+  `metodePencairan` varchar(50) DEFAULT NULL COMMENT 'Metode pencairan: uang_muka, dana_penuh, bertahap',
+  `catatanBendahara` text DEFAULT NULL COMMENT 'Catatan dari Bendahara saat pencairan'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -167,7 +171,8 @@ CREATE TABLE `tbl_lpj` (
   `kegiatanId` int(11) NOT NULL,
   `grandTotalRealisasi` decimal(15,2) DEFAULT NULL,
   `submittedAt` timestamp NULL DEFAULT NULL,
-  `approvedAt` timestamp NULL DEFAULT NULL
+  `approvedAt` timestamp NULL DEFAULT NULL,
+  `tenggatLpj` date DEFAULT NULL COMMENT 'Batas waktu pengumpulan LPJ'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
