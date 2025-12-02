@@ -1,7 +1,6 @@
 <?php
-// File: src/views/pages/verifikator/telaah_detail.php (HANYA UNTUK VERIFIKATOR)
+// File: src/views/pages/verifikator/telaah_detail.php
 
-// --- 1. Setup Variabel (HANYA UNTUK VERIFIKATOR) ---
 $kegiatanId = $kegiatan_data['kegiatanId'] ?? $id ?? '';
 
 $status = $status ?? 'Menunggu';
@@ -11,7 +10,7 @@ $is_disetujui = (strtolower($status) === 'disetujui');
 $is_menunggu = (strtolower($status) === 'menunggu');
 $is_telah_direvisi = (strtolower($status) === 'telah direvisi');
 $is_ditolak = (strtolower($status) === 'ditolak');
-$is_revisi = (strtolower($status) === 'revisi'); // Status saat menunggu admin
+$is_revisi = (strtolower($status) === 'revisi');
 
 $komentar_revisi = $komentar_revisi ?? [];
 $komentar_penolakan = $komentar_penolakan ?? '';
@@ -22,7 +21,6 @@ $rab_data = $rab_data ?? [];
 $kode_mak = $kode_mak ?? '';
 $back_url = $back_url ?? '/docutrack/public/verifikator/dashboard'; 
 
-// Data tambahan yang sama dengan admin
 $surat_pengantar = $kegiatan_data['surat_pengantar'] ?? '';
 $tanggal_mulai = $kegiatan_data['tanggal_mulai'] ?? '';
 $tanggal_selesai = $kegiatan_data['tanggal_selesai'] ?? '';
@@ -32,7 +30,19 @@ if (!function_exists('formatRupiah')) {
     function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
 }
 
-// --- 2. FUNGSI HELPER (KHUSUS VERIFIKATOR) ---
+if (!function_exists('isValidDate')) {
+    function isValidDate($date) {
+        return !empty($date) && $date !== '0000-0000' && strtotime($date) !== false;
+    }
+}
+
+if (!function_exists('formatTanggal')) {
+    function formatTanggal($date, $format = 'd M Y') {
+        if (!isValidDate($date)) return '-';
+        return date($format, strtotime($date));
+    }
+}
+
 function showCommentIcon($field_name, $komentar_list, $is_revisi, $is_telah_direvisi) {
     if (($is_revisi || $is_telah_direvisi) && isset($komentar_list[$field_name])) {
         $comment = htmlspecialchars($komentar_list[$field_name]);
@@ -309,9 +319,9 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                                     <td class="px-4 py-3 text-sm text-gray-700"><?php echo htmlspecialchars($item['uraian'] ?? ''); ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?php echo htmlspecialchars($item['rincian'] ?? ''); ?></td>
                                     <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo $vol1; ?></td>
-                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo htmlspecialchars($sat1); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-center"><?php echo htmlspecialchars($sat1); ?></td>
                                     <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo $vol2; ?></td>
-                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?php echo htmlspecialchars($sat2); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-center"><?php echo htmlspecialchars($sat2); ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-700 text-right"><?php echo number_format($harga, 0, ',', '.'); ?></td>
                                     <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right"><?php echo formatRupiah($total_item); ?></td>
                                 </tr>
@@ -339,60 +349,80 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 </div>
             </div>
 
-            <?php if ($is_disetujui): ?>
-                <div class="mb-8">
-                    <h3 class="text-xl font-bold text-gray-800 pb-3 mb-6 border-b border-gray-200">Rincian Rancangan Kegiatan</h3>
-                    
-                    <div class="mb-6">
-                        <label class="text-sm font-semibold text-gray-700 mb-2 block">Surat Pengantar</label>
-                        <div class="relative max-w-sm">
-                            <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                                <span class="text-sm text-gray-800">
-                                    <?= !empty($surat_pengantar) ? htmlspecialchars($surat_pengantar) : '-'; ?>
-                                </span>
-                                <?php if (!empty($surat_pengantar)): ?>
-                                    <a href="<?= htmlspecialchars($surat_pengantar_url); ?>" target="_blank" class="text-blue-600 hover:text-blue-700">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                <?php else: ?>
-                                    <i class="fas fa-file-alt text-gray-400"></i>
-                                <?php endif; ?>
+            <div class="mb-8 pt-6 border-t border-gray-200 animate-reveal" style="animation-delay: 500ms;">
+                <h3 class="text-xl font-bold text-gray-800 pb-3 mb-4 border-b border-gray-200">5. Rincian Rancangan Kegiatan</h3>
+                
+                <div class="mb-6">
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Surat Pengantar</label>
+                    <div class="relative max-w-2xl">
+                        <?php if (!empty($surat_pengantar)): ?>
+                            <div class="flex items-center justify-between gap-3 px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
+                                <div class="flex items-center gap-3 min-w-0 flex-1">
+                                    <i class="fas fa-file-pdf text-red-500 text-xl flex-shrink-0"></i>
+                                    <span class="text-sm text-gray-800 font-medium truncate" title="<?php echo htmlspecialchars($surat_pengantar); ?>">
+                                        <?php echo htmlspecialchars($surat_pengantar); ?>
+                                    </span>
+                                </div>
+                                <a href="<?php echo htmlspecialchars($surat_pengantar_url); ?>" target="_blank" 
+                                   class="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0">
+                                    <i class="fas fa-download"></i>
+                                </a>
                             </div>
-                        </div>
+                        <?php else: ?>
+                            <div class="flex items-center justify-between px-4 py-3.5 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-file-pdf text-gray-300 text-xl"></i>
+                                    <span class="text-sm text-gray-400 italic">Belum ada file yang diunggah</span>
+                                </div>
+                                <i class="fas fa-times-circle text-gray-300"></i>
+                            </div>
+                        <?php endif; ?>
                     </div>
+                </div>
 
-                    <div class="mb-4">
-                        <label class="text-sm font-semibold text-gray-700 mb-3 block">Kurun Waktu Pelaksanaan</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-                            <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                                <div>
-                                    <span class="text-xs text-gray-500 block">Tanggal Mulai</span>
-                                    <span class="text-sm text-gray-800 font-medium">
-                                        <?= !empty($tanggal_mulai) ? date('d M Y', strtotime($tanggal_mulai)) : '-'; ?>
-                                    </span>
-                                </div>
-                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                <div class="mb-4">
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 block">Kurun Waktu Pelaksanaan</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
+                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
+                            <div>
+                                <span class="text-xs text-gray-500 block mb-1">Tanggal Mulai</span>
+                                <span class="text-sm text-gray-800 font-semibold">
+                                    <?php 
+                                    if (isValidDate($tanggal_mulai)) {
+                                        echo formatTanggal($tanggal_mulai);
+                                    } else {
+                                        echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
+                                    }
+                                    ?>
+                                </span>
                             </div>
-                            <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                                <div>
-                                    <span class="text-xs text-gray-500 block">Tanggal Selesai</span>
-                                    <span class="text-sm text-gray-800 font-medium">
-                                        <?= !empty($tanggal_selesai) ? date('d M Y', strtotime($tanggal_selesai)) : '-'; ?>
-                                    </span>
-                                </div>
-                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                            <i class="fas fa-calendar-alt <?php echo isValidDate($tanggal_mulai) ? 'text-blue-500' : 'text-gray-300'; ?> text-lg"></i>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
+                            <div>
+                                <span class="text-xs text-gray-500 block mb-1">Tanggal Selesai</span>
+                                <span class="text-sm text-gray-800 font-semibold">
+                                    <?php 
+                                    if (isValidDate($tanggal_selesai)) {
+                                        echo formatTanggal($tanggal_selesai);
+                                    } else {
+                                        echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
+                                    }
+                                    ?>
+                                </span>
                             </div>
+                            <i class="fas fa-calendar-check <?php echo isValidDate($tanggal_selesai) ? 'text-green-500' : 'text-gray-300'; ?> text-lg"></i>
                         </div>
                     </div>
                 </div>
-            <?php endif; ?>
+            </div>
             
             <div id="mak-section" class="mt-8 pt-6 border-t border-gray-200 animate-reveal 
                 <?php echo ($is_disetujui) ? 'block' : 'hidden'; ?>" 
                 style="<?php echo (($is_menunggu || $is_telah_direvisi) && !$is_ditolak) ? 'opacity: 0; max-height: 0px; overflow: hidden; transform: translateY(-10px); transition: all 0.4s ease-out;' : 'animation-delay: 500ms;'; ?>"
                 >
                 <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                    Kode Mata Anggaran Kegiatan (MAK)
+                    6. Kode Mata Anggaran Kegiatan (MAK)
                     <?php showCommentIcon('kode_mak', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                 </h3>
                 <div class="relative max-w-md">
@@ -458,17 +488,14 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        // --- 1. Ambil Status & Nama dari PHP ---
         const isDisetujui = <?php echo json_encode($is_disetujui); ?>;
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
         const kegiatanId = <?php echo json_encode($kegiatanId ?: $id); ?>;
 
-        // --- 2. Fallback Fungsi formatRupiah ---
         if (typeof formatRupiah !== 'function') {
             window.formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka || 0)}`;
         }
         
-        // --- 3. Logika Floating Label ---
         document.querySelectorAll('#form-verifikasi .peer').forEach(input => {
             const label = input.nextElementSibling;
             if (label && label.classList.contains('floating-label')) {
@@ -496,10 +523,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             }
         });
 
-        // ===================================
-        // 💡 LOGIKA UI DINAMIS VERIFIKATOR (LENGKAP) 💡
-        // ===================================
-        
         const btnLanjutMak = document.getElementById('btn-lanjut-mak');
         const btnKembaliReview = document.getElementById('btn-kembali-review');
         const btnShowRevisi = document.getElementById('btn-show-revisi');
@@ -515,7 +538,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         const commentBoxes = document.querySelectorAll('.comment-box'); 
         const formVerifikasi = document.getElementById('form-verifikasi');
 
-        function toggleReviewMode(mode) { // 'review', 'approval', 'comment'
+        function toggleReviewMode(mode) {
             if (reviewActions) reviewActions.classList.toggle('hidden', mode !== 'review');
             if (approvalActions) approvalActions.classList.toggle('hidden', mode !== 'approval');
             if (commentActions) commentActions.classList.toggle('hidden', mode !== 'comment');
@@ -554,22 +577,18 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             });
         }
 
-        // --- Event Listener untuk Lanjut (ke MAK) ---
         btnLanjutMak?.addEventListener('click', () => {
             toggleReviewMode('approval');
         });
 
-        // --- Event Listener untuk Kembali (dari MAK) ---
         btnKembaliReview?.addEventListener('click', () => {
             toggleReviewMode('review');
         });
 
-        // --- Event Listener untuk Revisi (Masuk mode komentar) ---
         btnShowRevisi?.addEventListener('click', () => {
             toggleReviewMode('comment');
         });
 
-        // --- Event Listener untuk Batal Revisi ---
         btnBatalRevisi?.addEventListener('click', () => {
             commentBoxes.forEach(box => {
                 const textarea = box.querySelector('textarea');
@@ -578,7 +597,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             toggleReviewMode('review');
         });
         
-        // --- Event Listener untuk Kirim Komentar Revisi (Submit) ---
         btnKirimRevisi?.addEventListener('click', (e) => {
             e.preventDefault();
             
@@ -609,7 +627,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'Mengirim...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-                    // pas btn-kirim-revisi diklik, akan mengarahkan ke route revise di index
                     formVerifikasi.action = "/docutrack/public/verifikator/telaah/revise/" + kegiatanId + "?ref=detail";
 
                     formVerifikasi.submit();
@@ -617,7 +634,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             });
         });
 
-        // --- Event Listener untuk Tombol Tolak ---
         btnTolak?.addEventListener('click', () => {
             Swal.fire({
                 title: 'Tolak Usulan Ini?',
@@ -640,11 +656,10 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'Memproses...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     
-                    // Tambahkan hidden input untuk alasan penolakan (dari SweetAlert input)
                     const alasanInput = document.createElement('input');
                     alasanInput.type = 'hidden';
                     alasanInput.name = 'alasan_penolakan';
-                    alasanInput.value = result.value; // Ambil nilai dari SweetAlert textarea
+                    alasanInput.value = result.value;
                     formVerifikasi.appendChild(alasanInput);
                     
                     formVerifikasi.action = "/docutrack/public/verifikator/telaah/reject/" + kegiatanId + "?ref=detail";
@@ -653,7 +668,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             });
         });
 
-        // --- Event Listener untuk Tombol Setujui Usulan (setelah isi MAK) ---
         btnSetujui?.addEventListener('click', (e) => {
             e.preventDefault(); 
             
@@ -683,14 +697,12 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'Menyetujui...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });                    
                     
-                    // pas btn-setujui-usulan diklik, akan mengarahkan ke route approve di index
                     formVerifikasi.action = "/docutrack/public/verifikator/telaah/approve/" + kegiatanId + "?ref=detail";
 
-                    // pas btn-setujui-usulan, ngetriger form action ke approve
                     formVerifikasi.submit();
                 }
             });
         });
         
-    }); // Akhir DOMContentLoaded
+    });
 </script>

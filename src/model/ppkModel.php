@@ -5,7 +5,6 @@ class ppkModel {
     private $db;
 
     public function __construct() {
-        // Hubungkan ke database
         require_once __DIR__ . '/conn.php';
         if (isset($conn)) {
             $this->db = $conn;
@@ -15,17 +14,9 @@ class ppkModel {
     }
 
     /**
-     * ====================================================
-     * 1. MENGAMBIL DATA STATISTIK (KARTU ATAS DASHBOARD)
-     * ====================================================
+     * Mengambil data statistik untuk dashboard.
      */
     public function getDashboardStats() {
-        // Menghitung total berdasarkan statusUtamaId di tbl_kegiatan
-        // Asumsi ID Status: 
-        // 1 = Menunggu, 2 = Revisi
-        // 3 = Disetujui
-        // 4 = Ditolak
-        
         $query = "SELECT 
                     sum(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as total,
                     SUM(CASE WHEN posisiId IN (3, 5) THEN 1 ELSE 0 END) as disetujui,
@@ -45,13 +36,9 @@ class ppkModel {
     }
 
     /**
-     * ====================================================
-     * 2. MENGAMBIL LIST USULAN (UNTUK TABEL DASHBOARD)
-     * ====================================================
+     * Mengambil daftar usulan untuk tabel dashboard.
      */
     public function getDashboardKAK() {
-        // Mengambil data kegiatan join dengan status
-        
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -61,13 +48,10 @@ class ppkModel {
                     k.prodiPenyelenggara as prodi,
                     k.createdAt as tanggal_pengajuan,
                     k.posisiId as posisi,
-                    
-                    -- Ambil nama status dari tabel relasi tbl_status_utama
                     s.namaStatusUsulan as status
-
                 FROM tbl_kegiatan k
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                WHERE k.posisiId = 4  -- TAMBAHKAN INI
+                WHERE k.posisiId = 4
                 ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
@@ -75,14 +59,12 @@ class ppkModel {
         
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                // Formatting Status agar konsisten (Huruf Besar Awal)
                 if (isset($row['status'])) {
                     $row['status'] = ucfirst($row['status']); 
                 } else {
-                    $row['status'] = 'Menunggu'; // Default
+                    $row['status'] = 'Menunggu';
                 }
                 
-                // Pastikan Jurusan & Prodi tidak null untuk tampilan
                 $row['jurusan'] = $row['jurusan'] ?? '-';
                 $row['prodi'] = $row['prodi'] ?? '-';
                 
@@ -93,12 +75,8 @@ class ppkModel {
     }
 
     /**
-     * ====================================================
-     * 3. GET DETAIL KEGIATAN (UNTUK HALAMAN TELAAH)
-     * ====================================================
+     * Mengambil detail utama kegiatan.
      */
-    
-    // A. Ambil Data Utama Kegiatan
     public function getDetailKegiatan($kegiatanId) {
         $query = "SELECT 
                     k.*, 
@@ -117,7 +95,9 @@ class ppkModel {
         return mysqli_fetch_assoc($result);
     }
 
-    // B. Ambil Indikator KAK
+    /**
+     * Mengambil indikator KAK.
+     */
     public function getIndikatorByKAK($kakId) {
         $query = "SELECT bulan, indikatorKeberhasilan as nama, targetPersen as target FROM tbl_indikator_kak WHERE kakId = ?";
         $stmt = mysqli_prepare($this->db, $query);
@@ -130,7 +110,9 @@ class ppkModel {
         return $data;
     }
 
-    // C. Ambil Tahapan Pelaksanaan
+    /**
+     * Mengambil tahapan pelaksanaan.
+     */
     public function getTahapanByKAK($kakId) {
         $query = "SELECT namaTahapan FROM tbl_tahapan_pelaksanaan WHERE kakId = ? ORDER BY tahapanId ASC";
         $stmt = mysqli_prepare($this->db, $query);
@@ -143,7 +125,9 @@ class ppkModel {
         return $data;
     }
 
-    // D. Ambil RAB (Grouped by Kategori)
+    /**
+     * Mengambil RAB (dikelompokkan berdasarkan kategori).
+     */
     public function getRABByKAK($kakId) {
         $query = "SELECT r.*, cat.namaKategori 
                   FROM tbl_rab r
@@ -164,15 +148,9 @@ class ppkModel {
     }
 
     /**
-     * ====================================================
-     * 4. UPDATE STATUS (APPROVE PPK)
-     * ====================================================
+     * Menyetujui usulan.
      */
     public function approveUsulan($kegiatanId) {
-        // LOGIKA ESTAFET PPK:
-        // Posisi: Pindah ke Wadir (ID 3)
-        // Status: Reset ke Menunggu (ID 1)
-        
         $nextPosisi = 3;  // WADIR
         $resetStatus = 1; // Menunggu
         $statusDisetujui = 3; // Status untuk history
@@ -180,7 +158,6 @@ class ppkModel {
         mysqli_begin_transaction($this->db);
         
         try {
-            // 1. Update posisi kegiatan ke Wadir
             $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
             $stmt = mysqli_prepare($this->db, $query);
             mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $resetStatus, $kegiatanId);
@@ -190,7 +167,6 @@ class ppkModel {
             }
             mysqli_stmt_close($stmt);
             
-            // 2. Catat ke tbl_progress_history
             $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, ?, NOW())";
             $stmtHistory = mysqli_prepare($this->db, $historyQuery);
             mysqli_stmt_bind_param($stmtHistory, "ii", $kegiatanId, $statusDisetujui);
@@ -208,78 +184,9 @@ class ppkModel {
     }
 
     /**
-     * ====================================================
-     * 4B. REJECT USULAN (PPK)
-     * ====================================================
-     * Kembalikan ke Admin (posisiId = 1) dengan status Revisi (2)
-     * 
-     * @param int $kegiatanId ID Kegiatan
-     * @param string $alasanPenolakan Alasan penolakan (opsional)
-     * @return bool
-     */
-    public function rejectUsulan($kegiatanId, $alasanPenolakan = '') {
-        // LOGIKA REJECT PPK:
-        // Posisi: Kembalikan ke Admin (ID 1)
-        // Status: Revisi (ID 2) agar bisa diperbaiki
-        
-        $backToPosisi = 1;    // Kembalikan ke Admin
-        $statusRevisi = 2;    // Status Revisi
-        $currentPosisi = 4;   // PPK
-        $userId = $_SESSION['user_id'] ?? null;
-        
-        mysqli_begin_transaction($this->db);
-        
-        try {
-            // 1. Update posisi kegiatan kembali ke Admin
-            $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "iii", $backToPosisi, $statusRevisi, $kegiatanId);
-            
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal update kegiatan");
-            }
-            mysqli_stmt_close($stmt);
-            
-            // 2. Catat ke tbl_progress_history
-            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, fromPosisi, toPosisi, userId, aksi, timestamp) 
-                             VALUES (?, ?, ?, ?, ?, 'reject', NOW())";
-            $stmtHistory = mysqli_prepare($this->db, $historyQuery);
-            mysqli_stmt_bind_param($stmtHistory, "iiiii", $kegiatanId, $statusRevisi, $currentPosisi, $backToPosisi, $userId);
-            mysqli_stmt_execute($stmtHistory);
-            $historyId = mysqli_insert_id($this->db);
-            mysqli_stmt_close($stmtHistory);
-            
-            // 3. Simpan komentar penolakan jika ada
-            if (!empty($alasanPenolakan) && $historyId) {
-                $commentQuery = "INSERT INTO tbl_komentar_revisi (historyId, userId, roleId, komentar, createdAt) 
-                                 VALUES (?, ?, 4, ?, NOW())";
-                $stmtComment = mysqli_prepare($this->db, $commentQuery);
-                mysqli_stmt_bind_param($stmtComment, "iis", $historyId, $userId, $alasanPenolakan);
-                mysqli_stmt_execute($stmtComment);
-                mysqli_stmt_close($stmtComment);
-            }
-            
-            mysqli_commit($this->db);
-            return true;
-            
-        } catch (Exception $e) {
-            mysqli_rollback($this->db);
-            error_log("PPK rejectUsulan Error: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * ====================================================
-     * 5. AMBIL DATA RIWAYAT (HISTORY)
-     * ====================================================
-     * Mengambil data yang SUDAH LEWAT dari meja PPK
+     * Mengambil data riwayat PPK.
      */
     public function getRiwayat() {
-        // Logika:
-        // 1. Sudah Disetujui: Posisi ada di Wadir (3) atau Bendahara (5)
-        // 2. Ditolak: Status Utama = 4 (Ditolak)
-        
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -287,23 +194,14 @@ class ppkModel {
                     k.nimPelaksana as nim,
                     k.prodiPenyelenggara as prodi,
                     k.createdAt as tanggal_pengajuan,
-                    
-                    -- Tentukan Status Tampilan untuk Riwayat
                     CASE 
-                        -- Jika posisi sudah di Wadir/Bendahara => Berarti 'Disetujui' oleh PPK
                         WHEN k.posisiId IN (3, 5) AND k.statusUtamaId != 4 THEN 'Disetujui'
-                        -- Jika statusnya 4 => 'Ditolak'
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                        -- Sisa (jarang terjadi di query ini)
                         ELSE 'Diproses'
                     END as status
-
                   FROM tbl_kegiatan k
                   WHERE 
-                    -- Filter: Ambil yang posisinya SUDAH MAJU ke Wadir(3)/Bendahara(5)
-                    -- ATAU yang statusnya Ditolak(4) tapi pernah lewat PPK (Logika sederhana: semua yg ditolak)
                     k.posisiId IN (3, 5) OR k.statusUtamaId = 4
-                  
                   ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
@@ -318,14 +216,11 @@ class ppkModel {
     }
 
     /**
-     * ====================================================
-     * 6. MONITORING DATA (Untuk Halaman Monitoring)
-     * ====================================================
+     * Mengambil data monitoring.
      */
     public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter) {
         $offset = ($page - 1) * $perPage;
         
-        // Base Query
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -336,58 +231,46 @@ class ppkModel {
                     k.createdAt as tanggal,
                     k.posisiId,
                     k.statusUtamaId,
-                    
-                    -- MAPPING PROGRESS BERDASARKAN POSISI ID
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak' 
-                        WHEN k.posisiId = 1 THEN 'Pengajuan'    -- Di Admin
-                        WHEN k.posisiId = 2 THEN 'Verifikasi'   -- Di Verifikator
-                        WHEN k.posisiId = 4 THEN 'ACC PPK'      -- Di PPK
-                        WHEN k.posisiId = 3 THEN 'ACC WD'    -- Di Wadir
-                        WHEN k.posisiId = 5 THEN 'Dana Cair'    -- Di Bendahara
+                        WHEN k.posisiId = 1 THEN 'Pengajuan'
+                        WHEN k.posisiId = 2 THEN 'Verifikasi'
+                        WHEN k.posisiId = 4 THEN 'ACC PPK'
+                        WHEN k.posisiId = 3 THEN 'ACC WD'
+                        WHEN k.posisiId = 5 THEN 'Dana Cair'
                         ELSE 'Unknown'
                     END as tahap_sekarang,
-
-                    -- Status Label
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.posisiId = 5 THEN 'Approved'
                         ELSE 'In Process'
                     END as status
-
                   FROM tbl_kegiatan k
                   WHERE 1=1 ";
         
-        // Filter Search
         if (!empty($search)) {
             $search = mysqli_real_escape_string($this->db, $search);
             $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
 
-        // Filter Status
         if ($statusFilter !== 'semua') {
             if ($statusFilter === 'ditolak') {
                 $query .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
                 $query .= " AND k.posisiId = 5";
             } elseif ($statusFilter === 'menunggu') {
-                $query .= " AND k.posisiId = 4"; // Menunggu di meja PPK
+                $query .= " AND k.posisiId = 4";
             } elseif ($statusFilter === 'in process') {
                 $query .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
             }
         }
 
-        // Filter Jurusan
         if ($jurusanFilter !== 'semua') {
             $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
             $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
         }
 
-        // Hitung Total Data (Untuk Pagination)
-        $countQuery = str_replace("SELECT \n                    k.kegiatanId as id,", "SELECT COUNT(*) as total", $query);
-        // Hapus bagian column yang panjang di count query agar valid SQL (simple regex replace or substr if needed, but manual replacement above is safer logic structure, simplified here:)
         $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-        // Re-apply filters to count query (Copy paste logic above or restructure code, for brevity I'll rewrite logic inside logic)
         if (!empty($search)) { $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')"; }
         if ($statusFilter !== 'semua') {
              if ($statusFilter === 'ditolak') $countQuery .= " AND k.statusUtamaId = 4";
@@ -397,15 +280,11 @@ class ppkModel {
         }
         if ($jurusanFilter !== 'semua') { $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'"; }
 
-
-        // Order & Limit
         $query .= " ORDER BY k.createdAt DESC LIMIT $perPage OFFSET $offset";
 
-        // Execute Count
         $totalResult = mysqli_query($this->db, $countQuery);
         $totalItems = ($totalResult) ? mysqli_fetch_assoc($totalResult)['total'] : 0;
 
-        // Execute Main Query
         $result = mysqli_query($this->db, $query);
         $data = [];
         if ($result) {
@@ -420,7 +299,6 @@ class ppkModel {
         ];
     }
 
-    // Helper untuk Filter Dropdown
     public function getListJurusanDistinct() {
         $query = "SELECT DISTINCT jurusanPenyelenggara as jurusan FROM tbl_kegiatan WHERE jurusanPenyelenggara IS NOT NULL AND jurusanPenyelenggara != '' ORDER BY jurusanPenyelenggara ASC";
         $result = mysqli_query($this->db, $query);
@@ -433,4 +311,3 @@ class ppkModel {
         return $list;
     }
 }
-?>

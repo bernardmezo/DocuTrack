@@ -14,18 +14,13 @@ class wadirModel {
     }
 
     /**
-     * 1. STATISTIK DASHBOARD
+     * Mengambil data statistik untuk dashboard.
      */
     public function getDashboardStats() {
-        // ID ROLE: 3=Wadir, 5=Bendahara
-        
         $query = "SELECT 
                     SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as total,
-                    -- Disetujui Wadir: Jika posisi sudah di Bendahara (5)
                     SUM(CASE WHEN posisiId = 5 AND statusUtamaId != 4 THEN 1 ELSE 0 END) as disetujui,
-                    -- Menunggu: Sedang di meja Wadir (Posisi = 3)
                     SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as menunggu
-
                 FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
@@ -36,8 +31,7 @@ class wadirModel {
     }
 
     /**
-     * 2. LIST USULAN (ACTIVE TASKS)
-     * Hanya mengambil yang posisiId = 3 (Wadir)
+     * Mengambil daftar usulan (tugas aktif).
      */
     public function getDashboardKAK() {
         $query = "SELECT 
@@ -50,10 +44,9 @@ class wadirModel {
                     k.createdAt as tanggal_pengajuan,
                     k.posisiId as posisi,
                     s.namaStatusUsulan as status
-
                 FROM tbl_kegiatan k
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                WHERE k.posisiId = 3  -- KHUSUS WADIR
+                WHERE k.posisiId = 3
                 ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
@@ -61,7 +54,6 @@ class wadirModel {
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 if (isset($row['status'])) $row['status'] = ucfirst($row['status']);
-                // Handle null
                 $row['jurusan'] = $row['jurusan'] ?? '-';
                 $row['prodi'] = $row['prodi'] ?? '-';
                 $data[] = $row;
@@ -71,7 +63,7 @@ class wadirModel {
     }
 
     /**
-     * 3. DETAIL KEGIATAN (Generic)
+     * Mengambil detail kegiatan.
      */
     public function getDetailKegiatan($kegiatanId) {
         $query = "SELECT k.*, kak.*, s.namaStatusUsulan as status_text
@@ -113,13 +105,9 @@ class wadirModel {
     }
 
     /**
-     * 4. APPROVE USULAN (WADIR -> BENDAHARA)
+     * Menyetujui usulan (Wadir -> Bendahara).
      */
     public function approveUsulan($kegiatanId) {
-        // LOGIKA ESTAFET WADIR:
-        // Posisi: Pindah ke Bendahara (ID 5)
-        // Status: Reset ke Menunggu (ID 1)
-        
         $nextPosisi = 5;  // BENDAHARA
         $resetStatus = 1; // Menunggu
         $statusDisetujui = 3; // Status untuk history
@@ -127,7 +115,6 @@ class wadirModel {
         mysqli_begin_transaction($this->db);
         
         try {
-            // 1. Update posisi kegiatan ke Bendahara
             $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
             $stmt = mysqli_prepare($this->db, $query);
             mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $resetStatus, $kegiatanId);
@@ -137,7 +124,6 @@ class wadirModel {
             }
             mysqli_stmt_close($stmt);
             
-            // 2. Catat ke tbl_progress_history
             $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, ?, NOW())";
             $stmtHistory = mysqli_prepare($this->db, $historyQuery);
             mysqli_stmt_bind_param($stmtHistory, "ii", $kegiatanId, $statusDisetujui);
@@ -155,68 +141,7 @@ class wadirModel {
     }
 
     /**
-     * 4B. REJECT USULAN (WADIR)
-     * Kembalikan ke Admin (posisiId = 1) dengan status Revisi (2)
-     * 
-     * @param int $kegiatanId ID Kegiatan
-     * @param string $alasanPenolakan Alasan penolakan (opsional)
-     * @return bool
-     */
-    public function rejectUsulan($kegiatanId, $alasanPenolakan = '') {
-        // LOGIKA REJECT WADIR:
-        // Posisi: Kembalikan ke Admin (ID 1)
-        // Status: Revisi (ID 2) agar bisa diperbaiki
-        
-        $backToPosisi = 1;    // Kembalikan ke Admin
-        $statusRevisi = 2;    // Status Revisi
-        $currentPosisi = 3;   // Wadir
-        $userId = $_SESSION['user_id'] ?? null;
-        
-        mysqli_begin_transaction($this->db);
-        
-        try {
-            // 1. Update posisi kegiatan kembali ke Admin
-            $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "iii", $backToPosisi, $statusRevisi, $kegiatanId);
-            
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal update kegiatan");
-            }
-            mysqli_stmt_close($stmt);
-            
-            // 2. Catat ke tbl_progress_history
-            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, fromPosisi, toPosisi, userId, aksi, timestamp) 
-                             VALUES (?, ?, ?, ?, ?, 'reject', NOW())";
-            $stmtHistory = mysqli_prepare($this->db, $historyQuery);
-            mysqli_stmt_bind_param($stmtHistory, "iiiii", $kegiatanId, $statusRevisi, $currentPosisi, $backToPosisi, $userId);
-            mysqli_stmt_execute($stmtHistory);
-            $historyId = mysqli_insert_id($this->db);
-            mysqli_stmt_close($stmtHistory);
-            
-            // 3. Simpan komentar penolakan jika ada
-            if (!empty($alasanPenolakan) && $historyId) {
-                $commentQuery = "INSERT INTO tbl_komentar_revisi (historyId, userId, roleId, komentar, createdAt) 
-                                 VALUES (?, ?, 3, ?, NOW())";
-                $stmtComment = mysqli_prepare($this->db, $commentQuery);
-                mysqli_stmt_bind_param($stmtComment, "iis", $historyId, $userId, $alasanPenolakan);
-                mysqli_stmt_execute($stmtComment);
-                mysqli_stmt_close($stmtComment);
-            }
-            
-            mysqli_commit($this->db);
-            return true;
-            
-        } catch (Exception $e) {
-            mysqli_rollback($this->db);
-            error_log("Wadir rejectUsulan Error: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * 5. RIWAYAT WADIR
-     * Mengambil yang sudah lewat Wadir (Posisi = 5) ATAU Ditolak
+     * Mengambil riwayat Wadir.
      */
     public function getRiwayat() {
         $query = "SELECT 
@@ -244,14 +169,11 @@ class wadirModel {
     }
 
     /**
-     * ====================================================
-     * 6. MONITORING DATA (SAMA DENGAN PPK)
-     * ====================================================
+     * Mengambil data monitoring.
      */
     public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter) {
         $offset = ($page - 1) * $perPage;
         
-        // Base Query
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -262,59 +184,46 @@ class wadirModel {
                     k.createdAt as tanggal,
                     k.posisiId,
                     k.statusUtamaId,
-                    
-                    -- MAPPING PROGRESS (Sesuai Flowchart)
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.posisiId = 1 THEN 'Pengajuan'    
                         WHEN k.posisiId = 2 THEN 'Verifikasi'   
                         WHEN k.posisiId = 4 THEN 'ACC PPK'      
-                        WHEN k.posisiId = 3 THEN 'ACC WD'       -- Konsisten dengan JS ('ACC WD')
+                        WHEN k.posisiId = 3 THEN 'ACC WD'       
                         WHEN k.posisiId = 5 THEN 'Dana Cair'    
                         ELSE 'Unknown'
                     END as tahap_sekarang,
-
-                    -- Status Label
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.posisiId = 5 THEN 'Approved'
                         ELSE 'In Process'
                     END as status
-
                   FROM tbl_kegiatan k
                   WHERE 1=1 ";
         
-        // Filter Search
         if (!empty($search)) {
             $search = mysqli_real_escape_string($this->db, $search);
             $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
 
-        // Filter Status
         if ($statusFilter !== 'semua') {
             if ($statusFilter === 'ditolak') {
                 $query .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
                 $query .= " AND k.posisiId = 5";
             } elseif ($statusFilter === 'menunggu') {
-                $query .= " AND k.posisiId = 3"; // Menunggu di meja Wadir
+                $query .= " AND k.posisiId = 3";
             } elseif ($statusFilter === 'in process') {
                 $query .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
             }
         }
 
-        // Filter Jurusan
         if ($jurusanFilter !== 'semua') {
             $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
             $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
         }
 
-        // Hitung Total Data
-        $countQuery = str_replace("SELECT \n                    k.kegiatanId as id,", "SELECT COUNT(*) as total", $query);
-        // Simplifikasi count query untuk performa (opsional, tapi string replace di atas kadang rawan jika select kompleks)
         $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-        // Re-apply logic (Simpelnya ambil logic WHERE saja jika mau)
-        // Untuk amannya, copy logic WHERE di atas:
         if (!empty($search)) { $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')"; }
         if ($statusFilter !== 'semua') {
              if ($statusFilter === 'ditolak') $countQuery .= " AND k.statusUtamaId = 4";

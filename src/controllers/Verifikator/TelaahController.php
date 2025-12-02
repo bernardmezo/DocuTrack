@@ -6,8 +6,7 @@ require_once '../src/model/verifikatorModel.php';
 
 class VerifikatorTelaahController extends Controller {
     /**
-     * METHOD: index()
-     * Menampilkan halaman daftar antrian telaah (data real dari DB).
+     * Menampilkan halaman daftar antrian telaah.
      */
     public function index($data_dari_router = []) {
         $model = new verifikatorModel();
@@ -50,7 +49,6 @@ class VerifikatorTelaahController extends Controller {
     }
 
     /**
-     * METHOD: show($id)
      * Menampilkan detail telaah (KAK) untuk satu usulan berdasarkan ID.
      */
     public function show($id, $data_dari_router = []) {
@@ -88,22 +86,25 @@ class VerifikatorTelaahController extends Controller {
         }
 
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
+        
+        $surat_url = !empty($dataDB['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $dataDB['suratPengantar'] : '';
 
         $kegiatan_data = [
             'kegiatanId' => $dataDB['kegiatanId'],
             'nama_pengusul' => $dataDB['pemilikKegiatan'],
             'nim_pengusul' => $dataDB['nimPelaksana'],
-            'nama_penanggung_jawab' => $dataDB['namaPenanggungJawab'] ?? '-',
+            'nama_penanggung_jawab' => $dataDB['namaPJ'] ?? '-',
             'nip_penanggung_jawab' => $dataDB['nip'] ?? '-',
             'jurusan' => $dataDB['jurusanPenyelenggara'],
+            'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
             'gambaran_umum' => $dataDB['gambaranUmum'],
             'penerima_manfaat' => $dataDB['penerimaMaanfaat'],
             'metode_pelaksanaan' => $dataDB['metodePelaksanaan'],
             'tahapan_kegiatan' => $tahapan_string,
-            'surat_pengantar' => '',
-            'tanggal_mulai' => '',
-            'tanggal_selesai' => ''
+            'surat_pengantar' => $dataDB['suratPengantar'] ?? '',
+            'tanggal_mulai' => $dataDB['tanggalMulai'] ?? '',
+            'tanggal_selesai' => $dataDB['tanggalSelesai'] ?? ''
         ];
 
         $data = array_merge($data_dari_router, [
@@ -118,7 +119,7 @@ class VerifikatorTelaahController extends Controller {
             'kode_mak' => $dataDB['buktiMAK'] ?? '',
             'komentar_revisi' => [],
             'komentar_penolakan' => '',
-            'surat_pengantar_url' => '#',
+            'surat_pengantar_url' => $surat_url,
             'back_url' => $back_url
         ]);
 
@@ -126,7 +127,6 @@ class VerifikatorTelaahController extends Controller {
     }
 
     /**
-     * METHOD: approve($id)
      * Menyetujui usulan dengan ID tertentu.
      */
     public function approve($routeId = null)
@@ -139,6 +139,7 @@ class VerifikatorTelaahController extends Controller {
 
             $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
             $kodeMak = trim($_POST['kode_mak'] ?? '');
+            $umpanBalik = trim($_POST['umpan_balik'] ?? '');
 
             if (empty($kegiatanId)) {
                 throw new Exception('ID kegiatan tidak ditemukan');
@@ -150,7 +151,7 @@ class VerifikatorTelaahController extends Controller {
 
             $model = new verifikatorModel();
 
-            if ($model->approveUsulan($kegiatanId, $kodeMak)) {
+            if ($model->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
                 $_SESSION['flash_message'] = 'Usulan berhasil disetujui.';
                 header('Location: /docutrack/public/verifikator/dashboard?msg=approved');
                 exit;
@@ -166,8 +167,7 @@ class VerifikatorTelaahController extends Controller {
     }
 
     /**
-     * METHOD: reject
-     * Menolak usulan dengan ID tertentu + menyimpan alasan
+     * Menolak usulan dengan ID tertentu.
      */
     public function reject($routeId = null)
     {
@@ -205,8 +205,7 @@ class VerifikatorTelaahController extends Controller {
     }
 
     /**
-     * METHOD: revise($id)
-     * Mengirim usulan untuk direvisi + menyimpan komentar
+     * Mengirim usulan untuk direvisi.
      */
     public function revise($routeId = null)
     {
@@ -221,7 +220,6 @@ class VerifikatorTelaahController extends Controller {
                 throw new Exception('ID kegiatan tidak ditemukan');
             }
 
-            // Ambil komentar dari array komentar[field_name] yang dikirim View
             $rawKomentar = $_POST['komentar'] ?? [];
             $komentarRevisi = [];
 
@@ -235,7 +233,6 @@ class VerifikatorTelaahController extends Controller {
                 }
             }
 
-            // Minimal harus ada 1 komentar revisi
             if (empty($komentarRevisi)) {
                 throw new Exception('Minimal isi satu catatan revisi');
             }

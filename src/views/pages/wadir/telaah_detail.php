@@ -1,14 +1,11 @@
 <?php
-// File: src/views/pages/Wadir/telaah_detail.php (HANYA UNTUK Wadir)
+// File: src/views/pages/Wadir/telaah_detail.php
 
-// --- 1. Setup Variabel (Diterima dari Controller) ---
 $status = $status ?? 'Menunggu';
 
-// Status Boolean
 $is_disetujui = (strtolower($status) === 'disetujui');
 $is_menunggu = (strtolower($status) === 'menunggu');
 
-// Data Payload
 $komentar_penolakan = $komentar_penolakan ?? '';
 $kegiatan_data = $kegiatan_data ?? [];
 $iku_data = $iku_data ?? [];
@@ -22,12 +19,23 @@ $tanggal_mulai = $kegiatan_data['tanggal_mulai'] ?? '';
 $tanggal_selesai = $kegiatan_data['tanggal_selesai'] ?? '';
 $surat_pengantar_url = $surat_pengantar_url ?? '';
 
-// Fallback helper
 if (!function_exists('formatRupiah')) {
     function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
 }
 
-// Helper function untuk menampilkan value atau placeholder
+if (!function_exists('isValidDate')) {
+    function isValidDate($date) {
+        return !empty($date) && $date !== '0000-00-00' && strtotime($date) !== false;
+    }
+}
+
+if (!function_exists('formatTanggal')) {
+    function formatTanggal($date, $format = 'd M Y') {
+        if (!isValidDate($date)) return '-';
+        return date($format, strtotime($date));
+    }
+}
+
 function displayValue($value, $placeholder = 'Belum diisi') {
     return !empty($value) ? htmlspecialchars($value) : '<span class="text-gray-400 italic">' . $placeholder . '</span>';
 }
@@ -37,7 +45,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
 
     <section class="bg-white p-4 md:p-10 rounded-2xl shadow-lg overflow-hidden mb-8">
         
-        <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-5 border-b border-gray-200 gap-4">
             <div>
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Persetujuan Usulan Kegiatan</h2>
@@ -61,7 +68,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
         
         <form id="form-Wadir-approval" action="#" method="POST">
             
-            <!-- 1. KAK -->
             <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 mb-6">
         <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 pb-3 border-b border-gray-100">
             1. Kerangka Acuan Kerja (KAK)
@@ -334,30 +340,30 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                                 <span class="text-xs text-gray-500 block mb-1">Tanggal Mulai</span>
                                 <span class="text-sm text-gray-800 font-semibold">
                                     <?php 
-                                    if (!empty($tanggal_mulai)) {
-                                        echo date('d M Y', strtotime($tanggal_mulai));
+                                    if (isValidDate($tanggal_mulai)) {
+                                        echo formatTanggal($tanggal_mulai);
                                     } else {
                                         echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
                                     }
                                     ?>
                                 </span>
                             </div>
-                            <i class="fas fa-calendar-alt <?php echo !empty($tanggal_mulai) ? 'text-blue-500' : 'text-gray-300'; ?> text-lg"></i>
+                            <i class="fas fa-calendar-alt <?php echo isValidDate($tanggal_mulai) ? 'text-blue-500' : 'text-gray-300'; ?> text-lg"></i>
                         </div>
                         <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
                             <div>
                                 <span class="text-xs text-gray-500 block mb-1">Tanggal Selesai</span>
                                 <span class="text-sm text-gray-800 font-semibold">
                                     <?php 
-                                    if (!empty($tanggal_selesai)) {
-                                        echo date('d M Y', strtotime($tanggal_selesai));
+                                    if (isValidDate($tanggal_selesai)) {
+                                        echo formatTanggal($tanggal_selesai);
                                     } else {
                                         echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
                                     }
                                     ?>
                                 </span>
                             </div>
-                            <i class="fas fa-calendar-check <?php echo !empty($tanggal_selesai) ? 'text-green-500' : 'text-gray-300'; ?> text-lg"></i>
+                            <i class="fas fa-calendar-check <?php echo isValidDate($tanggal_selesai) ? 'text-green-500' : 'text-gray-300'; ?> text-lg"></i>
                         </div>
                     </div>
                 </div>
@@ -436,10 +442,8 @@ function displayValue($value, $placeholder = 'Belum diisi') {
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
         const formWadir = document.getElementById('form-Wadir-approval');
 
-        // [PENTING] Ambil ID Kegiatan dari PHP untuk menyusun URL Action
         const kegiatanId = "<?php echo $id ?? ''; ?>"; 
         
-        // --- Event Listener Tombol Setujui (Wadir) ---
         const btnSetujuiWadir = document.getElementById('btn-setujui-Wadir');
         btnSetujuiWadir?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -469,7 +473,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             didOpen: () => Swal.showLoading() 
                         });
                         
-                        // Delay 1.5 detik sebelum submit
                         setTimeout(() => {
                             formWadir.action = `/docutrack/public/wadir/telaah/approve/${kegiatanId}`;
                             formWadir.submit();
@@ -477,7 +480,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                     }
                 });
             } else {
-                // Fallback jika SweetAlert tidak tersedia
                 if (confirm(`Apakah Anda yakin ingin menyetujui usulan "${namaKegiatan}"?`)) {
                     formWadir.action = `/docutrack/public/wadir/telaah/approve/${kegiatanId}`;
                     formWadir.submit();
@@ -485,5 +487,5 @@ function displayValue($value, $placeholder = 'Belum diisi') {
             }
         });
         
-    }); // Akhir DOMContentLoaded
+    });
 </script>

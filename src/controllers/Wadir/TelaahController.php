@@ -3,7 +3,7 @@
 
 require_once '../src/core/Controller.php';
 require_once '../src/model/wadirModel.php';
-require_once '../src/helpers/logger_helper.php'; // ✅ LOAD LOGGER untuk audit trail
+require_once '../src/helpers/logger_helper.php';
 
 class WadirTelaahController extends Controller {
     
@@ -22,16 +22,13 @@ class WadirTelaahController extends Controller {
         $tahapan   = $model->getTahapanByKAK($kakId);
         $rab       = $model->getRABByKAK($kakId);
 
-        // --- Formatting ---
         $tahapan_string = "";
         foreach ($tahapan as $idx => $t) { $tahapan_string .= ($idx + 1) . ". " . $t . "\n"; }
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
         
-        // --- LOGIKA STATUS PINTAR ---
-        // Jika dokumen sudah lewat dari Wadir (Posisi bukan 3), tampilkan "Disetujui"
         $status_asli = ucfirst($dataDB['status_text'] ?? 'Menunggu');
         $posisi_saat_ini = $dataDB['posisiId'];
-        $role_wadir = 3; // Posisi Wadir
+        $role_wadir = 3;
 
         if ($posisi_saat_ini != $role_wadir && $status_asli != 'Ditolak') {
             $status_tampilan = 'Disetujui';
@@ -42,8 +39,10 @@ class WadirTelaahController extends Controller {
         $kegiatan_data = [
             'nama_pengusul' => $dataDB['pemilikKegiatan'],
             'nim_pengusul' => $dataDB['nimPelaksana'],
-            'nama_penanggung_jawab' => $dataDB['pemilikKegiatan'], // Sesuaikan jika ada kolom khusus
-            'nip_penanggung_jawab' => $dataDB['nimPelaksana'],
+            'nama_penanggung_jawab' => $dataDB['namaPJ'] ?? '-',
+            'nip_penanggung_jawab' => $dataDB['nip'] ?? '-',
+            'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '',
+            'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
             'gambaran_umum' => $dataDB['gambaranUmum'],
             'penerima_manfaat' => $dataDB['penerimaMaanfaat'],
@@ -71,22 +70,18 @@ class WadirTelaahController extends Controller {
         $this->view('pages/wadir/telaah_detail', $data, 'wadir');
     }
 
-    // Aksi Approve Wadir -> Bendahara dengan Audit Logging
-    // Ref: ANALYSIS_REPORT.md - Poin 3.C & DATABASE_AUDIT.md - Pilar 3 (Auditability)
     public function approve($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new wadirModel();
             $userId = $_SESSION['user_id'] ?? 0;
             
-            // Ambil data kegiatan sebelum approval untuk logging
             $kegiatan = $model->getDetailKegiatan($id);
             $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
             
             if($model->approveUsulan($id)) {
-                // ✅ AUDIT LOG: Catat approval Wadir
                 logApproval($userId, $id, 'WADIR', true, 
                     'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
-                    $oldStatusId, 3); // 3 = Status Disetujui
+                    $oldStatusId, 3);
                 
                 header('Location: /docutrack/public/wadir/dashboard?msg=approved');
                 exit;
@@ -94,29 +89,4 @@ class WadirTelaahController extends Controller {
         }
         header('Location: /docutrack/public/wadir/telaah/show/'.$id);
     }
-    
-    // Aksi Reject Wadir dengan Audit Logging
-    public function reject($id) {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model = new wadirModel();
-            $userId = $_SESSION['user_id'] ?? 0;
-            $catatan = trim($_POST['catatan_penolakan'] ?? '');
-            
-            // Ambil data kegiatan sebelum rejection untuk logging
-            $kegiatan = $model->getDetailKegiatan($id);
-            $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
-            
-            if($model->rejectUsulan($id, $catatan)) {
-                // ✅ AUDIT LOG: Catat rejection Wadir
-                logApproval($userId, $id, 'WADIR', false, 
-                    'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown') . '. Alasan: ' . $catatan,
-                    $oldStatusId, 4); // 4 = Status Ditolak
-                
-                header('Location: /docutrack/public/wadir/dashboard?msg=rejected');
-                exit;
-            }
-        }
-        header('Location: /docutrack/public/wadir/telaah/show/'.$id);
-    }
 }
-?>
