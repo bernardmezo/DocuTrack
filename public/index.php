@@ -543,6 +543,43 @@ switch ($main_route) {
         }
         break; 
 
+    case 'direktur':
+    AuthMiddleware::check(); // ✅ Aktifkan
+    // DirekturMiddleware::check(); // Opsional jika sudah dibuat
+    
+    $base_direktur_path = '/direktur';
+    
+    switch ($sub_route) {
+        case 'index': 
+        case 'dashboard': 
+            require_once '../src/controllers/Direktur/DashboardController.php';
+            $controller = new DirekturDashboardController(); 
+            $controller->index(['active_page' => $base_direktur_path . '/dashboard']);
+            break;
+
+        case 'akun':
+            require_once '../src/controllers/Direktur/AkunController.php';
+            $controller = new DirekturAkunController();
+            
+            if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->update();
+            } else {
+                $controller->index(['active_page' => $base_direktur_path . '/akun']);
+            }
+            break;
+            // ============================================
+
+            case 'monitoring': 
+                require_once '../src/controllers/Direktur/MonitoringController.php';
+                $controller = new DirekturMonitoringController(); 
+                $controller->index();
+                break;
+
+            default:
+                not_found("Halaman Direktur tidak ditemukan.");
+        }
+        break; 
+
     // --- Jika Rute Utama Tidak Dikenali ---
     default:
         not_found("Rute utama '/{$main_route}' tidak valid.");

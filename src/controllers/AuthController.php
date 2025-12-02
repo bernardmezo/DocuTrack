@@ -85,6 +85,13 @@ class AuthController extends Controller {
                 'nama' => 'Super Admin',
                 'role' => 'super-admin',
                 'email' => 'superadmin@example.com'
+            ],
+            'direktur@example.com' => [
+                'id' => 7,
+                'password' => 'password123',
+                'nama' => 'Mr. Direktur',
+                'role' => 'direktur',
+                'email' => 'direktur@example.com'
             ]
         ];
 
@@ -156,6 +163,9 @@ class AuthController extends Controller {
             
             case 'super-admin':
                 header('Location: /docutrack/public/super_admin/dashboard');
+                break;
+            case 'direktur':
+                header('Location: /docutrack/public/direktur/dashboard');
                 break;
 
             default:
