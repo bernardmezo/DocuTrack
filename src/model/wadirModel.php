@@ -155,6 +155,66 @@ class wadirModel {
     }
 
     /**
+     * 4B. REJECT USULAN (WADIR)
+     * Kembalikan ke Admin (posisiId = 1) dengan status Revisi (2)
+     * 
+     * @param int $kegiatanId ID Kegiatan
+     * @param string $alasanPenolakan Alasan penolakan (opsional)
+     * @return bool
+     */
+    public function rejectUsulan($kegiatanId, $alasanPenolakan = '') {
+        // LOGIKA REJECT WADIR:
+        // Posisi: Kembalikan ke Admin (ID 1)
+        // Status: Revisi (ID 2) agar bisa diperbaiki
+        
+        $backToPosisi = 1;    // Kembalikan ke Admin
+        $statusRevisi = 2;    // Status Revisi
+        $currentPosisi = 3;   // Wadir
+        $userId = $_SESSION['user_id'] ?? null;
+        
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // 1. Update posisi kegiatan kembali ke Admin
+            $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "iii", $backToPosisi, $statusRevisi, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Gagal update kegiatan");
+            }
+            mysqli_stmt_close($stmt);
+            
+            // 2. Catat ke tbl_progress_history
+            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, fromPosisi, toPosisi, userId, aksi, timestamp) 
+                             VALUES (?, ?, ?, ?, ?, 'reject', NOW())";
+            $stmtHistory = mysqli_prepare($this->db, $historyQuery);
+            mysqli_stmt_bind_param($stmtHistory, "iiiii", $kegiatanId, $statusRevisi, $currentPosisi, $backToPosisi, $userId);
+            mysqli_stmt_execute($stmtHistory);
+            $historyId = mysqli_insert_id($this->db);
+            mysqli_stmt_close($stmtHistory);
+            
+            // 3. Simpan komentar penolakan jika ada
+            if (!empty($alasanPenolakan) && $historyId) {
+                $commentQuery = "INSERT INTO tbl_komentar_revisi (historyId, userId, roleId, komentar, createdAt) 
+                                 VALUES (?, ?, 3, ?, NOW())";
+                $stmtComment = mysqli_prepare($this->db, $commentQuery);
+                mysqli_stmt_bind_param($stmtComment, "iis", $historyId, $userId, $alasanPenolakan);
+                mysqli_stmt_execute($stmtComment);
+                mysqli_stmt_close($stmtComment);
+            }
+            
+            mysqli_commit($this->db);
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("Wadir rejectUsulan Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * 5. RIWAYAT WADIR
      * Mengambil yang sudah lewat Wadir (Posisi = 5) ATAU Ditolak
      */

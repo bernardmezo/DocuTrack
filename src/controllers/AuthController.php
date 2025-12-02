@@ -9,6 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once '../src/core/Controller.php';
 // 1. Panggil Model Login
 require_once '../src/model/LoginModel.php';
+require_once '../src/helpers/logger_helper.php'; // ✅ LOAD LOGGER untuk audit trail
 
 class AuthController extends Controller {
 
@@ -56,22 +57,13 @@ class AuthController extends Controller {
         }
 
         // 5. Verifikasi Password
-        // PENTING: Di database asli, password HARUS di-hash pakai password_hash()
-        // Kita gunakan password_verify() untuk mencocokkan input dengan hash di DB.
+        // SECURITY FIX: Hanya gunakan password_verify() - TIDAK ADA FALLBACK PLAIN TEXT
+        // Ref: DATABASE_AUDIT.md - Pilar 2: Security Hardening
         
-        $password_valid = false;
-
-        // Cek A: Jika database menggunakan Hash (Recommended)
-        if (password_verify($password, $user['password'])) {
-            $password_valid = true;
-        } 
-        // Cek B: (FALLBACK) Jika database masih pakai text polos (HANYA UNTUK DEVELOPMENT)
-        // Hapus bagian 'elseif' ini jika nanti password di DB sudah di-hash semua.
-        elseif ($password === $user['password']) {
-            $password_valid = true;
-        }
-
-        if (!$password_valid) {
+        if (!password_verify($password, $user['password'])) {
+            // ✅ AUDIT LOG: Catat login gagal
+            logLogin(0, $email, false, 'Password salah');
+            
             $_SESSION['login_error'] = 'Password salah.';
             header('Location: /docutrack/public/');
             exit;
@@ -99,6 +91,10 @@ class AuthController extends Controller {
         //  LOGIN BERHASIL
         // ============================
 
+        // SECURITY FIX: Regenerate session ID untuk mencegah Session Fixation Attack
+        // Ref: DATABASE_AUDIT.md - Pilar 2: Security Hardening
+        session_regenerate_id(true);
+        
         unset($_SESSION['login_error']);
 
         // --- MERGED SESSION LOGIC ---
@@ -120,6 +116,9 @@ class AuthController extends Controller {
             'header_bg'     => 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
             'created_at'    => date('Y-m-d')
         ];
+
+        // ✅ AUDIT LOG: Catat login berhasil
+        logLogin($user['userId'], $email, true);
 
         // ============================
         //  REDIRECT BERDASARKAN ROLE
@@ -164,6 +163,12 @@ class AuthController extends Controller {
     }
 
     public function logout() {
+        // ✅ AUDIT LOG: Catat logout sebelum session dihapus
+        $userId = $_SESSION['user_id'] ?? 0;
+        if ($userId > 0) {
+            logLogout($userId);
+        }
+        
         session_destroy();
         header('Location: /docutrack/public/'); 
         exit;

@@ -88,7 +88,7 @@ Class verifikatorModel {
 
                 FROM tbl_kegiatan k
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                WHERE k.posisiId = 1  -- posisi verifikator
+                WHERE k.posisiId = 2  -- posisi verifikator (kegiatan yang sudah disubmit Admin)
                 ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);

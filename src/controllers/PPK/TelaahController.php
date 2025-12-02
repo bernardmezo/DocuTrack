@@ -3,6 +3,7 @@
 
 require_once '../src/core/Controller.php';
 require_once '../src/model/ppkModel.php';
+require_once '../src/helpers/logger_helper.php'; // ✅ LOAD LOGGER untuk audit trail
 
 class PPKTelaahController extends Controller {
 
@@ -77,12 +78,48 @@ class PPKTelaahController extends Controller {
         $this->view('pages/ppk/telaah_detail', $data, 'ppk');
     }
 
-    // Approve Action
+    // Approve Action dengan Audit Logging
+    // Ref: ANALYSIS_REPORT.md - Poin 3.C & DATABASE_AUDIT.md - Pilar 3 (Auditability)
     public function approve($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $model = new ppkModel();
+            $userId = $_SESSION['user_id'] ?? 0;
+            
+            // Ambil data kegiatan sebelum approval untuk logging
+            $kegiatan = $model->getDetailKegiatan($id);
+            $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
+            
             if($model->approveUsulan($id)) {
+                // ✅ AUDIT LOG: Catat approval PPK
+                logApproval($userId, $id, 'PPK', true, 
+                    'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
+                    $oldStatusId, 3); // 3 = Status Disetujui
+                
                 header('Location: /docutrack/public/ppk/dashboard?msg=approved');
+                exit;
+            }
+        }
+        header('Location: /docutrack/public/ppk/telaah/show/'.$id);
+    }
+    
+    // Reject Action dengan Audit Logging
+    public function reject($id) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $model = new ppkModel();
+            $userId = $_SESSION['user_id'] ?? 0;
+            $catatan = trim($_POST['catatan_penolakan'] ?? '');
+            
+            // Ambil data kegiatan sebelum rejection untuk logging
+            $kegiatan = $model->getDetailKegiatan($id);
+            $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
+            
+            if($model->rejectUsulan($id, $catatan)) {
+                // ✅ AUDIT LOG: Catat rejection PPK
+                logApproval($userId, $id, 'PPK', false, 
+                    'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown') . '. Alasan: ' . $catatan,
+                    $oldStatusId, 4); // 4 = Status Ditolak
+                
+                header('Location: /docutrack/public/ppk/dashboard?msg=rejected');
                 exit;
             }
         }

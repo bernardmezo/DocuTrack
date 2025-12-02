@@ -3,6 +3,7 @@
 
 require_once '../src/core/Controller.php';
 require_once '../src/model/bendaharaModel.php'; // ✅ LOAD MODEL
+require_once '../src/helpers/logger_helper.php'; // ✅ LOAD LOGGER untuk audit trail
 
 class BendaharaPencairandanaController extends Controller {
     
@@ -130,7 +131,8 @@ class BendaharaPencairandanaController extends Controller {
     }
 
     /**
-     * Proses Pencairan Dana
+     * Proses Pencairan Dana dengan Audit Logging
+     * Ref: ANALYSIS_REPORT.md - Poin 3.C & DATABASE_AUDIT.md - Pilar 3 (Auditability)
      */
     public function proses() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -140,6 +142,7 @@ class BendaharaPencairandanaController extends Controller {
 
         $kak_id = $_POST['kak_id'] ?? null;
         $action = $_POST['action'] ?? null;
+        $userId = $_SESSION['user_id'] ?? 0;
         
         if (!$kak_id || !$action) {
             $_SESSION['flash_error'] = 'Data tidak lengkap!';
@@ -153,7 +156,7 @@ class BendaharaPencairandanaController extends Controller {
                 $jumlah_dicairkan = floatval($_POST['jumlah_dicairkan'] ?? 0);
                 $metode_pencairan = $_POST['metode_pencairan'] ?? 'uang_muka';
                 $catatan = trim($_POST['catatan'] ?? '');
-                $tenggat_lpj = $_POST['tenggat_lpj'] ?? null; // ✅ Ambil tenggat LPJ dari form
+                $tenggat_lpj = $_POST['tenggat_lpj'] ?? null;
                 
                 if ($jumlah_dicairkan <= 0) {
                     throw new Exception('Jumlah pencairan harus lebih dari 0');
@@ -163,8 +166,12 @@ class BendaharaPencairandanaController extends Controller {
                     throw new Exception('Tanggal batas LPJ wajib diisi');
                 }
                 
-                // ✅ SIMPAN KE DATABASE (termasuk buat placeholder LPJ dengan tenggat)
+                // ✅ SIMPAN KE DATABASE (dengan transaction safety di model)
                 if ($this->model->prosesPencairan($kak_id, $jumlah_dicairkan, $metode_pencairan, $catatan, $tenggat_lpj)) {
+                    
+                    // ✅ AUDIT LOG: Catat pencairan berhasil
+                    logPencairan($userId, $kak_id, $jumlah_dicairkan, $metode_pencairan, $catatan);
+                    
                     $_SESSION['flash_message'] = 'Dana berhasil dicairkan sebesar Rp ' . number_format($jumlah_dicairkan, 0, ',', '.') . '. Batas pengumpulan LPJ: ' . $tenggat_lpj;
                     $_SESSION['flash_type'] = 'success';
                 } else {
@@ -180,7 +187,11 @@ class BendaharaPencairandanaController extends Controller {
                     exit;
                 }
                 
-                // TODO: Implement reject logic jika diperlukan
+                // ✅ AUDIT LOG: Catat penolakan pencairan
+                writeLog($userId, 'PENCAIRAN_REJECT', 
+                    "Menolak pencairan untuk kegiatan ID: $kak_id. Alasan: $catatan",
+                    'kegiatan', $kak_id);
+                
                 $_SESSION['flash_message'] = 'Pencairan ditolak.';
                 $_SESSION['flash_type'] = 'warning';
                 
@@ -189,6 +200,11 @@ class BendaharaPencairandanaController extends Controller {
             }
 
         } catch (Exception $e) {
+            // ✅ AUDIT LOG: Catat error
+            writeLog($userId, 'PENCAIRAN_PROSES', 
+                "Error proses pencairan kegiatan ID: $kak_id - " . $e->getMessage(),
+                'kegiatan', $kak_id);
+            
             $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
         }
 

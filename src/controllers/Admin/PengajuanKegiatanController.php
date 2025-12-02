@@ -3,27 +3,43 @@
 
 require_once '../src/core/Controller.php';
 require_once '../src/model/adminModel.php'; // Load Model
+require_once '../src/helpers/logger_helper.php'; // Load Logger Helper
 
 class AdminPengajuanKegiatanController extends Controller {
     
     // HAPUS function getAllKegiatan() { ... } KARENA SUDAH TIDAK DIPAKAI
 
     /**
-     * Menampilkan HALAMAN LIST (Hanya yang Disetujui)
+     * Menampilkan HALAMAN LIST dengan Role-Based Filtering
+     * 
+     * LOGIC:
+     * - Super Admin: Lihat SEMUA kegiatan
+     * - Admin Jurusan: Hanya kegiatan dari jurusan sendiri
+     * 
+     * Ref: ANALYSIS_REPORT.md - Poin 3.D (Logic Mismatch: Filter Admin)
      */
     public function index($data_dari_router = []) { 
         // 1. Panggil Model
         $model = new adminModel();
         
-        // 2. Ambil data asli dari database
-        $all_kegiatan = $model->getDashboardKAK();
+        // 2. Ambil data user dari session untuk filtering
+        $userRole = $_SESSION['user_role'] ?? '';
+        $userJurusan = $_SESSION['user_jurusan'] ?? null; // Nama jurusan user
         
-        // 3. Filter hanya yang statusnya "Disetujui"
-        // Note: Pastikan ejaan status di database 'Disetujui' (sesuai tbl_status_utama)
+        // 3. Ambil data dari database dengan filter berbasis role
+        if ($userRole === 'super-admin' || $userRole === 'superadmin') {
+            // Super Admin: Lihat SEMUA data
+            $all_kegiatan = $model->getDashboardKAK();
+        } else {
+            // Admin Jurusan: Hanya data jurusan sendiri
+            // Panggil method baru yang menerima filter jurusan
+            $all_kegiatan = $model->getDashboardKAKByJurusan($userJurusan);
+        }
+        
+        // 4. Filter hanya yang statusnya "Menunggu" di posisi Admin (posisi 2)
         $list_kegiatan_disetujui = array_filter($all_kegiatan, function($item) {
             return isset($item['posisi']) && strtolower($item['posisi']) === '2' && isset($item['status']) && strtolower($item['status']) === 'menunggu';
         });
-
 
         $data = array_merge($data_dari_router, [
             'title' => 'List Pengajuan Kegiatan',
@@ -174,15 +190,71 @@ class AdminPengajuanKegiatanController extends Controller {
     }
 
     // ... (Function downloadSurat tetap sama) ...
+    /**
+     * Download Surat Pengantar dengan validasi keamanan
+     * SECURITY FIX: Implementasi path traversal protection
+     * Ref: ANALYSIS_REPORT.md - Poin 3.A & DATABASE_AUDIT.md - Pilar 2
+     */
     public function downloadSurat($filename) {
-        // ... kode downloadSurat lama Anda ...
-        $file_path = __DIR__ . '/../../../public/uploads/surat/' . $filename;
-        if (file_exists($file_path)) {
-            // ... headers ...
-            readfile($file_path);
-            exit;
-        } else {
-            echo "File tidak ditemukan.";
+        // SECURITY: Gunakan basename() untuk menghapus path traversal attempts
+        // Contoh serangan: ../../etc/passwd akan menjadi "passwd"
+        $safe_filename = basename($filename);
+        
+        // Definisikan direktori upload yang diizinkan
+        $upload_dir = realpath(__DIR__ . '/../../../public/uploads/surat');
+        
+        if ($upload_dir === false) {
+            http_response_code(500);
+            echo "Direktori upload tidak ditemukan.";
+            return;
         }
+        
+        // Bangun full path dan resolve ke absolute path
+        $file_path = realpath($upload_dir . DIRECTORY_SEPARATOR . $safe_filename);
+        
+        // SECURITY CHECK 1: File harus exist
+        if ($file_path === false || !file_exists($file_path)) {
+            http_response_code(404);
+            echo "File tidak ditemukan.";
+            return;
+        }
+        
+        // SECURITY CHECK 2: File HARUS berada di dalam direktori upload
+        // Ini menangkap upaya path traversal yang berhasil melewati basename()
+        if (strpos($file_path, $upload_dir) !== 0) {
+            http_response_code(403);
+            error_log("[SECURITY] Path traversal attempt blocked: {$filename} from IP: {$_SERVER['REMOTE_ADDR']}");
+            echo "Akses ditolak.";
+            return;
+        }
+        
+        // SECURITY CHECK 3: Validasi ekstensi file (whitelist)
+        $allowed_extensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+        $extension = strtolower(pathinfo($safe_filename, PATHINFO_EXTENSION));
+        
+        if (!in_array($extension, $allowed_extensions)) {
+            http_response_code(403);
+            echo "Tipe file tidak diizinkan.";
+            return;
+        }
+        
+        // Set Content-Type berdasarkan ekstensi
+        $mime_types = [
+            'pdf'  => 'application/pdf',
+            'doc'  => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png'  => 'image/png'
+        ];
+        
+        header('Content-Type: ' . ($mime_types[$extension] ?? 'application/octet-stream'));
+        header('Content-Disposition: attachment; filename="' . $safe_filename . '"');
+        header('Content-Length: ' . filesize($file_path));
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        
+        readfile($file_path);
+        exit;
     }
 }

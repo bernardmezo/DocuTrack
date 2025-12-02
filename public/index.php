@@ -21,6 +21,7 @@ require_once '../src/middleware/VerifikatorMiddleware.php';
 require_once '../src/middleware/WadirMiddleware.php';
 require_once '../src/middleware/PpkMiddleware.php';
 require_once '../src/middleware/BendaharaMiddleware.php';
+require_once '../src/middleware/SuperAdminMiddleware.php';
 // -----------------------------------------------------------------
 
 
@@ -532,7 +533,7 @@ switch ($main_route) {
 
     case 'super_admin':
         AuthMiddleware::check();
-        // SuperAdminMiddleware::check(); // TODO: Buat middleware khusus Super Admin
+        SuperAdminMiddleware::check(); // Super Admin authorization check
         
         $base_super_admin_path = '/super_admin';
         

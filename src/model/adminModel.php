@@ -99,6 +99,68 @@ class adminModel {
 
     /**
      * ====================================================
+     * 2B. MENGAMBIL LIST KAK BERDASARKAN JURUSAN (Role-Based Filtering)
+     * ====================================================
+     * Ref: ANALYSIS_REPORT.md - Poin 3.D (Logic Mismatch: Filter Admin)
+     */
+    public function getDashboardKAKByJurusan($namaJurusan) {
+        if (empty($namaJurusan)) {
+            // Jika jurusan kosong, return empty array untuk keamanan
+            return [];
+        }
+
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as nama_mahasiswa,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    CONCAT(k.pemilikKegiatan, ' (', k.nimPelaksana, '), ', k.prodiPenyelenggara) as pengusul,
+                    k.createdAt as tanggal_pengajuan,
+                    k.posisiId as posisi,
+                    k.statusUtamaId,
+                    
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.statusUtamaId = 2 THEN 'Revisi'
+                        WHEN k.posisiId = 1 THEN 'Draft'
+                        WHEN k.posisiId = 2 THEN 'Di Verifikator'
+                        WHEN k.posisiId = 4 THEN 'Di PPK'
+                        WHEN k.posisiId = 3 THEN 'Di Wadir'
+                        WHEN k.posisiId = 5 AND k.tanggalPencairan IS NULL THEN 'Di Bendahara'
+                        WHEN k.posisiId = 5 AND k.tanggalPencairan IS NOT NULL THEN 'Dana Cair'
+                        ELSE s.namaStatusUsulan
+                    END as status
+
+                FROM tbl_kegiatan k
+                LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
+                JOIN tbl_role r ON k.posisiId = r.roleId
+                WHERE k.jurusanPenyelenggara = ?
+                ORDER BY k.createdAt DESC";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "s", $namaJurusan);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                if (isset($row['status'])) {
+                    $row['status'] = ucfirst($row['status']); 
+                } else {
+                    $row['status'] = 'Menunggu';
+                }
+                $data[] = $row;
+            }
+        }
+        mysqli_stmt_close($stmt);
+        return $data;
+    }
+
+    /**
+     * ====================================================
      * 3. MENGAMBIL LIST LPJ (UNTUK TABEL LPJ)
      * ====================================================
      */
