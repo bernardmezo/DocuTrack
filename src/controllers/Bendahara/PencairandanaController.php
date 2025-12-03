@@ -2,15 +2,15 @@
 // File: src/controllers/Bendahara/PencairandanaController.php
 
 require_once '../src/core/Controller.php';
-require_once '../src/model/bendaharaModel.php'; // ✅ LOAD MODEL
-require_once '../src/helpers/logger_helper.php'; // ✅ LOAD LOGGER untuk audit trail
+require_once '../src/model/bendaharaModel.php';
+require_once '../src/helpers/logger_helper.php';
 
 class BendaharaPencairandanaController extends Controller {
     
     private $model;
     
     public function __construct() {
-        $this->model = new bendaharaModel(); // ✅ INISIALISASI MODEL
+        $this->model = new bendaharaModel();
     }
 
     /**
@@ -18,7 +18,6 @@ class BendaharaPencairandanaController extends Controller {
      */
     public function index($data_dari_router = []) {
         
-        // ✅ AMBIL DATA DARI DATABASE (bukan dummy)
         $stats = $this->model->getDashboardStats();
         $list_antrian = $this->model->getAntrianPencairan();
         $jurusan_list = $this->model->getListJurusan();
@@ -30,7 +29,7 @@ class BendaharaPencairandanaController extends Controller {
                 'menunggu' => $stats['menunggu'] ?? 0,
                 'dicairkan' => $stats['dicairkan'] ?? 0
             ],
-            'list_kak' => $list_antrian,  // ✅ Data real dari DB
+            'list_kak' => $list_antrian,
             'jurusan_list' => $jurusan_list
         ]);
 
@@ -45,7 +44,6 @@ class BendaharaPencairandanaController extends Controller {
         $base_url = "/docutrack/public/bendahara";
         $back_url = $base_url . '/' . $ref;
 
-        // ✅ AMBIL DATA DARI DATABASE
         $kegiatan = $this->model->getDetailPencairan($id);
         
         if (!$kegiatan) {
@@ -54,22 +52,18 @@ class BendaharaPencairandanaController extends Controller {
             exit;
         }
         
-        // Ambil data relasi
         $rab_data = $this->model->getRABByKegiatan($id);
         $iku_data = $this->model->getIKUByKegiatan($id);
         $indikator_data = $this->model->getIndikatorByKegiatan($id);
         $tahapan = $this->model->getTahapanByKegiatan($id);
         
-        // Format tahapan sebagai string bernomor
         $tahapan_string = "";
         foreach ($tahapan as $idx => $t) {
             $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
         }
         
-        // Cek status pencairan
         $is_sudah_dicairkan = !empty($kegiatan['tanggalPencairan']);
         
-        // Tentukan status tampilan
         if ($is_sudah_dicairkan) {
             $status_display = 'Dana Diberikan';
         } else {
@@ -81,7 +75,6 @@ class BendaharaPencairandanaController extends Controller {
             'id' => $id,
             'status' => $status_display,
             
-            // Data Kegiatan (untuk View yang akses langsung)
             'nama_kegiatan' => $kegiatan['namaKegiatan'],
             'nama_mahasiswa' => $kegiatan['pemilikKegiatan'],
             'nim' => $kegiatan['nimPelaksana'],
@@ -90,9 +83,8 @@ class BendaharaPencairandanaController extends Controller {
             'tanggal_pengajuan' => $kegiatan['createdAt'],
             'kode_mak' => $kegiatan['buktiMAK'] ?? '-',
             
-            // Data KAK (field sesuai nama yang dipakai View)
             'kegiatan_data' => [
-                'id' => $id,  // Untuk hidden input form
+                'id' => $id,
                 'nama_pengusul' => $kegiatan['pemilikKegiatan'] ?? '-',
                 'nim_pengusul' => $kegiatan['nimPelaksana'] ?? '-',
                 'nama_penanggung_jawab' => $kegiatan['namaPenanggungJawab'] ?? '-',
@@ -106,18 +98,14 @@ class BendaharaPencairandanaController extends Controller {
                 'tanggal_selesai' => $kegiatan['tanggalSelesai'] ?? ''
             ],
             
-            // Data IKU & Indikator
             'iku_data' => $iku_data,
             'indikator_data' => $indikator_data,
             
-            // Data RAB
             'rab_data' => $rab_data,
             'anggaran_disetujui' => $kegiatan['total_rab'] ?? 0,
             
-            // Surat Pengantar
             'surat_pengantar_url' => $kegiatan['suratPengantarUrl'] ?? '',
             
-            // Data Pencairan (jika sudah dicairkan)
             'jumlah_dicairkan' => $kegiatan['jumlahDicairkan'] ?? 0,
             'tanggal_pencairan' => $kegiatan['tanggalPencairan'] ?? null,
             'metode_pencairan' => $kegiatan['metodePencairan'] ?? 'uang_muka',
@@ -131,8 +119,7 @@ class BendaharaPencairandanaController extends Controller {
     }
 
     /**
-     * Proses Pencairan Dana dengan Audit Logging
-     * Ref: ANALYSIS_REPORT.md - Poin 3.C & DATABASE_AUDIT.md - Pilar 3 (Auditability)
+     * Proses Pencairan Dana dengan Audit Logging.
      */
     public function proses() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -152,7 +139,6 @@ class BendaharaPencairandanaController extends Controller {
 
         try {
             if ($action === 'cairkan') {
-                // Validasi input
                 $jumlah_dicairkan = floatval($_POST['jumlah_dicairkan'] ?? 0);
                 $metode_pencairan = $_POST['metode_pencairan'] ?? 'uang_muka';
                 $catatan = trim($_POST['catatan'] ?? '');
@@ -166,13 +152,11 @@ class BendaharaPencairandanaController extends Controller {
                     throw new Exception('Tanggal batas LPJ wajib diisi');
                 }
                 
-                // ✅ SIMPAN KE DATABASE (dengan transaction safety di model)
                 if ($this->model->prosesPencairan($kak_id, $jumlah_dicairkan, $metode_pencairan, $catatan, $tenggat_lpj)) {
                     
-                    // ✅ AUDIT LOG: Catat pencairan berhasil
                     logPencairan($userId, $kak_id, $jumlah_dicairkan, $metode_pencairan, $catatan);
                     
-                    $_SESSION['flash_message'] = 'Dana berhasil dicairkan sebesar Rp ' . number_format($jumlah_dicairkan, 0, ',', '.') . '. Batas pengumpulan LPJ: ' . $tenggat_lpj;
+                    $_SESSION['flash_message'] = 'Dana berhasil dicairkan sebesar Rp ' . number_format($jumlah_dicairkan, 0, ",", ".") . '. Batas pengumpulan LPJ: ' . $tenggat_lpj;
                     $_SESSION['flash_type'] = 'success';
                 } else {
                     throw new Exception('Gagal memproses pencairan');
@@ -187,7 +171,6 @@ class BendaharaPencairandanaController extends Controller {
                     exit;
                 }
                 
-                // ✅ AUDIT LOG: Catat penolakan pencairan
                 writeLog($userId, 'PENCAIRAN_REJECT', 
                     "Menolak pencairan untuk kegiatan ID: $kak_id. Alasan: $catatan",
                     'kegiatan', $kak_id);
@@ -200,7 +183,6 @@ class BendaharaPencairandanaController extends Controller {
             }
 
         } catch (Exception $e) {
-            // ✅ AUDIT LOG: Catat error
             writeLog($userId, 'PENCAIRAN_PROSES', 
                 "Error proses pencairan kegiatan ID: $kak_id - " . $e->getMessage(),
                 'kegiatan', $kak_id);
@@ -212,4 +194,3 @@ class BendaharaPencairandanaController extends Controller {
         exit;
     }
 }
-?>

@@ -1,5 +1,29 @@
+# ==============================================================================
+# DocuTrack - Apache Configuration
+# ==============================================================================
+# Handles URL rewriting and direct access to static assets
+#
+# Rules:
+# 1. Allow direct access to uploads folder (PDF, images, documents)
+# 2. Allow direct access to assets folder (CSS, JS, images)
+# 3. Route all other requests to index.php for MVC routing
+# ==============================================================================
+
 RewriteEngine On
 RewriteBase /docutrack/public/
+
+# Rule 1: Allow direct access to uploads folder
+# Files in /uploads/ can be accessed directly without routing to index.php
+RewriteCond %{REQUEST_URI} ^/docutrack/public/uploads/
+RewriteRule ^ - [L]
+
+# Rule 2: Allow direct access to assets folder  
+# CSS, JS, and static images can be accessed directly
+RewriteCond %{REQUEST_URI} ^/docutrack/public/assets/
+RewriteRule ^ - [L]
+
+# Rule 3: Route everything else to index.php if not a real file/directory
+# This enables MVC routing through the front controller
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]

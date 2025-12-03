@@ -8,23 +8,12 @@
  * 3. Return koneksi yang siap pakai
  */
 
+// ...existing code...
 $host = 'localhost';
 $user = 'root';
 $pass = '';  // Kosongkan untuk default XAMPP
 $db   = 'db_docutrack2';
 
-// Include auto-setup class
-require_once __DIR__ . '/db_setup.php';
-
-// Check if setup is needed
-$setup = new DatabaseSetup($host, $user, $pass, $db);
-
-if ($setup->needsSetup()) {
-    // Run silent setup (no HTML output)
-    $setup->run(true);
-}
-
-// Now connect normally
 $conn = mysqli_connect($host, $user, $pass, $db);
 
 if (!$conn) {

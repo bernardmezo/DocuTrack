@@ -4,6 +4,63 @@
 class Controller {
     
     /**
+     * Safe wrapper untuk memanggil Model method dengan error handling
+     * 
+     * @param object $model Instance dari model
+     * @param string $method Nama method yang akan dipanggil
+     * @param array $params Parameter untuk method
+     * @param mixed $defaultReturn Nilai default jika error (default: [])
+     * @return mixed Hasil dari method atau $defaultReturn jika error
+     */
+    protected function safeModelCall($model, string $method, array $params = [], $defaultReturn = []) {
+        try {
+            if (!method_exists($model, $method)) {
+                error_log("Method {$method} tidak ditemukan di " . get_class($model));
+                return $defaultReturn;
+            }
+            
+            $result = call_user_func_array([$model, $method], $params);
+            
+            // Pastikan return array jika expected array
+            if (is_array($defaultReturn) && $result === null) {
+                return [];
+            }
+            
+            return $result ?? $defaultReturn;
+            
+        } catch (Exception $e) {
+            error_log("Error di Model " . get_class($model) . "::{$method} - " . $e->getMessage());
+            return $defaultReturn;
+        }
+    }
+    
+    /**
+     * Set flash message untuk feedback user
+     * 
+     * @param string $type Tipe pesan: 'success', 'error', 'warning', 'info'
+     * @param string $message Pesan yang akan ditampilkan
+     */
+    protected function setFlashMessage(string $type, string $message) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['flash_' . $type] = $message;
+    }
+    
+    /**
+     * Redirect dengan flash message
+     * 
+     * @param string $url URL tujuan redirect
+     * @param string $type Tipe pesan flash
+     * @param string $message Pesan flash
+     */
+    protected function redirectWithMessage(string $url, string $type, string $message) {
+        $this->setFlashMessage($type, $message);
+        header("Location: {$url}");
+        exit;
+    }
+    
+    /**
      * Fungsi ini memuat view dan layout yang sesuai
      *
      * @param string $view Nama file view (misal: 'pages/admin/dashboard')

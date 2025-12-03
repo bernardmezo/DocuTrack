@@ -100,6 +100,148 @@ function sanitizeFilename(string $filename): string
 }
 
 /**
+ * Generate CSRF Token untuk form protection
+ * Token disimpan di session dan harus dikirim ulang di setiap form POST
+ * 
+ * @return string CSRF token yang di-generate
+ * 
+ * @example
+ * // Di view form:
+ * <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+ */
+function csrf_token(): string
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    if (!isset($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validasi CSRF Token dari form submission
+ * 
+ * @param string|null $token Token yang dikirim dari form
+ * @return bool True jika valid, False jika invalid
+ * 
+ * @example
+ * // Di controller sebelum proses POST:
+ * if (!csrf_validate($_POST['csrf_token'] ?? '')) {
+ *     die('Invalid CSRF token');
+ * }
+ */
+function csrf_validate(?string $token): bool
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    if (empty($token) || !isset($_SESSION['csrf_token'])) {
+        return false;
+    }
+    
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Regenerate CSRF token (gunakan setelah form submission berhasil)
+ * 
+ * @return string Token baru yang di-generate
+ */
+function csrf_regenerate(): string
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validasi file upload untuk keamanan
+ * 
+ * @param array $file Data dari $_FILES['field_name']
+ * @param array $options Opsi validasi:
+ *   - 'allowed_types' => array of MIME types (default: PDF, Images)
+ *   - 'max_size' => size in bytes (default: 5MB)
+ *   - 'allowed_extensions' => array of extensions (default: pdf,jpg,jpeg,png)
+ * @return array ['valid' => bool, 'error' => string|null]
+ * 
+ * @example
+ * $validation = validateFileUpload($_FILES['dokumen'], [
+ *     'allowed_types' => ['application/pdf'],
+ *     'max_size' => 2 * 1024 * 1024, // 2MB
+ *     'allowed_extensions' => ['pdf']
+ * ]);
+ * if (!$validation['valid']) {
+ *     die($validation['error']);
+ * }
+ */
+function validateFileUpload(array $file, array $options = []): array
+{
+    // Default options
+    $defaults = [
+        'allowed_types' => [
+            'application/pdf',
+            'image/jpeg',
+            'image/jpg',
+            'image/png'
+        ],
+        'max_size' => 5 * 1024 * 1024, // 5MB
+        'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png']
+    ];
+    
+    $options = array_merge($defaults, $options);
+    
+    // Check if file was uploaded
+    if (!isset($file['error']) || is_array($file['error'])) {
+        return ['valid' => false, 'error' => 'Invalid file parameter'];
+    }
+    
+    // Check upload errors
+    switch ($file['error']) {
+        case UPLOAD_ERR_OK:
+            break;
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            return ['valid' => false, 'error' => 'File terlalu besar'];
+        case UPLOAD_ERR_NO_FILE:
+            return ['valid' => false, 'error' => 'Tidak ada file yang diupload'];
+        default:
+            return ['valid' => false, 'error' => 'Error upload file'];
+    }
+    
+    // Check file size
+    if ($file['size'] > $options['max_size']) {
+        $maxMB = round($options['max_size'] / 1024 / 1024, 2);
+        return ['valid' => false, 'error' => "Ukuran file maksimal {$maxMB}MB"];
+    }
+    
+    // Check extension
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $options['allowed_extensions'], true)) {
+        $allowed = implode(', ', $options['allowed_extensions']);
+        return ['valid' => false, 'error' => "Format file harus: {$allowed}"];
+    }
+    
+    // Check MIME type (more secure than extension check)
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->file($file['tmp_name']);
+    
+    if (!in_array($mimeType, $options['allowed_types'], true)) {
+        return ['valid' => false, 'error' => 'Tipe file tidak diizinkan'];
+    }
+    
+    // All checks passed
+    return ['valid' => true, 'error' => null];
+}
+
+/**
  * Validasi dan sanitasi URL
  * Mencegah open redirect vulnerability
  * 
