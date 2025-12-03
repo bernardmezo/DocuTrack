@@ -286,13 +286,13 @@
                             <h2 class="text-xl md:text-2xl font-bold text-gray-800 flex-shrink-0">Rincian Anggaran Biaya (RAB)</h2>
                             <div class="rab-actions-wrapper relative w-full sm:w-auto self-end sm:self-center">
                                 <div class="rab-actions flex justify-end gap-4">
-                                    <button class="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-center text-white rounded-lg transition-all bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg" id="add-category-toggle-btn">
+                                    <button type="button" class="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-medium text-center text-white rounded-lg transition-all bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg" id="add-category-toggle-btn">
                                         <i class="fas fa-plus"></i> Tambah kategori
                                     </button>
                                 </div>
                                 <div class="category-popup absolute top-full right-0 mt-2 p-4 bg-white border border-gray-200 rounded-lg shadow-xl w-60 md:w-64 z-10 opacity-0 invisible -translate-y-2 transition-all" id="category-popup">
                                     <input type="text" id="new-category-name" placeholder="Tulis Kategori Baru" class="w-full p-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                                    <button class="w-full mt-2 px-4 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300" id="create-category-btn">Create</button>
+                                    <button type="button" class="w-full mt-2 px-4 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-300" id="create-category-btn">Create</button>
                                 </div>
                             </div>
                         </div>
@@ -321,7 +321,7 @@
 
             </div>
 
-            <div class="grand-total-container flex justify-between items-center bg-white p-4 md:p-6 rounded-lg shadow-lg mt-8 hidden">
+            <div class="grand-total-container justify-between items-center bg-white p-4 md:p-6 rounded-lg shadow-lg mt-8 hidden">
                 <h3 class="text-lg md:text-xl font-bold text-gray-800">Grand Total</h3>
                 <span class="text-xl md:text-2xl font-bold text-blue-600" id="grand-total-display">RP 0</span>
             </div>

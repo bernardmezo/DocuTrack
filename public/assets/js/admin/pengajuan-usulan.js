@@ -151,7 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const grandTotalContainer = document.querySelector('.grand-total-container');
         if (grandTotalContainer) {
-            grandTotalContainer.classList.toggle('hidden', targetStep !== 4);
+            if (targetStep === 4) {
+                grandTotalContainer.classList.remove('hidden');
+                grandTotalContainer.classList.add('flex');
+            } else {
+                grandTotalContainer.classList.add('hidden');
+                grandTotalContainer.classList.remove('flex');
+            }
         }
 
         if (targetStep === 4) {
@@ -601,10 +607,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (rabSidebar && addCategoryToggleBtnRAB && categoryPopupRAB && createCategoryBtnRAB && newCategoryNameInputRAB && rabContent && grandTotalDisplay) {
         rabSidebar.addEventListener('click', (e) => { const ci = e.target.closest('.category-sidebar-item'); if (!ci) return; const cN = ci.dataset.categoryName; if (e.target.closest('.actions')) { if (confirm(`Hapus kategori "${cN}"?`)) { delete budgetData[cN]; const rK = Object.keys(budgetData); activeCategory = rK.length > 0 ? rK[0] : null; renderRabSidebar(); renderRabContent(); } } else { activeCategory = cN; renderRabSidebar(); renderRabContent(); } });
-        addCategoryToggleBtnRAB.addEventListener('click', (e) => { e.stopPropagation(); categoryPopupRAB.classList.toggle('invisible'); categoryPopupRAB.classList.toggle('opacity-0'); categoryPopupRAB.classList.toggle('-translate-y-2'); if (!categoryPopupRAB.classList.contains('invisible')) newCategoryNameInputRAB.focus(); });
+        addCategoryToggleBtnRAB.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); categoryPopupRAB.classList.toggle('invisible'); categoryPopupRAB.classList.toggle('opacity-0'); categoryPopupRAB.classList.toggle('-translate-y-2'); if (!categoryPopupRAB.classList.contains('invisible')) newCategoryNameInputRAB.focus(); });
         document.addEventListener('click', (e) => { if (categoryPopupRAB && !categoryPopupRAB.classList.contains('invisible') && !categoryPopupRAB.contains(e.target) && !addCategoryToggleBtnRAB.contains(e.target)) categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); });
         categoryPopupRAB.addEventListener('click', (e) => e.stopPropagation());
-        createCategoryBtnRAB.addEventListener('click', () => { const n = newCategoryNameInputRAB.value.trim(); if (n && !budgetData[n]) { budgetData[n] = []; activeCategory = n; renderRabSidebar(); renderRabContent(); newCategoryNameInputRAB.value = ''; categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); } else if (!n) alert("Nama tidak boleh kosong."); else alert("Nama sudah ada."); });
+        createCategoryBtnRAB.addEventListener('click', (e) => { e.preventDefault(); const n = newCategoryNameInputRAB.value.trim(); if (n && !budgetData[n]) { budgetData[n] = []; activeCategory = n; renderRabSidebar(); renderRabContent(); newCategoryNameInputRAB.value = ''; categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); } else if (!n) alert("Nama tidak boleh kosong."); else alert("Nama sudah ada."); });
         newCategoryNameInputRAB.addEventListener('keypress', (e) => { if (e.key === 'Enter') createCategoryBtnRAB.click(); });
         rabContent.addEventListener('click', (e) => { if (e.target.closest('#add-row-btn')) { if (!activeCategory) { alert("Pilih atau buat kategori dulu."); return; } budgetData[activeCategory].push({ id: Date.now(), uraian: '', rincian: '', vol1: 1, sat1: '', vol2: 1, sat2: '', harga: 0 }); renderRabContent(); } if (e.target.closest('.delete-row-btn')) { const r = e.target.closest('tr'); if (!r || !r.dataset.itemId) return; const id = parseInt(r.dataset.itemId); budgetData[activeCategory] = budgetData[activeCategory].filter(i => i.id !== id); renderRabContent(); } });
         // Updated Event Listener for mapped inputs

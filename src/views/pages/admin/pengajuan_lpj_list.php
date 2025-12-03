@@ -186,6 +186,7 @@ sort($jurusan_list);
                     <select id="filter-status" class="w-full pl-4 pr-10 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm cursor-pointer appearance-none">
                         <option value="">Semua Status</option>
                         <option value="menunggu_upload">Perlu Upload</option>
+                        <option value="siap_submit">Siap Submit</option>
                         <option value="menunggu">Menunggu</option>
                         <option value="revisi">Revisi</option>
                         <option value="setuju">Setuju</option>
@@ -269,7 +270,8 @@ sort($jurusan_list);
                                 'setuju' => 'text-green-600 bg-green-100',
                                 'revisi' => 'text-yellow-600 bg-yellow-100',
                                 'menunggu_upload' => 'text-orange-600 bg-orange-100',
-                                default => 'text-blue-600 bg-blue-100',
+                                'siap_submit' => 'text-blue-600 bg-blue-100',
+                                default => 'text-gray-600 bg-gray-100',
                             };
                             
                             // Status Display Text
@@ -277,6 +279,7 @@ sort($jurusan_list);
                                 'setuju' => 'Disetujui',
                                 'revisi' => 'Revisi',
                                 'menunggu_upload' => 'Perlu Upload',
+                                'siap_submit' => 'Siap Submit',
                                 default => 'Menunggu',
                             };
                     ?>
@@ -316,9 +319,25 @@ sort($jurusan_list);
 
                         <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex gap-2 items-center">
+                                <?php 
+                                $button_text = match ($status_raw) {
+                                    'menunggu_upload' => 'Upload Bukti',
+                                    'siap_submit' => 'Submit LPJ',
+                                    'menunggu' => 'Lihat Status',
+                                    'setuju' => 'Lihat Detail',
+                                    'revisi' => 'Lihat Revisi',
+                                    default => 'Review',
+                                };
+                                $button_color = match ($status_raw) {
+                                    'menunggu_upload' => 'bg-orange-600 hover:bg-orange-700',
+                                    'siap_submit' => 'bg-blue-600 hover:bg-blue-700',
+                                    'setuju' => 'bg-green-600 hover:bg-green-700',
+                                    default => 'bg-gray-600 hover:bg-gray-700',
+                                };
+                                ?>
                                 <a href="/docutrack/public/admin/pengajuan-lpj/show/<?php echo $item['id'] ?? 0; ?>" 
-                                   class="bg-green-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition-colors">
-                                    <?php echo $status_raw === 'menunggu_upload' ? 'Upload Bukti' : 'Review'; ?>
+                                   class="<?php echo $button_color; ?> text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium transition-colors">
+                                    <?php echo $button_text; ?>
                                 </a>
                             </div>
                         </td>

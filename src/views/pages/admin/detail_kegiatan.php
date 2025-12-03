@@ -104,7 +104,7 @@ $id = $kegiatan_id?? 1;
                                 </div>
                             </div>
                             
-                            <div id="file-info" class="hidden absolute bottom-3 right-3 left-3 bg-white/95 backdrop-blur rounded-lg border border-emerald-100 p-2.5 flex items-center justify-center gap-2 shadow-md animate-fade-in-up">
+                            <div id="file-info" class="hidden absolute bottom-3 right-3 left-3 bg-white/95 backdrop-blur rounded-lg border border-emerald-100 p-2.5 items-center justify-center gap-2 shadow-md animate-fade-in-up">
                                 <div class="bg-emerald-100 text-emerald-600 rounded-full p-1">
                                     <i class="fas fa-check text-[10px]"></i>
                                 </div>
@@ -146,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = fileInput.files[0].name;
                 fileNameDisplay.textContent = name;
                 fileInfo.classList.remove('hidden');
+                fileInfo.classList.add('flex');
                 dropzone.classList.add('border-emerald-400', 'bg-emerald-50/20');
                 dropzone.classList.remove('border-slate-300', 'bg-slate-50', 'hover:border-blue-400', 'hover:bg-blue-50/50');
                 fileLabelDefault.innerHTML = `<span class="text-emerald-600 font-semibold">File siap diupload</span>`;
