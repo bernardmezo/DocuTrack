@@ -9,7 +9,7 @@ class SuperadminDashboardController extends Controller {
     private $model;
     
     public function __construct() {
-        $this->model = new superAdminModel();
+        $this->model = new superAdminModel($this->db);
     }
     
     public function index($data_dari_router = []) {

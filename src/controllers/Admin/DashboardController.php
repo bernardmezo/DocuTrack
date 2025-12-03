@@ -9,7 +9,7 @@ class AdminDashboardController extends Controller {
     
     public function index($data_dari_router = []) {
         
-        $model = new adminModel();
+        $model = new adminModel($this->db);
 
         // 1. ambil data statisti card (buat kartu yang diatas)
         $stats = $model->getDashboardStats(); 

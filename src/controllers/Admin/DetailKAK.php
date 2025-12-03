@@ -11,7 +11,7 @@ class AdminDetailKAKController extends Controller {
         $base_url = "/docutrack/public/admin";
         $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-kegiatan';
 
-        $model = new adminModel();
+        $model = new adminModel($this->db);
         
         $dataDB = $model->getDetailKegiatan($id);
         
@@ -36,11 +36,13 @@ class AdminDetailKAKController extends Controller {
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
 
         // Extract data kegiatan dengan null coalescing untuk keamanan data
+        // Note: Query sudah return alias yang tepat dari JOIN tbl_user
         $kegiatan_data = [
-            'nama_pengusul' => $dataDB['pemilikKegiatan'] ?? '-',
-            'nim_pengusul' => $dataDB['nimPelaksana'] ?? '-',
-            'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
-            'nim_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
+            'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',          // dari u.nama (user yang buat kegiatan)
+            'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',           // dari k.nimPelaksana (NIM pelaksana)
+            'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',        // dari k.pemilikKegiatan (nama pelaksana)
+            'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',        // dari k.namaPJ (nama PJ)
+            'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',          // dari k.nip (NIP PJ)
             'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '-',
             'nama_kegiatan' => $dataDB['namaKegiatan'] ?? 'Tidak ada judul',
             'gambaran_umum' => $dataDB['gambaranUmum'] ?? '-',

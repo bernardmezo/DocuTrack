@@ -8,7 +8,7 @@ class BendaharaDashboardController extends Controller {
     private $model;
     
     public function __construct() {
-        $this->model = new bendaharaModel();
+        $this->model = new bendaharaModel($this->db);
     }
     
     public function index($data_dari_router = []) {

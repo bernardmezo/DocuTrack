@@ -8,7 +8,7 @@ class WadirRiwayatController extends Controller {
     
     public function index($data_dari_router = []) { 
         
-        $model = new wadirModel();
+        $model = new wadirModel($this->db);
         
         // Ambil Data Riwayat (Posisi 5 / Ditolak)
         $list_riwayat = $model->getRiwayat();

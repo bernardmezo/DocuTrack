@@ -12,7 +12,7 @@ class PPKTelaahController extends Controller {
         $base_url = "/docutrack/public/ppk";
         $back_url = $base_url . '/' . $ref;
 
-        $model = new ppkModel();
+        $model = new ppkModel($this->db);
         $dataDB = $model->getDetailKegiatan($id);
         
         if (!$dataDB) { echo "Data tidak ditemukan."; return; }
@@ -38,10 +38,11 @@ class PPKTelaahController extends Controller {
         }
 
         $kegiatan_data = [
-            'nama_pengusul' => $dataDB['pemilikKegiatan'],
-            'nim_pengusul' => $dataDB['nimPelaksana'],
-            'nama_penanggung_jawab' => $dataDB['namaPJ'] ?? '-',
-            'nip_penanggung_jawab' => $dataDB['nip'] ?? '-',
+            'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',
+            'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',
+            'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',
+            'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
+            'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
             'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '',
             'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
@@ -74,7 +75,7 @@ class PPKTelaahController extends Controller {
 
     public function approve($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model = new ppkModel();
+            $model = new ppkModel($this->db);
             $userId = $_SESSION['user_id'] ?? 0;
             
             $kegiatan = $model->getDetailKegiatan($id);

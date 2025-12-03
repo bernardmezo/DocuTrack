@@ -6,7 +6,7 @@ require_once '../src/model/wadirModel.php';
 class WadirMonitoringController extends Controller {
     
     public function index($data_dari_router = []) { 
-        $model = new wadirModel();
+        $model = new wadirModel($this->db);
         $list_jurusan = $model->getListJurusanDistinct();
 
         $data = array_merge($data_dari_router, [
@@ -30,7 +30,7 @@ class WadirMonitoringController extends Controller {
             $search_text = isset($_GET['search']) ? trim(urldecode($_GET['search'])) : '';
             $per_page = 5;
 
-            $model = new wadirModel();
+            $model = new wadirModel($this->db);
             
             // Panggil Fungsi dari Model
             $result = $model->getMonitoringData($page, $per_page, $search_text, $status_filter, $jurusan_filter);

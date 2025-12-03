@@ -8,7 +8,7 @@ class WadirPengajuanKegiatanController extends Controller {
     
     public function index($data_dari_router = []) { 
         
-        $model = new wadirModel();
+        $model = new wadirModel($this->db);
         
         // Ambil data yang ada di meja Wadir (Posisi 3)
         $list_usulan_all = $model->getDashboardKAK();

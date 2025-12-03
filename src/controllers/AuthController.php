@@ -46,7 +46,7 @@ class AuthController extends Controller {
         }
 
         // 3. Panggil Model & Cari User
-        $loginModel = new LoginModel();
+        $loginModel = new LoginModel($this->db);
         $user = $loginModel->getUserByEmail($email);
 
         // 4. Cek Apakah User Ditemukan?

@@ -9,7 +9,7 @@ class SuperadminBuatikuController extends Controller {
     private $model;
     
     public function __construct() {
-        $this->model = new superAdminModel();
+        $this->model = new superAdminModel($this->db);
     }
     
     public function index() { 

@@ -9,7 +9,7 @@ class AdminPengajuanLpjController extends Controller {
     private $model;
 
     public function __construct() {
-        $this->model = new adminModel();
+        $this->model = new adminModel($this->db);
     }
 
     /**
@@ -55,7 +55,7 @@ class AdminPengajuanLpjController extends Controller {
         }
         
         require_once '../src/model/bendaharaModel.php';
-        $bendaharaModel = new bendaharaModel();
+        $bendaharaModel = new bendaharaModel($this->db);
         
         $result = $this->safeModelCall($bendaharaModel, 'approveLPJ', [$lpjId], false);
         

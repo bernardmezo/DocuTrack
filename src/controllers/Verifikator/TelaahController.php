@@ -9,7 +9,7 @@ class VerifikatorTelaahController extends Controller {
      * Menampilkan halaman daftar antrian telaah.
      */
     public function index($data_dari_router = []) {
-        $model = new verifikatorModel();
+        $model = new verifikatorModel($this->db);
         $all_usulan = $model->getDashboardKAK();
 
         $list_usulan = [];
@@ -67,7 +67,7 @@ class VerifikatorTelaahController extends Controller {
                 break;
         }
 
-        $model = new verifikatorModel();
+        $model = new verifikatorModel($this->db);
         $dataDB = $model->getDetailKegiatan($id);
 
         if (!$dataDB) {
@@ -91,10 +91,11 @@ class VerifikatorTelaahController extends Controller {
 
         $kegiatan_data = [
             'kegiatanId' => $dataDB['kegiatanId'],
-            'nama_pengusul' => $dataDB['pemilikKegiatan'],
-            'nim_pengusul' => $dataDB['nimPelaksana'],
-            'nama_penanggung_jawab' => $dataDB['namaPJ'] ?? '-',
-            'nip_penanggung_jawab' => $dataDB['nip'] ?? '-',
+            'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',
+            'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',
+            'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',
+            'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
+            'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
             'jurusan' => $dataDB['jurusanPenyelenggara'],
             'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
@@ -149,7 +150,7 @@ class VerifikatorTelaahController extends Controller {
                 throw new Exception('Kode MAK wajib diisi.');
             }
 
-            $model = new verifikatorModel();
+            $model = new verifikatorModel($this->db);
 
             if ($model->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
                 $_SESSION['flash_message'] = 'Usulan berhasil disetujui.';
@@ -187,7 +188,7 @@ class VerifikatorTelaahController extends Controller {
                 throw new Exception('Alasan penolakan wajib diisi');
             }
 
-            $model = new verifikatorModel();
+            $model = new verifikatorModel($this->db);
 
             if ($model->rejectUsulan($kegiatanId, $alasanPenolakan)) {
                 $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
@@ -237,7 +238,7 @@ class VerifikatorTelaahController extends Controller {
                 throw new Exception('Minimal isi satu catatan revisi');
             }
 
-            $model = new verifikatorModel();
+            $model = new verifikatorModel($this->db);
 
             if ($model->reviseUsulan($kegiatanId, $komentarRevisi)) {
                 $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';

@@ -9,7 +9,7 @@ class PPKDashboardController extends Controller {
     public function index($data_dari_router = []) {
         
         // 1. Panggil Model
-        $model = new ppkModel();
+        $model = new ppkModel($this->db);
 
         // 2. Ambil Data Real dari Database
         $stats = $model->getDashboardStats();

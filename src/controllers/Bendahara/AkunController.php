@@ -19,7 +19,7 @@ class BendaharaAkunController extends Controller
             exit;
         }
         
-        $this->model = new bendaharaModel();
+        $this->model = new bendaharaModel($this->db);
     }
 
     public function index($options = [])

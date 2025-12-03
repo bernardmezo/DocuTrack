@@ -9,7 +9,7 @@ class BendaharaRiwayatverifikasiController extends Controller {
     private $model;
     
     public function __construct() {
-        $this->model = new bendaharaModel();
+        $this->model = new bendaharaModel($this->db);
     }
     
     /**
@@ -77,10 +77,11 @@ class BendaharaRiwayatverifikasiController extends Controller {
             // Data KAK
             'kegiatan_data' => [
                 'id' => $id,
-                'nama_pengusul' => $kegiatan['pemilikKegiatan'] ?? '-',
-                'nim_pengusul' => $kegiatan['nimPelaksana'] ?? '-',
-                'nama_penanggung_jawab' => $kegiatan['namaPJ'] ?? '-',
-                'nip_penanggung_jawab' => $kegiatan['nip'] ?? '-',
+                'nama_pengusul' => $kegiatan['nama_pengusul'] ?? '-',
+                'nim_pengusul' => $kegiatan['nim_pelaksana'] ?? '-',
+                'nama_pelaksana' => $kegiatan['nama_pelaksana'] ?? '-',
+                'nama_penanggung_jawab' => $kegiatan['nama_pj'] ?? '-',
+                'nip_penanggung_jawab' => $kegiatan['nim_pj'] ?? '-',
                 'nama_kegiatan' => $kegiatan['namaKegiatan'] ?? '-',
                 'gambaran_umum' => $kegiatan['gambaranUmum'] ?? '-',
                 'penerima_manfaat' => $kegiatan['penerimaMaanfaat'] ?? '-',

@@ -6,7 +6,7 @@ require_once '../src/model/ppkModel.php';
 class PPKMonitoringController extends Controller {
     
     public function index($data_dari_router = []) { 
-        $model = new ppkModel();
+        $model = new ppkModel($this->db);
         $list_jurusan = $model->getListJurusanDistinct();
 
         $data = array_merge($data_dari_router, [
@@ -31,7 +31,7 @@ class PPKMonitoringController extends Controller {
             $search_text = isset($_GET['search']) ? trim(urldecode($_GET['search'])) : '';
             $per_page = 5;
 
-            $model = new ppkModel();
+            $model = new ppkModel($this->db);
             
             // Panggil Fungsi dari Model
             $result = $model->getMonitoringData($page, $per_page, $search_text, $status_filter, $jurusan_filter);

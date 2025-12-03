@@ -14,7 +14,7 @@ class VerifikatorDashboardController extends Controller {
     
     public function index($data_dari_router = []) {
         
-        $model = new verifikatorModel();
+        $model = new verifikatorModel($this->db);
 
         $stats = $model->getDashboardStats();
 

@@ -9,7 +9,7 @@ class WadirDashboardController extends Controller {
     public function index($data_dari_router = []) {
         
         // 1. Panggil Model
-        $model = new wadirModel();
+        $model = new wadirModel($this->db);
 
         // 2. Ambil Data Real
         $stats = $model->getDashboardStats();

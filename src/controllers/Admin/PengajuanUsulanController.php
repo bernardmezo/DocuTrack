@@ -10,7 +10,7 @@ class AdminPengajuanUsulanController extends Controller {
     private $model;
     
     public function __construct() {
-        $this->model = new adminModel();
+        $this->model = new adminModel($this->db);
     }
 
     public function index($data_dari_router = []) {

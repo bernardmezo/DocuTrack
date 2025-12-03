@@ -9,7 +9,7 @@ class BendaharaPengajuanlpjController extends Controller {
     private $model;
 
     public function __construct() {
-        $this->model = new bendaharaModel(); // ✅ INISIALISASI MODEL
+        $this->model = new bendaharaModel($this->db); // ✅ INISIALISASI MODEL
     }
 
     /**

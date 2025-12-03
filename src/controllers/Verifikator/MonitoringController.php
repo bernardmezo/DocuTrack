@@ -9,7 +9,7 @@ class VerifikatorMonitoringController extends Controller {
     private $model;
     
     public function __construct() {
-        $this->model = new VerifikatorModel();
+        $this->model = new VerifikatorModel($this->db);
     }
     
     /**

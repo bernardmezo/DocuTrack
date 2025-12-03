@@ -11,7 +11,7 @@ class AdminPengajuanKegiatanController extends Controller {
      * Menampilkan halaman daftar pengajuan kegiatan dengan filtering role-based.
      */
     public function index($data_dari_router = []) { 
-        $model = new adminModel();
+        $model = new adminModel($this->db);
         
         $userRole = $_SESSION['user_role'] ?? '';
         $userJurusan = $_SESSION['user_jurusan'] ?? null;
@@ -47,7 +47,7 @@ class AdminPengajuanKegiatanController extends Controller {
         $base_url = "/docutrack/public/admin";
         $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-kegiatan';
 
-        $model = new adminModel();
+        $model = new adminModel($this->db);
         
         $kegiatanDB = $model->getDetailKegiatan($id);
 
@@ -153,7 +153,7 @@ class AdminPengajuanKegiatanController extends Controller {
             }
         }
 
-        $model = new adminModel();
+        $model = new adminModel($this->db);
         
         if ($model->updateRincianKegiatan($kegiatan_id, $data_update, $file_name)) {
             header('Location: /docutrack/public/admin/pengajuan-kegiatan/show/' . $kegiatan_id);

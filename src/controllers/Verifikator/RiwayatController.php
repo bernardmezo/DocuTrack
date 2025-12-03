@@ -9,7 +9,7 @@ class VerifikatorRiwayatController extends Controller {
     public function index($data_dari_router = []) { 
         
         // 1. Panggil Model
-        $model = new verifikatorModel();
+        $model = new verifikatorModel($this->db);
         
         // 2. Ambil Data Riwayat Real dari DB
         $list_riwayat = $model->getRiwayat();
