@@ -4,5 +4,17 @@
     "license": "MIT",
     "require": {
         "mpdf/mpdf": "^8.2"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DocuTrack\\Tools\\": "tools/"
+        }
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --memory-limit=1G"
     }
 }
