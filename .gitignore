@@ -48,6 +48,9 @@ temp/
 # Uploads (Keep directory, ignore content)
 /public/assets/uploads/*
 !/public/assets/uploads/.gitkeep
+/public/uploads/*
+!/public/uploads/README.md
+!/public/uploads/.gitkeep
 
 # Build/Generated files
 /public/assets/css/output.css
@@ -57,3 +60,8 @@ temp/
 # Tests
 /tests/coverage/
 /phpunit.xml
+
+# Backups and Refactoring Artifacts
+*.backup_*
+.dead_code_backup/
+*_broken_backup.php
