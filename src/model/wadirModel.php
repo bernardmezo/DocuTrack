@@ -141,37 +141,84 @@ class wadirModel {
     }
 
     /**
-     * Mengambil riwayat Wadir.
+     * Mengambil riwayat verifikasi Wadir dengan tanggal approval.
+     *
+     * Method ini mengambil semua kegiatan yang sudah diproses oleh Wadir:
+     * - Disetujui: posisiId >= 5 (sudah lanjut ke tahap berikutnya)
+     * - Ditolak: statusUtamaId = 4
+     *
+     * Tanggal approval diambil dari:
+     * 1. tbl_progress_history (jika ada record approval Wadir)
+     * 2. k.updatedAt (fallback jika history tidak tersedia)
+     *
+     * @return array Array berisi daftar kegiatan yang sudah diproses Wadir
      */
-    public function getRiwayat() {
+    public function getRiwayat()
+    {
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
                     k.pemilikKegiatan as pengusul,
                     k.nimPelaksana as nim,
                     k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
                     k.createdAt as tanggal_pengajuan,
+                    k.updatedAt as tanggal_update,
+                    
+                    -- Ambil tanggal approval dari history (jika ada)
+                    COALESCE(
+                        (SELECT ph.timestamp 
+                         FROM tbl_progress_history ph 
+                         WHERE ph.kegiatanId = k.kegiatanId 
+                         AND ph.statusId IN (3, 5) 
+                         ORDER BY ph.timestamp DESC 
+                         LIMIT 1),
+                        k.updatedAt
+                    ) as tanggal_disetujui,
+                    
                     CASE 
-                        WHEN k.posisiId = 5 AND k.statusUtamaId != 4 THEN 'Disetujui'
+                        WHEN k.posisiId >= 5 AND k.statusUtamaId != 4 THEN 'Disetujui'
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         ELSE 'Diproses'
                     END as status
+                    
                   FROM tbl_kegiatan k
-                  WHERE k.posisiId = 5 OR k.statusUtamaId = 4
-                  ORDER BY k.createdAt DESC";
+                  WHERE k.posisiId >= 4 OR k.statusUtamaId = 4
+                  ORDER BY tanggal_disetujui DESC";
 
         $result = mysqli_query($this->db, $query);
         $data = [];
-        if ($result) { 
-            while ($r = mysqli_fetch_assoc($result)) $data[] = $r; 
+        
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                // Pastikan field jurusan tidak null
+                $row['jurusan'] = $row['jurusan'] ?? '-';
+                $row['prodi'] = $row['prodi'] ?? '-';
+                $data[] = $row;
+            }
         }
+        
         return $data;
     }
 
     /**
-     * Mengambil data monitoring.
+     * Mengambil data monitoring untuk Wadir dengan filtering dan pagination.
+     *
+     * Method ini mengambil data kegiatan untuk monitoring dengan berbagai filter:
+     * - 'menunggu': Hanya usulan yang posisiId = 3 DAN statusUtamaId = 1 (menunggu approval Wadir)
+     * - 'approved': Usulan yang sudah disetujui (posisiId >= 4)
+     * - 'ditolak': Usulan yang ditolak (statusUtamaId = 4)
+     * - 'in process': Usulan yang masih dalam proses
+     *
+     * @param int $page Halaman saat ini untuk pagination
+     * @param int $perPage Jumlah item per halaman
+     * @param string $search Kata kunci pencarian (nama kegiatan atau pengusul)
+     * @param string $statusFilter Filter status: 'semua', 'menunggu', 'approved', 'ditolak', 'in process'
+     * @param string $jurusanFilter Filter jurusan: 'semua' atau nama jurusan spesifik
+     * @return array Array dengan key 'data' (list kegiatan) dan 'totalItems' (total records)
      */
-    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter) {
+    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter)
+    {
         $offset = ($page - 1) * $perPage;
         
         $query = "SELECT 
@@ -195,43 +242,62 @@ class wadirModel {
                     END as tahap_sekarang,
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                        WHEN k.posisiId = 5 THEN 'Approved'
+                        WHEN k.posisiId >= 4 AND k.statusUtamaId != 4 THEN 'Approved'
+                        WHEN k.posisiId = 3 AND k.statusUtamaId = 1 THEN 'Menunggu'
                         ELSE 'In Process'
                     END as status
                   FROM tbl_kegiatan k
                   WHERE 1=1 ";
         
+        // Filter pencarian (escaped untuk mencegah SQL injection)
         if (!empty($search)) {
             $search = mysqli_real_escape_string($this->db, $search);
             $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
 
+        // Filter status dengan logic yang diperbaiki
         if ($statusFilter !== 'semua') {
             if ($statusFilter === 'ditolak') {
                 $query .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
-                $query .= " AND k.posisiId = 5";
+                $query .= " AND k.posisiId >= 4 AND k.statusUtamaId != 4";
             } elseif ($statusFilter === 'menunggu') {
-                $query .= " AND k.posisiId = 3";
+                // FIXED: Menunggu = posisi di Wadir (3) DAN statusUtama = 1 (menunggu approval)
+                $query .= " AND k.posisiId = 3 AND k.statusUtamaId = 1";
             } elseif ($statusFilter === 'in process') {
-                $query .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+                $query .= " AND k.statusUtamaId != 4 AND k.posisiId < 4";
             }
         }
 
+        // Filter jurusan
         if ($jurusanFilter !== 'semua') {
             $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
             $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
         }
 
+        // Build count query dengan filter yang sama
         $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-        if (!empty($search)) { $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')"; }
-        if ($statusFilter !== 'semua') {
-             if ($statusFilter === 'ditolak') $countQuery .= " AND k.statusUtamaId = 4";
-             elseif ($statusFilter === 'approved') $countQuery .= " AND k.posisiId = 5";
-             elseif ($statusFilter === 'menunggu') $countQuery .= " AND k.posisiId = 3";
-             elseif ($statusFilter === 'in process') $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+        
+        if (!empty($search)) {
+            $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
-        if ($jurusanFilter !== 'semua') { $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'"; }
+        
+        if ($statusFilter !== 'semua') {
+            if ($statusFilter === 'ditolak') {
+                $countQuery .= " AND k.statusUtamaId = 4";
+            } elseif ($statusFilter === 'approved') {
+                $countQuery .= " AND k.posisiId >= 4 AND k.statusUtamaId != 4";
+            } elseif ($statusFilter === 'menunggu') {
+                // FIXED: Konsisten dengan main query
+                $countQuery .= " AND k.posisiId = 3 AND k.statusUtamaId = 1";
+            } elseif ($statusFilter === 'in process') {
+                $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 4";
+            }
+        }
+        
+        if ($jurusanFilter !== 'semua') {
+            $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
+        }
 
         $query .= " ORDER BY k.createdAt DESC LIMIT $perPage OFFSET $offset";
 

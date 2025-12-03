@@ -216,9 +216,23 @@ class ppkModel {
     }
 
     /**
-     * Mengambil data monitoring.
+     * Mengambil data monitoring untuk PPK dengan filtering dan pagination.
+     *
+     * Method ini mengambil data kegiatan untuk monitoring dengan berbagai filter:
+     * - 'menunggu': Hanya usulan yang posisiId = 4 DAN statusUtamaId = 1 (menunggu approval PPK)
+     * - 'approved': Usulan yang sudah disetujui (posisiId >= 5)
+     * - 'ditolak': Usulan yang ditolak (statusUtamaId = 4)
+     * - 'in process': Usulan yang masih dalam proses
+     *
+     * @param int $page Halaman saat ini untuk pagination
+     * @param int $perPage Jumlah item per halaman
+     * @param string $search Kata kunci pencarian (nama kegiatan atau pengusul)
+     * @param string $statusFilter Filter status: 'semua', 'menunggu', 'approved', 'ditolak', 'in process'
+     * @param string $jurusanFilter Filter jurusan: 'semua' atau nama jurusan spesifik
+     * @return array Array dengan key 'data' (list kegiatan) dan 'totalItems' (total records)
      */
-    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter) {
+    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter)
+    {
         $offset = ($page - 1) * $perPage;
         
         $query = "SELECT 
@@ -243,42 +257,61 @@ class ppkModel {
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.posisiId = 5 THEN 'Approved'
+                        WHEN k.posisiId = 4 AND k.statusUtamaId = 1 THEN 'Menunggu'
                         ELSE 'In Process'
                     END as status
                   FROM tbl_kegiatan k
                   WHERE 1=1 ";
         
+        // Filter pencarian (escaped untuk mencegah SQL injection)
         if (!empty($search)) {
             $search = mysqli_real_escape_string($this->db, $search);
             $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
 
+        // Filter status dengan logic yang diperbaiki
         if ($statusFilter !== 'semua') {
             if ($statusFilter === 'ditolak') {
                 $query .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
-                $query .= " AND k.posisiId = 5";
+                $query .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
             } elseif ($statusFilter === 'menunggu') {
-                $query .= " AND k.posisiId = 4";
+                // FIXED: Menunggu = posisi di PPK (4) DAN statusUtama = 1 (menunggu approval)
+                $query .= " AND k.posisiId = 4 AND k.statusUtamaId = 1";
             } elseif ($statusFilter === 'in process') {
-                $query .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+                $query .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
             }
         }
 
+        // Filter jurusan
         if ($jurusanFilter !== 'semua') {
             $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
             $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
         }
 
+        // Build count query dengan filter yang sama
         $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-        if (!empty($search)) { $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')"; }
-        if ($statusFilter !== 'semua') {
-             if ($statusFilter === 'ditolak') $countQuery .= " AND k.statusUtamaId = 4";
-             elseif ($statusFilter === 'approved') $countQuery .= " AND k.posisiId = 5";
-             elseif ($statusFilter === 'menunggu') $countQuery .= " AND k.posisiId = 4";
-             elseif ($statusFilter === 'in process') $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId != 5";
+        
+        if (!empty($search)) {
+            $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
-        if ($jurusanFilter !== 'semua') { $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'"; }
+        
+        if ($statusFilter !== 'semua') {
+            if ($statusFilter === 'ditolak') {
+                $countQuery .= " AND k.statusUtamaId = 4";
+            } elseif ($statusFilter === 'approved') {
+                $countQuery .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
+            } elseif ($statusFilter === 'menunggu') {
+                // FIXED: Konsisten dengan main query
+                $countQuery .= " AND k.posisiId = 4 AND k.statusUtamaId = 1";
+            } elseif ($statusFilter === 'in process') {
+                $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
+            }
+        }
+        
+        if ($jurusanFilter !== 'semua') {
+            $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
+        }
 
         $query .= " ORDER BY k.createdAt DESC LIMIT $perPage OFFSET $offset";
 
