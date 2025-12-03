@@ -20,11 +20,11 @@ if (getenv('APP_ENV') === 'production') {
 // Autoloader
 spl_autoload_register(function ($class) {
     $prefixes = [
-        'Core\'         => DOCUTRACK_ROOT . '/src/core/',
-        'Controllers\'  => DOCUTRACK_ROOT . '/src/controllers/',
-        'Models\'       => DOCUTRACK_ROOT . '/src/model/',
-        'Helpers\'      => DOCUTRACK_ROOT . '/src/helpers/',
-        'Middleware\'   => DOCUTRACK_ROOT . '/src/middleware/',
+        'Core\\'         => DOCUTRACK_ROOT . '/src/core/',
+        'Controllers\\'  => DOCUTRACK_ROOT . '/src/controllers/',
+        'Models\\'       => DOCUTRACK_ROOT . '/src/model/',
+        'Helpers\\'      => DOCUTRACK_ROOT . '/src/helpers/',
+        'Middleware\\'   => DOCUTRACK_ROOT . '/src/middleware/',
     ];
 
     foreach ($prefixes as $prefix => $baseDir) {
