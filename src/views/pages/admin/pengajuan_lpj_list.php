@@ -2,7 +2,12 @@
 <?php
 // File: src/views/pages/admin/pengajuan_lpj_list.php
 
-// 1. MOCK DATA (Simulasi Database)
+// Flash messages
+$success_msg = $_SESSION['flash_message'] ?? null;
+$error_msg = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_message'], $_SESSION['flash_error']);
+
+// 1. Ensure data available (remove mock data in production)
 if (!isset($list_lpj)) {
     $list_lpj = [
         [
@@ -134,6 +139,24 @@ sort($jurusan_list);
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
+
+    <?php if($success_msg): ?>
+    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+            <p class="text-green-700 font-medium"><?= htmlspecialchars($success_msg) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if($error_msg): ?>
+    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+            <p class="text-red-700 font-medium"><?= htmlspecialchars($error_msg) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <section class="bg-white p-4 md:p-7 rounded-2xl shadow-lg mb-8">
         

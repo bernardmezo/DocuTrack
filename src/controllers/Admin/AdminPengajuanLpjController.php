@@ -17,15 +17,93 @@ class AdminPengajuanLpjController extends Controller {
      */
     public function index($data_dari_router = []) { 
         
-        // Ambil data LPJ dari database
-        $list_lpj = $this->model->getDashboardLPJ();
+        // Handle action dari GET parameter
+        $action = $_GET['action'] ?? 'list';
+        $id = $_GET['id'] ?? null;
+        
+        // Route ke method yang sesuai
+        if ($action === 'verifikasi' && $id) {
+            return $this->verifikasi($id);
+        } elseif ($action === 'tolak' && $id) {
+            return $this->tolak($id);
+        }
+        
+        // Default: Tampilkan list dengan type safety
+        $list_lpj = $this->safeModelCall($this->model, 'getDashboardLPJ', [], []);
+        
+        // Support feedback messages (already set in session by action methods)
+        // No need to unset here since View will handle it
         
         $data = array_merge($data_dari_router, [
             'title' => 'List Pengajuan LPJ',
-            'list_lpj' => $list_lpj 
+            'list_lpj' => $list_lpj ?? []
         ]);
 
         $this->view('pages/admin/pengajuan_lpj_list', $data, 'app');
+    }
+    
+    /**
+     * Verifikasi/Approve LPJ
+     */
+    public function verifikasi($lpjId) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['confirm'])) {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-lpj',
+                'error',
+                'Konfirmasi verifikasi diperlukan'
+            );
+        }
+        
+        require_once '../src/model/bendaharaModel.php';
+        $bendaharaModel = new bendaharaModel();
+        
+        $result = $this->safeModelCall($bendaharaModel, 'approveLPJ', [$lpjId], false);
+        
+        if ($result) {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-lpj',
+                'success',
+                'LPJ berhasil diverifikasi dan disetujui'
+            );
+        } else {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-lpj',
+                'error',
+                'Gagal memverifikasi LPJ'
+            );
+        }
+    }
+    
+    /**
+     * Tolak LPJ dengan komentar
+     */
+    public function tolak($lpjId) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-lpj',
+                'error',
+                'Method not allowed'
+            );
+        }
+        
+        $komentar = trim($_POST['komentar'] ?? '');
+        
+        if (empty($komentar)) {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-lpj?action=detail&id=' . $lpjId,
+                'error',
+                'Komentar penolakan wajib diisi'
+            );
+        }
+        
+        // TODO: Implementasi logic penolakan LPJ di Model
+        // $result = $this->model->tolakLPJ($lpjId, $komentar);
+        
+        $this->redirectWithMessage(
+            '/docutrack/public/admin/pengajuan-lpj',
+            'success',
+            'LPJ ditolak dan dikembalikan untuk revisi'
+        );
     }
 
     public function show($id, $data_dari_router = []) {
@@ -86,13 +164,53 @@ class AdminPengajuanLpjController extends Controller {
             echo json_encode(['success' => false, 'message' => 'Method not allowed']);
             return;
         }
+
+        if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+            echo json_encode(['success' => false, 'message' => 'File tidak ditemukan atau error upload.']);
+            return;
+        }
+
+        // Gunakan helper validation yang sudah dibuat
+        require_once '../src/helpers/security_helper.php';
         
-        http_response_code(200);
-        echo json_encode([
-            'success' => true, 
-            'message' => 'Bukti berhasil diupload',
-            'filename' => 'bukti_' . time() . '.pdf'
+        $validation = validateFileUpload($_FILES['file'], [
+            'allowed_types' => ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
+            'max_size' => 5 * 1024 * 1024, // 5MB
+            'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png']
         ]);
+        
+        if (!$validation['valid']) {
+            echo json_encode(['success' => false, 'message' => $validation['error']]);
+            return;
+        }
+
+        $file = $_FILES['file'];
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+
+        // Tentukan direktori upload
+        $targetDir = __DIR__ . '/../../../public/uploads/lpj/';
+        
+        // ✅ CEK DAN BUAT DIREKTORI JIKA BELUM ADA
+        if (!is_dir($targetDir)) {
+            if (!mkdir($targetDir, 0777, true)) {
+                echo json_encode(['success' => false, 'message' => 'Gagal membuat direktori upload.']);
+                return;
+            }
+        }
+
+        // Generate nama file unik
+        $filename = 'bukti_' . time() . '_' . uniqid() . '.' . $ext;
+        $targetFile = $targetDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $targetFile)) {
+            echo json_encode([
+                'success' => true, 
+                'message' => 'Bukti berhasil diupload',
+                'filename' => $filename
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Gagal menyimpan file ke server.']);
+        }
     }
     
     public function submitLpj() {
@@ -102,11 +220,75 @@ class AdminPengajuanLpjController extends Controller {
             return;
         }
         
-        http_response_code(200);
-        echo json_encode([
-            'success' => true, 
-            'message' => 'LPJ berhasil diajukan ke Bendahara'
-        ]);
+        // Load Helper Model for Transaction
+        require_once __DIR__ . '/../../model/lpj/lpjModel.php';
+
+        $kegiatanId = $_POST['kegiatan_id'] ?? null;
+        $itemsJson = $_POST['items'] ?? '[]';
+
+        if (!$kegiatanId) {
+            echo json_encode(['success' => false, 'message' => 'ID Kegiatan tidak valid.']);
+            return;
+        }
+
+        $items = json_decode($itemsJson, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            echo json_encode(['success' => false, 'message' => 'Format data item tidak valid.']);
+            return;
+        }
+
+        // 1. Cek apakah LPJ sudah ada untuk kegiatan ini
+        $existingLpj = getLpjWithItemsByKegiatanId($kegiatanId);
+        $lpjId = null;
+
+        // Mulai Transaction via Model logic
+        // Karena Model lpjModel.php yang baru menggunakan procedural style dengan global $conn,
+        // kita harus berhati-hati. Idealnya kita wrap di try-catch sini.
+
+        try {
+            if ($existingLpj) {
+                $lpjId = $existingLpj['lpj_id'];
+                // Hapus item lama (Reset)
+                deleteLpjItemsByLpjId($lpjId);
+            } else {
+                // Insert Baru
+                $lpjId = insertLpj($kegiatanId);
+                if (!$lpjId) throw new Exception("Gagal membuat draft LPJ.");
+            }
+
+            // Insert Item Baru
+            if (!empty($items)) {
+                // Mapping data JSON ke format Database
+                $dbItems = [];
+                foreach ($items as $item) {
+                    $dbItems[] = [
+                        'jenis_belanja' => $item['kategori'] ?? 'Lainnya',
+                        'uraian' => $item['uraian'] ?? '',
+                        'rincian' => $item['rincian'] ?? '',
+                        'satuan' => $item['satuan'] ?? '',
+                        'total_harga' => floatval($item['harga_satuan'] ?? 0),
+                        'sub_total' => floatval($item['total'] ?? 0), // Frontend sends 'total' as subtotal
+                        'file_bukti_nota' => $item['file_bukti'] ?? null
+                    ];
+                }
+                
+                if (!insertLpjItems($lpjId, $dbItems)) {
+                    throw new Exception("Gagal menyimpan item LPJ.");
+                }
+            }
+
+            // Update Grand Total & Status
+            updateLpjGrandTotal($lpjId);
+            updateLpjStatus($lpjId, 'Submitted');
+
+            echo json_encode([
+                'success' => true, 
+                'message' => 'LPJ berhasil diajukan ke Bendahara'
+            ]);
+
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        }
     }
     
     public function submitRevisi() {

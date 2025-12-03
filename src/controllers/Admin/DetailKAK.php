@@ -35,20 +35,21 @@ class AdminDetailKAKController extends Controller {
 
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
 
+        // Extract data kegiatan dengan null coalescing untuk keamanan data
         $kegiatan_data = [
-            'nama_pengusul' => $dataDB['pemilikKegiatan'],
-            'nim_pengusul' => $dataDB['nimPelaksana'],
-            'nama_penanggung_jawab' => $dataDB['namaPenanggungJawab'] ?? '-',
-            'nip_penanggung_jawab' => $dataDB['nip'] ?? '-',
-            'jurusan' => $dataDB['jurusanPenyelenggara'],
-            'nama_kegiatan' => $dataDB['namaKegiatan'],
-            'gambaran_umum' => $dataDB['gambaranUmum'],
-            'penerima_manfaat' => $dataDB['penerimaMaanfaat'],
-            'metode_pelaksanaan' => $dataDB['metodePelaksanaan'],
+            'nama_pengusul' => $dataDB['pemilikKegiatan'] ?? '-',
+            'nim_pengusul' => $dataDB['nimPelaksana'] ?? '-',
+            'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
+            'nim_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
+            'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '-',
+            'nama_kegiatan' => $dataDB['namaKegiatan'] ?? 'Tidak ada judul',
+            'gambaran_umum' => $dataDB['gambaranUmum'] ?? '-',
+            'penerima_manfaat' => $dataDB['penerimaMaanfaat'] ?? '-',
+            'metode_pelaksanaan' => $dataDB['metodePelaksanaan'] ?? '-',
             'tahapan_kegiatan' => $tahapan_string,
-            'surat_pengantar' => '',
-            'tanggal_mulai' => '',
-            'tanggal_selesai' => ''
+            'file_surat_pengantar' => $dataDB['file_surat_pengantar'] ?? null,
+            'tanggal_mulai' => $dataDB['tanggal_mulai'] ?? null,
+            'tanggal_selesai' => $dataDB['tanggal_selesai'] ?? null
         ];
 
         $data = array_merge($data_dari_router, [
@@ -61,10 +62,15 @@ class AdminDetailKAKController extends Controller {
             'indikator_data' => $indikator,
             'rab_data' => $rab,
             
-            'kode_mak' => $dataDB['buktiMAK'] ?? '',
+            'kode_mak' => $dataDB['buktiMAK'] ?? '-',
             'komentar_revisi' => $komentar,
             'komentar_penolakan' => $komentarPenolakan,
-            'surat_pengantar_url' => '#', 
+            
+            // Generate URL untuk surat pengantar (jika ada)
+            'surat_pengantar_url' => !empty($dataDB['file_surat_pengantar']) 
+                ? '/docutrack/public/uploads/surat/' . basename($dataDB['file_surat_pengantar']) 
+                : null,
+            
             'back_url' => $back_url
         ]);
 

@@ -73,7 +73,9 @@ if (!function_exists('formatRupiah')) {
         <?php endif; ?>
 
         <form id="form-lpj-submit" action="#" method="POST" enctype="multipart/form-data">
-            
+            <!-- HIDDEN INPUT UNTUK JS -->
+            <input type="hidden" id="kegiatan_id" value="<?php echo $kegiatan_data['kegiatanId'] ?? $kegiatan_data['id'] ?? 0; ?>">
+
             <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Rencana Anggaran Biaya (RAB)</h3>
                 
@@ -86,7 +88,7 @@ if (!function_exists('formatRupiah')) {
                 ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?php echo htmlspecialchars($kategori); ?></h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table class="w-full min-w-[1200px]">
+                        <table class="w-full min-w-[1200px]" data-kategori="<?php echo htmlspecialchars($kategori); ?>">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 200px;">Uraian</th>
@@ -121,7 +123,15 @@ if (!function_exists('formatRupiah')) {
 
                                     $subtotal_plan += $plan;
                                 ?>
-                                <tr class="<?php echo $has_comment ? 'bg-yellow-50' : ''; ?>">
+                                <tr class="<?php echo $has_comment ? 'bg-yellow-50' : ''; ?>" 
+                                    data-row-id="<?php echo $item_id; ?>"
+                                    data-uraian="<?php echo htmlspecialchars($item['uraian'] ?? ''); ?>"
+                                    data-rincian="<?php echo htmlspecialchars($rincian); ?>"
+                                    data-satuan="<?php echo htmlspecialchars($sat1); ?>"
+                                    data-harga="<?php echo $harga_satuan; ?>"
+                                    data-total="<?php echo $plan; ?>"
+                                    data-uploaded-file="<?php echo htmlspecialchars($item['bukti_file'] ?? ''); ?>">
+
                                     <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
                                         <?php echo htmlspecialchars($item['uraian'] ?? ''); ?>
                                         <?php if ($has_comment): ?>
@@ -158,7 +168,7 @@ if (!function_exists('formatRupiah')) {
                                                     <?php echo $is_selesai ? 'disabled' : ''; ?>>
                                                 <i class='fas fa-upload mr-1'></i> <?php echo $bukti_uploaded ? 'Ganti Bukti' : 'Upload Bukti'; ?>
                                             </button>
-                                            <div id="bukti-display-<?php echo $item_id; ?>" class="hidden items-center justify-center gap-2 text-green-600">
+                                            <div id="bukti-display-<?php echo $item_id; ?>" class="<?php echo $bukti_uploaded ? 'flex' : 'hidden'; ?> items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
                                                 <span class="text-xs font-medium">Terupload</span>
                                             </div>
@@ -199,11 +209,11 @@ if (!function_exists('formatRupiah')) {
             <div class="flex flex-col sm:flex-row-reverse justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                  
                  <?php if ($is_revisi): ?>
-                    <button type="submit" id="submit-lpj-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5">
+                    <button type="button" id="submit-lpj-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5">
                         <i class="fas fa-paper-plane"></i> Submit Revisi LPJ
                     </button>
                  <?php elseif ($is_menunggu): ?>
-                    <button type="submit" id="submit-lpj-btn" 
+                    <button type="button" id="submit-lpj-btn" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
                             <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
                          <i class="fas fa-check-circle"></i> 
@@ -287,12 +297,11 @@ if (!function_exists('formatRupiah')) {
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Upload Modal Logic
+    // --- MODAL VARIABLES ---
     const backdrop = document.getElementById('upload-modal-backdrop');
     const modal = document.getElementById('upload-modal-content');
     const closeBtn = document.getElementById('close-upload-modal-btn');
     const cancelBtn = document.getElementById('cancel-upload-btn');
-    const uploadBtns = document.querySelectorAll('.btn-upload-bukti');
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-upload-input');
     const filePreview = document.getElementById('file-preview-area');
@@ -301,10 +310,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadForm = document.getElementById('upload-file-form');
     const modalItemName = document.getElementById('modal-item-name');
     const modalItemIdInput = document.getElementById('modal-item-id-input');
+    const submitLpjBtn = document.getElementById('submit-lpj-btn');
     
     let selectedFile = null;
     let currentItemId = null;
 
+    // --- MODAL FUNCTIONS ---
     function openModal(itemId, itemName) {
         currentItemId = itemId;
         modalItemName.textContent = itemName;
@@ -349,7 +360,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    uploadBtns.forEach(btn => {
+    // --- EVENT LISTENERS: UPLOAD BUTTONS ---
+    document.querySelectorAll('.btn-upload-bukti').forEach(btn => {
         btn.addEventListener('click', () => {
             const itemId = btn.dataset.itemId;
             const itemName = btn.dataset.itemName;
@@ -361,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', closeModal);
 
+    // --- DRAG & DROP ---
     dropzone.addEventListener('click', () => fileInput.click());
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -383,39 +396,152 @@ document.addEventListener('DOMContentLoaded', () => {
 
     removeFileBtn.addEventListener('click', resetForm);
 
-    uploadForm.addEventListener('submit', (e) => {
+    // --- AJAX UPLOAD BUKTI ---
+    uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!selectedFile) {
             alert('Pilih file terlebih dahulu');
             return;
         }
 
-        // Simulate upload success
-        const uploadBtn = document.querySelector(`[data-item-id="${currentItemId}"]`);
-        const displayArea = document.getElementById(`bukti-display-${currentItemId}`);
-        
-        if (uploadBtn && displayArea) {
-            uploadBtn.classList.add('hidden');
-            displayArea.classList.remove('hidden');
-            displayArea.classList.add('flex');
-        }
+        const formData = new FormData();
+        formData.append('file', selectedFile);
 
-        alert('Bukti berhasil diupload!');
-        closeModal();
-        
-        // Check if all bukti uploaded to enable submit button
-        checkAllBuktiUploaded();
+        const submitBtn = document.getElementById('confirm-upload-btn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengupload...';
+        submitBtn.disabled = true;
+
+        try {
+            const response = await fetch('/docutrack/public/admin/pengajuan-lpj/upload-bukti', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 1. Update UI Row
+                const row = document.querySelector(`tr[data-row-id="${currentItemId}"]`);
+                if (row) {
+                    row.dataset.uploadedFile = result.filename;
+                    
+                    // Update visual buttons
+                    const uploadBtn = row.querySelector('.btn-upload-bukti');
+                    const displayArea = document.getElementById(`bukti-display-${currentItemId}`);
+                    
+                    if (uploadBtn && displayArea) {
+                        uploadBtn.classList.add('hidden');
+                        displayArea.classList.remove('hidden');
+                        displayArea.classList.add('flex');
+                    }
+                }
+
+                alert('Bukti berhasil diupload!');
+                closeModal();
+                checkAllBuktiUploaded();
+
+            } else {
+                alert('Upload Gagal: ' + result.message);
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat upload file.');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
     });
 
+    // --- CHECK ALL BUKTI ---
     function checkAllBuktiUploaded() {
-        const allUploadBtns = document.querySelectorAll('.btn-upload-bukti:not(.hidden)');
-        const submitBtn = document.getElementById('submit-lpj-btn');
-        
-        if (allUploadBtns.length === 0 && submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
+        const rows = document.querySelectorAll('tbody tr[data-row-id]');
+        let allUploaded = true;
+
+        rows.forEach(row => {
+            if (!row.dataset.uploadedFile || row.dataset.uploadedFile === '') {
+                allUploaded = false;
+            }
+        });
+
+        if (submitLpjBtn) {
+            if (allUploaded) {
+                submitLpjBtn.disabled = false;
+                submitLpjBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
+            } else {
+                submitLpjBtn.disabled = true;
+                submitLpjBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Upload Bukti Terlebih Dahulu';
+            }
         }
     }
+
+    // --- AJAX SUBMIT LPJ ---
+    if (submitLpjBtn) {
+        submitLpjBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            if (submitLpjBtn.disabled) return;
+
+            if (!confirm('Apakah Anda yakin semua bukti sudah benar? Data akan dikirim ke Bendahara.')) {
+                return;
+            }
+
+            submitLpjBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            submitLpjBtn.disabled = true;
+
+            const items = [];
+            const tables = document.querySelectorAll('table[data-kategori]');
+            
+            tables.forEach(table => {
+                const kategori = table.dataset.kategori;
+                const rows = table.querySelectorAll('tbody tr[data-row-id]');
+                
+                rows.forEach(row => {
+                    items.push({
+                        kategori: kategori,
+                        uraian: row.dataset.uraian,
+                        rincian: row.dataset.rincian,
+                        satuan: row.dataset.satuan,
+                        harga_satuan: parseFloat(row.dataset.harga),
+                        total: parseFloat(row.dataset.total),
+                        file_bukti: row.dataset.uploadedFile
+                    });
+                });
+            });
+
+            const payload = new FormData();
+            payload.append('kegiatan_id', document.getElementById('kegiatan_id').value);
+            payload.append('items', JSON.stringify(items));
+
+            try {
+                const response = await fetch('/docutrack/public/admin/pengajuan-lpj/submit', {
+                    method: 'POST',
+                    body: payload
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message);
+                    window.location.href = '/docutrack/public/admin/pengajuan-lpj';
+                } else {
+                    alert('Gagal Submit: ' + result.message);
+                    submitLpjBtn.disabled = false;
+                    submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan koneksi.');
+                submitLpjBtn.disabled = false;
+                submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
+            }
+        });
+    }
+
+    // Initial check on load
+    checkAllBuktiUploaded();
 });
 </script>

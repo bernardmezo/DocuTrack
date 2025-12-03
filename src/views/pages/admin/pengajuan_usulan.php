@@ -19,6 +19,24 @@
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
+    <?php if(isset($success_message) && $success_message): ?>
+    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+            <p class="text-green-700 font-medium"><?= htmlspecialchars($success_message) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if(isset($error_message) && $error_message): ?>
+    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+            <p class="text-red-700 font-medium"><?= htmlspecialchars($error_message) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <section id="form-section" class="transition-opacity duration-500 ease-out">
 <!-- ======== MULAI FORM ========= -->
         <form id="kak-form-element" action="/docutrack/public/admin/pengajuan-usulan/store" method="POST" enctype="multipart/form-data">

@@ -234,24 +234,53 @@ class adminModel {
     }
 
     /**
-     * Mengambil detail KAK.
+     * Mengambil detail lengkap kegiatan beserta data KAK, Penanggung Jawab, dan file pendukung.
+     *
+     * Method ini melakukan JOIN dengan beberapa tabel untuk mengumpulkan informasi lengkap:
+     * - Data kegiatan utama dari tbl_kegiatan
+     * - Data KAK dari tbl_kak
+     * - Data Penanggung Jawab dari tbl_user (via rancangan_kegiatan)
+     * - Tanggal mulai dan selesai dari tbl_rancangan_kegiatan
+     * - File surat pengantar dari tbl_rancangan_kegiatan
+     * - Status usulan dari tbl_status_utama
+     *
+     * @param int $kegiatanId ID dari kegiatan yang akan diambil detailnya
+     * @return array|null Array asosiatif berisi detail kegiatan, atau null jika tidak ditemukan
+     * @throws mysqli_sql_exception Jika terjadi kesalahan database
      */
-    public function getDetailKegiatan($kegiatanId) {
+    public function getDetailKegiatan($kegiatanId)
+    {
         $query = "SELECT 
                     k.*, 
                     kak.*,
+                    rk.tanggalMulai as tanggal_mulai,
+                    rk.tanggalSelesai as tanggal_selesai,
+                    rk.fileSuratPengantar as file_surat_pengantar,
+                    u.nama as nama_pj,
+                    u.nim as nim_pj,
                     s.namaStatusUsulan as status_text
                   FROM tbl_kegiatan k
                   JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                  LEFT JOIN tbl_rancangan_kegiatan rk ON rk.kegiatanId = k.kegiatanId
+                  LEFT JOIN tbl_user u ON u.userId = rk.penanggungJawabId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                  WHERE k.kegiatanId = ?";
+                  WHERE k.kegiatanId = ?
+                  LIMIT 1";
         
         $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log('Failed to prepare statement in getDetailKegiatan: ' . mysqli_error($this->db));
+            return null;
+        }
+        
         mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
         
-        return mysqli_fetch_assoc($result);
+        return $data;
     }
 
     /**
