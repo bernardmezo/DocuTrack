@@ -16,12 +16,19 @@ class BendaharaPengajuanlpjController extends Controller {
      * Halaman List LPJ - HANYA MENUNGGU
      */
     public function index($data_dari_router = []) {
-        // ✅ AMBIL DATA DARI DATABASE (bukan dummy)
-        $list_lpj = $this->model->getAntrianLPJ();
+        // ✅ AMBIL DATA DARI DATABASE dengan type safety
+        $list_lpj = $this->safeModelCall($this->model, 'getAntrianLPJ', [], []);
+        
+        // Get flash messages from session
+        $success_msg = $_SESSION['flash_message'] ?? null;
+        $error_msg = $_SESSION['flash_error'] ?? null;
+        unset($_SESSION['flash_message'], $_SESSION['flash_error']);
 
         $data = array_merge($data_dari_router, [
             'title' => 'Pengajuan LPJ - Bendahara',
-            'list_lpj' => $list_lpj
+            'list_lpj' => $list_lpj ?? [],
+            'success_message' => $success_msg,
+            'error_message' => $error_msg
         ]);
 
         $this->view('pages/bendahara/pengajuan-lpj', $data, 'bendahara');
@@ -69,15 +76,16 @@ class BendaharaPengajuanlpjController extends Controller {
                 'id' => $item['lpjItemId'],
                 'uraian' => $item['uraian'] ?? '-',
                 'rincian' => $item['rincian'] ?? '-',
-                'vol1' => $item['volume'] ?? 0,
+                // Mapping field sesuai schema tbl_lpj_item yang disederhanakan
+                'vol1' => 1, // Default 1 karena tidak ada kolom volume di tbl_lpj_item
                 'sat1' => $item['satuan'] ?? '-',
-                'vol2' => $item['frekuensi'] ?? 1,
-                'sat2' => $item['satuanFrekuensi'] ?? '-',
-                'harga_satuan' => $item['hargaSatuan'] ?? 0,
-                'harga_plan' => $item['totalHarga'] ?? 0,
+                'vol2' => 1, // Default 1
+                'sat2' => '', 
+                'harga_satuan' => $item['totalHarga'] ?? 0, // totalHarga di DB tampaknya harga per item/transaksi
+                'harga_plan' => $item['subtotal'] ?? 0,
                 'subtotal' => $item['subtotal'] ?? 0,
                 'bukti_file' => $item['fileBukti'] ?? null,
-                'komentar' => null // Komentar revisi bisa diambil dari tabel lain jika ada
+                'komentar' => null 
             ];
         }
 

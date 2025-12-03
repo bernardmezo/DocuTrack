@@ -173,11 +173,11 @@ class bendaharaModel {
             $data[$kategori][] = [
                 'uraian' => $row['uraian'] ?? '',
                 'rincian' => $row['rincian'] ?? '',
-                'vol1' => $row['volume'] ?? 0,
-                'sat1' => $row['satuan'] ?? '',
-                'vol2' => $row['frekuensi'] ?? 1,
-                'sat2' => $row['satuanFrekuensi'] ?? '',
-                'harga' => $row['hargaSatuan'] ?? 0
+                'vol1' => $row['vol1'] ?? 0,
+                'sat1' => $row['sat1'] ?? '',
+                'vol2' => $row['vol2'] ?? 1,
+                'sat2' => $row['sat2'] ?? '',
+                'harga' => $row['harga'] ?? 0
             ];
         }
         return $data;
@@ -575,7 +575,7 @@ class bendaharaModel {
                   FROM tbl_kegiatan k
                   WHERE k.tanggalPencairan IS NOT NULL 
                      OR (k.statusUtamaId = 4 AND k.posisiId >= 5)
-                  ORDER BY COALESCE(k.tanggalPencairan, k.updatedAt) DESC";
+                  ORDER BY COALESCE(k.tanggalPencairan, k.createdAt) DESC";
         
         $result = mysqli_query($this->db, $query);
         $data = [];
@@ -658,5 +658,158 @@ class bendaharaModel {
         mysqli_stmt_bind_param($stmt, $types, ...$values);
         
         return mysqli_stmt_execute($stmt);
+    }
+
+    // =========================================================
+    // 7. PENCAIRAN BERTAHAP (NEW FEATURE)
+    // =========================================================
+    
+    /**
+     * Proses pencairan dana secara bertahap.
+     *
+     * Method ini memproses pencairan dana dengan metode bertahap dimana:
+     * - Dana dicairkan dalam beberapa tahap sesuai persentase yang ditentukan
+     * - Setiap tahap memiliki tanggal pencairan dan persentase sendiri
+     * - Data tahapan disimpan sebagai JSON di kolom pencairan_tahap_json
+     * - Status kegiatan diupdate menjadi 'dana_dicairkan_bertahap'
+     * - Batas waktu LPJ dihitung dari tanggal pencairan tahap TERAKHIR + 14 hari
+     *
+     * @param int $kegiatanId ID kegiatan yang akan dicairkan
+     * @param float $totalAnggaran Total anggaran yang disetujui
+     * @param array $tahapData Array of arrays, setiap item berisi:
+     *                         ['tanggal' => 'Y-m-d', 'persentase' => float]
+     * @return bool True jika berhasil, false jika gagal
+     * @throws Exception Jika validasi gagal atau database error
+     *
+     * @example
+     * ```php
+     * $tahapData = [
+     *     ['tanggal' => '2025-01-15', 'persentase' => 50],
+     *     ['tanggal' => '2025-02-15', 'persentase' => 50]
+     * ];
+     * $model->prosesPencairanBertahap(123, 10000000, $tahapData);
+     * ```
+     */
+    public function prosesPencairanBertahap($kegiatanId, $totalAnggaran, $tahapData)
+    {
+        // Validasi: Total persentase harus 100%
+        $totalPersentase = array_sum(array_column($tahapData, 'persentase'));
+        if ($totalPersentase != 100) {
+            throw new Exception("Total persentase harus 100%, saat ini: {$totalPersentase}%");
+        }
+        
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // 1. Build JSON array untuk tahapan pencairan
+            $tahapanJson = [];
+            
+            foreach ($tahapData as $index => $tahap) {
+                $tahapKe = $index + 1;
+                $tanggal = $tahap['tanggal'];
+                $persentase = $tahap['persentase'];
+                $jumlah = ($persentase / 100) * $totalAnggaran;
+                
+                // Build JSON object untuk setiap tahap
+                $tahapanJson[] = [
+                    'tahap' => $tahapKe,
+                    'tanggal' => $tanggal,
+                    'persentase' => $persentase,
+                    'jumlah' => $jumlah,
+                    'status' => 'scheduled' // scheduled, disbursed, cancelled
+                ];
+            }
+            
+            // Convert array to JSON string
+            $jsonString = json_encode($tahapanJson, JSON_UNESCAPED_UNICODE);
+            
+            if ($jsonString === false) {
+                throw new Exception('Gagal encode data tahapan ke JSON');
+            }
+            
+            // 2. Update status kegiatan dengan data tahapan JSON
+            $updateQuery = "UPDATE tbl_kegiatan 
+                           SET tanggalPencairan = ?,
+                               jumlahDicairkan = ?,
+                               metodePencairan = 'bertahap',
+                               pencairan_tahap_json = ?,
+                               statusUtamaId = 3
+                           WHERE kegiatanId = ?";
+            
+            // Tanggal pencairan = tanggal tahap pertama
+            $tanggalPertama = $tahapData[0]['tanggal'];
+            $stmtUpdate = mysqli_prepare($this->db, $updateQuery);
+            mysqli_stmt_bind_param($stmtUpdate, "sdsi", $tanggalPertama, $totalAnggaran, $jsonString, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($stmtUpdate)) {
+                throw new Exception("Gagal update status kegiatan");
+            }
+            mysqli_stmt_close($stmtUpdate);
+            
+            // 3. Hitung batas waktu LPJ: tanggal pencairan TERAKHIR + 14 hari
+            $tanggalTerakhir = end($tahapData)['tanggal'];
+            $batasLpj = date('Y-m-d', strtotime($tanggalTerakhir . ' +14 days'));
+            
+            $this->createOrUpdateLpjPlaceholder($kegiatanId, $batasLpj);
+            
+            // 4. Catat history
+            $statusDisetujui = 3;
+            $historyQuery = "INSERT INTO tbl_progress_history 
+                            (kegiatanId, statusId, timestamp) 
+                            VALUES (?, ?, NOW())";
+            
+            $stmtHistory = mysqli_prepare($this->db, $historyQuery);
+            mysqli_stmt_bind_param($stmtHistory, "ii", $kegiatanId, $statusDisetujui);
+            mysqli_stmt_execute($stmtHistory);
+            mysqli_stmt_close($stmtHistory);
+            
+            mysqli_commit($this->db);
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("prosesPencairanBertahap Error: " . $e->getMessage());
+            throw $e; // Re-throw untuk ditangani di controller
+        }
+    }
+    
+    /**
+     * Ambil data tahapan pencairan untuk kegiatan tertentu.
+     *
+     * Method ini akan parse JSON dari kolom pencairan_tahap_json dan
+     * mengembalikan array tahapan pencairan.
+     *
+     * @param int $kegiatanId ID kegiatan
+     * @return array Array berisi data tahapan pencairan, atau empty array jika tidak ada
+     */
+    public function getTahapanPencairan($kegiatanId)
+    {
+        $query = "SELECT pencairan_tahap_json 
+                 FROM tbl_kegiatan 
+                 WHERE kegiatanId = ? 
+                 LIMIT 1";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        
+        // Return empty array jika tidak ada data atau JSON null
+        if (!$row || empty($row['pencairan_tahap_json'])) {
+            return [];
+        }
+        
+        // Parse JSON string to array
+        $tahapanData = json_decode($row['pencairan_tahap_json'], true);
+        
+        // Validasi hasil decode
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('getTahapanPencairan: JSON decode error - ' . json_last_error_msg());
+            return [];
+        }
+        
+        return is_array($tahapanData) ? $tahapanData : [];
     }
 }

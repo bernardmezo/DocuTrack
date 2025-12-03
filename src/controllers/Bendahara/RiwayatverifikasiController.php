@@ -79,7 +79,7 @@ class BendaharaRiwayatverifikasiController extends Controller {
                 'id' => $id,
                 'nama_pengusul' => $kegiatan['pemilikKegiatan'] ?? '-',
                 'nim_pengusul' => $kegiatan['nimPelaksana'] ?? '-',
-                'nama_penanggung_jawab' => $kegiatan['namaPenanggungJawab'] ?? '-',
+                'nama_penanggung_jawab' => $kegiatan['namaPJ'] ?? '-',
                 'nip_penanggung_jawab' => $kegiatan['nip'] ?? '-',
                 'nama_kegiatan' => $kegiatan['namaKegiatan'] ?? '-',
                 'gambaran_umum' => $kegiatan['gambaranUmum'] ?? '-',
@@ -99,7 +99,7 @@ class BendaharaRiwayatverifikasiController extends Controller {
             'anggaran_disetujui' => $kegiatan['total_rab'] ?? 0,
             
             // Surat Pengantar
-            'surat_pengantar_url' => $kegiatan['suratPengantarUrl'] ?? '',
+            'surat_pengantar_url' => !empty($kegiatan['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $kegiatan['suratPengantar'] : '',
             
             // Data Pencairan
             'jumlah_dicairkan' => $kegiatan['jumlahDicairkan'] ?? 0,

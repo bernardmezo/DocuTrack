@@ -14,11 +14,11 @@ if (!function_exists('insertLpj')) {
     function insertLpj($kegiatan_id) {
         global $conn;
         
-        $status_default = 'Draft';
         $grand_total_default = 0.00;
 
-        $query = "INSERT INTO tbl_lpj (kegiatan_id, status_lpj, grand_total_realisasi, submitted_at, approved_at) 
-                  VALUES (?, ?, ?, NULL, NULL)";
+        // Schema: lpjId, kegiatanId, grandTotalRealisasi, submittedAt, approvedAt, tenggatLpj
+        $query = "INSERT INTO tbl_lpj (kegiatanId, grandTotalRealisasi, submittedAt, approvedAt) 
+                  VALUES (?, ?, NULL, NULL)";
         
         $stmt = mysqli_prepare($conn, $query);
         if ($stmt === false) {
@@ -26,8 +26,7 @@ if (!function_exists('insertLpj')) {
             return false;
         }
 
-        // Bind parameter: i = integer, s = string, d = double
-        mysqli_stmt_bind_param($stmt, 'isd', $kegiatan_id, $status_default, $grand_total_default);
+        mysqli_stmt_bind_param($stmt, 'id', $kegiatan_id, $grand_total_default);
 
         if (mysqli_stmt_execute($stmt)) {
             $newId = mysqli_insert_id($conn);
@@ -42,7 +41,7 @@ if (!function_exists('insertLpj')) {
 }
 
 /**
- * Mengupdate grand_total_realisasi di tbl_lpj.
+ * Mengupdate grandTotalRealisasi di tbl_lpj.
  * Sebaiknya dipanggil setelah ada perubahan (insert/update/delete) pada item.
  *
  * @param int $lpj_id ID LPJ
@@ -52,10 +51,10 @@ if (!function_exists('updateLpjGrandTotal')) {
     function updateLpjGrandTotal($lpj_id) {
         global $conn;
 
-        // Query ini menghitung total dari sub_total item dan meng-update tabel induk
-        $query = "UPDATE tbl_lpj SET grand_total_realisasi = 
-                    (SELECT COALESCE(SUM(sub_total), 0) FROM tbl_lpj_items WHERE lpj_id = ?)
-                  WHERE lpj_id = ?";
+        // Schema: tbl_lpj_item (singular), subtotal
+        $query = "UPDATE tbl_lpj SET grandTotalRealisasi = 
+                    (SELECT COALESCE(SUM(subtotal), 0) FROM tbl_lpj_item WHERE lpjId = ?)
+                  WHERE lpjId = ?";
         
         $stmt = mysqli_prepare($conn, $query);
         if ($stmt === false) {
@@ -80,28 +79,26 @@ if (!function_exists('updateLpjGrandTotal')) {
  * Mengupdate status LPJ dan timestamp terkait.
  *
  * @param int $lpj_id ID LPJ
- * @param string $new_status Status baru (e.g., 'Submitted', 'Approved', 'Revision')
+ * @param string $new_status Status baru (e.g., 'Submitted', 'Approved')
  * @return bool True jika berhasil, false jika gagal
  */
 if (!function_exists('updateLpjStatus')) {
     function updateLpjStatus($lpj_id, $new_status) {
         global $conn;
 
-        // Menyiapkan query dasar
-        $query = "UPDATE tbl_lpj SET status_lpj = ?";
-        $params = [$new_status];
-        $types = 's';
-
-        // Menambahkan timestamp otomatis berdasarkan status baru
+        // NOTE: Schema tbl_lpj TIDAK punya kolom 'status_lpj'. 
+        // Status ditentukan oleh submittedAt (Submitted) dan approvedAt (Approved).
+        
+        $query = "";
         if ($new_status == 'Submitted') {
-            $query .= ", submitted_at = NOW()";
+            $query = "UPDATE tbl_lpj SET submittedAt = NOW() WHERE lpjId = ?";
         } else if ($new_status == 'Approved') {
-            $query .= ", approved_at = NOW()";
+            $query = "UPDATE tbl_lpj SET approvedAt = NOW() WHERE lpjId = ?";
+        } else {
+            // Jika status lain (misal Reset/Revisi), mungkin kita perlu null-kan timestamp?
+            // Untuk saat ini kita anggap hanya submit/approve
+            return false;
         }
-
-        $query .= " WHERE lpj_id = ?";
-        $params[] = $lpj_id;
-        $types .= 'i';
 
         $stmt = mysqli_prepare($conn, $query);
         if ($stmt === false) {
@@ -109,7 +106,7 @@ if (!function_exists('updateLpjStatus')) {
             return false;
         }
 
-        mysqli_stmt_bind_param($stmt, $types, ...$params);
+        mysqli_stmt_bind_param($stmt, 'i', $lpj_id);
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
@@ -136,7 +133,9 @@ if (!function_exists('insertLpjItems')) {
     function insertLpjItems($lpj_id, $itemsList) {
         global $conn;
 
-        $query = "INSERT INTO tbl_lpj_items (lpj_id, jenis_belanja, uraian, rincian, satuan, total_harga, sub_total, file_bukti_nota) 
+        // Schema: tbl_lpj_item (singular)
+        // Cols: lpjId, jenisBelanja, uraian, rincian, satuan, totalHarga, subtotal, fileBukti
+        $query = "INSERT INTO tbl_lpj_item (lpjId, jenisBelanja, uraian, rincian, satuan, totalHarga, subtotal, fileBukti) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
         $stmt = mysqli_prepare($conn, $query);
@@ -146,6 +145,8 @@ if (!function_exists('insertLpjItems')) {
         }
 
         foreach ($itemsList as $item) {
+            // Pastikan key array sesuai dengan yang dikirim controller/caller
+            // Mapping ke camelCase DB
             mysqli_stmt_bind_param($stmt, 'issssdds',
                 $lpj_id,
                 $item['jenis_belanja'],
@@ -154,7 +155,7 @@ if (!function_exists('insertLpjItems')) {
                 $item['satuan'],
                 $item['total_harga'],
                 $item['sub_total'],
-                $item['file_bukti_nota']
+                $item['file_bukti_nota'] // Caller mungkin masih pakai snake_case
             );
 
             if (!mysqli_stmt_execute($stmt)) {
@@ -170,8 +171,7 @@ if (!function_exists('insertLpjItems')) {
 }
 
 /**
- * Menghapus semua item LPJ berdasarkan lpj_id.
- * (Fungsi helper untuk alur "Hapus-lalu-Insert" saat update)
+ * Menghapus semua item LPJ berdasarkan lpjId.
  *
  * @param int $lpj_id ID LPJ
  * @return bool True jika berhasil, false jika gagal
@@ -180,7 +180,7 @@ if (!function_exists('deleteLpjItemsByLpjId')) {
     function deleteLpjItemsByLpjId($lpj_id) {
         global $conn;
         
-        $query = "DELETE FROM tbl_lpj_items WHERE lpj_id = ?";
+        $query = "DELETE FROM tbl_lpj_item WHERE lpjId = ?";
         $stmt = mysqli_prepare($conn, $query);
 
         if ($stmt === false) {
@@ -213,9 +213,10 @@ if (!function_exists('getLpjWithItemsById')) {
     function getLpjWithItemsById($lpj_id) {
         global $conn;
 
+        // Schema: tbl_lpj l, tbl_lpj_item i
         $query = "SELECT l.*, i.* FROM tbl_lpj l
-                  LEFT JOIN tbl_lpj_items i ON l.lpj_id = i.lpj_id
-                  WHERE l.lpj_id = ?";
+                  LEFT JOIN tbl_lpj_item i ON l.lpjId = i.lpjId
+                  WHERE l.lpjId = ?";
         
         $stmt = mysqli_prepare($conn, $query);
         if ($stmt === false) {
@@ -238,27 +239,28 @@ if (!function_exists('getLpjWithItemsById')) {
             if ($lpjData === null) {
                 // Ini adalah baris pertama, set data induk LPJ
                 $lpjData = [
-                    'lpj_id' => $row['lpj_id'],
-                    'kegiatan_id' => $row['kegiatan_id'],
-                    'status_lpj' => $row['status_lpj'],
-                    'grand_total_realisasi' => $row['grand_total_realisasi'],
-                    'submitted_at' => $row['submitted_at'],
-                    'approved_at' => $row['approved_at'],
-                    'items' => [] // Siapkan array untuk item-item
+                    'lpj_id' => $row['lpjId'],
+                    'kegiatan_id' => $row['kegiatanId'],
+                    // 'status_lpj' => $row['status_lpj'], // REMOVED: Not in schema
+                    'grand_total_realisasi' => $row['grandTotalRealisasi'],
+                    'submitted_at' => $row['submittedAt'],
+                    'approved_at' => $row['approvedAt'],
+                    'tenggat_lpj' => $row['tenggatLpj'],
+                    'items' => []
                 ];
             }
 
-            // Tambahkan item jika ada (jika tidak, 'items' akan tetap jadi array kosong)
-            if (!empty($row['lpj_item_id'])) {
+            // Tambahkan item jika ada (lpjItemId not null)
+            if (!empty($row['lpjItemId'])) {
                 $lpjData['items'][] = [
-                    'lpj_item_id' => $row['lpj_item_id'],
-                    'jenis_belanja' => $row['jenis_belanja'],
+                    'lpj_item_id' => $row['lpjItemId'],
+                    'jenis_belanja' => $row['jenisBelanja'],
                     'uraian' => $row['uraian'],
                     'rincian' => $row['rincian'],
                     'satuan' => $row['satuan'],
-                    'total_harga' => $row['total_harga'],
-                    'sub_total' => $row['sub_total'],
-                    'file_bukti_nota' => $row['file_bukti_nota']
+                    'total_harga' => $row['totalHarga'],
+                    'sub_total' => $row['subtotal'],
+                    'file_bukti_nota' => $row['fileBukti']
                 ];
             }
         }
@@ -266,7 +268,7 @@ if (!function_exists('getLpjWithItemsById')) {
         mysqli_free_result($result);
         mysqli_stmt_close($stmt);
         
-        return $lpjData; // Mengembalikan data LPJ tunggal atau null
+        return $lpjData; 
     }
 }
 
@@ -280,9 +282,7 @@ if (!function_exists('getLpjWithItemsByKegiatanId')) {
     function getLpjWithItemsByKegiatanId($kegiatan_id) {
         global $conn;
 
-        // Asumsi 1 kegiatan = 1 LPJ. Jika bisa lebih, fungsi ini perlu diubah
-        // untuk mengembalikan array LPJ. Saat ini, saya anggap 1:1.
-        $query_lpj_id = "SELECT lpj_id FROM tbl_lpj WHERE kegiatan_id = ? LIMIT 1";
+        $query_lpj_id = "SELECT lpjId FROM tbl_lpj WHERE kegiatanId = ? LIMIT 1";
         $stmt_find = mysqli_prepare($conn, $query_lpj_id);
         
         if ($stmt_find === false) {
@@ -297,9 +297,9 @@ if (!function_exists('getLpjWithItemsByKegiatanId')) {
             $lpj = mysqli_fetch_assoc($result);
             mysqli_stmt_close($stmt_find);
 
-            if ($lpj && !empty($lpj['lpj_id'])) {
+            if ($lpj && !empty($lpj['lpjId'])) {
                 // Jika LPJ ditemukan, panggil fungsi get by ID
-                return getLpjWithItemsById($lpj['lpj_id']);
+                return getLpjWithItemsById($lpj['lpjId']);
             } else {
                 return null; // Tidak ada LPJ untuk kegiatan ini
             }
@@ -326,7 +326,7 @@ if (!function_exists('deleteLpjWithItems')) {
 
         try {
             // 1. Hapus semua item
-            $stmt1 = mysqli_prepare($conn, "DELETE FROM tbl_lpj_items WHERE lpj_id = ?");
+            $stmt1 = mysqli_prepare($conn, "DELETE FROM tbl_lpj_item WHERE lpjId = ?");
             mysqli_stmt_bind_param($stmt1, 'i', $lpj_id);
             if (!mysqli_stmt_execute($stmt1)) {
                 throw new Exception(mysqli_stmt_error($stmt1));
@@ -334,7 +334,7 @@ if (!function_exists('deleteLpjWithItems')) {
             mysqli_stmt_close($stmt1);
 
             // 2. Hapus LPJ induk
-            $stmt2 = mysqli_prepare($conn, "DELETE FROM tbl_lpj WHERE lpj_id = ?");
+            $stmt2 = mysqli_prepare($conn, "DELETE FROM tbl_lpj WHERE lpjId = ?");
             mysqli_stmt_bind_param($stmt2, 'i', $lpj_id);
             if (!mysqli_stmt_execute($stmt2)) {
                 throw new Exception(mysqli_stmt_error($stmt2));
@@ -353,5 +353,4 @@ if (!function_exists('deleteLpjWithItems')) {
         }
     }
 }
-
 ?>
