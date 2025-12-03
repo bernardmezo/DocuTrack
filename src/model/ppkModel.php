@@ -1,15 +1,34 @@
 <?php
-// File: src/models/ppkModel.php
+/**
+ * ppkModel - PPK Management Model
+ * 
+ * @category Model
+ * @package  DocuTrack
+ * @version  2.0.0 - Refactored to remove constructor trap
+ */
 
 class ppkModel {
+    /**
+     * @var mysqli Database connection instance
+     */
     private $db;
 
-    public function __construct() {
-        require_once __DIR__ . '/conn.php';
-        if (isset($conn)) {
-            $this->db = $conn;
+    /**
+     * Constructor - Dependency Injection untuk database connection
+     *
+     * @param mysqli|null $db Database connection (optional for backward compatibility)
+     */
+    public function __construct($db = null) {
+        if ($db !== null) {
+            $this->db = $db;
         } else {
-            die("Error: Koneksi database gagal di ppkModel.");
+            // Backward compatibility
+            require_once __DIR__ . '/conn.php';
+            if (isset($conn)) {
+                $this->db = $conn;
+            } else {
+                die("Error: Koneksi database gagal di ppkModel.");
+            }
         }
     }
 
@@ -81,9 +100,18 @@ class ppkModel {
         $query = "SELECT 
                     k.*, 
                     kak.*,
+                    k.tanggalMulai as tanggal_mulai,
+                    k.tanggalSelesai as tanggal_selesai,
+                    k.suratPengantar as file_surat_pengantar,
+                    u.nama as nama_pengusul,
+                    k.namaPJ as nama_pj,
+                    k.nip as nim_pj,
+                    k.nimPelaksana as nim_pelaksana,
+                    k.pemilikKegiatan as nama_pelaksana,
                     s.namaStatusUsulan as status_text
                 FROM tbl_kegiatan k
                 JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                LEFT JOIN tbl_user u ON u.userId = k.userId
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                 WHERE k.kegiatanId = ?";
         

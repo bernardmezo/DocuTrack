@@ -1,15 +1,34 @@
 <?php
-// File: src/model/superAdminModel.php
+/**
+ * superAdminModel - Super Admin Management Model
+ * 
+ * @category Model
+ * @package  DocuTrack
+ * @version  2.0.0 - Refactored to remove constructor trap
+ */
 
 class superAdminModel {
+    /**
+     * @var mysqli Database connection instance
+     */
     private $db;
 
-    public function __construct() {
-        require_once __DIR__ . '/conn.php';
-        if (isset($conn)) {
-            $this->db = $conn;
+    /**
+     * Constructor - Dependency Injection untuk database connection
+     *
+     * @param mysqli|null $db Database connection (optional for backward compatibility)
+     */
+    public function __construct($db = null) {
+        if ($db !== null) {
+            $this->db = $db;
         } else {
-            die("Error: Koneksi database gagal di superAdminModel.");
+            // Backward compatibility
+            require_once __DIR__ . '/conn.php';
+            if (isset($conn)) {
+                $this->db = $conn;
+            } else {
+                die("Error: Koneksi database gagal di superAdminModel.");
+            }
         }
     }
 
@@ -445,53 +464,35 @@ class superAdminModel {
             ];
         }
         
-        $query = "SELECT ikuId as id, namaIku as nama, deskripsi FROM tbl_iku ORDER BY ikuId ASC";
-        
-        $result = mysqli_query($this->db, $query);
-        $data = [];
-        
-        if ($result) {
-            while ($row = mysqli_fetch_assoc($result)) {
-                $data[] = $row;
-            }
-        }
-        
+        // NOTE: tbl_iku doesn't exist in current schema
+        // Return mock data for now until IKU management is implemented
         return $data;
     }
 
     /**
-     * Create IKU
+     * Create IKU - DISABLED: tbl_iku doesn't exist in schema
      */
     public function createIKU($nama, $deskripsi) {
-        $query = "INSERT INTO tbl_iku (namaIku, deskripsi) VALUES (?, ?)";
-        
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "ss", $nama, $deskripsi);
-        
-        return mysqli_stmt_execute($stmt);
+        // NOTE: tbl_iku table not implemented yet
+        error_log('superAdminModel::createIKU - Table tbl_iku does not exist in current schema');
+        return false;
     }
 
     /**
-     * Update IKU
+     * Update IKU - DISABLED: tbl_iku doesn't exist in schema
      */
     public function updateIKU($id, $nama, $deskripsi) {
-        $query = "UPDATE tbl_iku SET namaIku = ?, deskripsi = ? WHERE ikuId = ?";
-        
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "ssi", $nama, $deskripsi, $id);
-        
-        return mysqli_stmt_execute($stmt);
+        // NOTE: tbl_iku table not implemented yet
+        error_log('superAdminModel::updateIKU - Table tbl_iku does not exist in current schema');
+        return false;
     }
 
     /**
-     * Delete IKU
+     * Delete IKU - DISABLED: tbl_iku doesn't exist in schema
      */
     public function deleteIKU($id) {
-        $query = "DELETE FROM tbl_iku WHERE ikuId = ?";
-        
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "i", $id);
-        
-        return mysqli_stmt_execute($stmt);
+        // NOTE: tbl_iku table not implemented yet
+        error_log('superAdminModel::deleteIKU - Table tbl_iku does not exist in current schema');
+        return false;
     }
 }

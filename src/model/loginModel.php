@@ -1,21 +1,34 @@
 <?php
-// File: src/models/LoginModel.php
+/**
+ * LoginModel - Authentication Model
+ * 
+ * @category Model
+ * @package  DocuTrack
+ * @version  2.0.0 - Refactored to remove constructor trap
+ */
 
 class LoginModel {
-    // Properti untuk menyimpan koneksi
+    /**
+     * @var mysqli Database connection instance
+     */
     private $db;
 
-    public function __construct() {
-        // 1. Panggil file koneksi
-        // Gunakan __DIR__ agar path-nya pasti benar (di folder yang sama dengan model ini)
-        require_once __DIR__ . '/conn.php';
-
-        // 2. Pindahkan variabel $conn global ke dalam properti class ($this->db)
-        // Kita gunakan 'global' keyword atau cek isset agar variabel $conn dari luar bisa masuk
-        if (isset($conn)) {
-            $this->db = $conn;
+    /**
+     * Constructor - Dependency Injection untuk database connection
+     *
+     * @param mysqli|null $db Database connection (optional for backward compatibility)
+     */
+    public function __construct($db = null) {
+        if ($db !== null) {
+            $this->db = $db;
         } else {
-            die("Error: Variabel \$conn tidak ditemukan di conn.php");
+            // Backward compatibility
+            require_once __DIR__ . '/conn.php';
+            if (isset($conn)) {
+                $this->db = $conn;
+            } else {
+                die("Error: Variabel \$conn tidak ditemukan di conn.php");
+            }
         }
     }
 

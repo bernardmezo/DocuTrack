@@ -7,8 +7,7 @@
     // Insert data utama ke tbl_kak
     if (!function_exists('insertKAK')) {
         function insertKAK($kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             $stmt = mysqli_prepare($conn, "
                 INSERT INTO tbl_kak (kegiatan_id, gambaran_umum, penerima_manfaat, metode_pelaksanaan, indikator_kerja_utama_renstra)
                 VALUES (?, ?, ?, ?, ?)
@@ -35,8 +34,7 @@
     // update data utama di tbl_kak.
     if (!function_exists('updateKAK')) {
         function updateKAK($kakId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             $stmt = mysqli_prepare($conn, "
                 UPDATE tbl_kak SET 
                     gambaran_umum = ?, 
@@ -66,8 +64,7 @@
     // Ambil satu data KAK + semua indikator & tahapan-nya.
     if (!function_exists('getKAKWithRelationsById')) {
         function getKAKWithRelationsById($kakId) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             $query = "
                 SELECT 
                     k.kak_id, 
@@ -154,8 +151,7 @@
     // Ambil semua data KAK dengan indikator & tahapan lengkap (JOIN)
     if (!function_exists('getAllKAKWithRelations')) {
         function getAllKAKWithRelations() {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             $query = "
                 SELECT 
                     k.kak_id, 
@@ -224,8 +220,7 @@
     // Hapus semua data KAK beserta relasinya (indikator & tahapan) MENGGUNAKAN TRANSAKSI untuk menjamin integritas data.
     if (!function_exists('deleteKAK')) {
         function deleteKAK($kakId) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             // Mulai Transaksi
             mysqli_begin_transaction($conn);
 
@@ -273,8 +268,7 @@
     // Insert beberapa tahapan pelaksanaan (tbl_kak_tahapan_pelaksanaan)
     if (!function_exists('insertTahapanPelaksanaan')) {
         function insertTahapanPelaksanaan($kakId, $tahapanList) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             $stmt = mysqli_prepare($conn, "
                 INSERT INTO tbl_kak_tahapan_pelaksanaan (kak_id, nama_tahapan)
                 VALUES (?, ?)
@@ -302,8 +296,7 @@
     // Insert beberapa indikator 
     if (!function_exists('insertIndikatorKinerja')) {
         function insertIndikatorKinerja($kakId, $indikatorList) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             $stmt = mysqli_prepare($conn, "
                 INSERT INTO tbl_kak_indikator (kak_id, bulan, indikator_keberhasilan, target_persen)
                 VALUES (?, ?, ?, ?)
@@ -333,8 +326,7 @@
     // Hapus semua data KAK beserta relasinya
     if (!function_exists('deleteKAK')) {
         function deleteKAK($kakId) {
-            global $conn;
-
+        $conn = $this->db; // Refactored: use instance property instead of global
             mysqli_query($conn, "DELETE FROM tbl_kak_tahapan_pelaksanaan WHERE kak_id = " . intval($kakId));
             mysqli_query($conn, "DELETE FROM tbl_kak_indikator WHERE kak_id = " . intval($kakId));
             mysqli_query($conn, "DELETE FROM tbl_kak WHERE kak_id = " . intval($kakId));

@@ -1,15 +1,37 @@
 <?php
-// File: src/models/adminModel.php
+/**
+ * adminModel - Admin Management Model
+ * 
+ * Model untuk mengelola operasi admin dengan DI pattern.
+ * 
+ * @category Model
+ * @package  DocuTrack
+ * @version  2.0.0 - Refactored to remove constructor trap
+ */
 
 class adminModel {
+    /**
+     * @var mysqli Database connection instance
+     */
     private $db;
 
-    public function __construct() {
-        require_once __DIR__ . '/conn.php';
-        if (isset($conn)) {
-            $this->db = $conn;
+    /**
+     * Constructor - Dependency Injection untuk database connection
+     *
+     * @param mysqli|null $db Database connection (optional for backward compatibility)
+     */
+    public function __construct($db = null) {
+        if ($db !== null) {
+            // New DI pattern: accept database from parameter
+            $this->db = $db;
         } else {
-            die("Error: Koneksi database gagal di adminModel.");
+            // Backward compatibility: load conn.php if no DI provided
+            require_once __DIR__ . '/conn.php';
+            if (isset($conn)) {
+                $this->db = $conn;
+            } else {
+                die("Error: Koneksi database gagal di adminModel.");
+            }
         }
     }
 
@@ -148,14 +170,27 @@ class adminModel {
                     k.prodiPenyelenggara as prodi,
                     k.jurusanPenyelenggara as jurusan,
                     l.submittedAt as tanggal_pengajuan,
+                    l.approvedAt,
+                    l.tenggatLpj,
                     CASE 
                         WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
                         WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
-                        ELSE 'Menunggu_Upload'
+                        WHEN EXISTS (
+                            SELECT 1 FROM tbl_lpj_item li 
+                            WHERE li.lpjId = l.lpjId 
+                            AND (li.fileBukti IS NULL OR li.fileBukti = '')
+                        ) THEN 'Menunggu_Upload'
+                        ELSE 'Siap_Submit'
                     END as status
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
-                  ORDER BY l.submittedAt DESC";
+                  ORDER BY 
+                    CASE 
+                        WHEN l.approvedAt IS NULL AND l.submittedAt IS NOT NULL THEN 1
+                        WHEN l.approvedAt IS NULL AND l.submittedAt IS NULL THEN 2
+                        ELSE 3
+                    END,
+                    l.submittedAt DESC";
 
         $result = mysqli_query($this->db, $query);
         $data = [];
@@ -184,7 +219,12 @@ class adminModel {
                     CASE 
                         WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
                         WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
-                        ELSE 'Menunggu_Upload'
+                        WHEN EXISTS (
+                            SELECT 1 FROM tbl_lpj_item li 
+                            WHERE li.lpjId = l.lpjId 
+                            AND (li.fileBukti IS NULL OR li.fileBukti = '')
+                        ) THEN 'Menunggu_Upload'
+                        ELSE 'Siap_Submit'
                     END as status
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
@@ -213,8 +253,8 @@ class adminModel {
                     r.sat2,
                     r.harga as harga_satuan,
                     r.totalHarga as harga_plan,
-                    r.buktiFile as bukti_file,
-                    r.komentarRevisi as komentar,
+                    NULL as bukti_file,
+                    NULL as komentar,
                     cat.namaKategori
                 FROM tbl_rab r
                 JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
@@ -253,16 +293,18 @@ class adminModel {
         $query = "SELECT 
                     k.*, 
                     kak.*,
-                    rk.tanggalMulai as tanggal_mulai,
-                    rk.tanggalSelesai as tanggal_selesai,
-                    rk.fileSuratPengantar as file_surat_pengantar,
-                    u.nama as nama_pj,
-                    u.nim as nim_pj,
+                    k.tanggalMulai as tanggal_mulai,
+                    k.tanggalSelesai as tanggal_selesai,
+                    k.suratPengantar as file_surat_pengantar,
+                    u.nama as nama_pengusul,
+                    k.namaPJ as nama_pj,
+                    k.nip as nim_pj,
+                    k.nimPelaksana as nim_pelaksana,
+                    k.pemilikKegiatan as nama_pelaksana,
                     s.namaStatusUsulan as status_text
                   FROM tbl_kegiatan k
                   JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
-                  LEFT JOIN tbl_rancangan_kegiatan rk ON rk.kegiatanId = k.kegiatanId
-                  LEFT JOIN tbl_user u ON u.userId = rk.penanggungJawabId
+                  LEFT JOIN tbl_user u ON u.userId = k.userId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                   WHERE k.kegiatanId = ?
                   LIMIT 1";
@@ -611,7 +653,7 @@ class adminModel {
             $stmt = mysqli_prepare($this->db, $query);
             mysqli_stmt_bind_param($stmt, "sssssiii", 
                 $data['namaPj'], 
-                $data['nimNipPj'], 
+                $data['nip'], 
                 $data['tgl_mulai'], 
                 $data['tgl_selesai'], 
                 $fileSurat, 
@@ -632,7 +674,7 @@ class adminModel {
             $stmt = mysqli_prepare($this->db, $query);
             mysqli_stmt_bind_param($stmt, "ssssiii", 
                 $data['namaPj'], 
-                $data['nimNipPj'], 
+                $data['nip'], 
                 $data['tgl_mulai'], 
                 $data['tgl_selesai'], 
                 $posisiIdPPK,
