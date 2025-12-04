@@ -17,6 +17,24 @@ $back_url = $back_url ?? '/docutrack/public/bendahara/pengajuan-lpj';
 if (!function_exists('formatRupiah')) {
     function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
 }
+
+if (!function_exists('showCommentIcon')) {
+    function showCommentIcon($field_name, $komentar_existing, $is_revisi, $is_telah_direvisi) {
+        if (($is_revisi || $is_telah_direvisi) && !empty($komentar_existing)) {
+            $comment = htmlspecialchars($komentar_existing);
+            echo "<span class='comment-icon-wrapper relative inline-flex items-center ml-2 group'>";
+            echo "<span class='comment-icon flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 border-2 border-yellow-400 cursor-pointer transition-all duration-300 hover:bg-yellow-200 hover:scale-110 hover:shadow-lg hover:shadow-yellow-200'>";
+            echo "<i class='fas fa-comment-dots text-yellow-600 text-sm group-hover:animate-pulse'></i>";
+            echo "</span>";
+            echo "<span class='comment-tooltip invisible group-hover:visible opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 z-50'>";
+            echo "<span class='flex items-center gap-2 text-yellow-400 font-semibold mb-1'><i class='fas fa-exclamation-circle'></i> Catatan Revisi</span>";
+            echo "<span class='block text-gray-200 leading-relaxed'>{$comment}</span>";
+            echo "<span class='absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-gray-900'></span>";
+            echo "</span>";
+            echo "</span>";
+        }
+    }
+}
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -79,6 +97,9 @@ if (!function_exists('formatRupiah')) {
                     <div>
                         <h4 class="text-sm font-semibold text-blue-800 mb-1">Status: Telah Direvisi</h4>
                         <p class="text-sm text-blue-700">Admin telah melakukan perbaikan. Silakan cek ulang dan putuskan untuk <strong>menyetujui</strong> atau <strong>meminta revisi kembali</strong>.</p>
+                        <p class="text-xs text-blue-600 mt-2 italic">
+                            <i class="fas fa-info-circle"></i> Item yang pernah direvisi ditandai dengan ikon komentar. Hover untuk melihat catatan.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -149,12 +170,13 @@ if (!function_exists('formatRupiah')) {
                                 ?>
                                 <tr class="<?= $row_class ?>">
                                     <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
-                                        <?= htmlspecialchars($item['uraian'] ?? '') ?>
-                                        <?php if ($has_existing_comment && ($is_telah_direvisi || $is_revisi)): ?>
-                                            <span class="block text-xs text-yellow-600 mt-1">
-                                                <i class="fas fa-exclamation-circle"></i> Pernah direvisi
-                                            </span>
-                                        <?php endif; ?>
+                                        <div class="flex items-center gap-1">
+                                            <span><?= htmlspecialchars($item['uraian'] ?? '') ?></span>
+                                            <?php 
+                                                // Tampilkan ikon komentar dengan tooltip hover
+                                                showCommentIcon($item_id, $komentar_existing, $is_revisi, $is_telah_direvisi); 
+                                            ?>
+                                        </div>
                                     </td>
                                     
                                     <td class="px-3 py-3 text-sm text-gray-600" style="width: 180px;"><?= htmlspecialchars($rincian) ?></td>
@@ -186,15 +208,16 @@ if (!function_exists('formatRupiah')) {
                                     
                                     <td class="px-3 py-3" style="width: 250px;">
                                         <?php if ($is_revisi || $is_disetujui): ?>
-                                            <div class="text-xs <?= $has_existing_comment ? 'text-yellow-800 font-medium italic' : 'text-gray-500 italic' ?>">
-                                                <?= $has_existing_comment ? htmlspecialchars($komentar_existing) : '-' ?>
+                                            <!-- Mode View Only: Komentar sudah ditampilkan di tooltip, kolom ini kosong atau tanda "-" -->
+                                            <div class="text-xs text-gray-400 italic text-center">
+                                                <?= $has_existing_comment ? 'Lihat ikon' : '-' ?>
                                             </div>
                                         <?php else: ?>
+                                            <!-- Mode Edit: Textarea untuk input komentar baru -->
                                             <textarea name="komentar[<?= $item_id ?>]" 
-                                                      rows="2" 
-                                                      placeholder="Tulis komentar jika perlu revisi..."
-                                                      class="w-full text-xs p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none <?= $has_existing_comment ? 'border-yellow-400 bg-yellow-50' : '' ?>"
-                                                      <?= $is_disetujui ? 'readonly' : '' ?>><?= htmlspecialchars($komentar_existing ?? '') ?></textarea>
+                                                    rows="2" 
+                                                    placeholder="Tulis komentar jika perlu revisi..."
+                                                    class="w-full text-xs p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none <?= $has_existing_comment ? 'border-yellow-400 bg-yellow-50 font-medium' : '' ?>"><?= htmlspecialchars($komentar_existing ?? '') ?></textarea>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -359,3 +382,50 @@ function konfirmasiRevisi() {
     }
 }
 </script>
+
+<style>
+    /* ========================================
+       CSS UNTUK TOOLTIP KOMENTAR (BARU)
+       ======================================== */
+    .comment-icon-wrapper {
+        display: inline-flex;
+    }
+    
+    .comment-icon {
+        cursor: pointer;
+    }
+    
+    .comment-tooltip {
+        pointer-events: none;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    
+    .comment-tooltip::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 100%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid #1f2937;
+    }
+    
+    /* Animasi Pulse untuk Ikon */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .group:hover .group-hover\:animate-pulse {
+        animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    /* Transisi Smooth untuk Tooltip */
+    .comment-tooltip {
+        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    }
+</style>

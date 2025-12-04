@@ -58,6 +58,48 @@ switch (strtolower($userRole)) {
         $akun_link = '/docutrack/public/admin/akun';
 }
 ?>
+
+
+<style>
+    .timeline-line {
+            background: linear-gradient(to right, #3B82F6 0%, #10B981 50%, #3B82F6 100%);
+        }
+        .timeline-vertical {
+            background: linear-gradient(to bottom, #10B981, #3B82F6);
+        }
+        
+        /* Decorative wave paths */
+        .wave-path {
+            position: absolute;
+            width: 300px;
+            height: 400px;
+            opacity: 0.15;
+        }
+        
+        .wave-1 {
+            top: -50px;
+            left: 5%;
+            border: 4px solid #22D3EE;
+            border-radius: 50% 50% 0 50%;
+            transform: rotate(-20deg);
+        }
+        
+        .wave-2 {
+            top: 10%;
+            right: 10%;
+            border: 4px solid #22D3EE;
+            border-radius: 50% 0 50% 50%;
+            transform: rotate(15deg);
+        }
+        
+        .wave-3 {
+            bottom: 15%;
+            left: 15%;
+            border: 4px solid #22D3EE;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-10deg);
+        }
+</style>
 <!DOCTYPE html>
 <html lang="id">
 <head>
