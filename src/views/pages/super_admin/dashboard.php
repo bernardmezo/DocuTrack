@@ -47,17 +47,17 @@
                     </h2>
                     <p class="text-sm text-gray-500">Distribusi pengajuan berdasarkan program studi</p>
                 </div>
-                <div class="flex flex-wrap gap-2 mt-4 sm:mt-0">
-                    <button class="filter-btn-prodi active px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105" data-filter="today">
+                <div class="flex gap-2 mt-4 sm:mt-0">
+                    <button class="filter-btn-prodi active px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 whitespace-nowrap" data-filter="today">
                         <i class="fas fa-calendar-day mr-1"></i> Hari Ini
                     </button>
-                    <button class="filter-btn-prodi px-4 py-2 rounded-lg bg-white border-2 border-gray-200 text-gray-700 text-sm font-medium hover:border-cyan-400 hover:text-cyan-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105" data-filter="week">
+                    <button class="filter-btn-prodi px-4 py-2 rounded-lg bg-white border-2 border-gray-200 text-gray-700 text-sm font-medium hover:border-cyan-400 hover:text-cyan-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 whitespace-nowrap" data-filter="week">
                         <i class="fas fa-calendar-week mr-1"></i> Minggu
                     </button>
-                    <button class="filter-btn-prodi px-4 py-2 rounded-lg bg-white border-2 border-gray-200 text-gray-700 text-sm font-medium hover:border-cyan-400 hover:text-cyan-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105" data-filter="month">
+                    <button class="filter-btn-prodi px-4 py-2 rounded-lg bg-white border-2 border-gray-200 text-gray-700 text-sm font-medium hover:border-cyan-400 hover:text-cyan-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 whitespace-nowrap" data-filter="month">
                         <i class="fas fa-calendar-alt mr-1"></i> Bulan
                     </button>
-                    <button class="filter-btn-prodi px-4 py-2 rounded-lg bg-white border-2 border-gray-200 text-gray-700 text-sm font-medium hover:border-cyan-400 hover:text-cyan-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105" data-filter="year">
+                    <button class="filter-btn-prodi px-4 py-2 rounded-lg bg-white border-2 border-gray-200 text-gray-700 text-sm font-medium hover:border-cyan-400 hover:text-cyan-600 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 whitespace-nowrap" data-filter="year">
                         <i class="fas fa-calendar mr-1"></i> Tahun
                     </button>
                 </div>
@@ -302,25 +302,11 @@
     // COLOR PALETTE
     // ===============================================
     var colorPalette = [
-        'rgba(6, 182, 212, 0.85)',    // Cyan
-        'rgba(14, 165, 233, 0.85)',   // Sky Blue
         'rgba(59, 130, 246, 0.85)',   // Blue
-        'rgba(16, 185, 129, 0.85)',   // Emerald
-        'rgba(245, 158, 11, 0.85)',   // Amber
-        'rgba(251, 146, 60, 0.85)',   // Orange
-        'rgba(236, 72, 153, 0.85)',   // Pink
-        'rgba(139, 92, 246, 0.85)'    // Violet
     ];
 
     var borderColorPalette = [
-        'rgb(6, 182, 212)',
-        'rgb(14, 165, 233)',
         'rgb(59, 130, 246)',
-        'rgb(16, 185, 129)',
-        'rgb(245, 158, 11)',
-        'rgb(251, 146, 60)',
-        'rgb(236, 72, 153)',
-        'rgb(139, 92, 246)'
     ];
 
     // ===============================================
