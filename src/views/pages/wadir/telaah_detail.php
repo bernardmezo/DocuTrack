@@ -1,5 +1,5 @@
 <?php
-// File: src/views/pages/Wadir/telaah_detail.php
+// File: src/views/pages/wadir/telaah_detail.php (HANYA UNTUK Wadir)
 
 $status = $status ?? 'Menunggu';
 
@@ -25,7 +25,7 @@ if (!function_exists('formatRupiah')) {
 
 if (!function_exists('isValidDate')) {
     function isValidDate($date) {
-        return !empty($date) && $date !== '0000-00-00' && strtotime($date) !== false;
+        return !empty($date) && $date !== '0000-0000' && strtotime($date) !== false;
     }
 }
 
@@ -60,10 +60,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                     <?php endif; ?>
                 </p>
             </div>
-            <a href="<?php echo htmlspecialchars($back_url); ?>" 
-               class="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 w-full md:w-auto transform hover:-translate-y-0.5">
-                <i class="fas fa-arrow-left text-xs"></i> Kembali
-            </a>
         </div>
         
         <form id="form-Wadir-approval" action="#" method="POST">
