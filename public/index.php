@@ -52,6 +52,8 @@ function get_request_path() {
         $request_path = '/';
     }
     
+    $request_path = strtolower($request_path);
+
     return $request_path;
 }
 
