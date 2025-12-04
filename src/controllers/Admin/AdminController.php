@@ -62,7 +62,7 @@ class AdminController extends \Controller
             $this->redirectWithMessage($errorRedirectUrl, 'error', 'Tanggal selesai harus sama atau setelah tanggal mulai.');
         }
 
-        $fileInput = $_FILES['file_surat_pengantar'] ?? $_FILES['surat_pengantar'] ?? null;
+        $fileInput = $_FILES['surat_pengantar'] ?? null;
 
         // URL sukses (kembali ke list)
         $successRedirectUrl = '/docutrack/public/admin/pengajuan-kegiatan';
@@ -75,34 +75,17 @@ class AdminController extends \Controller
             $this->connection->begin_transaction();
             $transactionStarted = true;
 
-            $lockStmt = $this->connection->prepare(
-                'SELECT suratPengantar FROM tbl_kegiatan WHERE kegiatanId = ? FOR UPDATE'
-            );
 
-            if ($lockStmt === false) {
-                throw new RuntimeException('Gagal mengambil data kegiatan.');
-            }
+            $uploadPlan = $this->prepareSuratUpload($kegiatanId, $fileInput);
 
-            $lockStmt->bind_param('i', $kegiatanId);
-            $lockStmt->execute();
-            $result = $lockStmt->get_result();
 
-            if ($result === false || $result->num_rows === 0) {
-                throw new RuntimeException('Data kegiatan tidak ditemukan.');
-            }
-
-            $row = $result->fetch_assoc();
-            $existingSurat = $row['suratPengantar'] ?? null;
-            $lockStmt->close();
-
-            $uploadPlan = $this->prepareSuratUpload($kegiatanId, $fileInput, $existingSurat);
-
+            $umpanBalikVerifikator = null;
             // Update Data & State Transition:
             // Posisi -> 4 (PPK)
             // Status Utama -> 1 (Menunggu / Pending)
             $updateStmt = $this->connection->prepare(
                 'UPDATE tbl_kegiatan
-                 SET namaPJ = ?, nip = ?, tanggalMulai = ?, tanggalSelesai = ?, suratPengantar = ?, posisiId = ?, statusUtamaId = ?, umpanBalikVerifikator = NULL
+                 SET namaPJ = ?, nip = ?, tanggalMulai = ?, tanggalSelesai = ?, suratPengantar = ?, posisiId = ?, umpanBalikVerifikator = ?
                  WHERE kegiatanId = ?'
             );
 
@@ -113,71 +96,27 @@ class AdminController extends \Controller
             $formattedMulai = $tanggalMulai->format('Y-m-d');
             $formattedSelesai = $tanggalSelesai->format('Y-m-d');
             $posisiPpk = 4;
-            $statusMenunggu = 1;
 
             $updateStmt->bind_param(
-                'sssssiii',
+                'sssssisi',
                 $penanggungJawab,
                 $nipPj,
                 $formattedMulai,
                 $formattedSelesai,
                 $uploadPlan['fileName'],
                 $posisiPpk,
-                $statusMenunggu,
+                $umpanBalikVerifikator,
                 $kegiatanId
             );
 
-            $updateStmt->execute();
+            // [PERBAIKAN UTAMA] Cek hasil eksekusi!
+            if (!$updateStmt->execute()) {
+                throw new RuntimeException('Gagal update database: ' . $updateStmt->error);
+            }
             $updateStmt->close();
-
-            if ($uploadPlan['tempPath'] !== null && $uploadPlan['destinationPath'] !== null) {
-                if (!is_uploaded_file($uploadPlan['tempPath'])) {
-                    throw new RuntimeException('File surat pengantar tidak valid.');
-                }
-
-                if (!move_uploaded_file($uploadPlan['tempPath'], $uploadPlan['destinationPath'])) {
-                    throw new RuntimeException('Gagal menyimpan file surat pengantar.');
-                }
-
-                $uploadedFilePath = $uploadPlan['destinationPath'];
-                $previousFilePath = $uploadPlan['previousFile'];
-            } else {
-                $uploadedFilePath = null;
-                $previousFilePath = null;
-            }
-
-            // Catat History
-            $historySql = 'INSERT INTO tbl_progress_history (kegiatanId, statusId, changedByUserId) VALUES (?, ?, ';
-            $userId = isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])
-                ? (int) $_SESSION['user_id']
-                : null;
-
-            if ($userId === null) {
-                $historySql .= 'NULL)';
-                $historyStmt = $this->connection->prepare($historySql);
-                if ($historyStmt === false) {
-                    throw new RuntimeException('Gagal menyiapkan riwayat progres.');
-                }
-                $historyStmt->bind_param('ii', $kegiatanId, $statusMenunggu);
-            } else {
-                $historySql .= '?)';
-                $historyStmt = $this->connection->prepare($historySql);
-                if ($historyStmt === false) {
-                    throw new RuntimeException('Gagal menyiapkan riwayat progres.');
-                }
-                $historyStmt->bind_param('iii', $kegiatanId, $statusMenunggu, $userId);
-            }
-
-            $historyStmt->execute();
-            $historyStmt->close();
-
             $this->connection->commit();
-            $transactionStarted = false;
 
-            if ($previousFilePath !== null && $previousFilePath !== $uploadedFilePath && is_file($previousFilePath)) {
-                @unlink($previousFilePath);
-            }
-
+            
             $this->redirectWithMessage($successRedirectUrl, 'success', 'Rincian kegiatan berhasil disimpan dan dikirim ke PPK.');
         } catch (Throwable $e) {
             if ($transactionStarted) {
@@ -189,7 +128,8 @@ class AdminController extends \Controller
             }
 
             error_log('AdminController::submitRincian Error: ' . $e->getMessage());
-            $this->redirectWithMessage($errorRedirectUrl, 'error', 'Terjadi kesalahan saat menyimpan rincian kegiatan.');
+            die(''. $e->getMessage());
+            // $this->redirectWithMessage($errorRedirectUrl, 'error', 'Terjadi kesalahan saat menyimpan rincian kegiatan.');
         }
     }
 
@@ -235,25 +175,12 @@ class AdminController extends \Controller
         return $date;
     }
 
-    private function prepareSuratUpload(int $kegiatanId, ?array $fileInfo, ?string $existingFilename): array
+    private function prepareSuratUpload($kegiatanId, $fileInfo): array
     {
-        $uploadDir = DOCUTRACK_ROOT . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'surat';
+        $uploadDir = realpath(__DIR__ . '/../../../public/uploads/surat/');  
 
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
             throw new RuntimeException('Direktori upload surat tidak tersedia.');
-        }
-
-        if ($fileInfo === null || ($fileInfo['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-            if ($existingFilename === null || $existingFilename === '') {
-                throw new RuntimeException('Surat pengantar wajib diunggah.');
-            }
-
-            return [
-                'fileName' => $existingFilename,
-                'tempPath' => null,
-                'destinationPath' => null,
-                'previousFile' => null,
-            ];
         }
 
         if (($fileInfo['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
@@ -277,6 +204,7 @@ class AdminController extends \Controller
             throw new RuntimeException('Path file surat pengantar tidak valid.');
         }
 
+        // nama file baru untuk disimpan
         $fileName = sprintf(
             'surat_pengantar_%d_%s.%s',
             $kegiatanId,
@@ -284,18 +212,19 @@ class AdminController extends \Controller
             $extension
         );
 
-        $destinationPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
+        if(move_uploaded_file($tempPath, $uploadDir . DIRECTORY_SEPARATOR . $fileName)) {
+            // Jika berhasil dipindahkan ke direktori tujuan, kembalikan path tujuan
+            $destinationPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
+        } else {
+            throw new RuntimeException('Gagal memindahkan file surat pengantar ke direktori tujuan.');
+        }
 
         $previousFilePath = null;
-        if ($existingFilename !== null && $existingFilename !== '') {
-            $previousFilePath = $uploadDir . DIRECTORY_SEPARATOR . $existingFilename;
-        }
 
         return [
             'fileName' => $fileName,
-            'tempPath' => $tempPath,
-            'destinationPath' => $destinationPath,
-            'previousFile' => $previousFilePath,
+            'filePath' => $destinationPath,
+            'previousFilePath' => $previousFilePath
         ];
     }
 }

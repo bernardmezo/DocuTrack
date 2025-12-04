@@ -128,7 +128,7 @@ switch ($main_route) {
                 break;
 
             case 'pengajuan-kegiatan':
-                if (isset($param1) && $param1 === 'submitRincian') {
+                if (isset($param1) && $param1 === 'submitrincian') {
                     require_once '../src/controllers/Admin/AdminController.php';
                     $controller = new Controllers\Admin\AdminController($db);
                     $controller->submitRincian();

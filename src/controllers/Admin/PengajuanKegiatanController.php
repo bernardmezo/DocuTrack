@@ -145,7 +145,7 @@ class AdminPengajuanKegiatanController extends Controller {
      */
     public function downloadSurat($filename) {
         $safe_filename = basename($filename);
-        $upload_dir = realpath(__DIR__ . '/../../../public/uploads/surat');
+        $upload_dir = realpath(__DIR__ . '/../../../public/uploads/surat/');
         
         if ($upload_dir === false) {
             http_response_code(500);
@@ -176,7 +176,7 @@ class AdminPengajuanKegiatanController extends Controller {
             echo "Tipe file tidak diizinkan.";
             return;
         }
-        
+
         $mime_types = [
             'pdf'  => 'application/pdf',
             'doc'  => 'application/msword',
@@ -185,7 +185,7 @@ class AdminPengajuanKegiatanController extends Controller {
             'jpeg' => 'image/jpeg',
             'png'  => 'image/png'
         ];
-        
+
         header('Content-Type: ' . ($mime_types[$extension] ?? 'application/octet-stream'));
         header('Content-Disposition: attachment; filename="' . $safe_filename . '"');
         header('Content-Length: ' . filesize($file_path));
