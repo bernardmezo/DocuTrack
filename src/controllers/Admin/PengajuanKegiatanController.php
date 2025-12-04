@@ -4,6 +4,7 @@
 require_once '../src/core/Controller.php';
 require_once '../src/model/adminModel.php';
 require_once '../src/helpers/logger_helper.php';
+require_once __DIR__ . '/AdminController.php'; // Load AdminController for submitRincian
 
 class AdminPengajuanKegiatanController extends Controller {
     
@@ -16,23 +17,38 @@ class AdminPengajuanKegiatanController extends Controller {
         $userRole = $_SESSION['user_role'] ?? '';
         $userJurusan = $_SESSION['user_jurusan'] ?? null;
         
+        // Ambil data mentah dari Model
         if ($userRole === 'super-admin' || $userRole === 'superadmin') {
             $all_kegiatan = $model->getDashboardKAK();
         } else {
-            $all_kegiatan = $model->getDashboardKAKByJurusan($userJurusan);
+            // Jika jurusan tidak terdeteksi di session, kembalikan array kosong untuk keamanan
+            if (empty($userJurusan)) {
+                $all_kegiatan = [];
+            } else {
+                $all_kegiatan = $model->getDashboardKAKByJurusan($userJurusan);
+            }
         }
         
+        // Filter: Hanya tampilkan kegiatan yang Posisi = Admin (1) DAN Status = Disetujui (3)
+        // Ini adalah kegiatan yang dikembalikan Verifikator untuk dilengkapi rinciannya
         $list_kegiatan_disetujui = array_filter($all_kegiatan, function($item) {
-            $posisi = $item['posisi'] ?? null;
-            $statusId = $item['statusUtamaId'] ?? null;
-            $status = strtolower($item['status'] ?? '');
+            $posisi = (int) ($item['posisi'] ?? 0);
+            $statusId = (int) ($item['statusUtamaId'] ?? 0);
             
-            return ($posisi == 1 && ($statusId == 3 || $status === 'usulan disetujui'));
+            // Logic Strict: Posisi di Admin (1) AND Status Disetujui (3)
+            return ($posisi === 1 && $statusId === 3);
         });
 
         $data = array_merge($data_dari_router, [
             'title' => 'List Pengajuan Kegiatan',
-            'list_kegiatan' => array_values($list_kegiatan_disetujui)
+            // Re-index array agar urutan kunci rapi (0, 1, 2...) untuk View
+            'list_kegiatan' => array_values($list_kegiatan_disetujui),
+            'debug_info' => [
+                'role' => $userRole,
+                'jurusan' => $userJurusan,
+                'total_raw' => count($all_kegiatan),
+                'total_filtered' => count($list_kegiatan_disetujui)
+            ]
         ]);
 
         $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'app');
@@ -112,55 +128,16 @@ class AdminPengajuanKegiatanController extends Controller {
             'back_url' => $back_url
         ]);
 
-        $this->view('pages/admin/detail_kegiatan', $data, 'app');
+        $this->view('pages/admin/detail_kak', $data, 'app');
     }
 
     /**
-     * Menangani submit rincian kegiatan (upload surat & update DB).
+     * Menangani submit rincian kegiatan dengan controller baru berbasis MVC.
      */
-    public function submitRincian() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405); echo "Method not allowed"; return;
-        }
-
-        $kegiatan_id = $_POST['kegiatan_id'] ?? null;
-        
-        $data_update = [
-            'namaPj'        => $_POST['penanggung_jawab'] ?? '',
-            'nimNipPj'         => $_POST['nim_nip_pj'] ?? '',
-            'tgl_mulai'   => $_POST['tanggal_mulai'] ?? null,
-            'tgl_selesai' => $_POST['tanggal_selesai'] ?? null
-        ];
-
-        $file_name = null;
-        
-        if (isset($_FILES['surat_pengantar']) && $_FILES['surat_pengantar']['error'] === UPLOAD_ERR_OK) {
-            $file_tmp = $_FILES['surat_pengantar']['tmp_name'];
-            $file_original_name = $_FILES['surat_pengantar']['name'];
-            $file_ext = strtolower(pathinfo($file_original_name, PATHINFO_EXTENSION));
-            
-            $allowed_extensions = ['pdf', 'doc', 'docx'];
-            if (in_array($file_ext, $allowed_extensions)) {
-                $file_name = 'surat_' . $kegiatan_id . '_' . time() . '.' . $file_ext;
-                $upload_dir = __DIR__ . '/../../../public/uploads/surat';
-                
-                if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
-                
-                if (!move_uploaded_file($file_tmp, $upload_dir . $file_name)) {
-                    header('Location: /docutrack/public/admin/pengajuan-kegiatan/show/' . $kegiatan_id . '?mode=rincian&error=upload_failed');
-                    exit;
-                }
-            }
-        }
-
-        $model = new adminModel($this->db);
-        
-        if ($model->updateRincianKegiatan($kegiatan_id, $data_update, $file_name)) {
-            header('Location: /docutrack/public/admin/pengajuan-kegiatan/show/' . $kegiatan_id);
-            exit;
-        } else {
-            echo "Gagal update database.";
-        }
+    public function submitRincian(): void
+    {
+        $controller = new \Controllers\Admin\AdminController($this->db);
+        $controller->submitRincian();
     }
 
     /**

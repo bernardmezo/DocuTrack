@@ -126,12 +126,17 @@ switch ($main_route) {
                 break;
 
             case 'pengajuan-kegiatan':
+                if (isset($param1) && $param1 === 'submitRincian') {
+                    require_once '../src/controllers/Admin/AdminController.php';
+                    $controller = new Controllers\Admin\AdminController($db);
+                    $controller->submitRincian();
+                    break;
+                }
+
                 require_once '../src/controllers/Admin/PengajuanKegiatanController.php';
                 $controller = new AdminPengajuanKegiatanController($db); 
-                
-                if (isset($param1) && $param1 === 'submitRincian') {
-                    $controller->submitRincian();
-                } elseif (isset($param1) && $param1 === 'show' && isset($param2)) {
+
+                if (isset($param1) && $param1 === 'show' && isset($param2)) {
                     $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
                 } else {
                     $controller->index(['active_page' => $base_admin_path . '/pengajuan-kegiatan']);

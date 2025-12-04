@@ -97,8 +97,9 @@ if (!function_exists('formatRupiah')) {
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 1</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 80px;">Vol 2</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 2</th>
-                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga (Rp)</th>
-                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total</th>
+                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga Satuan (Rp)</th>
+                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total Rencana</th>
+                                    <th class="px-3 py-3 text-right text-xs font-bold text-blue-600 uppercase" style="width: 150px;">Realisasi (Rp)</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th>
                                     <?php if ($is_revisi || $is_selesai): ?>
                                         <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 250px;">Komentar Verifikator</th>
@@ -113,7 +114,6 @@ if (!function_exists('formatRupiah')) {
                                     $has_comment = $is_revisi && !empty($komentar);
                                     $bukti_uploaded = !empty($item['bukti_file']);
                                     
-                                    // Data tambahan untuk format baru
                                     $rincian = $item['rincian'] ?? '-';
                                     $vol1 = $item['vol1'] ?? '-';
                                     $sat1 = $item['sat1'] ?? '-';
@@ -129,7 +129,7 @@ if (!function_exists('formatRupiah')) {
                                     data-rincian="<?php echo htmlspecialchars($rincian); ?>"
                                     data-satuan="<?php echo htmlspecialchars($sat1); ?>"
                                     data-harga="<?php echo $harga_satuan; ?>"
-                                    data-total="<?php echo $plan; ?>"
+                                    data-total-plan="<?php echo $plan; ?>"
                                     data-uploaded-file="<?php echo htmlspecialchars($item['bukti_file'] ?? ''); ?>">
 
                                     <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
@@ -153,24 +153,41 @@ if (!function_exists('formatRupiah')) {
                                     
                                     <td class="px-3 py-3 text-sm text-gray-600 text-right" style="width: 130px;"><?php echo number_format($harga_satuan, 0, ',', '.'); ?></td>
                                     
-                                    <td class="px-3 py-3 text-sm text-blue-600 font-semibold text-right" style="width: 150px;"><?php echo formatRupiah($plan); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-right font-medium" style="width: 150px;"><?php echo formatRupiah($plan); ?></td>
+
+                                    <td class="px-3 py-3" style="width: 150px;">
+                                        <?php if ($is_menunggu || $is_revisi): ?>
+                                            <div class="relative">
+                                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
+                                                <input type="number" 
+                                                       class="realisasi-input w-full pl-6 pr-2 py-1 text-sm text-right border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                                       value="<?php echo $plan; ?>" 
+                                                       min="0" 
+                                                       step="1">
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="text-right text-sm font-bold text-blue-600">
+                                                <?php echo formatRupiah($plan); // Default fallback or fetch from DB if available ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
 
                                     <td class='px-3 py-3 text-center' style="width: 100px;">
                                         <?php if ($bukti_uploaded && !$has_comment): ?>
                                             <div class="flex items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
-                                                <span class="text-xs font-medium">Terupload</span>
+                                                <span class="text-xs font-medium">Ada</span>
                                             </div>
                                         <?php else: ?>
                                             <button type="button" class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors <?php echo $has_comment ? 'ring-2 ring-yellow-400' : ''; ?> <?php echo !$bukti_uploaded && $is_menunggu ? 'animate-pulse' : ''; ?>" 
                                                     data-item-id="<?php echo $item_id; ?>" 
                                                     data-item-name="<?php echo htmlspecialchars($item['uraian'] ?? 'Item'); ?>"
                                                     <?php echo $is_selesai ? 'disabled' : ''; ?>>
-                                                <i class='fas fa-upload mr-1'></i> <?php echo $bukti_uploaded ? 'Ganti Bukti' : 'Upload Bukti'; ?>
+                                                <i class='fas fa-upload'></i>
                                             </button>
                                             <div id="bukti-display-<?php echo $item_id; ?>" class="<?php echo $bukti_uploaded ? 'flex' : 'hidden'; ?> items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
-                                                <span class="text-xs font-medium">Terupload</span>
+                                                <span class="text-xs font-medium">Ada</span>
                                             </div>
                                         <?php endif; ?>
                                     </td>
@@ -183,9 +200,10 @@ if (!function_exists('formatRupiah')) {
                                 </tr>
                                 <?php endforeach; $grand_total_plan += $subtotal_plan; ?>
                                 
-                                <tr class="bg-gray-100 font-semibold">
+                                <tr class="bg-gray-50 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?php echo htmlspecialchars($kategori); ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 text-right"><?php echo formatRupiah($subtotal_plan); ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-600 text-right"><?php echo formatRupiah($subtotal_plan); ?></td>
+                                    <td class="px-4 py-3 text-sm text-blue-700 text-right subtotal-realisasi" data-subtotal-realisasi="<?php echo $subtotal_plan; ?>"><?php echo formatRupiah($subtotal_plan); ?></td>
                                     <td colspan="<?php echo ($is_revisi || $is_selesai) ? '2' : '1'; ?>"></td>
                                 </tr>
                             </tbody>
@@ -198,10 +216,17 @@ if (!function_exists('formatRupiah')) {
                     <p class="text-sm text-gray-500 italic">Tidak ada data RAB untuk ditampilkan.</p>
                 <?php endif; ?>
                 
-                <div class="flex justify-end mt-6">
+                <div class="flex justify-end mt-6 gap-4">
+                    <!-- Total Rencana -->
+                    <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 p-5 bg-gray-50 rounded-xl border border-gray-200 w-full md:w-auto min-w-[300px]">
+                        <span class="text-lg font-semibold text-gray-600">Total Rencana:</span>
+                        <span class="text-2xl font-bold text-gray-700 text-right"><?php echo formatRupiah($grand_total_plan); ?></span>
+                    </div>
+                    
+                    <!-- Total Realisasi -->
                     <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 w-full md:w-auto min-w-[350px]">
-                        <span class="text-lg font-semibold text-gray-800">Grand Total RAB:</span>
-                        <span class="text-2xl font-bold text-blue-600 text-right" id="grand-total-plan"><?php echo formatRupiah($grand_total_plan); ?></span>
+                        <span class="text-lg font-semibold text-gray-800">Total Realisasi:</span>
+                        <span class="text-2xl font-bold text-blue-600 text-right" id="grand-total-realisasi"><?php echo formatRupiah($grand_total_plan); ?></span>
                     </div>
                 </div>
             </div>
@@ -254,8 +279,8 @@ if (!function_exists('formatRupiah')) {
             <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
                 <i class="fas fa-cloud-upload-alt text-5xl text-gray-400"></i>
                 <p class="mt-4 text-sm text-gray-600">Seret & lepas file di sini, atau <span class="font-semibold text-blue-600">klik untuk memilih file</span></p>
-                <p class="text-xs text-gray-500 mt-2">Format: PNG, JPG, PDF (Maks. 5MB)</p>
-                <input type="file" id="file-upload-input" class="hidden" accept="image/png, image/jpeg, .pdf">
+                <p class="text-xs text-gray-500 mt-2">Format: PNG, JPG (Maks. 5MB)</p>
+                <input type="file" id="file-upload-input" class="hidden" accept="image/png, image/jpeg, image/jpg">
             </div>
 
             <div id="file-preview-area" class="hidden mt-4">
@@ -347,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleFile(file) {
-        if (file && (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'application/pdf')) {
+        if (file && (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg')) {
             if (file.size > 5 * 1024 * 1024) {
                 alert('Ukuran file maksimal 5MB');
                 return;
@@ -356,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filePreviewName.textContent = file.name;
             filePreview.classList.remove('hidden');
         } else {
-            alert('Format file tidak didukung. Gunakan PNG, JPG, atau PDF.');
+            alert('Format file tidak didukung. Gunakan PNG atau JPG.');
         }
     }
 
@@ -478,6 +503,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- REALISASI CALCULATION ---
+    const realisasiInputs = document.querySelectorAll('.realisasi-input');
+    const grandTotalRealisasiEl = document.getElementById('grand-total-realisasi');
+
+    function formatRupiahJS(angka) {
+        return 'Rp ' + new Intl.NumberFormat('id-ID').format(angka);
+    }
+
+    function updateGrandTotalRealisasi() {
+        let grandTotal = 0;
+        
+        // Hitung per row
+        realisasiInputs.forEach(input => {
+            const val = parseFloat(input.value) || 0;
+            grandTotal += val;
+        });
+        
+        // Update Subtotal per kategori
+        document.querySelectorAll('table[data-kategori]').forEach(table => {
+            let subtotalKategori = 0;
+            table.querySelectorAll('.realisasi-input').forEach(inp => {
+                subtotalKategori += parseFloat(inp.value) || 0;
+            });
+            const subtotalEl = table.querySelector('.subtotal-realisasi');
+            if(subtotalEl) subtotalEl.textContent = formatRupiahJS(subtotalKategori);
+        });
+
+        if (grandTotalRealisasiEl) grandTotalRealisasiEl.textContent = formatRupiahJS(grandTotal);
+    }
+
+    realisasiInputs.forEach(input => {
+        input.addEventListener('input', updateGrandTotalRealisasi);
+    });
+
     // --- AJAX SUBMIT LPJ ---
     if (submitLpjBtn) {
         submitLpjBtn.addEventListener('click', async (e) => {
@@ -485,7 +544,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (submitLpjBtn.disabled) return;
 
-            if (!confirm('Apakah Anda yakin semua bukti sudah benar? Data akan dikirim ke Bendahara.')) {
+            // Validasi Realisasi
+            let validRealisasi = true;
+            realisasiInputs.forEach(input => {
+                if (!input.value || parseFloat(input.value) < 0) validRealisasi = false;
+            });
+
+            if (!validRealisasi) {
+                alert('Mohon isi semua kolom Realisasi dengan nilai yang valid (>= 0).');
+                return;
+            }
+
+            if (!confirm('Apakah Anda yakin semua bukti dan data realisasi sudah benar? Data akan dikirim ke Bendahara.')) {
                 return;
             }
 
@@ -500,13 +570,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rows = table.querySelectorAll('tbody tr[data-row-id]');
                 
                 rows.forEach(row => {
+                    const realisasiInput = row.querySelector('.realisasi-input');
+                    // Ambil nilai realisasi dari input, fallback ke rencana jika error (seharusnya tidak terjadi karena validasi)
+                    const realisasiVal = realisasiInput ? parseFloat(realisasiInput.value) : parseFloat(row.dataset.totalPlan);
+
                     items.push({
                         kategori: kategori,
                         uraian: row.dataset.uraian,
                         rincian: row.dataset.rincian,
                         satuan: row.dataset.satuan,
                         harga_satuan: parseFloat(row.dataset.harga),
-                        total: parseFloat(row.dataset.total),
+                        total: realisasiVal, // Use REALISASI value for 'sub_total' in DB
                         file_bukti: row.dataset.uploadedFile
                     });
                 });

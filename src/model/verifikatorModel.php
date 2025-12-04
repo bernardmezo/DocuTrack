@@ -1,38 +1,33 @@
 <?php
+declare(strict_types=1);
+
+use Core\Database;
+use mysqli;
+use RuntimeException;
+use Throwable;
+
 /**
  * verifikatorModel - Verifikator Management Model
- * 
+ *
  * @category Model
  * @package  DocuTrack
  * @version  2.0.0 - Refactored to remove constructor trap
  */
 
-Class verifikatorModel {
-    /**
-     * @var mysqli Database connection instance
-     */
-    private $db;
+class verifikatorModel
+{
+    private mysqli $db;
 
-    /**
-     * Constructor - Dependency Injection untuk database connection
-     *
-     * @param mysqli|null $db Database connection (optional for backward compatibility)
-     */
-    function __construct($db = null)
+    public function __construct(?mysqli $db = null)
     {
-        if ($db !== null) {
+        if ($db instanceof mysqli) {
             $this->db = $db;
-        } else {
-            // Backward compatibility
-            require_once __DIR__ . '/conn.php';
-            if (isset($conn)) {
-                $this->db = $conn;
-            } else {
-                die('Error: Koneksi database gagal di verifikatorModel.');
-            }
+            return;
         }
+
+        $this->db = Database::getInstance()->getConnection();
     }
-    
+
     /**
      * Mengambil data statistik untuk dashboard.
      */
@@ -87,48 +82,19 @@ Class verifikatorModel {
 
         $result = mysqli_query($this->db, $query);
         $data = [];
-        
+
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 if (isset($row['status'])) {
-                    $row['status'] = ucfirst($row['status']); 
+                    $row['status'] = ucfirst($row['status']);
                 } else {
                     $row['status'] = 'Menunggu';
                 }
                 $data[] = $row;
             }
         }
-        return $data;
-    }
 
-    /**
-     * Mengambil detail kegiatan.
-     */
-    public function getDetailKegiatan($kegiatanId) {
-        $query = "SELECT 
-                    k.*, 
-                    kak.*,
-                    k.tanggalMulai as tanggal_mulai,
-                    k.tanggalSelesai as tanggal_selesai,
-                    k.suratPengantar as file_surat_pengantar,
-                    u.nama as nama_pengusul,
-                    k.namaPJ as nama_pj,
-                    k.nip as nim_pj,
-                    k.nimPelaksana as nim_pelaksana,
-                    k.pemilikKegiatan as nama_pelaksana,
-                    s.namaStatusUsulan as status_text
-                FROM tbl_kegiatan k
-                JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
-                LEFT JOIN tbl_user u ON u.userId = k.userId
-                LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                WHERE k.kegiatanId = ?";
-        
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        
-        return mysqli_fetch_assoc($result);
+        return $data;
     }
 
     /**
@@ -257,63 +223,130 @@ Class verifikatorModel {
     }
 
     /**
-     * Menyetujui usulan.
+     * Mengambil detail kegiatan.
      */
-    public function approveUsulan($kegiatanId, $kodeMak, $umpanBalik = '') {
-        $currentPosisi = 2;
-        $userId = $_SESSION['user_id'] ?? null;
+    public function getDetailKegiatan($kegiatanId) {
+        $query = "SELECT 
+                    k.*, 
+                    kak.*,
+                    k.tanggalMulai as tanggal_mulai,
+                    k.tanggalSelesai as tanggal_selesai,
+                    k.suratPengantar as file_surat_pengantar,
+                    k.pemilikKegiatan as nama_pengusul,
+                    k.namaPJ as nama_pj,
+                    k.nip as nim_pj,
+                    k.nimPelaksana as nim_pelaksana,
+                    k.pemilikKegiatan as nama_pelaksana,
+                    s.namaStatusUsulan as status_text
+                FROM tbl_kegiatan k
+                JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                LEFT JOIN tbl_user u ON u.userId = k.userId
+                LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
+                WHERE k.kegiatanId = ?";
         
-        $checkQuery = "SELECT namaPJ, suratPengantar FROM tbl_kegiatan WHERE kegiatanId = ?";
-        $checkStmt = mysqli_prepare($this->db, $checkQuery);
-        mysqli_stmt_bind_param($checkStmt, "i", $kegiatanId);
-        mysqli_stmt_execute($checkStmt);
-        $checkResult = mysqli_stmt_get_result($checkStmt);
-        $kegiatan = mysqli_fetch_assoc($checkResult);
-        mysqli_stmt_close($checkStmt);
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
         
-        $hasRincian = !empty($kegiatan['namaPJ']) || !empty($kegiatan['suratPengantar']);
-        
-        if ($hasRincian) {
-            $nextPosisi = 4;
-            $nextStatus = 1;
-            $fase = 'kegiatan';
-        } else {
-            $nextPosisi = 1;
-            $nextStatus = 3;
-            $fase = 'usulan';
+        return mysqli_fetch_assoc($result);
+    }
+
+    /**
+     * Menyetujui usulan dan mengembalikan ke Admin untuk melengkapi rincian.
+     * 
+     * Logic:
+     * 1. Update statusUtamaId = 3 (Disetujui/Menunggu Rincian)
+     * 2. Update posisiId = 1 (Kembali ke Admin)
+     * 3. Input buktiMAK & umpanBalikVerifikator
+     */
+    public function approveUsulan(int $kegiatanId, string $kodeMak, ?string $catatan = null): bool
+    {
+        $trimmedMak = trim($kodeMak);
+
+        if ($trimmedMak === '') {
+            error_log('approveUsulan Error: Kode MAK tidak boleh kosong.');
+            return false;
         }
-        
-        mysqli_begin_transaction($this->db);
-        
+
+        $note = null;
+        if ($catatan !== null) {
+            $catatanTrimmed = trim($catatan);
+            if ($catatanTrimmed !== '') {
+                $note = $catatanTrimmed;
+            }
+        }
+
+        $connection = $this->db;
+        $currentPosisi = 2; // Verifikator
+        $nextPosisi = 1;    // Admin (PENTING: Kembali ke Admin dulu)
+        $nextStatus = 3;    // Disetujui Verifikator - Menunggu Rincian
+
+        $userId = isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])
+            ? (int) $_SESSION['user_id']
+            : null;
+
+        $transactionStarted = false;
+
         try {
-            if ($fase === 'usulan' && !empty($umpanBalik)) {
-                $query = "UPDATE tbl_kegiatan 
-                          SET statusUtamaId = ?, posisiId = ?, buktiMAK = ?, umpanBalikVerifikator = ? 
-                          WHERE kegiatanId = ?";
-                $stmt = mysqli_prepare($this->db, $query);
-                mysqli_stmt_bind_param($stmt, "iissi", $nextStatus, $nextPosisi, $kodeMak, $umpanBalik, $kegiatanId);
-            } else {
-                $query = "UPDATE tbl_kegiatan 
-                          SET statusUtamaId = ?, posisiId = ?, buktiMAK = ? 
-                          WHERE kegiatanId = ?";
-                $stmt = mysqli_prepare($this->db, $query);
-                mysqli_stmt_bind_param($stmt, "iisi", $nextStatus, $nextPosisi, $kodeMak, $kegiatanId);
+            $connection->begin_transaction();
+            $transactionStarted = true;
+
+            // Lock row untuk mencegah race condition
+            $lockStmt = $connection->prepare('SELECT kegiatanId FROM tbl_kegiatan WHERE kegiatanId = ? FOR UPDATE');
+            if ($lockStmt === false) {
+                throw new RuntimeException('Gagal menyiapkan statement lock.');
             }
-            
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal update kegiatan");
+            $lockStmt->bind_param('i', $kegiatanId);
+            $lockStmt->execute();
+            $result = $lockStmt->get_result();
+            if ($result->num_rows === 0) {
+                throw new RuntimeException('Kegiatan tidak ditemukan.');
             }
-            mysqli_stmt_close($stmt);
+            $lockStmt->close();
+
+            // Prepare Update Query
+            $sql = 'UPDATE tbl_kegiatan 
+                    SET statusUtamaId = ?, 
+                        posisiId = ?, 
+                        buktiMAK = ?, 
+                        umpanBalikVerifikator = ?
+                    WHERE kegiatanId = ?';
             
-            $actionLabel = ($fase === 'usulan') ? 'approve_usulan' : 'approve_kegiatan';
-            $this->insertProgressHistory($kegiatanId, $nextStatus, $currentPosisi, $nextPosisi, $userId, $actionLabel);
+            $updateStmt = $connection->prepare($sql);
+            if ($updateStmt === false) {
+                throw new RuntimeException('Gagal menyiapkan statement update.');
+            }
+
+            $updateStmt->bind_param('iisss', $nextStatus, $nextPosisi, $trimmedMak, $note, $kegiatanId);
             
-            mysqli_commit($this->db);
+            if (!$updateStmt->execute()) {
+                throw new RuntimeException('Gagal update kegiatan: ' . $updateStmt->error);
+            }
+            $updateStmt->close();
+
+            // Catat History
+            $historyId = $this->insertProgressHistory(
+                $kegiatanId,
+                $nextStatus,
+                $currentPosisi,
+                $nextPosisi,
+                $userId,
+                'verifikator_approve'
+            );
+
+            if ($historyId <= 0) {
+                throw new RuntimeException('Gagal mencatat riwayat.');
+            }
+
+            $connection->commit();
             return true;
-            
-        } catch (Exception $e) {
-            mysqli_rollback($this->db);
-            error_log("approveUsulan Error: " . $e->getMessage());
+
+        } catch (Throwable $e) {
+            if ($transactionStarted) {
+                $connection->rollback();
+            }
+            error_log('approveUsulan Exception: ' . $e->getMessage());
             return false;
         }
     }
@@ -418,22 +451,33 @@ Class verifikatorModel {
     /**
      * Memasukkan record ke tabel tbl_progress_history.
      */
-    private function insertProgressHistory($kegiatanId, $statusId, $fromPosisi, $toPosisi, $userId, $actionType) {
-        $query = "INSERT INTO tbl_progress_history 
-                  (kegiatanId, statusId, timestamp) 
-                  VALUES (?, ?, NOW())";
-        
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "ii", $kegiatanId, $statusId);
-        
-        if (mysqli_stmt_execute($stmt)) {
-            $insertId = mysqli_insert_id($this->db);
-            mysqli_stmt_close($stmt);
-            return $insertId;
+    private function insertProgressHistory(
+        int $kegiatanId,
+        int $statusId,
+        int $fromPosisi,
+        int $toPosisi,
+        ?int $userId,
+        string $actionType
+    ): int {
+        $sql = 'INSERT INTO tbl_progress_history (kegiatanId, statusId, changedByUserId) VALUES (?, ?, ';
+        $placeholders = $userId === null ? 'NULL)' : '?)';
+        $stmt = $this->db->prepare($sql . $placeholders);
+
+        if ($stmt === false) {
+            throw new RuntimeException('Gagal menyiapkan statement progress history.');
         }
-        
-        mysqli_stmt_close($stmt);
-        return false;
+
+        if ($userId === null) {
+            $stmt->bind_param('ii', $kegiatanId, $statusId);
+        } else {
+            $stmt->bind_param('iii', $kegiatanId, $statusId, $userId);
+        }
+
+        $stmt->execute();
+        $insertId = (int) $this->db->insert_id;
+        $stmt->close();
+
+        return $insertId;
     }
 
     /**
@@ -487,7 +531,4 @@ Class verifikatorModel {
         }
         return $data;
     }
-}   
-
-
-?>
+}

@@ -103,7 +103,7 @@ class ppkModel {
                     k.tanggalMulai as tanggal_mulai,
                     k.tanggalSelesai as tanggal_selesai,
                     k.suratPengantar as file_surat_pengantar,
-                    u.nama as nama_pengusul,
+                    k.pemilikKegiatan as nama_pengusul,
                     k.namaPJ as nama_pj,
                     k.nip as nim_pj,
                     k.nimPelaksana as nim_pelaksana,
@@ -176,30 +176,48 @@ class ppkModel {
     }
 
     /**
-     * Menyetujui usulan.
+     * Menyetujui usulan dan meneruskan ke Wadir.
      */
-    public function approveUsulan($kegiatanId) {
+    public function approveUsulan($kegiatanId, $rekomendasi = '') {
         $nextPosisi = 3;  // WADIR
-        $resetStatus = 1; // Menunggu
-        $statusDisetujui = 3; // Status untuk history
+        $currentPosisi = 4; // PPK
+        $statusProses = 1; // Masih dalam proses
+        $userId = $_SESSION['user_id'] ?? null;
         
         mysqli_begin_transaction($this->db);
         
         try {
+            // Update status kegiatan
             $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
             $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $resetStatus, $kegiatanId);
+            mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $statusProses, $kegiatanId);
             
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception("Gagal update kegiatan");
             }
             mysqli_stmt_close($stmt);
             
-            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, ?, NOW())";
+            // Insert History
+            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, changedByUserId, timestamp) VALUES (?, ?, ?, NOW())";
             $stmtHistory = mysqli_prepare($this->db, $historyQuery);
-            mysqli_stmt_bind_param($stmtHistory, "ii", $kegiatanId, $statusDisetujui);
-            mysqli_stmt_execute($stmtHistory);
+            mysqli_stmt_bind_param($stmtHistory, "iii", $kegiatanId, $statusProses, $userId);
+            
+            if (!mysqli_stmt_execute($stmtHistory)) {
+                 throw new Exception("Gagal catat history");
+            }
+            
+            $historyId = mysqli_insert_id($this->db);
             mysqli_stmt_close($stmtHistory);
+
+             // Jika ada rekomendasi, simpan ke tabel komentar (opsional, jika ada tabel khusus untuk rekomendasi PPK bisa disesuaikan)
+             // Saat ini kita simpan sebagai komentar 'rekomendasi' di history jika tidak kosong
+            if (!empty($rekomendasi)) {
+                $commentQuery = "INSERT INTO tbl_revisi_comment (progressHistoryId, komentarRevisi, targetTabel) VALUES (?, ?, 'ppk_rekomendasi')";
+                $stmtComment = mysqli_prepare($this->db, $commentQuery);
+                mysqli_stmt_bind_param($stmtComment, "is", $historyId, $rekomendasi);
+                mysqli_stmt_execute($stmtComment);
+                mysqli_stmt_close($stmtComment);
+            }
             
             mysqli_commit($this->db);
             return true;

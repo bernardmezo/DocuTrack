@@ -5,7 +5,7 @@ $status = $status ?? 'Menunggu';
 $user_role = $user_role ?? 'admin';
 
 $is_revisi = (strtolower($status) === 'revisi');
-$is_disetujui = (strtolower($status) === 'disetujui');
+$is_disetujui = (strtolower($status) === 'disetujui' || strtolower($status) === 'usulan disetujui');
 $is_ditolak = (strtolower($status) === 'ditolak');
 
 $komentar_revisi = $komentar_revisi ?? [];

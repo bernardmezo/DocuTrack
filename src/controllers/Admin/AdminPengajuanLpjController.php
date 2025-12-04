@@ -9,6 +9,7 @@ class AdminPengajuanLpjController extends Controller {
     private $model;
 
     public function __construct() {
+        parent::__construct();
         $this->model = new adminModel($this->db);
     }
 
@@ -173,10 +174,11 @@ class AdminPengajuanLpjController extends Controller {
         // Gunakan helper validation yang sudah dibuat
         require_once '../src/helpers/security_helper.php';
         
+        // REVISI: Hanya perbolehkan file gambar (JPG, JPEG, PNG) max 5MB
         $validation = validateFileUpload($_FILES['file'], [
-            'allowed_types' => ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
+            'allowed_types' => ['image/jpeg', 'image/jpg', 'image/png'],
             'max_size' => 5 * 1024 * 1024, // 5MB
-            'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png']
+            'allowed_extensions' => ['jpg', 'jpeg', 'png']
         ]);
         
         if (!$validation['valid']) {
@@ -220,8 +222,11 @@ class AdminPengajuanLpjController extends Controller {
             return;
         }
         
-        // Load Helper Model for Transaction
+        // Load Helper Model Class
         require_once __DIR__ . '/../../model/lpj/lpjModel.php';
+        
+        // Instantiate Model
+        $lpjModel = new \lpjModel($this->db);
 
         $kegiatanId = $_POST['kegiatan_id'] ?? null;
         $itemsJson = $_POST['items'] ?? '[]';
@@ -238,21 +243,23 @@ class AdminPengajuanLpjController extends Controller {
         }
 
         // 1. Cek apakah LPJ sudah ada untuk kegiatan ini
-        $existingLpj = getLpjWithItemsByKegiatanId($kegiatanId);
+        $existingLpj = $lpjModel->getLpjWithItemsByKegiatanId($kegiatanId);
         $lpjId = null;
 
         // Mulai Transaction via Model logic
-        // Karena Model lpjModel.php yang baru menggunakan procedural style dengan global $conn,
-        // kita harus berhati-hati. Idealnya kita wrap di try-catch sini.
-
         try {
+            // Use explicit transaction on the connection
+            $this->db->begin_transaction();
+
             if ($existingLpj) {
                 $lpjId = $existingLpj['lpj_id'];
                 // Hapus item lama (Reset)
-                deleteLpjItemsByLpjId($lpjId);
+                if (!$lpjModel->deleteLpjItemsByLpjId($lpjId)) {
+                     throw new Exception("Gagal menghapus item lama.");
+                }
             } else {
                 // Insert Baru
-                $lpjId = insertLpj($kegiatanId);
+                $lpjId = $lpjModel->insertLpj($kegiatanId);
                 if (!$lpjId) throw new Exception("Gagal membuat draft LPJ.");
             }
 
@@ -272,14 +279,16 @@ class AdminPengajuanLpjController extends Controller {
                     ];
                 }
                 
-                if (!insertLpjItems($lpjId, $dbItems)) {
+                if (!$lpjModel->insertLpjItems($lpjId, $dbItems)) {
                     throw new Exception("Gagal menyimpan item LPJ.");
                 }
             }
 
             // Update Grand Total & Status
-            updateLpjGrandTotal($lpjId);
-            updateLpjStatus($lpjId, 'Submitted');
+            $lpjModel->updateLpjGrandTotal($lpjId);
+            $lpjModel->updateLpjStatus($lpjId, 'Submitted');
+
+            $this->db->commit();
 
             echo json_encode([
                 'success' => true, 
@@ -287,6 +296,7 @@ class AdminPengajuanLpjController extends Controller {
             ]);
 
         } catch (Exception $e) {
+            $this->db->rollback();
             echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
         }
     }

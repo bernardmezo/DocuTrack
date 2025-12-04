@@ -296,7 +296,7 @@ class adminModel {
                     k.tanggalMulai as tanggal_mulai,
                     k.tanggalSelesai as tanggal_selesai,
                     k.suratPengantar as file_surat_pengantar,
-                    u.nama as nama_pengusul,
+                    k.pemilikKegiatan as nama_pengusul,
                     k.namaPJ as nama_pj,
                     k.nip as nim_pj,
                     k.nimPelaksana as nim_pelaksana,

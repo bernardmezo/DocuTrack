@@ -46,6 +46,8 @@ if (!function_exists('formatRupiah')) {
         <?php if ($status_lower === 'menunggu'): ?>
         <form method="POST" action="/docutrack/public/bendahara/pencairan-dana/proses" id="formPencairan">
             <input type="hidden" name="kak_id" value="<?= $kegiatan_data['id'] ?? '' ?>">
+            <!-- Simpan total anggaran asli untuk validasi -->
+            <input type="hidden" name="total_anggaran" id="total_anggaran" value="<?= $anggaran_disetujui ?? 0 ?>">
         <?php endif; ?>
 
             <div class="mb-8">
@@ -218,148 +220,87 @@ if (!function_exists('formatRupiah')) {
                 </div>
             </div>
 
-            <div class="mb-8">
-                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Rincian Rancangan Kegiatan</h3>
-                
-                <div class="mb-6">
-                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Surat Pengantar</label>
-                    <div class="relative max-w-sm">
-                        <?php if (!empty($surat_pengantar_url)): ?>
-                        <a href="<?= htmlspecialchars($surat_pengantar_url) ?>" target="_blank"
-                           class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition-colors">
-                            <span class="text-sm text-gray-800 flex items-center gap-2">
-                                <i class="fas fa-file-pdf text-red-600"></i>
-                                <?= basename($surat_pengantar_url) ?>
-                            </span>
-                            <i class="fas fa-external-link-alt text-blue-600"></i>
-                        </a>
-                        <?php else: ?>
-                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                            <span class="text-sm text-gray-500 italic">Tidak ada file</span>
-                            <i class="fas fa-file-alt text-gray-400"></i>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 block">Kurun Waktu Pelaksanaan</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
-                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                            <div>
-                                <span class="text-xs text-gray-500 block">Tanggal Mulai</span>
-                                <span class="text-sm text-gray-800 font-medium">
-                                    <?= date('d M Y', strtotime($kegiatan_data['tanggal_mulai'])) ?>
-                                </span>
-                            </div>
-                            <i class="fas fa-calendar-alt text-gray-400"></i>
-                        </div>
-                        <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                            <div>
-                                <span class="text-xs text-gray-500 block">Tanggal Selesai</span>
-                                <span class="text-sm text-gray-800 font-medium">
-                                    <?= date('d M Y', strtotime($kegiatan_data['tanggal_selesai'])) ?>
-                                </span>
-                            </div>
-                            <i class="fas fa-calendar-alt text-gray-400"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <?php if ($status_lower === 'menunggu' || $status_lower === 'dana diberikan'): ?>
             <div class="mb-8 pt-6 border-t border-gray-200">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Proses Pencairan Dana</h3>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+                <div class="grid grid-cols-1 gap-y-5">
+                    
+                    <!-- Pilihan Metode -->
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Nominal yang Disetujui & Dicairkan <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative mt-1">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
-                            <input type="text" 
-                                   id="jumlah_dicairkan"
-                                   name="jumlah_dicairkan" 
-                                   value="<?= $status_lower === 'dana diberikan' ? number_format($jumlah_dicairkan ?? 0, 0, '', '') : '' ?>"
-                                   placeholder="0"
-                                   class="block w-full pl-10 pr-4 py-3 text-sm <?= $status_lower === 'dana diberikan' ? 'bg-gray-100' : '' ?> border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   <?= $status_lower === 'dana diberikan' ? 'readonly' : 'required' ?>>
-                        </div>
-                        <?php if ($status_lower === 'dana diberikan' && $tanggal_pencairan): ?>
-                        <p class="mt-1 text-xs text-green-600">
-                            <i class="fas fa-check-circle"></i> Dicairkan pada: <?= date('d F Y, H:i', strtotime($tanggal_pencairan)) ?>
-                        </p>
-                        <?php endif; ?>
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">
+                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
                             Metode Pencairan <span class="text-red-500">*</span>
                         </label>
-                        <div class="space-y-2">
-                            <?php 
-                            $metode_terpilih = 'uang_muka';
-                            if ($status_lower === 'dana diberikan' && !empty($metode_pencairan)) {
-                                $metode_terpilih = $metode_pencairan;
-                            }
-                            ?>
-                            <label class="flex items-center p-3 border border-gray-200 rounded-lg <?= $status_lower === 'menunggu' ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50 cursor-not-allowed' ?>">
-                                <input type="radio" 
-                                       name="metode_pencairan" 
-                                       value="uang_muka" 
-                                       class="mr-3" 
-                                       <?= $status_lower === 'dana diberikan' ? 'disabled' : '' ?>
-                                       <?= $metode_terpilih === 'uang_muka' ? 'checked' : '' ?>>
-                                <span class="text-sm text-gray-700">Uang Muka</span>
+                        <div class="flex gap-4">
+                            <label class="flex-1 flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <input type="radio" name="metode_pencairan" value="penuh" class="peer mr-3" checked onchange="toggleMetode('penuh')">
+                                <div>
+                                    <span class="text-sm font-semibold text-gray-700 block">Pencairan Penuh</span>
+                                    <span class="text-xs text-gray-500">Cairkan 100% dana sekaligus</span>
+                                </div>
                             </label>
-                            <label class="flex items-center p-3 border border-gray-200 rounded-lg <?= $status_lower === 'menunggu' ? 'hover:bg-gray-50 cursor-pointer' : 'bg-gray-50 cursor-not-allowed' ?>">
-                                <input type="radio" 
-                                       name="metode_pencairan" 
-                                       value="dana_penuh" 
-                                       class="mr-3" 
-                                       <?= $status_lower === 'dana diberikan' ? 'disabled' : '' ?>
-                                       <?= $metode_terpilih === 'dana_penuh' ? 'checked' : '' ?>>
-                                <span class="text-sm text-gray-700">Dana Penuh</span>
+                            <label class="flex-1 flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                <input type="radio" name="metode_pencairan" value="bertahap" class="peer mr-3" onchange="toggleMetode('bertahap')">
+                                <div>
+                                    <span class="text-sm font-semibold text-gray-700 block">Pencairan Bertahap</span>
+                                    <span class="text-xs text-gray-500">Cairkan dana dalam beberapa termin</span>
+                                </div>
                             </label>
                         </div>
                     </div>
-                    
-                    <!-- ✅ Input Tanggal Batas LPJ -->
-                    <div class="md:col-span-2">
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Batas Waktu Pengumpulan LPJ <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative mt-1">
-                            <input type="date" 
-                                   id="tenggat_lpj"
-                                   name="tenggat_lpj" 
-                                   min="<?= date('Y-m-d') ?>"
-                                   class="block w-full px-4 py-3 text-sm <?= $status_lower === 'dana diberikan' ? 'bg-gray-100' : '' ?> border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   <?= $status_lower === 'dana diberikan' ? 'readonly' : 'required' ?>>
+
+                    <!-- Container Input Penuh -->
+                    <div id="container-penuh" class="space-y-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
+                        <div>
+                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                Nominal Pencairan (Rp) <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative mt-1">
+                                <input type="text" id="jumlah_dicairkan" name="jumlah_dicairkan" 
+                                       value="<?= number_format($grand_total_rab, 0, '', '') ?>"
+                                       class="block w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                       oninput="formatRupiah(this)">
+                            </div>
                         </div>
-                        <p class="mt-1 text-xs text-gray-500">
-                            <i class="fas fa-info-circle"></i> Mahasiswa harus mengumpulkan LPJ sebelum tanggal ini
-                        </p>
                     </div>
+
+                    <!-- Container Input Bertahap -->
+                    <div id="container-bertahap" class="hidden space-y-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rincian Tahapan</label>
+                            <button type="button" onclick="addStage()" class="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-md hover:bg-blue-200 transition-colors">
+                                + Tambah Tahap
+                            </button>
+                        </div>
+                        
+                        <input type="hidden" name="jumlah_tahap" id="jumlah_tahap" value="0">
+                        <div id="stages-wrapper" class="space-y-3">
+                            <!-- Dynamic inputs will appear here -->
+                        </div>
+                        <div class="text-right text-xs text-gray-500 mt-2">
+                            Total Persentase: <span id="total-persen" class="font-bold text-gray-800">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Catatan -->
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Catatan Bendahara (Opsional)</label>
+                        <textarea name="catatan" rows="2" class="mt-1 block w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
                 </div>
             </div>
             <?php endif; ?>
 
             <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
-                <a href="<?= htmlspecialchars($back_url) ?>" 
-                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all">
-                    <i class="fas fa-arrow-left text-xs"></i> 
-                    <?= htmlspecialchars($back_text ?? 'Kembali') ?>
+                <a href="<?= htmlspecialchars($back_url) ?>" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all">
+                    <i class="fas fa-arrow-left text-xs"></i> Kembali
                 </a>
                  
                 <?php if ($status_lower === 'menunggu'): ?>
                 <div class="flex gap-4 w-full sm:w-auto">
-
-                    <button type="button" 
-                            onclick="konfirmasiCairkan()"
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition-all">
-                        <i class="fas fa-check-circle text-xs"></i> Setujui & Cairkan
+                    <button type="button" onclick="submitForm()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition-all">
+                        <i class="fas fa-check-circle text-xs"></i> Proses Pencairan
                     </button>
                 </div>
                 <?php endif; ?>
@@ -372,27 +313,66 @@ if (!function_exists('formatRupiah')) {
     </section>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Format input rupiah dengan pemisah ribuan
+// Init state
+let stageCount = 0;
+
 document.addEventListener('DOMContentLoaded', function() {
-    const inputJumlah = document.getElementById('jumlah_dicairkan');
-    
-    if (inputJumlah && !inputJumlah.hasAttribute('readonly')) {
-        formatRupiah(inputJumlah);
-        
-        inputJumlah.addEventListener('input', function(e) {
-            formatRupiah(e.target);
-        });
-        
-        inputJumlah.addEventListener('keypress', function(e) {
-            if (e.which < 48 || e.which > 57) {
-                e.preventDefault();
-            }
-        });
-    } else if (inputJumlah && inputJumlah.hasAttribute('readonly')) {
-        formatRupiah(inputJumlah);
-    }
+    formatRupiah(document.getElementById('jumlah_dicairkan'));
+    // Initialize 2 stages by default if in bertahap mode
+    addStage();
+    addStage();
 });
+
+function toggleMetode(metode) {
+    const containerPenuh = document.getElementById('container-penuh');
+    const containerBertahap = document.getElementById('container-bertahap');
+    
+    if (metode === 'penuh') {
+        containerPenuh.classList.remove('hidden');
+        containerBertahap.classList.add('hidden');
+    } else {
+        containerPenuh.classList.add('hidden');
+        containerBertahap.classList.remove('hidden');
+    }
+}
+
+function addStage() {
+    if(stageCount >= 5) return; // Max 5 tahap
+    stageCount++;
+    document.getElementById('jumlah_tahap').value = stageCount;
+    
+    const wrapper = document.getElementById('stages-wrapper');
+    const div = document.createElement('div');
+    div.className = 'flex gap-3 items-end animate-fade-in-up';
+    div.innerHTML = `
+        <div class="w-10 text-center py-2.5 text-sm font-bold text-gray-400">#${stageCount}</div>
+        <div class="flex-1">
+            <label class="text-[10px] uppercase text-gray-500 font-semibold">Tanggal Pencairan</label>
+            <input type="date" name="tanggal_tahap_${stageCount}" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+        </div>
+        <div class="w-24">
+            <label class="text-[10px] uppercase text-gray-500 font-semibold">Persentase</label>
+            <div class="relative">
+                <input type="number" name="persentase_tahap_${stageCount}" class="w-full pl-3 pr-6 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right" placeholder="0" min="1" max="100" oninput="updateTotalPersen()">
+                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">%</span>
+            </div>
+        </div>
+    `;
+    wrapper.appendChild(div);
+}
+
+function updateTotalPersen() {
+    let total = 0;
+    for(let i=1; i<=stageCount; i++) {
+        const val = parseFloat(document.querySelector(`input[name="persentase_tahap_${i}"]`).value) || 0;
+        total += val;
+    }
+    const display = document.getElementById('total-persen');
+    display.innerText = total + '%';
+    display.className = total === 100 ? 'font-bold text-green-600' : 'font-bold text-red-500';
+}
 
 function formatRupiah(input) {
     let value = input.value.replace(/\D/g, '');
@@ -400,85 +380,56 @@ function formatRupiah(input) {
     input.value = value;
 }
 
-function konfirmasiCairkan() {
+function submitForm() {
     const form = document.getElementById('formPencairan');
-    const jumlah = document.getElementById('jumlah_dicairkan').value.replace(/\./g, '');
-    const tenggatLpj = document.getElementById('tenggat_lpj').value;
+    const metode = document.querySelector('input[name="metode_pencairan"]:checked').value;
     
-    // Validasi jumlah
-    if (!jumlah || parseInt(jumlah) <= 0) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Jumlah Tidak Valid',
-                text: 'Jumlah dana harus diisi dengan nilai yang valid!',
-                confirmButtonColor: '#3B82F6'
-            });
-        } else {
-            alert('Jumlah dana harus diisi dengan nilai yang valid!');
+    if (metode === 'penuh') {
+        const jumlah = document.getElementById('jumlah_dicairkan').value.replace(/\./g, '');
+        if (!jumlah || parseInt(jumlah) <= 0) {
+            Swal.fire('Error', 'Nominal pencairan tidak valid', 'error');
+            return;
         }
-        return;
-    }
-    
-    // ✅ Validasi tenggat LPJ
-    if (!tenggatLpj) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'error',
-                title: 'Batas LPJ Belum Diisi',
-                text: 'Tanggal batas pengumpulan LPJ wajib diisi!',
-                confirmButtonColor: '#3B82F6'
-            });
-        } else {
-            alert('Tanggal batas pengumpulan LPJ wajib diisi!');
-        }
-        return;
-    }
-    
-    const formatted = parseInt(jumlah).toLocaleString('id-ID');
-    const formattedTanggal = new Date(tenggatLpj).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Cairkan Dana?',
-            html: `Apakah Anda yakin akan menyetujui dan mencairkan dana sebesar<br><strong class="text-blue-600">Rp ${formatted}</strong>?<br><br><small class="text-gray-600">Batas pengumpulan LPJ: <strong>${formattedTanggal}</strong></small><br><br><small class="text-red-600">Tindakan ini tidak dapat dibatalkan.</small>`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Ya, Cairkan!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({ 
-                    title: 'Memproses...', 
-                    text: 'Sedang mencairkan dana...',
-                    allowOutsideClick: false, 
-                    didOpen: () => Swal.showLoading() 
-                });
-                
-                const actionInput = document.createElement('input');
-                actionInput.type = 'hidden';
-                actionInput.name = 'action';
-                actionInput.value = 'cairkan';
-                form.appendChild(actionInput);
-                
-                // Pastikan mengirim angka murni tanpa titik
-                document.getElementById('jumlah_dicairkan').value = jumlah;
-                form.submit();
-            }
-        });
+        // Set value clean without dots
+        document.getElementById('jumlah_dicairkan').value = jumlah;
     } else {
-        if (confirm('Apakah Anda yakin akan mencairkan dana sebesar Rp ' + formatted + '?\nBatas LPJ: ' + formattedTanggal + '\n\nTindakan ini tidak dapat dibatalkan.')) {
-            const actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = 'cairkan';
-            form.appendChild(actionInput);
+        let total = 0;
+        for(let i=1; i<=stageCount; i++) {
+            total += parseFloat(document.querySelector(`input[name="persentase_tahap_${i}"]`).value) || 0;
+        }
+        if (Math.abs(total - 100) > 0.1) {
+            Swal.fire('Error', `Total persentase harus 100% (Saat ini: ${total}%)`, 'error');
+            return;
+        }
+    }
+
+    Swal.fire({
+        title: 'Konfirmasi Pencairan',
+        text: "Apakah data yang dimasukkan sudah benar? Tindakan ini tidak dapat dibatalkan.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Ya, Cairkan Dana',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const hiddenAction = document.createElement('input');
+            hiddenAction.type = 'hidden';
+            hiddenAction.name = 'action';
+            hiddenAction.value = 'cairkan';
+            form.appendChild(hiddenAction);
             
-            document.getElementById('jumlah_dicairkan').value = jumlah;
             form.submit();
         }
-    }
+    });
 }
 </script>
+
+<style>
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
+</style>
