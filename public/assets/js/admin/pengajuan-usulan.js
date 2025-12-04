@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ===================================
-    // TEMPLATE STEPPER (4 STEPS)
+    // TEMPLATE STEPPER (4 STEPS)   
     // ===================================
     const stepperTemplates = {
         1: `<nav aria-label="Progress"><ol role="list" class="relative z-0 flex items-center justify-between w-full max-w-4xl mx-auto"><div class="absolute left-0 top-6 w-full -translate-y-1/2 h-1.5 bg-gray-200 -z-10"></div><div class="stepper-line absolute left-0 top-6 w-0 -translate-y-1/2 h-1.5 -z-10 transition-all duration-700 ease-out bg-gradient-to-r from-blue-500 to-cyan-400 line-flow-animation"></div><li class="relative"><a href="#" class="group" aria-current="step"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-white ring-4 ring-blue-500 shadow-xl shadow-blue-500/50 transition-all duration-300"><span class="font-bold md:font-extrabold text-xl md:text-2xl bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">1</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-bold text-blue-600">Data Pengusul</span><span class="block text-[10px] md:text-xs text-blue-500">Sedang diisi</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">2</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Kerangka Acuan</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">3</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Indikator Kinerja</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li><li class="relative"><a href="#" class="group"><div class="flex flex-col items-center w-20 md:w-32 text-center"><span class="flex items-center justify-center w-12 h-12 rounded-full bg-gray-200 text-gray-500 ring-4 ring-white group-hover:bg-gray-300 transition-all duration-300"><span class="font-medium md:font-bold text-lg md:text-xl">4</span></span><div class="mt-2 md:mt-3"><span class="block text-xs md:text-sm font-medium text-gray-500 group-hover:text-gray-700">Rincian Anggaran</span><span class="block text-[10px] md:text-xs text-gray-400">Berikutnya</span></div></div></a></li></ol></nav>`,
@@ -151,7 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const grandTotalContainer = document.querySelector('.grand-total-container');
         if (grandTotalContainer) {
-            grandTotalContainer.classList.toggle('hidden', targetStep !== 4);
+            if (targetStep === 4) {
+                grandTotalContainer.classList.remove('hidden');
+                grandTotalContainer.classList.add('flex');
+            } else {
+                grandTotalContainer.classList.add('hidden');
+                grandTotalContainer.classList.remove('flex');
+            }
         }
 
         if (targetStep === 4) {
@@ -254,6 +260,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                 allowOutsideClick: false,
                                 didOpen: () => { Swal.showLoading(); }
                             });
+
+                            // ===========================================
+                            // TAMBAHANIN: KONVERSI BUDGET DATA KE JSON
+                            // ===========================================
+                            const rabInput = document.getElementById('rab_data_input');
+                            if (rabInput) {
+                                // Ubah object JS jadi string JSON
+                                rabInput.value = JSON.stringify(budgetData);
+                            }
+
                             if (kakFormElement) kakFormElement.submit();
                         }
                     });
@@ -470,12 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===================================
     // Data Structure Updated for double volume (vol1, sat1, vol2, sat2)
     let budgetData = {
-        "Belanja Barang": [
-            { id: Date.now(), uraian: 'Konsumsi Rapat', rincian: 'Snack Box', vol1: 50, sat1: 'Org', vol2: 3, sat2: 'Kali', harga: 15000 }
-        ],
-        "Belanja Jasa": [
-            { id: Date.now() + 1, uraian: 'Sewa Peralatan', rincian: 'Sewa Sound System', vol1: 1, sat1: 'Paket', vol2: 2, sat2: 'Hari', harga: 500000 }
-        ],
+        "Belanja Barang": [],
+        "Belanja Jasa": [],
         "Belanja Perjalanan": []
     };
     let activeCategory = "Belanja Barang";
@@ -595,10 +607,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (rabSidebar && addCategoryToggleBtnRAB && categoryPopupRAB && createCategoryBtnRAB && newCategoryNameInputRAB && rabContent && grandTotalDisplay) {
         rabSidebar.addEventListener('click', (e) => { const ci = e.target.closest('.category-sidebar-item'); if (!ci) return; const cN = ci.dataset.categoryName; if (e.target.closest('.actions')) { if (confirm(`Hapus kategori "${cN}"?`)) { delete budgetData[cN]; const rK = Object.keys(budgetData); activeCategory = rK.length > 0 ? rK[0] : null; renderRabSidebar(); renderRabContent(); } } else { activeCategory = cN; renderRabSidebar(); renderRabContent(); } });
-        addCategoryToggleBtnRAB.addEventListener('click', (e) => { e.stopPropagation(); categoryPopupRAB.classList.toggle('invisible'); categoryPopupRAB.classList.toggle('opacity-0'); categoryPopupRAB.classList.toggle('-translate-y-2'); if (!categoryPopupRAB.classList.contains('invisible')) newCategoryNameInputRAB.focus(); });
+        addCategoryToggleBtnRAB.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); categoryPopupRAB.classList.toggle('invisible'); categoryPopupRAB.classList.toggle('opacity-0'); categoryPopupRAB.classList.toggle('-translate-y-2'); if (!categoryPopupRAB.classList.contains('invisible')) newCategoryNameInputRAB.focus(); });
         document.addEventListener('click', (e) => { if (categoryPopupRAB && !categoryPopupRAB.classList.contains('invisible') && !categoryPopupRAB.contains(e.target) && !addCategoryToggleBtnRAB.contains(e.target)) categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); });
         categoryPopupRAB.addEventListener('click', (e) => e.stopPropagation());
-        createCategoryBtnRAB.addEventListener('click', () => { const n = newCategoryNameInputRAB.value.trim(); if (n && !budgetData[n]) { budgetData[n] = []; activeCategory = n; renderRabSidebar(); renderRabContent(); newCategoryNameInputRAB.value = ''; categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); } else if (!n) alert("Nama tidak boleh kosong."); else alert("Nama sudah ada."); });
+        createCategoryBtnRAB.addEventListener('click', (e) => { e.preventDefault(); const n = newCategoryNameInputRAB.value.trim(); if (n && !budgetData[n]) { budgetData[n] = []; activeCategory = n; renderRabSidebar(); renderRabContent(); newCategoryNameInputRAB.value = ''; categoryPopupRAB.classList.add('invisible', 'opacity-0', '-translate-y-2'); } else if (!n) alert("Nama tidak boleh kosong."); else alert("Nama sudah ada."); });
         newCategoryNameInputRAB.addEventListener('keypress', (e) => { if (e.key === 'Enter') createCategoryBtnRAB.click(); });
         rabContent.addEventListener('click', (e) => { if (e.target.closest('#add-row-btn')) { if (!activeCategory) { alert("Pilih atau buat kategori dulu."); return; } budgetData[activeCategory].push({ id: Date.now(), uraian: '', rincian: '', vol1: 1, sat1: '', vol2: 1, sat2: '', harga: 0 }); renderRabContent(); } if (e.target.closest('.delete-row-btn')) { const r = e.target.closest('tr'); if (!r || !r.dataset.itemId) return; const id = parseInt(r.dataset.itemId); budgetData[activeCategory] = budgetData[activeCategory].filter(i => i.id !== id); renderRabContent(); } });
         // Updated Event Listener for mapped inputs
@@ -612,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const pM = { 'uraian': 'uraian', 'rincian': 'rincian', 'vol1': 'vol1', 'sat1': 'sat1', 'vol2': 'vol2', 'sat2': 'sat2', 'harga': 'harga' }; 
             const p = Object.keys(pM).find(k => t.classList.contains(k)); 
             
-            const i = budgetData[activeCategory]?.find(item => item.id === id); 
+            const i = budgetData[activeCategory]?.find(item => item.id === id);
             if (i && p) { 
                 // Handle numbers vs text
                 if (t.type === 'number') {

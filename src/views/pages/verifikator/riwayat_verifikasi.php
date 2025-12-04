@@ -7,11 +7,11 @@ if (!isset($jurusan_list)) { $jurusan_list = []; }
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-[70px] max-w-7xl mx-auto w-full">
 
-    <section id="riwayat-list" class="bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8 flex flex-col">
+    <section id="riwayat-list" class="stage-content bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8 flex flex-col">
         
         <div class="mb-6 pb-5 border-b border-gray-200">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Verifikasi</h2>
-            <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda proses (Disetujui, Revisi, atau Ditolak).</p>
+            <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda proses (Disetujui, Ditolak, atau Revisi).</p>
         </div>
 
         <div class="flex flex-col lg:flex-row gap-3 mb-6">
@@ -67,25 +67,25 @@ if (!isset($jurusan_list)) { $jurusan_list = []; }
                     </tr>
                 </thead>
                 <tbody id="riwayat-table-body" class="divide-y divide-gray-100">
-                    </tbody>
+                </tbody>
             </table>
         </div>
 
         <div class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-4 mt-4">
             <div id="pagination-info" class="text-sm text-gray-600"></div>
-            <div id="pagination-riwayat" class="flex gap-2"></div>
+            <div id="pagination-riwayat" class="flex gap-1"></div>
         </div>
         
     </section>
 </main>
 
 <script>
+    // Data dikirim dari PHP ke JS
     window.riwayatData = <?php echo json_encode(array_values($list_riwayat)); ?>;
 </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Elemen DOM
     const searchInput = document.getElementById('search-riwayat-input');
     const filterStatus = document.getElementById('filter-status');
     const filterJurusan = document.getElementById('filter-jurusan');
@@ -93,13 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const paginationContainer = document.getElementById('pagination-riwayat');
     const paginationInfo = document.getElementById('pagination-info');
     
-    // Data & State
     const allData = window.riwayatData || [];
     const ITEMS_PER_PAGE = 5;
     let filteredData = [...allData];
     let currentPage = 1;
 
-    // Apply filters
     function applyFilters() {
         const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
         const statusFilter = filterStatus ? filterStatus.value.toLowerCase() : '';
@@ -109,14 +107,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const nama = (item.nama || '').toLowerCase();
             const pengusul = (item.pengusul || '').toLowerCase();
             const status = (item.status || '').toLowerCase();
-            
-            // PENTING: Filter tetap menggunakan JURUSAN INDUK
             const jurusan = (item.jurusan || '').toLowerCase();
             
             const searchMatch = !searchText || nama.includes(searchText) || pengusul.includes(searchText);
             const statusMatch = !statusFilter || status === statusFilter;
-            
-            // Logic: Jika filter kosong (semua jurusan) ATAU jurusan item sama dengan filter
             const jurusanMatch = !jurusanFilter || jurusan === jurusanFilter;
             
             return searchMatch && statusMatch && jurusanMatch;
@@ -126,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
         render();
     }
 
-    // Render table
     function render() {
         if (!tableBody) return;
         
@@ -136,7 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const end = start + ITEMS_PER_PAGE;
         const pageData = filteredData.slice(start, end);
         
-        // Render rows
         if (pageData.length === 0) {
             tableBody.innerHTML = `
                 <tr>
@@ -147,10 +139,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             tableBody.innerHTML = pageData.map((item, index) => {
                 const no = start + index + 1;
-                const tgl = formatDate(item.tgl_verifikasi);
+                // [PERBAIKAN] Gunakan item.tanggal_pengajuan (dari DB)
+                const tgl = formatDate(item.tanggal_pengajuan);
                 const statusLower = (item.status || '').toLowerCase();
                 
-                // Status badge styling
                 let statusClass = 'text-gray-600 bg-gray-100';
                 let statusIcon = 'fas fa-question-circle';
                 
@@ -165,8 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusIcon = 'fas fa-times-circle';
                 }
 
-                // TAMPILAN PRODI (ANAK), BUKAN JURUSAN (INDUK)
-                // Fallback ke jurusan jika prodi kosong
                 const displayProdi = item.prodi ? item.prodi : (item.jurusan || '-');
                 
                 return `
@@ -207,18 +197,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('');
         }
         
-        // Render pagination info
         if (paginationInfo) {
             const showingFrom = totalItems > 0 ? start + 1 : 0;
             const showingTo = totalItems > 0 ? Math.min(end, totalItems) : 0;
             paginationInfo.innerHTML = `Menampilkan <span class="font-semibold">${showingFrom}</span> s.d. <span class="font-semibold">${showingTo}</span> dari <span class="font-semibold">${totalItems}</span> hasil`;
         }
         
-        // Render pagination buttons
         renderPagination(totalPages);
     }
 
-    // Render pagination buttons
     function renderPagination(totalPages) {
         if (!paginationContainer) return;
         
@@ -229,53 +216,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         let html = '';
         
-        // Previous button
         const prevDisabled = currentPage === 1;
-        html += `<button class="pagination-btn px-4 py-2 rounded-md text-sm font-medium transition-colors 
-            ${prevDisabled ? 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
+        html += `<button class="pagination-btn px-3 py-1.5 rounded-md text-sm font-medium transition-colors 
+            ${prevDisabled ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
             data-page="${currentPage - 1}" ${prevDisabled ? 'disabled' : ''}>
-            <i class="fas fa-chevron-left mr-1"></i> Sebelumnya
+            <i class="fas fa-chevron-left"></i>
         </button>`;
         
-        // Page numbers with ellipsis
-        const start_page = Math.max(1, currentPage - 2);
-        const end_page = Math.min(totalPages, currentPage + 2);
-        
-        if (start_page > 1) {
-            html += `<button class="pagination-btn px-3 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50" 
-                data-page="1">1</button>`;
-            if (start_page > 2) {
-                html += `<span class="px-3 py-2 text-sm text-gray-500">...</span>`;
-            }
-        }
-        
-        for (let i = start_page; i <= end_page; i++) {
+        for (let i = 1; i <= totalPages; i++) {
             const isActive = i === currentPage;
-            html += `<button class="pagination-btn px-3 py-2 rounded-md text-sm font-medium transition-colors 
+            html += `<button class="pagination-btn px-3 py-1.5 rounded-md text-sm font-medium transition-colors 
                 ${isActive ? 'bg-blue-600 text-white' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
                 data-page="${i}">${i}</button>`;
         }
         
-        if (end_page < totalPages) {
-            if (end_page < totalPages - 1) {
-                html += `<span class="px-3 py-2 text-sm text-gray-500">...</span>`;
-            }
-            html += `<button class="pagination-btn px-3 py-2 rounded-md text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50" 
-                data-page="${totalPages}">${totalPages}</button>`;
-        }
-        
-        // Next button
         const nextDisabled = currentPage === totalPages;
-        html += `<button class="pagination-btn px-4 py-2 rounded-md text-sm font-medium transition-colors 
-            ${nextDisabled ? 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
+        html += `<button class="pagination-btn px-3 py-1.5 rounded-md text-sm font-medium transition-colors 
+            ${nextDisabled ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
             data-page="${currentPage + 1}" ${nextDisabled ? 'disabled' : ''}>
-            Selanjutnya <i class="fas fa-chevron-right ml-1"></i>
+            <i class="fas fa-chevron-right"></i>
         </button>`;
         
         paginationContainer.innerHTML = html;
     }
 
-    // Helper: Format date
     function formatDate(dateStr) {
         if (!dateStr) return '-';
         try {
@@ -286,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Helper: Escape HTML
     function escapeHtml(str) {
         if (!str) return '';
         const div = document.createElement('div');
@@ -294,20 +257,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return div.innerHTML;
     }
 
-    // Event: Search input
     let debounceTimer;
     searchInput?.addEventListener('input', function() {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(applyFilters, 300);
     });
 
-    // Event: Filter status
     filterStatus?.addEventListener('change', applyFilters);
-    
-    // Event: Filter jurusan
     filterJurusan?.addEventListener('change', applyFilters);
     
-    // Event: Pagination click
     paginationContainer?.addEventListener('click', function(e) {
         const btn = e.target.closest('.pagination-btn');
         if (btn && !btn.disabled) {
@@ -315,13 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (page >= 1 && page !== currentPage) {
                 currentPage = page;
                 render();
-                // Scroll to top of table
                 tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
     });
     
-    // Initial render
     render();
 });
 </script>

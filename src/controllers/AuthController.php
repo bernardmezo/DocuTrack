@@ -1,26 +1,29 @@
 <?php
 // File: src/controllers/AuthController.php
 
+// PENTING: Pastikan session sudah dimulai
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once '../src/core/Controller.php';
+// 1. Panggil Model Login
+require_once '../src/model/LoginModel.php';
+require_once '../src/helpers/logger_helper.php'; // ✅ LOAD LOGGER untuk audit trail
 
 class AuthController extends Controller {
 
     public function __construct() {
-        // Tidak butuh database sama sekali
+        // Constructor kosong
     }
 
-    /**
-     * Menampilkan halaman login.
-     * Jika diakses langsung, redirect ke landing page.
-     */
     public function index() {
         header('Location: /docutrack/public/'); 
         exit;
     }
 
-
     // =====================================================
-    // ===============  LOGIN MULTI-ROLE  ==================
+    // ===============  LOGIN REAL DATABASE  ===============
     // =====================================================
 
     public function handleLogin() {
@@ -28,119 +31,100 @@ class AuthController extends Controller {
             header('Location: /docutrack/public/');
             exit;
         }
+        
+        // 1. Ambil input dari form
+        $email      = trim($_POST['login_email'] ?? '');
+        $password   = trim($_POST['login_password'] ?? '');
+        // Role yang dipilih user di dropdown (opsional, kita validasi nanti)
+        $role_input = strtolower(trim($_POST['login_role'] ?? '')); 
 
-        // Ambil input dari form login
-        $email    = trim($_POST['login_email'] ?? '');
-        $password = trim($_POST['login_password'] ?? '');
-
+        // 2. Validasi Input Kosong
         if (empty($email) || empty($password)) {
             $_SESSION['login_error'] = 'Email dan password harus diisi.';
             header('Location: /docutrack/public/');
             exit;
         }
 
-        // ============================
-        //  DATABASE DUMMY TANPA DB
-        // ============================
+        // 3. Panggil Model & Cari User
+        $loginModel = new LoginModel($this->db);
+        $user = $loginModel->getUserByEmail($email);
 
-        $users_db = [
-            'admin@example.com' => [
-                'id' => 1,
-                'password' => 'password123',
-                'nama' => 'Admin Docutrack',
-                'role' => 'admin',
-                'email' => 'admin@example.com'
-            ],
-            'verifikator@example.com' => [
-                'id' => 2,
-                'password' => 'password123',
-                'nama' => 'Putra Yopan',
-                'role' => 'verifikator',
-                'email' => 'verifikator@example.com'
-            ],
-            'wadir@example.com' => [
-                'id' => 3,
-                'password' => 'password123',
-                'nama' => 'Wakil Direktur',
-                'role' => 'wadir',
-                'email' => 'wadir@example.com'
-            ],
-            'ppk@example.com' => [
-                'id' => 4,
-                'password' => 'password123',
-                'nama' => 'Pejabat PPK',
-                'role' => 'ppk',
-                'email' => 'ppk@example.com'
-            ],
-            'bendahara@example.com' => [
-                'id' => 5,
-                'password' => 'password123',
-                'nama' => 'Bendahara',
-                'role' => 'bendahara',
-                'email' => 'bendahara@example.com'
-            ],
-            'superadmin@example.com' => [
-                'id' => 6,
-                'password' => 'password123',
-                'nama' => 'Super Admin',
-                'role' => 'super-admin',
-                'email' => 'superadmin@example.com'
-            ],
-            'direktur@example.com' => [
-                'id' => 7,
-                'password' => 'password123',
-                'nama' => 'Mr. Direktur',
-                'role' => 'direktur',
-                'email' => 'direktur@example.com'
-            ]
-        ];
-
-
-        // ============================
-        //  LOGIKA LOGIN DUMMY
-        // ============================
-
-        if (!isset($users_db[$email])) {
-            $_SESSION['login_error'] = 'Email atau password salah.';
+        // 4. Cek Apakah User Ditemukan?
+        if (!$user) {
+            $_SESSION['login_error'] = 'Email tidak terdaftar.';
             header('Location: /docutrack/public/');
             exit;
         }
 
-        $user = $users_db[$email];
-
-        if ($password !== $user['password']) {
-            $_SESSION['login_error'] = 'Email atau password salah.';
+        // 5. Verifikasi Password
+        // SECURITY FIX: Hanya gunakan password_verify() - TIDAK ADA FALLBACK PLAIN TEXT
+        // Ref: DATABASE_AUDIT.md - Pilar 2: Security Hardening
+        
+        if (!password_verify($password, $user['password'])) {
+            // ✅ AUDIT LOG: Catat login gagal
+            logLogin(0, $email, false, 'Password salah');
+            
+            $_SESSION['login_error'] = 'Password salah.';
             header('Location: /docutrack/public/');
             exit;
+        }
+
+        // 6. Normalize & Validasi Role
+        // Normalize role dari database: 'Super Admin' -> 'super-admin', 'Verifikator' -> 'verifikator'
+        $normalized_role = strtolower($user['namaRole']);
+        $normalized_role = str_replace([' ', '_'], '-', $normalized_role);
+        $normalized_role = preg_replace('/--+/', '-', $normalized_role);
+
+        // Jika user memilih role di dropdown, kita cek kecocokannya (juga normalize input).
+        if (!empty($role_input)) {
+            $normalized_input = strtolower($role_input);
+            $normalized_input = str_replace([' ', '_'], '-', $normalized_input);
+            
+            if ($normalized_input !== $normalized_role) {
+                $_SESSION['login_error'] = "Akun ini tidak terdaftar sebagai " . ucfirst($role_input);
+                header('Location: /docutrack/public/');
+                exit;
+            }
         }
 
         // ============================
         //  LOGIN BERHASIL
         // ============================
 
+        // SECURITY FIX: Regenerate session ID untuk mencegah Session Fixation Attack
+        // Ref: DATABASE_AUDIT.md - Pilar 2: Security Hardening
+        session_regenerate_id(true);
+        
         unset($_SESSION['login_error']);
 
-        // SIMPAN KE FORMAT BARU (user_data)
+        // --- MERGED SESSION LOGIC ---
+        // 1. Simpan data ke Session (Logic dari branch integrate-db untuk database)
+        $_SESSION['user_id']       = $user['userId'];      // Dari query: u.userId
+        $_SESSION['user_name']     = $user['nama'];        // Dari query: u.nama
+        $_SESSION['user_role']     = $normalized_role;     // Normalized: 'verifikator', 'super-admin', dll
+        $_SESSION['user_jurusan']  = $user['namaJurusan'] ?? null; // Dari query: j.namaJurusan
+
+        // 2. Simpan data ke Session (Logic dari branch HEAD untuk frontend/design)
+        // Menggabungkan data database ke dalam format yang diharapkan oleh view/design lama
         $_SESSION['user_data'] = [
-            'id'            => $user['id'],
-            'username'      => $user['nama'],  // ✅ LANGSUNG GUNAKAN NAMA DARI DATABASE
+            'id'            => $user['userId'],
+            'username'      => $user['nama'],
             'email'         => $email,
-            'role'          => $user['role'],
+            'role'          => $normalized_role,
+            // Generate gambar profil seperti di branch HEAD agar desain tidak rusak
             'profile_image' => 'https://ui-avatars.com/api/?name=' . urlencode($user['nama']) . '&background=0D8ABC&color=fff&size=150',
             'header_bg'     => 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
             'created_at'    => date('Y-m-d')
         ];
 
-        // TETAP SIMPAN FORMAT LAMA UNTUK KOMPATIBILITAS
-        $_SESSION['user_id']   = $user['id'];
-        $_SESSION['user_name'] = $user['nama'];
-        $_SESSION['user_role'] = $user['role'];
+        // ✅ AUDIT LOG: Catat login berhasil
+        logLogin($user['userId'], $email, true);
 
         // ============================
-        //  REDIRECT BERDASARKAN ROLE (OTOMATIS)
+        //  REDIRECT BERDASARKAN ROLE
         // ============================
 
-        switch ($user['role']) {
+        switch ($normalized_role) {
             case 'verifikator':
                 header('Location: /docutrack/public/verifikator/dashboard');
                 break;
@@ -162,6 +146,7 @@ class AuthController extends Controller {
                 break;
             
             case 'super-admin':
+            case 'superadmin': // Fallback jika di DB ditulis tanpa spasi/dash
                 header('Location: /docutrack/public/super_admin/dashboard');
                 break;
             case 'direktur':
@@ -169,6 +154,10 @@ class AuthController extends Controller {
                 break;
 
             default:
+                // Jika role tidak dikenali, log untuk debugging dan redirect ke landing
+                // JANGAN session_destroy() karena akan menyebabkan loop
+                error_log("DocuTrack Login Warning: Unknown role '{$normalized_role}' for user {$user['email']}");
+                $_SESSION['login_error'] = 'Role pengguna tidak dikenali: ' . htmlspecialchars($user['namaRole']);
                 header('Location: /docutrack/public/');
                 break;
         }
@@ -176,12 +165,13 @@ class AuthController extends Controller {
         exit;
     }
 
-
-    // =====================================================
-    // ==================== LOGOUT ==========================
-    // =====================================================
-
     public function logout() {
+        // ✅ AUDIT LOG: Catat logout sebelum session dihapus
+        $userId = $_SESSION['user_id'] ?? 0;
+        if ($userId > 0) {
+            logLogout($userId);
+        }
+        
         session_destroy();
         header('Location: /docutrack/public/'); 
         exit;

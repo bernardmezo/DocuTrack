@@ -9,8 +9,8 @@ $current = $_SERVER['REQUEST_URI'];
 
 function isActive($current, $target) {
     return (strpos($current, $target) !== false)
-        ? 'nav-link-base nav-link-active'
-        : 'nav-link-base nav-link-inactive';
+        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
+        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
 }
 
 // ============================================
@@ -84,7 +84,7 @@ switch (strtolower($userRole)) {
         <div class="top-section bg-gradient-to-l from-[#17A18A] via-[#006A9A] to-[#114177] p-6 pb-4 md:pb-20 text-white shadow-lg">
             <header class="flex justify-between font-poppins items-center pb-5 border-b border-white/20 max-w-7xl mx-auto">
                 <!-- Sisi Kiri: Logo & Navigasi Desktop -->
-                <div class="flex items-center gap-4 md:gap-10">
+                <div class="flex items-center gap-4 md:gap-10 flex-1">
                     <!-- Logo lebih kecil di mobile -->
                     <div class="w-40 md:w-auto">
                         <a href="/docutrack/public/bendahara/dashboard"> <!-- Link logo ke dashboard -->
@@ -94,31 +94,31 @@ switch (strtolower($userRole)) {
                         </a>
                     </div>
 
-                    <!-- Navigasi Desktop -->
-                    <div class="flex items-center gap-4 md:gap-10">
-                        <nav>
+                    <!-- Navigasi Desktop - CENTER ALIGNED -->
+                    <div class="flex items-center justify-center flex-1">
+                        <nav class="hidden md:block">
                             <ul class="flex gap-4">
                                 <li>
                                     <a href="/docutrack/public/bendahara/dashboard" 
-                                    class="<?= isActive($current, '/bendahara/dashboard'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/bendahara/dashboard'); ?>">
                                         <i class="fas fa-th-large text-sm"></i> Dashboard
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/bendahara/pencairan-dana" 
-                                    class="<?= isActive($current, '/bendahara/pencairan-dana'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/bendahara/pencairan-dana'); ?>">
                                         <i class="fas fa-file-signature text-sm"></i> Pencairan Dana
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/bendahara/pengajuan-lpj" 
-                                    class="<?= isActive($current, '/bendahara/pengajuan-lpj'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/bendahara/pengajuan-lpj'); ?>">
                                         <i class="fas fa-file-invoice text-sm"></i> Pengajuan LPJ
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/bendahara/riwayat-verifikasi" 
-                                    class="<?= isActive($current, '/bendahara/riwayat-verifikasi'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/bendahara/riwayat-verifikasi'); ?>">
                                         <i class="fas fa-book-open text-sm"></i> Riwayat Verifikasi
                                     </a>
                                 </li>
@@ -167,4 +167,4 @@ switch (strtolower($userRole)) {
         </div> <!-- Akhir top-section -->
 
     <!-- Konten utama halaman dimulai di sini (akan ditutup oleh footer.php) -->
-    <main class="main-content ...">
+    <main class="main-content ..."></main>

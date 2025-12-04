@@ -88,7 +88,7 @@ $current = $active_page ?? '';
              
              <header class="flex justify-between items-center pb-5 border-b border-white/20 max-w-7xl mx-auto">
                  
-                 <div class="flex items-center gap-4 md:gap-10">
+                 <div class="flex items-center gap-4 md:gap-10 flex-1">
                      
                      <div class="w-40 md:w-auto">
                          <a href="/docutrack/public/wadir/dashboard">
@@ -97,14 +97,16 @@ $current = $active_page ?? '';
                          </a>
                      </div>
                      
-                     <nav class="hidden md:block">
-                         <ul class="flex gap-4">
-                             <li><a href="/docutrack/public/wadir/dashboard" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/dashboard'); ?>"><i class="fas fa-th-large text-sm"></i> Dashboard</a></li>
-                            <li><a href="/docutrack/public/wadir/pengajuan-kegiatan" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm"></i> Pengajuan Kegiatan</a></li>
-                            <li><a href="/docutrack/public/wadir/monitoring" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/monitoring'); ?>"><i class="fas fa-binoculars text-sm"></i> Monitoring</a></li>
-                            <li><a href="/docutrack/public/wadir/riwayat-verifikasi" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/riwayat-verifikasi'); ?>"><i class="fas fa-binoculars text-sm"></i> Riwayat Verifikasi</a></li>
-                         </ul>
-                     </nav>
+                     <div class="flex items-center justify-center flex-1">
+                         <nav class="hidden md:block">
+                             <ul class="flex gap-4">
+                                 <li><a href="/docutrack/public/wadir/dashboard" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/dashboard'); ?>"><i class="fas fa-th-large text-sm"></i> Dashboard</a></li>
+                                <li><a href="/docutrack/public/wadir/pengajuan-kegiatan" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm"></i> Pengajuan Kegiatan</a></li>
+                                <li><a href="/docutrack/public/wadir/monitoring" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/monitoring'); ?>"><i class="fas fa-binoculars text-sm"></i> Monitoring</a></li>
+                                <li><a href="/docutrack/public/wadir/riwayat-verifikasi" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/wadir/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm"></i> Riwayat Verifikasi</a></li>
+                             </ul>
+                         </nav>
+                     </div>
                  </div>
                  
                  <div class="flex items-center gap-4 md:gap-6">
@@ -148,8 +150,8 @@ $current = $active_page ?? '';
                 <div class="px-2 space-y-1">
                     <a href="/docutrack/public/wadir/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/wadir/dashboard'); ?>"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
                     <a href="/docutrack/public/wadir/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/wadir/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
-                    <a href="/docutrack/public/wadir/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/wadir/monitoring'); ?>"><i class="fas fa-binoculars text-sm w-5 text-center"></i> Monitoring</a>
-                    <a href="/docutrack/public/wadir/riwayat-verifikasi" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/wadir/riwayat-verifikasi'); ?>"> Riwayat Verifikasi</a>
+                    <a href="/docutrack/public/wadir/monitoring" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/wadir/monitoring'); ?>"><i class="fas fa-binoculars text-sm w-5 text-center"></i> Monitoring</a>
+                    <a href="/docutrack/public/wadir/riwayat-verifikasi" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/wadir/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm w-5 text-center"></i> Riwayat Verifikasi</a>
                 </div>
             </div>
-        </div> 
+        </div>

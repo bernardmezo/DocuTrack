@@ -1,14 +1,11 @@
 <?php
-// File: src/views/pages/PPK/telaah_detail.php (HANYA UNTUK PPK)
+// File: src/views/pages/PPK/telaah_detail.php
 
-// --- 1. Setup Variabel (Diterima dari Controller) ---
 $status = $status ?? 'Menunggu';
 
-// Status Boolean
 $is_disetujui = (strtolower($status) === 'disetujui');
 $is_menunggu = (strtolower($status) === 'menunggu');
 
-// Data Payload
 $komentar_penolakan = $komentar_penolakan ?? '';
 $kegiatan_data = $kegiatan_data ?? [];
 $iku_data = $iku_data ?? [];
@@ -22,12 +19,23 @@ $tanggal_mulai = $kegiatan_data['tanggal_mulai'] ?? '';
 $tanggal_selesai = $kegiatan_data['tanggal_selesai'] ?? '';
 $surat_pengantar_url = $surat_pengantar_url ?? '';
 
-// Fallback helper
 if (!function_exists('formatRupiah')) {
     function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
 }
 
-// Helper function untuk menampilkan value atau placeholder
+if (!function_exists('isValidDate')) {
+    function isValidDate($date) {
+        return !empty($date) && $date !== '0000-0000' && strtotime($date) !== false;
+    }
+}
+
+if (!function_exists('formatTanggal')) {
+    function formatTanggal($date, $format = 'd M Y') {
+        if (!isValidDate($date)) return '-';
+        return date($format, strtotime($date));
+    }
+}
+
 function displayValue($value, $placeholder = 'Belum diisi') {
     return !empty($value) ? htmlspecialchars($value) : '<span class="text-gray-400 italic">' . $placeholder . '</span>';
 }
@@ -37,7 +45,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
 
     <section class="bg-white p-4 md:p-10 rounded-2xl shadow-lg overflow-hidden mb-8">
         
-        <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-5 border-b border-gray-200 gap-4">
             <div>
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Persetujuan Usulan Kegiatan</h2>
@@ -53,15 +60,10 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                     <?php endif; ?>
                 </p>
             </div>
-            <a href="<?php echo htmlspecialchars($back_url); ?>" 
-               class="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 w-full md:w-auto transform hover:-translate-y-0.5">
-                <i class="fas fa-arrow-left text-xs"></i> Kembali
-            </a>
         </div>
         
         <form id="form-PPK-approval" action="#" method="POST">
             
-            <!-- 1. KAK -->
             <div class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 mb-6">
         <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2 pb-3 border-b border-gray-100">
             1. Kerangka Acuan Kerja (KAK)
@@ -135,7 +137,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
         </div>
     </div>
 
-            <!-- 2. IKU -->
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">2. Indikator Kinerja Utama (IKU)</h3>
                 <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Indikator yang Dipilih:</label>
@@ -153,7 +154,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 </div>
             </div>
 
-            <!-- 3. Indikator Kinerja -->
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">3. Indikator Kinerja KAK</h3>
                 <div class="overflow-x-auto border border-gray-200 rounded-lg">
@@ -197,7 +197,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 </div>
             </div>
 
-            <!-- 4. RAB -->
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">4. Rincian Anggaran Biaya (RAB)</h3>
                 <?php 
@@ -292,11 +291,9 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 </div>
             </div>
 
-            <!-- 5. Rincian Rancangan Kegiatan -->
             <div class="mb-8 pt-6 border-t border-gray-200">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">5. Rincian Rancangan Kegiatan</h3>
                 
-                <!-- Surat Pengantar -->
                 <div class="mb-6">
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Surat Pengantar</label>
                     <div class="relative max-w-2xl">
@@ -325,7 +322,6 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                     </div>
                 </div>
 
-                <!-- Kurun Waktu Pelaksanaan -->
                 <div class="mb-4">
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 block">Kurun Waktu Pelaksanaan</label>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg">
@@ -334,36 +330,35 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                                 <span class="text-xs text-gray-500 block mb-1">Tanggal Mulai</span>
                                 <span class="text-sm text-gray-800 font-semibold">
                                     <?php 
-                                    if (!empty($tanggal_mulai)) {
-                                        echo date('d M Y', strtotime($tanggal_mulai));
+                                    if (isValidDate($tanggal_mulai)) {
+                                        echo formatTanggal($tanggal_mulai);
                                     } else {
                                         echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
                                     }
                                     ?>
                                 </span>
                             </div>
-                            <i class="fas fa-calendar-alt <?php echo !empty($tanggal_mulai) ? 'text-blue-500' : 'text-gray-300'; ?> text-lg"></i>
+                            <i class="fas fa-calendar-alt <?php echo isValidDate($tanggal_mulai) ? 'text-blue-500' : 'text-gray-300'; ?> text-lg"></i>
                         </div>
                         <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
                             <div>
                                 <span class="text-xs text-gray-500 block mb-1">Tanggal Selesai</span>
                                 <span class="text-sm text-gray-800 font-semibold">
                                     <?php 
-                                    if (!empty($tanggal_selesai)) {
-                                        echo date('d M Y', strtotime($tanggal_selesai));
+                                    if (isValidDate($tanggal_selesai)) {
+                                        echo formatTanggal($tanggal_selesai);
                                     } else {
                                         echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
                                     }
                                     ?>
                                 </span>
                             </div>
-                            <i class="fas fa-calendar-check <?php echo !empty($tanggal_selesai) ? 'text-green-500' : 'text-gray-300'; ?> text-lg"></i>
+                            <i class="fas fa-calendar-check <?php echo isValidDate($tanggal_selesai) ? 'text-green-500' : 'text-gray-300'; ?> text-lg"></i>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- 6. Kode MAK -->
             <div class="mb-8 pt-6 border-t border-gray-200">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">6. Kode Mata Anggaran Kegiatan (MAK)</h3>
                 <div class="relative max-w-md">
@@ -397,20 +392,19 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 </div>
             </div>
 
-            <!-- Footer Buttons -->
             <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                 
                 <a href="<?php echo htmlspecialchars($back_url); ?>" 
-                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-0.5">
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-0.5">
                     <i class="fas fa-arrow-left text-xs"></i> Kembali
                 </a>
-                 
+                
                 <div class="flex flex-col sm:flex-row-reverse gap-4 w-full sm:w-auto">
                 
                 <?php if ($is_menunggu): ?>
                     <button type="button" id="btn-setujui-PPK" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg">
-                         <i class="fas fa-check-double"></i> Setujui Usulan
+                        <i class="fas fa-check-double"></i> Setujui Usulan
                     </button>
                 
                 <?php elseif ($is_disetujui): ?>
@@ -432,12 +426,12 @@ function displayValue($value, $placeholder = 'Belum diisi') {
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
-        const formPPK = document.getElementById('form-PPK-approval');
+        const kegiatanId = "<?php echo $id ?? ''; ?>"; 
         
-        // --- Event Listener Tombol Setujui (PPK) ---
+        const formPPK = document.getElementById('form-PPK-approval');
         const btnSetujuiPPK = document.getElementById('btn-setujui-PPK');
+        
         btnSetujuiPPK?.addEventListener('click', (e) => {
             e.preventDefault();
             
@@ -466,18 +460,18 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             didOpen: () => Swal.showLoading() 
                         });
                         
-                        // TODO: Ganti action form untuk PPK Setuju
-                        // formPPK.action = '/docutrack/public/ppk/telaah/approve';
+                        formPPK.action = `/docutrack/public/ppk/telaah/approve/${kegiatanId}`;
+                        
                         formPPK.submit();
                     }
                 });
             } else {
-                // Fallback jika SweetAlert tidak tersedia
                 if (confirm(`Apakah Anda yakin ingin menyetujui usulan "${namaKegiatan}"?`)) {
+                    formPPK.action = `/docutrack/public/ppk/telaah/approve/${kegiatanId}`;
                     formPPK.submit();
                 }
             }
         });
         
-    }); // Akhir DOMContentLoaded
+    });
 </script>

@@ -1,8 +1,7 @@
 <?php
 // File: src/views/pages/admin/rincian_kegiatan.php
 
-$data = $kegiatan_data ?? [];
-$kegiatan_id = $kegiatan_id ?? 1;
+$id = $kegiatan_id?? 1;
 ?>
 
 <main class="main-content font-poppins p-6 md:p-6 -mt-18 max-w-4xl mx-auto w-full relative z-10">
@@ -13,12 +12,12 @@ $kegiatan_id = $kegiatan_id ?? 1;
             <h1 class="text-xl font-semibold text-slate-800 tracking-tight">Lengkapi Rincian</h1>
             <p class="text-sm text-slate-500 mt-2 leading-relaxed">
                 Anda sedang mengisi data untuk kegiatan: <br>
-                <span class="text-blue-600 font-medium text-base"><?php echo htmlspecialchars($nama); ?></span>
+                <!-- <span class="text-blue-600 font-medium text-base"><?php echo htmlspecialchars($namaKeg); ?></span> -->
             </p>
         </div>
         
-        <form id="rincian-kegiatan-form" action="#" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="kegiatan_id" value="<?php echo htmlspecialchars($kegiatan_id); ?>">
+        <form id="rincian-kegiatan-form" action="/docutrack/public/admin/pengajuan-kegiatan/submitRincian" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="kegiatan_id" value="<?php echo htmlspecialchars($id); ?>">
 
             <div class="px-8 py-8 space-y-8">
                 
@@ -105,7 +104,7 @@ $kegiatan_id = $kegiatan_id ?? 1;
                                 </div>
                             </div>
                             
-                            <div id="file-info" class="hidden absolute bottom-3 right-3 left-3 bg-white/95 backdrop-blur rounded-lg border border-emerald-100 p-2.5 flex items-center justify-center gap-2 shadow-md animate-fade-in-up">
+                            <div id="file-info" class="hidden absolute bottom-3 right-3 left-3 bg-white/95 backdrop-blur rounded-lg border border-emerald-100 p-2.5 items-center justify-center gap-2 shadow-md animate-fade-in-up">
                                 <div class="bg-emerald-100 text-emerald-600 rounded-full p-1">
                                     <i class="fas fa-check text-[10px]"></i>
                                 </div>
@@ -147,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = fileInput.files[0].name;
                 fileNameDisplay.textContent = name;
                 fileInfo.classList.remove('hidden');
+                fileInfo.classList.add('flex');
                 dropzone.classList.add('border-emerald-400', 'bg-emerald-50/20');
                 dropzone.classList.remove('border-slate-300', 'bg-slate-50', 'hover:border-blue-400', 'hover:bg-blue-50/50');
                 fileLabelDefault.innerHTML = `<span class="text-emerald-600 font-semibold">File siap diupload</span>`;
@@ -212,21 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }).then((result) => {
                         if (result.dismiss === Swal.DismissReason.timer) {
-                            const Toast = Swal.mixin({
-                                toast: true, position: 'top-end', showConfirmButton: false,
-                                timer: 3000, timerProgressBar: true,
-                                didOpen: (toast) => {
-                                    toast.addEventListener('mouseenter', Swal.stopTimer)
-                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
-                                },
-                                customClass: {
-                                    popup: 'rounded-xl font-poppins border-l-4 border-emerald-500 shadow-lg',
-                                    title: 'text-slate-800 font-semibold'
-                                }
-                            });
-                            Toast.fire({ icon: 'success', title: 'Data Berhasil Disimpan' }).then(() => {
-                                window.location.href = '/docutrack/public/admin/pengajuan-kegiatan'; 
-                            });
+                            form.submit();
                         }
                     });
                 }

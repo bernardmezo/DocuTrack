@@ -3,11 +3,6 @@
 
 if (!isset($list_proposal)) { $list_proposal = []; }
 if (!isset($list_jurusan)) { $list_jurusan = []; }
-
-// --- Helper Function PHP (Optional/Fallback) ---
-function render_proposal_progress($tahap_sekarang, $status) {
-    // Logic sama seperti sebelumnya (bisa dihapus jika full JS render)
-}
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -91,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSearch = '';
     let debounceTimer;
 
-    // Render Progress Bar (Sama seperti sebelumnya)
+    // Render Progress Bar (Sama seperti Wadir)
     function renderProposalProgressJS(tahapSekarang, status) {
         const tahapanAll = ['Pengajuan', 'Verifikasi', 'ACC PPK', 'ACC WD', 'Dana Cair', 'LPJ'];
         
@@ -190,10 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
             delay += 80;
             
             tableBody.insertAdjacentHTML('beforeend', `
-                <div class='monitoring-row grid grid-cols-3 gap-4 px-4 py-5 items-center transition-colors animate-reveal ${rowClass} ${rowStyle}' style="animation-delay: ${delay}ms;">
+                <div class='monitoring-row grid grid-cols-3 gap-4 px-4 py-5 items-center transition-colors animate-reveal ${rowClass}' style="animation-delay: ${delay}ms; ${rowStyle}">
                     <div>
                         <p class="text-sm text-gray-900 font-bold">${item.nama}</p>
-                        <p class="text-xs text-gray-600 mt-1">${item.nama_lengkap} <span class="text-gray-400">(${item.nim})</span></p>
+                        <p class="text-xs text-gray-600 mt-1">${item.pengusul} <span class="text-gray-400">(${item.nim})</span></p>
                         <p class="text-xs text-gray-500 mt-0.5"><i class="fas fa-graduation-cap mr-1"></i>${displayJurusan}</p>
                     </div>
                     <div class="px-2">${renderProposalProgressJS(item.tahap_sekarang, item.status)}</div>

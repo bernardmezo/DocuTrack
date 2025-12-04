@@ -2,39 +2,36 @@
 // File: src/controllers/Super_Admin/BuatikuController.php
 
 require_once '../src/core/Controller.php';
+require_once '../src/model/superAdminModel.php';
 
 class SuperadminBuatikuController extends Controller {
     
-    // --- Data Dummy IKU (Sesuai Gambar) ---
-    private $all_iku = [
-        ['id' => 1, 'nama' => 'Mendapat Pekerjaan', 'deskripsi' => 'Lulusan berhasil mendapat pekerjaan'],
-        ['id' => 2, 'nama' => 'Melanjutkan Studi', 'deskripsi' => 'Lulusan melanjutkan studi ke jenjang lebih tinggi'],
-        ['id' => 3, 'nama' => 'Menjadi Wiraswasta', 'deskripsi' => 'Lulusan membuka usaha sendiri'],
-        ['id' => 4, 'nama' => 'Menjalankan kegiatan pembelajaran di luar program studi', 'deskripsi' => 'Mahasiswa mengambil SKS di luar prodi'],
-        ['id' => 5, 'nama' => 'Dosen berkegiatan di luar kampus', 'deskripsi' => 'Dosen praktisi atau magang industri'],
-        ['id' => 6, 'nama' => 'Praktisi mengajar di dalam kampus', 'deskripsi' => 'Kelas kolaborasi dengan praktisi'],
-        ['id' => 7, 'nama' => 'Hasil kerja dosen digunakan oleh masyarakat', 'deskripsi' => 'Pengabdian masyarakat atau paten'],
-        ['id' => 8, 'nama' => 'Program studi bekerjasama dengan mitra kelas dunia', 'deskripsi' => 'Kerjasama internasional'],
-    ];
+    private $model;
+    
+    public function __construct() {
+        $this->model = new superAdminModel($this->db);
+    }
     
     public function index() { 
         // 1. Ambil Parameter
         $page = (int)($_GET['page'] ?? 1);
         $search_text = strtolower($_GET['search'] ?? '');
-        $per_page = 5; // Sesuai gambar "Showing 1 to 5"
+        $per_page = 5;
 
+        // ✅ AMBIL DATA DARI DATABASE
+        $all_iku = $this->model->getAllIKU();
+        
         // 2. Logika Filter (Search)
-        $filtered_data = array_filter($this->all_iku, function($item) use ($search_text) {
+        $filtered_data = array_filter($all_iku, function($item) use ($search_text) {
             if (empty($search_text)) return true;
             return str_contains(strtolower($item['nama']), $search_text);
         });
 
         // 3. Pagination Logic
-        $filtered_data = array_values($filtered_data); // Reset key
+        $filtered_data = array_values($filtered_data);
         $total_items = count($filtered_data);
         $total_pages = ceil($total_items / $per_page);
         
-        // Prevent page number out of range
         if ($page < 1) $page = 1;
         if ($page > $total_pages && $total_pages > 0) $page = $total_pages;
 
@@ -58,7 +55,73 @@ class SuperadminBuatikuController extends Controller {
             ]
         ];
 
-        // Panggil View
         $this->view('pages/Super_Admin/buat-iku', $data, 'super_admin'); 
+    }
+    
+    /**
+     * Tambah IKU baru
+     */
+    public function create() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /docutrack/public/super_admin/buat-iku');
+            exit;
+        }
+        
+        $nama = trim($_POST['nama'] ?? '');
+        $deskripsi = trim($_POST['deskripsi'] ?? '');
+        
+        if (empty($nama)) {
+            $_SESSION['flash_error'] = 'Nama IKU wajib diisi!';
+            header('Location: /docutrack/public/super_admin/buat-iku');
+            exit;
+        }
+        
+        if ($this->model->createIKU($nama, $deskripsi)) {
+            $_SESSION['flash_message'] = 'IKU berhasil ditambahkan!';
+            $_SESSION['flash_type'] = 'success';
+        } else {
+            $_SESSION['flash_error'] = 'Gagal menambahkan IKU.';
+        }
+        
+        header('Location: /docutrack/public/super_admin/buat-iku');
+        exit;
+    }
+    
+    /**
+     * Edit IKU
+     */
+    public function edit($id) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /docutrack/public/super_admin/buat-iku');
+            exit;
+        }
+        
+        $nama = trim($_POST['nama'] ?? '');
+        $deskripsi = trim($_POST['deskripsi'] ?? '');
+        
+        if ($this->model->updateIKU($id, $nama, $deskripsi)) {
+            $_SESSION['flash_message'] = 'IKU berhasil diupdate!';
+            $_SESSION['flash_type'] = 'success';
+        } else {
+            $_SESSION['flash_error'] = 'Gagal mengupdate IKU.';
+        }
+        
+        header('Location: /docutrack/public/super_admin/buat-iku');
+        exit;
+    }
+    
+    /**
+     * Hapus IKU
+     */
+    public function delete($id) {
+        if ($this->model->deleteIKU($id)) {
+            $_SESSION['flash_message'] = 'IKU berhasil dihapus!';
+            $_SESSION['flash_type'] = 'success';
+        } else {
+            $_SESSION['flash_error'] = 'Gagal menghapus IKU.';
+        }
+        
+        header('Location: /docutrack/public/super_admin/buat-iku');
+        exit;
     }
 }

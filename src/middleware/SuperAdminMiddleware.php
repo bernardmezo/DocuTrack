@@ -1,67 +1,28 @@
 <?php
-// File: src/middleware/SuperAdminMiddleware.php
+// src/middleware/SuperAdminMiddleware.php
 
-class SuperAdminMiddleware
-{
+class SuperAdminMiddleware {
+    
     /**
-     * Memeriksa apakah user yang sedang login memiliki role 'super_admin' atau 'super administrator'
-     * Jika tidak, redirect ke halaman dashboard sesuai role mereka
+     * Memeriksa apakah pengguna memiliki role 'super_admin'.
+     * HARUS dijalankan SETELAH AuthMiddleware::check().
      */
-    public static function check()
-    {
+    public static function check() {
         // Pastikan session sudah dimulai
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-
-        // Cek apakah user sudah login (AuthMiddleware sudah handle ini, tapi double check)
-        if (!isset($_SESSION['user_data'])) {
-            header('Location: /docutrack/public/');
-            exit;
-        }
-
-        // Ambil role user dari session
-        $userRole = strtolower($_SESSION['user_data']['role'] ?? '');
-
-        // Cek apakah role adalah super admin (support berbagai format)
-        $allowedRoles = ['super_admin', 'super administrator', 'superadmin'];
         
-        if (!in_array($userRole, $allowedRoles)) {
-            // Jika bukan super admin, redirect ke dashboard sesuai role mereka
-            self::redirectToDashboard($userRole);
+        // Cek apakah role user ada di session DAN apakah role-nya 'super_admin'
+        if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'super_admin') {
+            // Jika tidak punya akses, tampilkan pesan error
+            http_response_code(403); // Kode status Forbidden
+            echo "Akses Ditolak. Anda tidak memiliki izin untuk mengakses halaman Super Admin.";
+            // Anda bisa juga membuat halaman error 403 yang lebih bagus
+            // require '../src/views/pages/errors/403.php'; 
+            exit; // Hentikan eksekusi script selanjutnya
         }
-
-        // Jika sampai sini, berarti user adalah super admin, boleh lanjut
-    }
-
-    /**
-     * Redirect user ke dashboard sesuai role mereka
-     */
-    private static function redirectToDashboard($role)
-    {
-        $redirectPath = '/docutrack/public/';
-
-        switch ($role) {
-            case 'admin':
-                $redirectPath = '/docutrack/public/admin/dashboard';
-                break;
-            case 'verifikator':
-                $redirectPath = '/docutrack/public/verifikator/dashboard';
-                break;
-            case 'wadir':
-                $redirectPath = '/docutrack/public/wadir/dashboard';
-                break;
-            case 'ppk':
-                $redirectPath = '/docutrack/public/ppk/dashboard';
-                break;
-            case 'bendahara':
-                $redirectPath = '/docutrack/public/bendahara/dashboard';
-                break;
-            default:
-                $redirectPath = '/docutrack/public/';
-        }
-
-        header("Location: $redirectPath");
-        exit;
+        
+        // Jika role sesuai, biarkan script lanjut
     }
 }

@@ -1,131 +1,14 @@
-<link rel="stylesheet" href="/docutrack/public/assets/css/admin/pengajuan_lpj_list.css">
 <?php
 // File: src/views/pages/admin/pengajuan_lpj_list.php
 
-// 1. MOCK DATA (Simulasi Database)
+// Flash messages
+$success_msg = $_SESSION['flash_message'] ?? null;
+$error_msg = $_SESSION['flash_error'] ?? null;
+unset($_SESSION['flash_message'], $_SESSION['flash_error']);
+
+// 1. Ensure data available
 if (!isset($list_lpj)) {
-    $list_lpj = [
-        [
-            'id' => 1,
-            'nama' => 'Seminar Nasional Teknologi AI',
-            'nama_mahasiswa' => 'Budi Santoso',
-            'nim' => '190101001',
-            'prodi' => 'D4 Teknik Informatika',
-            'jurusan' => 'Teknik Informatika dan Komputer',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-16 days')), 
-            'status' => 'Setuju'
-        ],
-        [
-            'id' => 2,
-            'nama' => 'Workshop UI/UX Design 2024',
-            'nama_mahasiswa' => 'Siti Aminah',
-            'nim' => '190101002',
-            'prodi' => 'D4 Teknik Grafika dan Penerbitan',
-            'jurusan' => 'Teknik Grafika dan Penerbitan',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-2 days')),
-            'status' => 'Revisi'
-        ],
-        [
-            'id' => 3,
-            'nama' => 'Lomba Coding Tingkat Kampus',
-            'nama_mahasiswa' => 'Andi Pratama',
-            'nim' => '190101003',
-            'prodi' => 'D4 Sistem Informasi Kota Cerdas',
-            'jurusan' => 'Teknik Informatika dan Komputer',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-5 days')), 
-            'status' => 'Setuju'
-        ],
-        [
-            'id' => 4,
-            'nama' => 'Pentas Seni Mahasiswa',
-            'nama_mahasiswa' => 'Dewi Lestari',
-            'nim' => '190101004',
-            'prodi' => 'D4 Administrasi Bisnis',
-            'jurusan' => 'Administrasi Niaga',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s'), 
-            'status' => 'Menunggu'
-        ],
-        [
-            'id' => 5,
-            'nama' => 'Webinar Keamanan Siber',
-            'nama_mahasiswa' => 'Riko Saputra',
-            'nim' => '190101005',
-            'prodi' => 'D4 Teknik Multimedia dan Jaringan',
-            'jurusan' => 'Teknik Informatika dan Komputer',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-3 days')),
-            'status' => 'Menunggu_Upload'
-        ],
-        [
-            'id' => 6,
-            'nama' => 'Pelatihan Fotografi Produk',
-            'nama_mahasiswa' => 'Kartika Dewi',
-            'nim' => '190101006',
-            'prodi' => 'D3 Desain Grafis',
-            'jurusan' => 'Teknik Grafika dan Penerbitan',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-8 days')),
-            'status' => 'Setuju'
-        ],
-        [
-            'id' => 7,
-            'nama' => 'Workshop Digital Marketing',
-            'nama_mahasiswa' => 'Eko Prasetyo',
-            'nim' => '190101007',
-            'prodi' => 'D3 Administrasi Bisnis',
-            'jurusan' => 'Administrasi Niaga',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-12 days')),
-            'status' => 'Menunggu'
-        ],
-        [
-            'id' => 8,
-            'nama' => 'Lomba Robotika Nasional',
-            'nama_mahasiswa' => 'Fajar Nugraha',
-            'nim' => '190101008',
-            'prodi' => 'D4 Teknik Elektronika',
-            'jurusan' => 'Teknik Elektro',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-6 days')),
-            'status' => 'Revisi'
-        ],
-        [
-            'id' => 9,
-            'nama' => 'Pelatihan Public Speaking',
-            'nama_mahasiswa' => 'Gita Pratiwi',
-            'nim' => '190101009',
-            'prodi' => 'D4 Manajemen Pemasaran',
-            'jurusan' => 'Administrasi Niaga',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-4 days')),
-            'status' => 'Menunggu_Upload'
-        ],
-        [
-            'id' => 10,
-            'nama' => 'Seminar Akuntansi Forensik',
-            'nama_mahasiswa' => 'Rina Sari',
-            'nim' => '190101010',
-            'prodi' => 'D4 Akuntansi Manajerial',
-            'jurusan' => 'Akuntansi',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-10 days')),
-            'status' => 'Setuju'
-        ],
-        [
-            'id' => 11,
-            'nama' => 'Workshop Video Editing',
-            'nama_mahasiswa' => 'Hendra Wijaya',
-            'nim' => '190101011',
-            'prodi' => 'D3 Desain Grafis',
-            'jurusan' => 'Teknik Grafika dan Penerbitan',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-15 days')),
-            'status' => 'Menunggu'
-        ],
-        [
-            'id' => 12,
-            'nama' => 'Kompetisi IoT Innovation',
-            'nama_mahasiswa' => 'Joko Susilo',
-            'nim' => '190101012',
-            'prodi' => 'D4 Teknik Informatika',
-            'jurusan' => 'Teknik Informatika dan Komputer',
-            'tanggal_pengajuan' => date('Y-m-d H:i:s', strtotime('-7 days')),
-            'status' => 'Setuju'
-        ],
-    ];
+    $list_lpj = [];
 }
 
 // Extract unique jurusan for filter
@@ -134,6 +17,24 @@ sort($jurusan_list);
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
+
+    <?php if($success_msg): ?>
+    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+            <p class="text-green-700 font-medium"><?= htmlspecialchars($success_msg) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if($error_msg): ?>
+    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+            <p class="text-red-700 font-medium"><?= htmlspecialchars($error_msg) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <section class="bg-white p-4 md:p-7 rounded-2xl shadow-lg mb-8">
         
@@ -148,12 +49,9 @@ sort($jurusan_list);
                 <div class="relative w-full md:w-auto">
                     <select id="filter-jurusan" style="color: #1f2937;" class="w-full md:min-w-[220px] pl-4 pr-10 py-2.5 text-sm font-medium bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm cursor-pointer appearance-none hover:border-gray-400">
                         <option value="" style="color: #6b7280;">Semua Jurusan</option>
-                        <option value="Teknik Informatika dan Komputer" style="color: #1f2937;">Teknik Informatika dan Komputer</option>
-                        <option value="Teknik Grafika dan Penerbitan" style="color: #1f2937;">Teknik Grafika dan Penerbitan</option>
-                        <option value="Teknik Elektro" style="color: #1f2937;">Teknik Elektro</option>
-                        <option value="Administrasi Niaga" style="color: #1f2937;">Administrasi Niaga</option>
-                        <option value="Akuntansi" style="color: #1f2937;">Akuntansi</option>
-                        <option value="Teknik Mesin" style="color: #1f2937;">Teknik Mesin</option>
+                        <?php foreach ($jurusan_list as $jurusan): ?>
+                            <option value="<?= htmlspecialchars($jurusan) ?>" style="color: #1f2937;"><?= htmlspecialchars($jurusan) ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
                 </div>
@@ -163,6 +61,7 @@ sort($jurusan_list);
                     <select id="filter-status" class="w-full pl-4 pr-10 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm cursor-pointer appearance-none">
                         <option value="">Semua Status</option>
                         <option value="menunggu_upload">Perlu Upload</option>
+                        <option value="siap_submit">Siap Submit</option>
                         <option value="menunggu">Menunggu</option>
                         <option value="revisi">Revisi</option>
                         <option value="setuju">Setuju</option>
@@ -199,45 +98,40 @@ sort($jurusan_list);
                         foreach ($list_lpj as $item): 
                             $status_raw = strtolower($item['status'] ?? 'menunggu');
                             $tgl_pengajuan_ts = strtotime($item['tanggal_pengajuan'] ?? 'now');
+                            $tenggat_lpj = $item['tenggatLpj'] ?? null;
                             
                             // --- LOGIKA TENGGAT WAKTU ---
                             $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 border border-gray-200 text-gray-600"><i class="fas fa-clock"></i><span>Menunggu</span></div>';
 
                             // KHUSUS STATUS MENUNGGU_UPLOAD
                             if ($status_raw === 'menunggu_upload') {
-                                $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 border border-orange-200 text-orange-700"><i class="fas fa-upload"></i><span>Perlu Upload Bukti</span></div>';
-                            }
-                            // HANYA HITUNG JIKA STATUS 'SETUJU'
-                            elseif ($status_raw === 'setuju') {
-                                $tgl_deadline_ts = strtotime('+14 days', $tgl_pengajuan_ts);
-                                
-                                $hari_ini_ts = time();
-                                $diff_seconds = $tgl_deadline_ts - $hari_ini_ts;
-                                $sisa_hari = ceil($diff_seconds / (60 * 60 * 24));
+                                if ($tenggat_lpj) {
+                                    $tenggat_ts = strtotime($tenggat_lpj);
+                                    $hari_ini_ts = time();
+                                    $diff_seconds = $tenggat_ts - $hari_ini_ts;
+                                    $sisa_hari = ceil($diff_seconds / (60 * 60 * 24));
 
-                                if ($sisa_hari < 0) {
-                                    $badge_class = 'bg-red-50 border-red-200 text-red-700';
-                                    $icon = 'fa-exclamation-triangle';
-                                    $text_status = 'Terlewat ' . abs($sisa_hari) . ' hari';
-                                } elseif ($sisa_hari == 0) {
-                                    $badge_class = 'bg-red-50 border-red-200 text-red-700';
-                                    $icon = 'fa-exclamation-circle';
-                                    $text_status = 'Hari Ini!';
-                                } elseif ($sisa_hari <= 3) {
-                                    $badge_class = 'bg-orange-50 border-orange-200 text-orange-700';
-                                    $icon = 'fa-hourglass-end';
-                                    $text_status = 'Sisa ' . $sisa_hari . ' hari';
-                                } elseif ($sisa_hari <= 7) {
-                                    $badge_class = 'bg-blue-50 border-blue-200 text-blue-700';
-                                    $icon = 'fa-hourglass-half';
-                                    $text_status = 'Sisa ' . $sisa_hari . ' hari';
+                                    if ($sisa_hari < 0) {
+                                        $badge_class = 'bg-red-50 border-red-200 text-red-700';
+                                        $icon = 'fa-exclamation-triangle';
+                                        $text_status = 'Terlewat ' . abs($sisa_hari) . ' hari';
+                                    } elseif ($sisa_hari == 0) {
+                                        $badge_class = 'bg-red-50 border-red-200 text-red-700';
+                                        $icon = 'fa-exclamation-circle';
+                                        $text_status = 'Hari Ini!';
+                                    } elseif ($sisa_hari <= 3) {
+                                        $badge_class = 'bg-orange-50 border-orange-200 text-orange-700';
+                                        $icon = 'fa-hourglass-end';
+                                        $text_status = 'Sisa ' . $sisa_hari . ' hari';
+                                    } else {
+                                        $badge_class = 'bg-blue-50 border-blue-200 text-blue-700';
+                                        $icon = 'fa-calendar-day';
+                                        $text_status = 'Sisa ' . $sisa_hari . ' hari';
+                                    }
+                                    $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border '.$badge_class.'"><i class="fas '.$icon.'"></i><span>'.$text_status.'</span></div>';
                                 } else {
-                                    $badge_class = 'bg-green-50 border-green-200 text-green-700';
-                                    $icon = 'fa-calendar-check';
-                                    $text_status = 'Sisa ' . $sisa_hari . ' hari';
+                                    $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 border border-orange-200 text-orange-700"><i class="fas fa-upload"></i><span>Perlu Upload Bukti</span></div>';
                                 }
-
-                                $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border '.$badge_class.'"><i class="fas '.$icon.'"></i><span>'.$text_status.'</span></div>';
                             }
                             // --- END LOGIKA TENGGAT ---
 
@@ -246,7 +140,8 @@ sort($jurusan_list);
                                 'setuju' => 'text-green-600 bg-green-100',
                                 'revisi' => 'text-yellow-600 bg-yellow-100',
                                 'menunggu_upload' => 'text-orange-600 bg-orange-100',
-                                default => 'text-blue-600 bg-blue-100',
+                                'siap_submit' => 'text-blue-600 bg-blue-100',
+                                default => 'text-gray-600 bg-gray-100',
                             };
                             
                             // Status Display Text
@@ -254,6 +149,7 @@ sort($jurusan_list);
                                 'setuju' => 'Disetujui',
                                 'revisi' => 'Revisi',
                                 'menunggu_upload' => 'Perlu Upload',
+                                'siap_submit' => 'Siap Submit',
                                 default => 'Menunggu',
                             };
                     ?>
@@ -293,9 +189,25 @@ sort($jurusan_list);
 
                         <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex gap-2 items-center">
+                                <?php 
+                                $button_text = match ($status_raw) {
+                                    'menunggu_upload' => 'Upload Bukti',
+                                    'siap_submit' => 'Submit LPJ',
+                                    'menunggu' => 'Lihat Status',
+                                    'setuju' => 'Lihat Detail',
+                                    'revisi' => 'Lihat Revisi',
+                                    default => 'Review',
+                                };
+                                $button_color = match ($status_raw) {
+                                    'menunggu_upload' => 'bg-orange-600 hover:bg-orange-700',
+                                    'siap_submit' => 'bg-blue-600 hover:bg-blue-700',
+                                    'setuju' => 'bg-green-600 hover:bg-green-700',
+                                    default => 'bg-gray-600 hover:bg-gray-700',
+                                };
+                                ?>
                                 <a href="/docutrack/public/admin/pengajuan-lpj/show/<?php echo $item['id'] ?? 0; ?>" 
-                                   class="bg-green-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition-colors">
-                                    <?php echo $status_raw === 'menunggu_upload' ? 'Upload Bukti' : 'Review'; ?>
+                                   class="<?php echo $button_color; ?> text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium transition-colors">
+                                    <?php echo $button_text; ?>
                                 </a>
                             </div>
                         </td>

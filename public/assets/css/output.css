@@ -970,6 +970,9 @@
   .w-\[7\%\] {
     width: 7%;
   }
+  .w-\[10\%\] {
+    width: 10%;
+  }
   .w-\[15\%\] {
     width: 15%;
   }
@@ -978,6 +981,11 @@
   }
   .w-\[55\%\] {
     width: 55%;
+  .w-\[25\%\] {
+    width: 25%;
+  }
+  .w-\[30\%\] {
+    width: 30%;
   }
   .w-\[90\%\] {
     width: 90%;
@@ -1142,6 +1150,9 @@
   }
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
+  }
+  .animate-fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
   }
   .animate-fade-out-scale {
     animation: fadeOutScale 0.3s ease-out forwards;
@@ -1782,6 +1793,15 @@
   }
   .bg-orange-100 {
     background-color: var(--color-orange-100);
+  }
+  .bg-primary-dark-green {
+    background-color: var(--color-primary-dark-green);
+  }
+  .bg-primary-dark-green\/70 {
+    background-color: color-mix(in srgb, #033226 70%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-primary-dark-green) 70%, transparent);
+    }
   }
   .bg-purple-50 {
     background-color: var(--color-purple-50);

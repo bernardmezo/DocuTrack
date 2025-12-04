@@ -1,246 +1,70 @@
 <?php
-// File: src/views/pages/PPK/riwayat_verifikasi.php
-
-if (!isset($list_riwayat)) { $list_riwayat = []; }
-if (!isset($jurusan_list)) { $jurusan_list = []; }
+// File: src/views/pages/PPK/riwayat.php
+$list_riwayat = $list_riwayat ?? [];
 ?>
 
-<main class="main-content font-poppins p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
+<main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-[70px] max-w-7xl mx-auto w-full">
 
-    <section id="riwayat-list" class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 flex flex-col">
+    <section class="bg-white p-6 rounded-2xl shadow-lg overflow-hidden mb-8">
         
-        <div class="flex flex-col p-6 border-b border-gray-200 flex-shrink-0 gap-4">
-            <div>
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Persetujuan</h2>
-                <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda setujui.</p>
-            </div>
-            
-            <div class="flex flex-col lg:flex-row gap-3">
-                <div class="relative flex-1">
-                    <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 z-10"></i>
-                    <input type="text" id="search-riwayat-input" placeholder="Cari Nama Kegiatan..."
-                           class="w-full pl-11 pr-4 py-2.5 text-sm text-gray-900 font-medium bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm hover:border-gray-400"
-                           aria-label="Cari Kegiatan">
-                </div>
-                
-                <div class="relative w-full lg:w-80">
-                    <i class="fas fa-graduation-cap absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 pointer-events-none z-10"></i>
-                    <select id="filter-jurusan" 
-                            style="color: #374151 !important;"
-                            class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
-                        <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
-                        <?php foreach ($jurusan_list as $jurusan): ?>
-                            <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" style="color: #374151 !important; font-weight: 600;"><?php echo htmlspecialchars($jurusan); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <i class="fas fa-chevron-down absolute top-1/2 right-4 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
-                </div>
-            </div>
+        <div class="mb-6 pb-5 border-b border-gray-200">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Persetujuan PPK</h2>
+            <p class="text-sm text-gray-500 mt-1">Daftar kegiatan yang telah Anda setujui atau tolak.</p>
         </div>
-        
-        <div class="overflow-x-auto border border-gray-100 rounded-lg">
-            <table class="w-full min-w-[800px]">
-                <thead class="bg-gray-50 sticky top-0 z-10">
+
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[900px]">
+                <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">No</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Kegiatan & Pengusul</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Tgl. Disetujui</th>
-                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Kegiatan</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Pengusul</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Tanggal</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Status Akhir</th>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Aksi</th>
                     </tr>
                 </thead>
-                <tbody id="riwayat-table-body" class="divide-y divide-gray-100">
-                    </tbody>
+                <tbody class="divide-y divide-gray-100">
+                    <?php if (empty($list_riwayat)): ?>
+                        <tr>
+                            <td colspan="6" class="px-6 py-10 text-center text-gray-500 italic">Belum ada riwayat persetujuan.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php 
+                        $no = 1;
+                        foreach ($list_riwayat as $item): 
+                            $status = $item['status'];
+                            $badgeClass = ($status === 'Disetujui') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                            $icon = ($status === 'Disetujui') ? 'fa-check-circle' : 'fa-times-circle';
+                        ?>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm text-gray-700"><?php echo $no++; ?>.</td>
+                            <td class="px-6 py-4 text-sm font-semibold text-gray-900"><?php echo htmlspecialchars($item['nama']); ?></td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <?php echo htmlspecialchars($item['pengusul']); ?>
+                                <div class="text-xs text-gray-400"><?php echo htmlspecialchars($item['prodi']); ?></div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">
+                                <?php echo date('d M Y', strtotime($item['tanggal_pengajuan'])); ?>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium <?php echo $badgeClass; ?>">
+                                    <i class="fas <?php echo $icon; ?>"></i> <?php echo $status; ?>
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <!-- Link ke Detail (Readonly) -->
+                                <a href="/docutrack/public/ppk/telaah/show/<?php echo $item['id']; ?>?ref=riwayat-verifikasi"
+                                   class="text-blue-600 hover:text-blue-800 font-medium">
+                                    Detail
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
             </table>
-        </div>
-
-        <div class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-4">
-            <div id="pagination-info" class="text-sm text-gray-600"></div>
-            <div id="pagination-riwayat" class="flex gap-1"></div>
         </div>
         
     </section>
 </main>
-
-<script>
-    window.riwayatData = <?php echo json_encode(array_values($list_riwayat)); ?>;
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('search-riwayat-input');
-    const filterJurusan = document.getElementById('filter-jurusan');
-    const tableBody = document.getElementById('riwayat-table-body');
-    const paginationContainer = document.getElementById('pagination-riwayat');
-    const paginationInfo = document.getElementById('pagination-info');
-    
-    const allData = window.riwayatData || [];
-    const ITEMS_PER_PAGE = 5;
-    let filteredData = [...allData];
-    let currentPage = 1;
-
-    function applyFilters() {
-        const searchText = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const jurusanFilter = filterJurusan ? filterJurusan.value.toLowerCase() : '';
-        
-        filteredData = allData.filter(item => {
-            const nama = (item.nama || '').toLowerCase();
-            const pengusul = (item.pengusul || '').toLowerCase();
-            // Filter tetap menggunakan 'jurusan' (Induk)
-            const jurusan = (item.jurusan || '').toLowerCase();
-            
-            const searchMatch = !searchText || nama.includes(searchText) || pengusul.includes(searchText);
-            const jurusanMatch = !jurusanFilter || jurusan === jurusanFilter;
-            
-            return searchMatch && jurusanMatch;
-        });
-        
-        currentPage = 1;
-        render();
-    }
-
-    function render() {
-        if (!tableBody) return;
-        
-        const totalItems = filteredData.length;
-        const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const pageData = filteredData.slice(start, end);
-        
-        if (pageData.length === 0) {
-            tableBody.innerHTML = `
-                <tr>
-                    <td colspan="5" class="px-6 py-10 text-center text-gray-500 italic">
-                        ${allData.length === 0 ? 'Tidak ada riwayat persetujuan.' : 'Data tidak ditemukan.'}
-                    </td>
-                </tr>`;
-        } else {
-            tableBody.innerHTML = pageData.map((item, index) => {
-                const no = start + index + 1;
-                const tgl = formatDate(item.tgl_verifikasi);
-                
-                // TAMPILAN KOLOM: PRODI (ANAK)
-                const displayProdi = item.prodi || item.jurusan;
-
-                return `
-                <tr class="bg-white hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-700">${no}.</td>
-                    <td class="px-6 py-5 text-sm">
-                        <div class="flex flex-col">
-                            <span class="font-semibold text-gray-900 mb-1">${escapeHtml(item.nama || '')}</span>
-                            <span class="text-gray-600 text-xs">
-                                ${escapeHtml(item.pengusul || '')}
-                                <span class="text-gray-500">(${escapeHtml(item.nim || '-')})</span>
-                            </span>
-                            <span class="text-gray-500 text-xs mt-0.5">
-                                <i class="fas fa-graduation-cap mr-1"></i>${escapeHtml(displayProdi || '-')}
-                            </span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-calendar-check text-green-500 text-xs"></i>
-                            ${tgl}
-                        </div>
-                    </td>
-                    <td class="px-6 py-5 whitespace-nowrap text-xs font-semibold">
-                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-green-700 bg-green-100">
-                            <i class="fas fa-check-circle"></i>
-                            ${escapeHtml(item.status || 'Disetujui')}
-                        </span>
-                    </td>
-                    <td class="px-6 py-5 whitespace-nowrap text-sm font-medium">
-                        <a href="/docutrack/public/ppk/telaah/show/${item.id}?ref=riwayat-verifikasi" 
-                           class="bg-blue-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
-                           <i class="fas fa-eye"></i>
-                           Detail
-                        </a>
-                    </td>
-                </tr>`;
-            }).join('');
-        }
-        
-        if (paginationInfo) {
-            const showingFrom = totalItems > 0 ? start + 1 : 0;
-            const showingTo = totalItems > 0 ? Math.min(end, totalItems) : 0;
-            paginationInfo.innerHTML = `Menampilkan <span class="font-semibold">${showingFrom}</span> s.d. <span class="font-semibold">${showingTo}</span> dari <span class="font-semibold">${totalItems}</span> hasil`;
-        }
-        
-        renderPagination(totalPages);
-    }
-
-    function renderPagination(totalPages) {
-        if (!paginationContainer) return;
-        
-        if (totalPages <= 1) {
-            paginationContainer.innerHTML = '';
-            return;
-        }
-        
-        let html = '';
-        
-        const prevDisabled = currentPage === 1;
-        html += `<button class="pagination-btn px-3 py-1.5 rounded-md text-sm font-medium transition-colors 
-            ${prevDisabled ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
-            data-page="${currentPage - 1}" ${prevDisabled ? 'disabled' : ''}>
-            <i class="fas fa-chevron-left"></i>
-        </button>`;
-        
-        for (let i = 1; i <= totalPages; i++) {
-            const isActive = i === currentPage;
-            html += `<button class="pagination-btn px-3 py-1.5 rounded-md text-sm font-medium transition-colors 
-                ${isActive ? 'bg-blue-600 text-white' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
-                data-page="${i}">${i}</button>`;
-        }
-        
-        const nextDisabled = currentPage === totalPages;
-        html += `<button class="pagination-btn px-3 py-1.5 rounded-md text-sm font-medium transition-colors 
-            ${nextDisabled ? 'text-gray-400 cursor-not-allowed bg-gray-100' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}" 
-            data-page="${currentPage + 1}" ${nextDisabled ? 'disabled' : ''}>
-            <i class="fas fa-chevron-right"></i>
-        </button>`;
-        
-        paginationContainer.innerHTML = html;
-    }
-
-    function formatDate(dateStr) {
-        if (!dateStr) return '-';
-        try {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-        } catch (e) {
-            return dateStr;
-        }
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
-    let debounceTimer;
-    searchInput?.addEventListener('input', function() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(applyFilters, 300);
-    });
-
-    filterJurusan?.addEventListener('change', applyFilters);
-    
-    paginationContainer?.addEventListener('click', function(e) {
-        const btn = e.target.closest('.pagination-btn');
-        if (btn && !btn.disabled) {
-            const page = parseInt(btn.dataset.page);
-            if (page >= 1 && page !== currentPage) {
-                currentPage = page;
-                render();
-                tableBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }
-    });
-    
-    render();
-});
-</script>

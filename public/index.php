@@ -1,41 +1,20 @@
 <?php
-// public/index.php
-// =================================================================
-// FRONT CONTROLLER (ROUTER)
-// =================================================================
+require_once __DIR__ . '/../src/bootstrap.php';
 
-// 1. Mulai Session
-// Wajib ada di baris paling atas untuk menangani login
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
+require_once __DIR__ . '/../src/middleware/RegisterMiddleware.php';
+require_once __DIR__ . '/../src/middleware/AdminMiddleware.php';
+require_once __DIR__ . '/../src/middleware/VerifikatorMiddleware.php';
+require_once __DIR__ . '/../src/middleware/WadirMiddleware.php';
+require_once __DIR__ . '/../src/middleware/PpkMiddleware.php';
+require_once __DIR__ . '/../src/middleware/BendaharaMiddleware.php';
+require_once __DIR__ . '/../src/middleware/SuperAdminMiddleware.php';
 
-// 2. Muat File Inti & Middleware
-// -----------------------------------------------------------------
-require_once '../src/core/Controller.php'; // Base Controller
-// Muat semua middleware di awal
-require_once '../src/middleware/AuthMiddleware.php';
-require_once '../src/middleware/RegisterMiddleware.php';
-require_once '../src/middleware/AdminMiddleware.php';
-require_once '../src/middleware/VerifikatorMiddleware.php';
-require_once '../src/middleware/WadirMiddleware.php';
-require_once '../src/middleware/PpkMiddleware.php';
-require_once '../src/middleware/BendaharaMiddleware.php';
-// -----------------------------------------------------------------
-
-
-// 3. Fungsi Helper Routing
-// -----------------------------------------------------------------
-/**
- * Membersihkan URL request agar routing berfungsi baik di subfolder (XAMPP)
- * maupun di root domain. Menghapus base path dan query string.
- * @return string Path request yang bersih (e.g., '/', '/admin/dashboard').
- */
 function get_request_path() {
-    $request_uri = $_SERVER['REQUEST_URI']; // cth: /docutrack/public/admin/dashboard?id=1
-    $script_name = $_SERVER['SCRIPT_NAME']; // cth: /docutrack/public/index.php
+    $request_uri = $_SERVER['REQUEST_URI'];
+    $script_name = $_SERVER['SCRIPT_NAME'];
 
-    $base_path = dirname($script_name); // cth: /docutrack/public
+    $base_path = dirname($script_name);
     
     if ($base_path === '/' || $base_path === '\\') {
         $base_path = '';
@@ -43,91 +22,66 @@ function get_request_path() {
 
     $request_path = $request_uri;
     if ($base_path && strpos($request_uri, $base_path) === 0) {
-        $request_path = substr($request_uri, strlen($base_path)); // cth: /admin/dashboard?id=1
+        $request_path = substr($request_uri, strlen($base_path));
     }
     
-    $request_path = parse_url($request_path, PHP_URL_PATH); // cth: /admin/dashboard
+    $request_path = parse_url($request_path, PHP_URL_PATH);
 
     if (empty($request_path) || $request_path === '/index.php') {
         $request_path = '/';
     }
     
+    $request_path = strtolower($request_path);
+
     return $request_path;
 }
 
-/**
- * Fungsi untuk menampilkan halaman 404 Not Found.
- * @param string $message Pesan error yang akan ditampilkan.
- */
-function not_found($message = "Halaman tidak ditemukan.") {
+function not_found($message = "Page not found.") {
     http_response_code(404);
-    // Anda bisa memuat view 404 yang lebih bagus jika ada
-    // require '../src/views/pages/errors/404.php';
     echo "<h2>404 Not Found</h2>";
     echo "<p>" . htmlspecialchars($message) . "</p>";
-    exit; // Hentikan eksekusi
+    exit;
 }
-// -----------------------------------------------------------------
 
-
-// 4. Proses Routing Utama
-// -----------------------------------------------------------------
-$path = get_request_path(); // Dapatkan path bersih (e.g., '/admin/dashboard')
+$path = get_request_path();
 
 $parts = explode('/', trim($path, '/'));
 
-$main_route = $parts[0] ?? '';   // 'admin', 'wadir', '', 'login', dll.
-$sub_route  = $parts[1] ?? 'index'; // 'dashboard', 'users', 'index' (default)
-$param1     = $parts[2] ?? null;  // Parameter tambahan 1 (e.g., 'show', ID)
-$param2     = $parts[3] ?? null;  // Parameter tambahan 2 (e.g., ID)
+$main_route = $parts[0] ?? '';
+$sub_route  = $parts[1] ?? 'index';
+$param1     = $parts[2] ?? null;
+$param2     = $parts[3] ?? null;
 
+$db = db();
 
-// Gunakan switch untuk menentukan controller berdasarkan segmen utama
 switch ($main_route) {
 
-    // --- Rute Landing Page (Publik) ---
-    case '': // Jika path hanya '/'
+    case '':
         require_once '../src/controllers/HomeController.php';
-        $controller = new HomeController();
+        $controller = new HomeController($db);
         $controller->index();
         break;
 
-    // --- Rute Login/Logout (Publik) ---
     case 'login':
         require_once '../src/controllers/AuthController.php';
-        $controller = new AuthController();
+        $controller = new AuthController($db);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $controller->handleLogin();
         } else {
-            // Jika akses GET ke /login, redirect ke home (karena pakai popup)
             header('Location: /docutrack/public/');
             exit;
         }
         break;
     
-    case 'register':
-        
-        require_once '../src/controllers/AuthController.php';
-        $controller = new AuthController();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $controller->handleRegister();
-        } else {
-            // Jika akses GET ke /login, redirect ke home (karena pakai popup)
-            header('Location: /docutrack/public/');
-            exit;
-        }
-        break;
-
     case 'logout':
         require_once '../src/controllers/AuthController.php';
-        $controller = new AuthController();
+        $controller = new AuthController($db);
         $controller->logout();
         break;
 
-    // --- Rute ADMIN (Dilindungi Middleware) ---
     case 'admin':
-        AuthMiddleware::check();  // 1. Pastikan sudah login
-        AdminMiddleware::check(); // 2. Pastikan role adalah 'admin'
+        AuthMiddleware::check();
+        AdminMiddleware::check();
         
         $base_admin_path = '/admin';
         
@@ -135,82 +89,78 @@ switch ($main_route) {
             case 'index': 
             case 'dashboard': 
                 require_once '../src/controllers/Admin/DashboardController.php';
-                $controller = new AdminDashboardController(); 
+                $controller = new AdminDashboardController($db); 
                 $controller->index(['active_page' => $base_admin_path . '/dashboard']);
                 break;
 
-            // ============================================
-            // RUTE AKUN SAYA - ADMIN
-            // ============================================
             case 'akun':
                 require_once '../src/controllers/Admin/AkunController.php';
-                $controller = new AdminAkunController();
+                $controller = new AdminAkunController($db);
                 
                 if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                    // Route: POST /admin/akun/update
                     $controller->update();
                 } else {
-                    // Route: GET /admin/akun
                     $controller->index(['active_page' => $base_admin_path . '/akun']);
                 }
                 break;
-            // ============================================
 
             case 'detail-kak':
-            require_once '../src/controllers/Admin/DetailKAK.php';
-            $controller = new AdminDetailKAKController(); 
-            
-            if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                // Route: /admin/detail-kak/show/123
-                $controller->show($param2, ['active_page' => $base_admin_path . '/dashboard']);
-            } else {
-                // Redirect ke dashboard jika akses tanpa ID
-                header('Location: /docutrack/public/admin/dashboard');
-                exit;
-            }
-            break;
+                require_once '../src/controllers/Admin/DetailKAK.php';
+                $controller = new AdminDetailKAKController($db); 
+                
+                if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                    $controller->show($param2, ['active_page' => $base_admin_path . '/dashboard']);
+                } else {
+                    header('Location: /docutrack/public/admin/dashboard');
+                    exit;
+                }
+                break;
 
             case 'pengajuan-usulan':
                 require_once '../src/controllers/Admin/PengajuanUsulanController.php';
-                $controller = new AdminPengajuanUsulanController(); 
-                $controller->index(['active_page' => $base_admin_path . '/pengajuan-usulan']);
+                $controller = new AdminPengajuanUsulanController($db); 
+
+                if (isset($param1) && $param1 === 'store') {
+                    $controller->store(); 
+                } else {
+                    $controller->index(['active_page' => $base_admin_path . '/pengajuan-usulan']);
+                }
                 break;
 
             case 'pengajuan-kegiatan':
+                if (isset($param1) && $param1 === 'submitRincian') {
+                    require_once '../src/controllers/Admin/AdminController.php';
+                    $controller = new Controllers\Admin\AdminController($db);
+                    $controller->submitRincian();
+                    break;
+                }
+
                 require_once '../src/controllers/Admin/PengajuanKegiatanController.php';
-                $controller = new AdminPengajuanKegiatanController(); 
-                
-                // Cek apakah ini rute 'show' (e.g., /admin/pengajuan-kegiatan/show/123)
+                $controller = new AdminPengajuanKegiatanController($db); 
+
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    // Panggil method show() dengan ID
                     $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
                 } else {
-                    // Jika tidak, panggil method index() (halaman list)
                     $controller->index(['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
                 }
                 break;
 
             case 'pengajuan-lpj':
                 require_once '../src/controllers/Admin/AdminPengajuanLpjController.php';
-                $controller = new AdminPengajuanLpjController(); 
+                $controller = new AdminPengajuanLpjController($db); 
                 
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    // Rute: /admin/pengajuan-lpj/show/[ID]
                     $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-lpj']);
                 } else {
-                    // Rute: /admin/pengajuan-lpj
                     $controller->index(['active_page' => $base_admin_path . '/pengajuan-lpj']);
                 }
                 break;
-            
-            
 
             default:
-                not_found("Halaman Admin '/{$sub_route}' tidak ditemukan.");
+                not_found("Page Admin '/{$sub_route}' not found.");
         }
-        break; // Akhir dari case 'admin'
-        
-    // --- Rute VERIFIKATOR (Dilindungi Middleware) ---
+        break;
+
     case 'verifikator':
         AuthMiddleware::check();
         VerifikatorMiddleware::check();
@@ -221,16 +171,13 @@ switch ($main_route) {
             case 'index': 
             case 'dashboard': 
                 require_once '../src/controllers/Verifikator/DashboardController.php';
-                $controller = new VerifikatorDashboardController(); 
+                $controller = new VerifikatorDashboardController($db); 
                 $controller->index(['active_page' => $base_verifikator_path . '/dashboard']);
                 break;
 
-            // ============================================
-            // RUTE AKUN SAYA - VERIFIKATOR
-            // ============================================
             case 'akun':
                 require_once '../src/controllers/Verifikator/AkunController.php';
-                $controller = new VerifikatorAkunController();
+                $controller = new VerifikatorAkunController($db);
                 
                 if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $controller->update();
@@ -238,44 +185,45 @@ switch ($main_route) {
                     $controller->index(['active_page' => $base_verifikator_path . '/akun']);
                 }
                 break;
-            // ============================================
 
-            // --- RUTE UNTUK HALAMAN TELAAN BARU ---
             case 'pengajuan-telaah':
                 require_once '../src/controllers/Verifikator/TelaahController.php';
-                $controller = new VerifikatorTelaahController();
-                // Rute: /verifikator/pengajuan-telaah (List)
+                $controller = new VerifikatorTelaahController($db);
                 $controller->index(['active_page' => $base_verifikator_path . '/pengajuan-telaah']);
                 break;
                 
             case 'telaah': 
                 require_once '../src/controllers/Verifikator/TelaahController.php';
-                $controller = new VerifikatorTelaahController();
+                $controller = new VerifikatorTelaahController($db);
                 
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    // Rute: /verifikator/telaah/show/[ID]
                     $controller->show($param2, ['active_page' => $base_verifikator_path . '/pengajuan-telaah']);
-                } else {
-                    // Fallback jika hanya /verifikator/telaah
-                    $controller->index(['active_page' => $base_verifikator_path . '/pengajuan-telaah']);
-                }
-                break;
-            // --- AKHIR RUTE TELAAN ---
+                    
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    $controller->approve($param2);
 
-            // --- RUTE BARU RIWAYAT ---
+                } elseif (isset($param1) && $param1 === 'reject' && isset($param2)) {
+                    $controller->reject($param2);
+
+                } elseif (isset($param1) && $param1 === 'revise' && isset($param2)) {
+                    $controller->revise($param2);
+
+                } else {
+                    $controller->index(['active_page' => $base_verifikator_path . '/pengajuan-telaah']);
+                }   
+                break;
+
             case 'riwayat-verifikasi':
-                // GANTI NAMA FILE DI SINI:
                 require_once '../src/controllers/Verifikator/RiwayatController.php';
-                $controller = new VerifikatorRiwayatController(); // Nama class juga harus cocok
+                $controller = new VerifikatorRiwayatController($db);
                 $controller->index(['active_page' => $base_verifikator_path . '/riwayat-verifikasi']);
                 break;
 
             default:
-                not_found("Halaman Verifikator '/{$sub_route}' tidak ditemukan.");
+                not_found("Page Verifikator '/{$sub_route}' not found.");
         }
-        break; // Akhir dari case 'verifikator'
+        break;
 
-    // --- Rute WADIR (Dilindungi Middleware) ---
     case 'wadir':
         AuthMiddleware::check();
         WadirMiddleware::check();
@@ -286,16 +234,13 @@ switch ($main_route) {
             case 'index': 
             case 'dashboard': 
                 require_once '../src/controllers/Wadir/DashboardController.php';
-                $controller = new WadirDashboardController(); 
+                $controller = new WadirDashboardController($db); 
                 $controller->index(['active_page' => $base_wadir_path . '/dashboard']);
                 break;
 
-            // ============================================
-            // RUTE AKUN SAYA - WADIR
-            // ============================================
             case 'akun':
                 require_once '../src/controllers/Wadir/AkunController.php';
-                $controller = new WadirAkunController();
+                $controller = new WadirAkunController($db);
                 
                 if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $controller->update();
@@ -303,19 +248,20 @@ switch ($main_route) {
                     $controller->index(['active_page' => $base_wadir_path . '/akun']);
                 }
                 break;
-            // ============================================
 
             case 'pengajuan-kegiatan':
                 require_once '../src/controllers/Wadir/PengajuanKegiatanController.php';
-                $controller = new WadirPengajuanKegiatanController();
+                $controller = new WadirPengajuanKegiatanController($db);
                 $controller->index(['active_page' => $base_wadir_path . '/pengajuan-kegiatan']);
                 break;
                 
             case 'telaah': 
                 require_once '../src/controllers/Wadir/TelaahController.php';
-                $controller = new WadirTelaahController();
+                $controller = new WadirTelaahController($db);
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
                     $controller->show($param2, ['active_page' => $base_wadir_path . '/pengajuan-kegiatan']);
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    $controller->approve($param2);
                 } else {
                     header('Location: /docutrack/public/wadir/dashboard');
                 }
@@ -323,32 +269,29 @@ switch ($main_route) {
             
             case 'monitoring':
                 require_once '../src/controllers/Wadir/MonitoringController.php';
-                $controller = new WadirMonitoringController();
+                $controller = new WadirMonitoringController($db);
                 
                 if (isset($param1) && $param1 === 'data') {
-                    // Rute API: /wadir/monitoring/data
                     $controller->getData();
                 } else {
-                    // Rute Halaman: /wadir/monitoring
                     $controller->index(['active_page' => $base_wadir_path . '/monitoring']);
                 }
                 break;
 
             case 'riwayat-verifikasi':
                 require_once '../src/controllers/Wadir/RiwayatController.php';
-                $controller = new WadirRiwayatController();
+                $controller = new WadirRiwayatController($db);
                 $controller->index(['active_page' => $base_wadir_path . '/riwayat-verifikasi']);
                 break;
 
             default:
-                not_found("Halaman Wadir '/{$sub_route}' tidak ditemukan.");
+                not_found("Page Wadir '/{$sub_route}' not found.");
         }
         break;
 
-    // --- Rute PPK (BARU) ---
     case 'ppk':
         AuthMiddleware::check();
-        PPKMiddleware::check(); // <-- Pastikan Anda membuat Middleware ini
+        PpkMiddleware::check();
         
         $base_ppk_path = '/ppk';
         
@@ -356,16 +299,13 @@ switch ($main_route) {
             case 'index': 
             case 'dashboard': 
                 require_once '../src/controllers/PPK/DashboardController.php';
-                $controller = new PPKDashboardController(); 
+                $controller = new PPKDashboardController($db); 
                 $controller->index(['active_page' => $base_ppk_path . '/dashboard']);
                 break;
 
-            // ============================================
-            // RUTE AKUN SAYA - PPK
-            // ============================================
             case 'akun':
                 require_once '../src/controllers/PPK/AkunController.php';
-                $controller = new PPKAkunController();
+                $controller = new PPKAkunController($db);
                 
                 if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $controller->update();
@@ -373,68 +313,67 @@ switch ($main_route) {
                     $controller->index(['active_page' => $base_ppk_path . '/akun']);
                 }
                 break;
-            // ============================================
 
             case 'pengajuan-kegiatan':
                 require_once '../src/controllers/PPK/PengajuanKegiatanController.php';
-                $controller = new PPKPengajuanKegiatanController();
+                $controller = new PPKPengajuanKegiatanController($db);
                 $controller->index(['active_page' => $base_ppk_path . '/pengajuan-kegiatan']);
                 break;
 
             case 'monitoring':
                 require_once '../src/controllers/PPK/MonitoringController.php';
-                $controller = new PPKMonitoringController();
+                $controller = new PPKMonitoringController($db);
                 if (isset($param1) && $param1 === 'data') {
-                    $controller->getData(); // Rute API
+                    $controller->getData();
                 } else {
-                    $controller->index(['active_page' => $base_ppk_path . '/monitoring']); // Rute Halaman
+                    $controller->index(['active_page' => $base_ppk_path . '/monitoring']);
                 }
                 break;
 
             case 'riwayat-verifikasi':
                 require_once '../src/controllers/PPK/RiwayatController.php';
-                $controller = new PPKRiwayatController();
+                $controller = new PPKRiwayatController($db);
                 $controller->index(['active_page' => $base_ppk_path . '/riwayat-verifikasi']);
                 break;
                 
             case 'telaah': 
                 require_once '../src/controllers/PPK/TelaahController.php';
-                $controller = new PPKTelaahController();
+                $controller = new PPKTelaahController($db);
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
                     $ref = $_GET['ref'] ?? 'dashboard';
                     $active_page = $base_ppk_path . '/' . $ref;
                     $controller->show($param2, ['active_page' => $active_page]);
+
+                } elseif (isset($param1) && $param1 === 'approve' && isset($param2)) {
+                    $controller->approve($param2); 
+
                 } else {
-                    header('Location: /docutrack/public/ppk/dashboard'); // Fallback
+                    header('Location: /docutrack/public/ppk/dashboard');
                 }
                 break;
             
-            default:
-                not_found("Halaman PPK '/{$sub_route}' tidak ditemukan.");
+default:
+                not_found("Page PPK '/{$sub_route}' not found.");
         }
         break;
 
-    // --- Rute BENDAHARA ---
     case 'bendahara':
-    // AuthMiddleware::check();      // Uncomment jika middleware sudah aktif
-    // BendaharaMiddleware::check(); // Uncomment jika middleware sudah aktif
-    
-    $base_bendahara_path = '/bendahara';
+        AuthMiddleware::check();
+        BendaharaMiddleware::check();
+        
+        $base_bendahara_path = '/bendahara';
     
     switch ($sub_route) {
         case 'index': 
         case 'dashboard': 
             require_once '../src/controllers/Bendahara/DashboardController.php';
-            $controller = new BendaharaDashboardController(); 
+            $controller = new BendaharaDashboardController($db); 
             $controller->index(['active_page' => $base_bendahara_path . '/dashboard']);
             break;
 
-        // ============================================
-        // RUTE AKUN SAYA - BENDAHARA
-        // ============================================
         case 'akun':
             require_once '../src/controllers/Bendahara/AkunController.php';
-            $controller = new BendaharaAkunController();
+            $controller = new BendaharaAkunController($db);
             
             if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $controller->update();
@@ -442,15 +381,12 @@ switch ($main_route) {
                 $controller->index(['active_page' => $base_bendahara_path . '/akun']);
             }
             break;
-        // ============================================
 
         case 'pencairan-dana': 
             require_once '../src/controllers/Bendahara/PencairandanaController.php';
-            $controller = new BendaharaPencairandanaController();
+            $controller = new BendaharaPencairandanaController($db);
             
             if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                // Route: /bendahara/pencairan-dana/show/101?ref=dashboard ATAU ?ref=pencairan-dana
-                // Ambil ref dari query string untuk tentukan active_page
                 $ref = $_GET['ref'] ?? 'pencairan-dana';
                 
                 if ($ref === 'dashboard') {
@@ -461,85 +397,84 @@ switch ($main_route) {
                 
                 $controller->show($param2, ['active_page' => $active_page]);
             } elseif (isset($param1) && $param1 === 'proses') {
-                // Route: /bendahara/pencairan-dana/proses (POST)
                 $controller->proses();
             } else {
-                // Route: /bendahara/pencairan-dana (list)
                 $controller->index(['active_page' => $base_bendahara_path . '/pencairan-dana']);
             }
             break;
 
         case 'pengajuan-lpj': 
             require_once '../src/controllers/Bendahara/PengajuanlpjController.php';
-            $controller = new BendaharaPengajuanlpjController();
+            $controller = new BendaharaPengajuanlpjController($db);
             
             if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                // Route: /bendahara/pengajuan-lpj/show/201?ref=lpj
                 $controller->show($param2, ['active_page' => $base_bendahara_path . '/pengajuan-lpj']);
             } elseif (isset($param1) && $param1 === 'proses') {
-                // Route: /bendahara/pengajuan-lpj/proses (POST)
                 $controller->proses();
             } else {
-                // Route: /bendahara/pengajuan-lpj (list)
                 $controller->index(['active_page' => $base_bendahara_path . '/pengajuan-lpj']);
             }
             break;
         
         case 'riwayat-verifikasi': 
             require_once '../src/controllers/Bendahara/RiwayatverifikasiController.php';
-            $controller = new BendaharaRiwayatverifikasiController(); 
-            $controller->index(['active_page' => $base_bendahara_path . '/riwayat-verifikasi']);
+            $controller = new BendaharaRiwayatverifikasiController($db);
+            
+            if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                $controller->show($param2, ['active_page' => $base_bendahara_path . '/riwayat-verifikasi']);
+            } else {
+                $controller->index(['active_page' => $base_bendahara_path . '/riwayat-verifikasi']);
+            }
             break;
         
-        default:
-            not_found("Halaman Bendahara tidak ditemukan.");
+default:
+            not_found("Page Bendahara not found.");
     }
     break;
 
     case 'super_admin':
-    AuthMiddleware::check(); // ✅ Aktifkan
-    // SuperAdminMiddleware::check(); // Opsional jika sudah dibuat
-    
-    $base_super_admin_path = '/super_admin';
-    
-    switch ($sub_route) {
-        case 'index': 
-        case 'dashboard': 
-            require_once '../src/controllers/Super_Admin/DashboardController.php';
-            $controller = new SuperadminDashboardController(); 
-            $controller->index(['active_page' => $base_super_admin_path . '/dashboard']);
-            break;
+        AuthMiddleware::check();
+        SuperAdminMiddleware::check();
+        
+        $base_super_admin_path = '/super_admin';
+        
+        switch ($sub_route) {
+            case 'index': 
+            case 'dashboard': 
+                require_once '../src/controllers/Super_Admin/DashboardController.php';
+                $controller = new SuperadminDashboardController($db); 
+                $controller->index();
+                break;
 
-        case 'akun':
-            require_once '../src/controllers/Super_Admin/AkunController.php';
-            $controller = new SuperadminAkunController();
-            
-            if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                $controller->update();
-            } else {
-                $controller->index(['active_page' => $base_super_admin_path . '/akun']);
-            }
-            break;
-            // ============================================
+            case 'akun':
+                require_once '../src/controllers/Super_Admin/AkunController.php';
+                $controller = new SuperAdminAkunController($db);
+                
+                if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $controller->update();
+                } else {
+                    $controller->index(['active_page' => $base_super_admin_path . '/akun']);
+                }
+                break;
 
             case 'kelola-akun': 
                 require_once '../src/controllers/Super_Admin/KelolaakunController.php';
-                $controller = new SuperadminKelolaakunController(); 
+                $controller = new SuperadminKelolaakunController($db); 
                 $controller->index();
                 break;
             case 'monitoring': 
                 require_once '../src/controllers/Super_Admin/MonitoringController.php';
-                $controller = new SuperadminMonitoringController(); 
+                $controller = new SuperadminMonitoringController($db); 
                 $controller->index();
                 break;
             case 'buat-iku': 
                 require_once '../src/controllers/Super_Admin/BuatikuController.php';
-                $controller = new SuperadminBuatikuController(); 
+                $controller = new SuperadminBuatikuController($db); 
                 $controller->index();
                 break;
 
             default:
-                not_found("Halaman Super Admin tidak ditemukan.");
+                not_found("Page Super Admin not found.");
         }
         break; 
 
@@ -584,4 +519,3 @@ switch ($main_route) {
     default:
         not_found("Rute utama '/{$main_route}' tidak valid.");
 }
-// -----------------------------------------------------------------

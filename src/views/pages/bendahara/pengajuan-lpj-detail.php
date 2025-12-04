@@ -18,20 +18,28 @@ if (!function_exists('formatRupiah')) {
     function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
 }
 
-if (!function_exists('showCommentIcon')) {
-    function showCommentIcon($field_name, $komentar_existing, $is_revisi, $is_telah_direvisi) {
-        if (($is_revisi || $is_telah_direvisi) && !empty($komentar_existing)) {
-            $comment = htmlspecialchars($komentar_existing);
-            echo "<span class='comment-icon-wrapper relative inline-flex items-center ml-2 group'>";
-            echo "<span class='comment-icon flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 border-2 border-yellow-400 cursor-pointer transition-all duration-300 hover:bg-yellow-200 hover:scale-110 hover:shadow-lg hover:shadow-yellow-200'>";
-            echo "<i class='fas fa-comment-dots text-yellow-600 text-sm group-hover:animate-pulse'></i>";
-            echo "</span>";
-            echo "<span class='comment-tooltip invisible group-hover:visible opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl transition-all duration-300 transform group-hover:translate-y-0 translate-y-2 z-50'>";
-            echo "<span class='flex items-center gap-2 text-yellow-400 font-semibold mb-1'><i class='fas fa-exclamation-circle'></i> Catatan Revisi</span>";
-            echo "<span class='block text-gray-200 leading-relaxed'>{$comment}</span>";
-            echo "<span class='absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-gray-900'></span>";
-            echo "</span>";
-            echo "</span>";
+/**
+ * Helper render comment box RAB (mirip telaah_detail::render_comment_box)
+ * - Ditampilkan hanya saat status MENUNGGU atau TELAH_DIREVISI (verifikator masih bisa minta revisi)
+ * - Disembunyikan saat status REVISI (lagi dikerjakan admin) atau DISETUJUI
+ */
+if (!function_exists('render_comment_box_rab_lpj')) {
+    function render_comment_box_rab_lpj($field_name, $is_menunggu_status, $is_telah_direvisi_status) {
+        if ($is_menunggu_status || $is_telah_direvisi_status) {
+            ?>
+            <div id="comment-box-<?= htmlspecialchars($field_name) ?>"
+                 class="comment-box mt-2 animate-reveal">
+                <label for="comment-<?= htmlspecialchars($field_name) ?>"
+                       class="text-xs font-semibold text-yellow-800">
+                    Catatan Revisi untuk bagian ini:
+                </label>
+                <textarea id="comment-<?= htmlspecialchars($field_name) ?>"
+                          name="komentar[<?= htmlspecialchars($field_name) ?>]"
+                          rows="3"
+                          class="mt-1 block w-full text-sm text-gray-800 bg-yellow-50 rounded-lg border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 py-2.5 leading-relaxed resize-none"
+                          placeholder="Tulis catatan revisi di sini..."><?= htmlspecialchars($_POST['komentar'][$field_name] ?? '') ?></textarea>
+            </div>
+            <?php
         }
     }
 }
@@ -128,6 +136,9 @@ if (!function_exists('showCommentIcon')) {
                         foreach ($rab_items as $kategori => $items): 
                             if (empty($items)) continue;
                             $subtotal_plan = 0;
+
+                            // key komentar per-kategori (misal: rab_belanja_hadiah)
+                            $rab_comment_key = 'rab_' . strtolower(str_replace(' ', '_', $kategori));
                 ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?= htmlspecialchars($kategori) ?></h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
@@ -143,9 +154,7 @@ if (!function_exists('showCommentIcon')) {
                                     <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga (Rp)</th>
                                     <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th>
-                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 250px;">
-                                        <?= ($is_revisi || $is_disetujui) ? 'Komentar' : 'Komentar Verifikasi' ?>
-                                    </th>
+                                    <!-- Kolom komentar verifikasi DIHAPUS, diganti comment box di bawah -->
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -205,32 +214,26 @@ if (!function_exists('showCommentIcon')) {
                                             <span class="text-xs text-gray-400 italic">-</span>
                                         <?php endif; ?>
                                     </td>
-                                    
-                                    <td class="px-3 py-3" style="width: 250px;">
-                                        <?php if ($is_revisi || $is_disetujui): ?>
-                                            <!-- Mode View Only: Komentar sudah ditampilkan di tooltip, kolom ini kosong atau tanda "-" -->
-                                            <div class="text-xs text-gray-400 italic text-center">
-                                                <?= $has_existing_comment ? 'Lihat ikon' : '-' ?>
-                                            </div>
-                                        <?php else: ?>
-                                            <!-- Mode Edit: Textarea untuk input komentar baru -->
-                                            <textarea name="komentar[<?= $item_id ?>]" 
-                                                    rows="2" 
-                                                    placeholder="Tulis komentar jika perlu revisi..."
-                                                    class="w-full text-xs p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none <?= $has_existing_comment ? 'border-yellow-400 bg-yellow-50 font-medium' : '' ?>"><?= htmlspecialchars($komentar_existing ?? '') ?></textarea>
-                                        <?php endif; ?>
-                                    </td>
                                 </tr>
                                 <?php endforeach; $grand_total_plan += $subtotal_plan; ?>
                                 
                                 <tr class="bg-gray-100 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?= htmlspecialchars($kategori) ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-900 text-right"><?= formatRupiah($subtotal_plan) ?></td>
-                                    <td colspan="2"></td>
+                                    <td></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+
+                    <?php
+                        // Comment box seperti di foto (di bawah tabel kategori)
+                        // tidak tampil ketika status REVISI (menunggu admin) atau DISETUJUI
+                        if (!$is_revisi && !$is_disetujui) {
+                            render_comment_box_rab_lpj($rab_comment_key, $is_menunggu, $is_telah_direvisi);
+                        }
+                    ?>
+
                 <?php 
                         endforeach; 
                     else:
@@ -329,7 +332,8 @@ function konfirmasiSetuju() {
 
 function konfirmasiRevisi() {
     const form = document.getElementById('form-lpj-verifikasi');
-    const komentarInputs = form.querySelectorAll('textarea[name^="komentar"]');
+    // Ambil semua textarea komentar (comment box bawah tabel)
+    const komentarInputs = form.querySelectorAll('.comment-box textarea[name^="komentar"]');
     
     let hasComment = false;
     komentarInputs.forEach(input => {
@@ -343,11 +347,11 @@ function konfirmasiRevisi() {
             Swal.fire({
                 icon: 'warning',
                 title: 'Komentar Diperlukan',
-                text: 'Mohon isi komentar pada item yang perlu direvisi terlebih dahulu!',
+                text: 'Mohon isi komentar pada bagian RAB yang perlu direvisi terlebih dahulu!',
                 confirmButtonColor: '#3B82F6'
             });
         } else {
-            alert('Mohon isi komentar pada item yang perlu direvisi terlebih dahulu!');
+            alert('Mohon isi komentar pada bagian RAB yang perlu direvisi terlebih dahulu!');
         }
         return;
     }

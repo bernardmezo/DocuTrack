@@ -1,9 +1,37 @@
 <?php
 // File: src/views/pages/bendahara/dashboard.php
-if (!isset($antrian_kak)) { $antrian_kak = [['id' => 1, 'nama' => 'Contoh Revisi', 'pengusul' => 'User (Dummy)', 'status' => 'Revisi']]; }
+// Ensure data is available
+if (!isset($list_kak)) { $list_kak = []; }
+if (!isset($list_lpj)) { $list_lpj = []; }
+if (!isset($stats)) { 
+    $stats = [
+        'total' => 0,
+        'danaDiberikan' => 0,
+        'ditolak' => 0,
+        'menunggu' => 0
+    ];
+}
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
+
+    <?php if(isset($success_message) && $success_message): ?>
+    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-3"></i>
+            <p class="text-green-700 font-medium"><?= htmlspecialchars($success_message) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if(isset($error_message) && $error_message): ?>
+    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-center">
+            <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+            <p class="text-red-700 font-medium"><?= htmlspecialchars($error_message) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Statistics Cards -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"> 

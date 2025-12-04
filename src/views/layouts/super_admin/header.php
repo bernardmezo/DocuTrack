@@ -9,8 +9,8 @@ $current = $_SERVER['REQUEST_URI'];
 
 function isActive($current, $target) {
     return (strpos($current, $target) !== false)
-        ? 'nav-link-base nav-link-active'
-        : 'nav-link-base nav-link-inactive';
+        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
+        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
 }
 
 // ============================================
@@ -66,7 +66,7 @@ switch (strtolower($userRole)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Judul Halaman Dinamis -->
-    <title><?php echo htmlspecialchars($title ?? 'Docutrack Bendahara'); ?></title>
+    <title><?php echo htmlspecialchars($title ?? 'Docutrack Super Admin'); ?></title>
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -87,7 +87,7 @@ switch (strtolower($userRole)) {
         <div class="top-section bg-gradient-to-l from-[#17A18A] via-[#006A9A] to-[#114177] p-6 pb-4 md:pb-20 text-white shadow-lg">
             <header class="flex justify-between font-poppins items-center pb-5 border-b border-white/20 max-w-7xl mx-auto">
                 <!-- Sisi Kiri: Logo & Navigasi Desktop -->
-                <div class="flex items-center gap-4 md:gap-10">
+                <div class="flex items-center gap-4 md:gap-10 flex-1">
                     <!-- Logo lebih kecil di mobile -->
                     <div class="w-40 md:w-auto">
                         <a href="/docutrack/public/super_admin/dashboard"> <!-- Link logo ke dashboard -->
@@ -97,31 +97,31 @@ switch (strtolower($userRole)) {
                         </a>
                     </div>
 
-                    <!-- Navigasi Desktop -->
-                    <div class="flex items-center gap-4 md:gap-10">
-                        <nav>
+                    <!-- Navigasi Desktop - CENTER ALIGNED -->
+                    <div class="flex items-center justify-center flex-1">
+                        <nav class="hidden md:block">
                             <ul class="flex gap-4">
                                 <li>
                                     <a href="/docutrack/public/super_admin/dashboard" 
-                                    class="<?= isActive($current, '/super_admin/dashboard'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/super_admin/dashboard'); ?>">
                                         <i class="fas fa-th-large text-sm"></i> Dashboard
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/super_admin/kelola-akun" 
-                                    class="<?= isActive($current, '/super_admin/kelola-akun'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/super_admin/kelola-akun'); ?>">
                                         <i class="fas fa-users-cog text-sm"></i> Kelola Akun
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/super_admin/monitoring" 
-                                    class="<?= isActive($current, '/super_admin/monitoring'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/super_admin/monitoring'); ?>">
                                         <i class="fas fa-desktop text-sm"></i> Monitoring
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/super_admin/buat-iku" 
-                                    class="<?= isActive($current, '/super_admin/buat-iku'); ?>">
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/super_admin/buat-iku'); ?>">
                                         <i class="fas fa-book-open text-sm"></i> Buat IKU
                                     </a>
                                 </li>
@@ -176,6 +176,16 @@ switch (strtolower($userRole)) {
                     </button>
                 </div>
             </header>
+
+            <!-- Panel Navigasi Mobile -->
+            <div id="mobile-bendahara-menu" class="md:hidden hidden max-w-7xl mx-auto pt-4 pb-2">
+                <div class="px-2 space-y-1">
+                    <a href="/docutrack/public/super_admin/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
+                    <a href="/docutrack/public/super_admin/kelola-akun" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-users-cog text-sm w-5 text-center"></i> Kelola Akun</a>
+                    <a href="/docutrack/public/super_admin/monitoring" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-desktop text-sm w-5 text-center"></i> Monitoring</a>
+                    <a href="/docutrack/public/super_admin/buat-iku" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white"><i class="fas fa-book-open text-sm w-5 text-center"></i> Buat IKU</a>
+                </div>
+            </div>
         </div> <!-- Akhir top-section -->
 
     <!-- Konten utama halaman dimulai di sini (akan ditutup oleh footer.php) -->

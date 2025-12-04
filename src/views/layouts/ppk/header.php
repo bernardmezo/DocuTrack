@@ -1,71 +1,36 @@
 <?php
 // File: src/views/layouts/PPK/header.php
 
-// 1. Mulai session jika belum ada
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 2. Ambil data user dari session untuk ditampilkan
 $user_role = $_SESSION['user_role'] ?? 'ppk';
 $user_name = $_SESSION['user_name'] ?? 'PPK User';
 
-/**
- * 3. FUNGSI isActive (SESUAI PERMINTAAN ANDA)
- * Fungsi ini sekarang MENGEMBALIKAN KELAS STYLING SECARA LANGSUNG.
- */
-function isActive($current_page, $target_path) {
+function isActivePPK($current_page, $target_path) {
     return ($current_page === $target_path) 
-        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50' // Aktif
-        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium'; // Non-Aktif
+        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
+        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
 }
 
-// ============================================
-// LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
-// ============================================
-
-// 1. Ambil data dari session 'user_data' (Format baru dari Controller)
 $userData = $_SESSION['user_data'] ?? [];
-
-// 2. Tentukan Nama (Prioritas: Data Baru -> Session Lama -> Default)
 $userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
-
-// 3. Tentukan Role
-$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'admin';
-
-// 4. Tentukan Foto Profile
+$userRole = $userData['role'] ?? $_SESSION['user_role'] ?? 'ppk';
 $defaultImage = 'https://ui-avatars.com/api/?name=' . urlencode($userName) . '&background=0D8ABC&color=fff&size=150';
 $userImage = $userData['profile_image'] ?? $_SESSION['profile_image'] ?? $defaultImage;
-
-// 5. Tentukan Background Header (BARU - jika ada)
 $headerBg = $userData['header_bg'] ?? 'linear-gradient(to left, #17A18A, #006A9A, #114177)';
 
-
-// ============================================
-// TENTUKAN LINK AKUN BERDASARKAN ROLE
-// ============================================
 switch (strtolower($userRole)) {
-    case 'verifikator':
-        $akun_link = '/docutrack/public/verifikator/akun';
-        break;
-    case 'wadir':
-        $akun_link = '/docutrack/public/wadir/akun';
-        break;
-    case 'ppk':
-        $akun_link = '/docutrack/public/ppk/akun';
-        break;
-    case 'bendahara':
-        $akun_link = '/docutrack/public/bendahara/akun';
-        break;
-    case 'super administrator': // Menangani format dari dummy data
-    case 'super_admin':
-        $akun_link = '/docutrack/public/super_admin/akun';
-        break;
-    default: // admin
-        $akun_link = '/docutrack/public/admin/akun';
+    case 'verifikator': $akun_link = '/docutrack/public/verifikator/akun'; break;
+    case 'wadir': $akun_link = '/docutrack/public/wadir/akun'; break;
+    case 'ppk': $akun_link = '/docutrack/public/ppk/akun'; break;
+    case 'bendahara': $akun_link = '/docutrack/public/bendahara/akun'; break;
+    case 'super administrator':
+    case 'super_admin': $akun_link = '/docutrack/public/super_admin/akun'; break;
+    default: $akun_link = '/docutrack/public/admin/akun';
 }
 
-// Ambil nilai 'active_page' yang dikirim dari Controller
 $current = $active_page ?? ''; 
 ?>
 <!DOCTYPE html>
@@ -74,22 +39,16 @@ $current = $active_page ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($title ?? 'PPK Dashboard'); ?></title>
-
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    
     <link href="/docutrack/public/assets/css/output.css" rel="stylesheet"> 
 </head>
 <body class="bg-gradient-to-br from-gray-100 to-teal-100 min-h-screen">
     <div class="main-wrapper font-poppins">
         <div class="top-section bg-gradient-to-l from-[#17A18A] via-[#006A9A] to-[#114177] p-6 pb-4 md:pb-20 text-white shadow-lg"> 
-             
              <header class="flex justify-between items-center pb-5 border-b border-white/20 max-w-7xl mx-auto">
-                 
-                 <div class="flex items-center gap-4 md:gap-10">
-                     
+                 <div class="flex items-center gap-4 md:gap-10 flex-1">
                      <div class="w-40 md:w-auto">
                          <a href="/docutrack/public/ppk/dashboard">
                              <svg width="195" height="47" viewBox="0 0 195 47" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -97,14 +56,16 @@ $current = $active_page ?? '';
                          </a>
                      </div>
                      
-                     <nav class="hidden md:block">
-                         <ul class="flex gap-4">
-                             <li><a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm"></i> Dashboard</a></li>
-                            <li><a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm"></i> Pengajuan Kegiatan</a></li>
-                            <li><a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm"></i> Monitoring</a></li>
-                            <li><a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-binoculars text-sm"></i> Riwayat Verifikasi</a></li>
-                         </ul>
-                     </nav>
+                     <div class="flex items-center justify-center flex-1">
+                         <nav class="hidden md:block">
+                             <ul class="flex gap-4">
+                                 <li><a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm"></i> Dashboard</a></li>
+                                <li><a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm"></i> Pengajuan Kegiatan</a></li>
+                                <li><a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm"></i> Monitoring</a></li>
+                                <li><a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm"></i> Riwayat Verifikasi</a></li>
+                             </ul>
+                         </nav>
+                     </div>
                  </div>
                  
                  <div class="flex items-center gap-4 md:gap-6">
@@ -136,20 +97,19 @@ $current = $active_page ?? '';
                              </a>
                         </div>
                     </div>
-                     <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-gray-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">
-                         <span class="sr-only">Buka menu utama</span>
-                         <svg id="hamburger-icon" class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
-                         <svg id="close-icon" class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                     <button id="mobile-menu-button" class="md:hidden p-2">
+                         <svg id="hamburger-icon" class="block h-6 w-6"><path /></svg>
+                         <svg id="close-icon" class="hidden h-6 w-6"><path /></svg>
                      </button>
                  </div>
              </header>
 
             <div id="mobile-menu" class="md:hidden hidden max-w-7xl mx-auto pt-4 pb-2">
                 <div class="px-2 space-y-1">
-                    <a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
-                    <a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
-                    <a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm w-5 text-center"></i> Monitoring</a>
-                    <a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/riwayat-verifikasi'); ?>"> Riwayat Verifikasi</a>
+                    <a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
+                    <a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
+                    <a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm w-5 text-center"></i> Monitoring</a>
+                    <a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm w-5 text-center"></i> Riwayat Verifikasi</a>
                 </div>
             </div>
-        </div> 
+        </div>

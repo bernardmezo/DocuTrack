@@ -1,9 +1,16 @@
 <?php
-// File: src/controllers/bendahara/RiwayatverifikasiController.php
+// File: src/controllers/Bendahara/RiwayatverifikasiController.php
 
 require_once '../src/core/Controller.php';
+require_once '../src/model/bendaharaModel.php';
 
 class BendaharaRiwayatverifikasiController extends Controller {
+    
+    private $model;
+    
+    public function __construct() {
+        $this->model = new bendaharaModel($this->db);
+    }
     
     /**
      * Menampilkan halaman Riwayat Verifikasi Bendahara.
@@ -11,150 +18,100 @@ class BendaharaRiwayatverifikasiController extends Controller {
      */
     public function index($data_dari_router = []) { 
         
-        // Data dummy diperbarui dengan struktur PNJ (Jurusan & Prodi)
-        // 'jurusan' = Induk (Untuk Filter)
-        // 'prodi'   = Spesifik (Untuk Tampilan)
-        $list_riwayat_dummy = [
-            [
-                'id' => 1,
-                'nama' => 'Workshop Teknologi Web Modern',
-                'pengusul' => 'Ahmad Rizki',
-                'nim' => '2021001',
-                'jurusan' => 'Teknik Informatika dan Komputer',
-                'prodi' => 'Teknik Informatika',
-                'tanggal_pengajuan' => '2024-01-15',
-                'tgl_verifikasi' => '2024-01-20',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 2,
-                'nama' => 'Seminar Kewirausahaan Digital',
-                'pengusul' => 'Siti Nurhaliza',
-                'nim' => '2021002',
-                'jurusan' => 'Administrasi Niaga',
-                'prodi' => 'Administrasi Bisnis',
-                'tanggal_pengajuan' => '2024-01-16',
-                'tgl_verifikasi' => '2024-01-21',
-                'status' => 'Revisi'
-            ],
-            [
-                'id' => 3,
-                'nama' => 'Pelatihan UI/UX Design',
-                'pengusul' => 'Budi Santoso',
-                'nim' => '2021003',
-                'jurusan' => 'Teknik Grafika dan Penerbitan',
-                'prodi' => 'Desain Grafis',
-                'tanggal_pengajuan' => '2024-01-17',
-                'tgl_verifikasi' => '2024-01-22',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 4,
-                'nama' => 'Kompetisi Business Plan',
-                'pengusul' => 'Dewi Lestari',
-                'nim' => '2021004',
-                'jurusan' => 'Akuntansi',
-                'prodi' => 'Keuangan dan Perbankan',
-                'tanggal_pengajuan' => '2024-01-18',
-                'tgl_verifikasi' => '2024-01-23',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 5,
-                'nama' => 'Workshop Cyber Security',
-                'pengusul' => 'Eko Prasetyo',
-                'nim' => '2021005',
-                'jurusan' => 'Teknik Informatika dan Komputer',
-                'prodi' => 'Teknik Multimedia Jaringan',
-                'tanggal_pengajuan' => '2024-01-19',
-                'tgl_verifikasi' => '2024-01-24',
-                'status' => 'Revisi'
-            ],
-            [
-                'id' => 6,
-                'nama' => 'Seminar MICE International',
-                'pengusul' => 'Fitri Amelia',
-                'nim' => '2021006',
-                'jurusan' => 'Administrasi Niaga',
-                'prodi' => 'MICE',
-                'tanggal_pengajuan' => '2024-01-20',
-                'tgl_verifikasi' => '2024-01-25',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 7,
-                'nama' => 'Pelatihan Data Science',
-                'pengusul' => 'Gita Permata',
-                'nim' => '2021007',
-                'jurusan' => 'Teknik Informatika dan Komputer',
-                'prodi' => 'Teknik Multimedia Digital',
-                'tanggal_pengajuan' => '2024-01-21',
-                'tgl_verifikasi' => '2024-01-26',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 8,
-                'nama' => 'Workshop Fotografi Produk',
-                'pengusul' => 'Hendra Wijaya',
-                'nim' => '2021008',
-                'jurusan' => 'Teknik Grafika dan Penerbitan',
-                'prodi' => 'Penerbitan',
-                'tanggal_pengajuan' => '2024-01-22',
-                'tgl_verifikasi' => '2024-01-27',
-                'status' => 'Revisi'
-            ],
-            [
-                'id' => 9,
-                'nama' => 'Rancang Bangun Konstruksi',
-                'pengusul' => 'Indra Kusuma',
-                'nim' => '2021009',
-                'jurusan' => 'Teknik Sipil',
-                'prodi' => 'Konstruksi Gedung',
-                'tanggal_pengajuan' => '2024-01-23',
-                'tgl_verifikasi' => '2024-01-28',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 10,
-                'nama' => 'Pelatihan Analisis Laporan Keuangan',
-                'pengusul' => 'Joko Widodo',
-                'nim' => '2021010',
-                'jurusan' => 'Akuntansi',
-                'prodi' => 'Akuntansi Keuangan',
-                'tanggal_pengajuan' => '2024-01-24',
-                'tgl_verifikasi' => '2024-01-29',
-                'status' => 'Dana Diberikan'
-            ],
-            [
-                'id' => 11,
-                'nama' => 'Workshop Mobile App Development',
-                'pengusul' => 'Kartika Sari',
-                'nim' => '2021011',
-                'jurusan' => 'Teknik Informatika dan Komputer',
-                'prodi' => 'Teknik Informatika',
-                'tanggal_pengajuan' => '2024-01-25',
-                'tgl_verifikasi' => '2024-01-30',
-                'status' => 'Revisi'
-            ],
-            [
-                'id' => 12,
-                'nama' => 'Seminar English for Business',
-                'pengusul' => 'Linda Wijayanti',
-                'nim' => '2021012',
-                'jurusan' => 'Administrasi Niaga',
-                'prodi' => 'Bahasa Inggris untuk Komunikasi Bisnis',
-                'tanggal_pengajuan' => '2024-01-26',
-                'tgl_verifikasi' => '2024-01-31',
-                'status' => 'Dana Diberikan'
-            ]
-        ];
-        // --- Akhir Data Dummy ---
+        // ✅ AMBIL DATA DARI DATABASE (bukan dummy)
+        $list_riwayat = $this->model->getRiwayatVerifikasi();
+        $jurusan_list = $this->model->getListJurusan();
 
         $data = array_merge($data_dari_router, [
             'title' => 'Riwayat Verifikasi',
-            'list_riwayat' => $list_riwayat_dummy 
+            'list_riwayat' => $list_riwayat,
+            'jurusan_list' => $jurusan_list
         ]);
 
         $this->view('pages/bendahara/riwayat-verifikasi', $data, 'bendahara');
+    }
+    
+    /**
+     * Menampilkan detail riwayat pencairan
+     */
+    public function show($id, $data_dari_router = []) {
+        $ref = $_GET['ref'] ?? 'riwayat-verifikasi';
+        $base_url = "/docutrack/public/bendahara";
+        $back_url = $base_url . '/' . $ref;
+
+        // ✅ AMBIL DATA DARI DATABASE
+        $kegiatan = $this->model->getDetailPencairan($id);
+        
+        if (!$kegiatan) {
+            $_SESSION['flash_error'] = 'Data tidak ditemukan.';
+            header('Location: ' . $back_url);
+            exit;
+        }
+        
+        // Ambil data relasi
+        $rab_data = $this->model->getRABByKegiatan($id);
+        $iku_data = $this->model->getIKUByKegiatan($id);
+        $indikator_data = $this->model->getIndikatorByKegiatan($id);
+        $tahapan = $this->model->getTahapanByKegiatan($id);
+        
+        // Format tahapan sebagai string bernomor
+        $tahapan_string = "";
+        foreach ($tahapan as $idx => $t) {
+            $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
+        }
+
+        $data = array_merge($data_dari_router, [
+            'title' => 'Detail Riwayat - ' . htmlspecialchars($kegiatan['namaKegiatan']),
+            'id' => $id,
+            'status' => !empty($kegiatan['tanggalPencairan']) ? 'Dana Diberikan' : 'Ditolak',
+            
+            // Data Kegiatan
+            'nama_kegiatan' => $kegiatan['namaKegiatan'],
+            'nama_mahasiswa' => $kegiatan['pemilikKegiatan'],
+            'nim' => $kegiatan['nimPelaksana'],
+            'jurusan' => $kegiatan['jurusanPenyelenggara'] ?? '-',
+            'prodi' => $kegiatan['prodiPenyelenggara'] ?? '-',
+            'tanggal_pengajuan' => $kegiatan['createdAt'],
+            'kode_mak' => $kegiatan['buktiMAK'] ?? '-',
+            
+            // Data KAK
+            'kegiatan_data' => [
+                'id' => $id,
+                'nama_pengusul' => $kegiatan['nama_pengusul'] ?? '-',
+                'nim_pengusul' => $kegiatan['nim_pelaksana'] ?? '-',
+                'nama_pelaksana' => $kegiatan['nama_pelaksana'] ?? '-',
+                'nama_penanggung_jawab' => $kegiatan['nama_pj'] ?? '-',
+                'nip_penanggung_jawab' => $kegiatan['nim_pj'] ?? '-',
+                'nama_kegiatan' => $kegiatan['namaKegiatan'] ?? '-',
+                'gambaran_umum' => $kegiatan['gambaranUmum'] ?? '-',
+                'penerima_manfaat' => $kegiatan['penerimaMaanfaat'] ?? '-',
+                'metode_pelaksanaan' => $kegiatan['metodePelaksanaan'] ?? '-',
+                'tahapan_kegiatan' => $tahapan_string ?: '-',
+                'tanggal_mulai' => $kegiatan['tanggalMulai'] ?? '',
+                'tanggal_selesai' => $kegiatan['tanggalSelesai'] ?? ''
+            ],
+            
+            // Data IKU & Indikator
+            'iku_data' => $iku_data,
+            'indikator_data' => $indikator_data,
+            
+            // Data RAB
+            'rab_data' => $rab_data,
+            'anggaran_disetujui' => $kegiatan['total_rab'] ?? 0,
+            
+            // Surat Pengantar
+            'surat_pengantar_url' => !empty($kegiatan['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $kegiatan['suratPengantar'] : '',
+            
+            // Data Pencairan
+            'jumlah_dicairkan' => $kegiatan['jumlahDicairkan'] ?? 0,
+            'tanggal_pencairan' => $kegiatan['tanggalPencairan'] ?? null,
+            'metode_pencairan' => $kegiatan['metodePencairan'] ?? '-',
+            'catatan_bendahara' => $kegiatan['catatanBendahara'] ?? '',
+            
+            'back_url' => $back_url,
+            'back_text' => 'Kembali'
+        ]);
+
+        $this->view('pages/bendahara/riwayat-verifikasi-detail', $data, 'bendahara');
     }
 }
