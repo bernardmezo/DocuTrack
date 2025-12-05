@@ -73,13 +73,15 @@ sort($jurusan_list);
                             <?php echo $nomor++; ?>.
                         </td>
 
-                        <td class="px-4 py-3 md:px-6 md:py-5 text-sm text-gray-800">
+                        <td class="px-4 py-3 md:px-6 md:py-5 text-sm">
                             <div class="flex flex-col">
-                                <span class="font-medium"><?php echo htmlspecialchars($item['nama'] ?? 'Tanpa Judul'); ?></span>
-                                <span class="text-xs text-gray-500 mt-1">
+                                <span class="font-semibold text-gray-900 mb-1"><?php echo htmlspecialchars($item['nama'] ?? 'Tanpa Judul'); ?></span>
+                                <span class="text-gray-600 text-xs">
                                     <?php echo htmlspecialchars($nama_mahasiswa); ?> 
-                                    (<?php echo htmlspecialchars($item['nim'] ?? '-'); ?>), 
-                                    <?php echo htmlspecialchars($item['prodi'] ?? $item['jurusan'] ?? '-'); ?>
+                                    <span class="text-gray-500">(<?php echo htmlspecialchars($item['nim'] ?? '-'); ?>)</span>
+                                </span>
+                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                    <i class="fas fa-graduation-cap mr-1"></i><?php echo htmlspecialchars($item['prodi'] ?? $item['jurusan'] ?? '-'); ?>
                                 </span>
                             </div>
                         </td>

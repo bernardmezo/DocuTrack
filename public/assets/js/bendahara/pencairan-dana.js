@@ -192,26 +192,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return `
                     <tr class='${rowClass} hover:bg-blue-50/50 transition-colors duration-150'>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                        <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
+                        <td class='px-6 py-5 text-sm'>
                             <div class="flex flex-col">
-                                <span class="font-medium text-gray-900">${this.escapeHtml(item.nama)}</span>
-                                <span class="text-xs text-gray-500 mt-1">
-                                    <i class="fas fa-user-graduate mr-1 text-gray-400"></i>
-                                    ${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}) - ${this.escapeHtml(displayProdi)}
+                                <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
+                                <span class="text-gray-600 text-xs">
+                                    ${this.escapeHtml(namaMahasiswa)} 
+                                    <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
+                                </span>
+                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                    <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(displayProdi)}
                                 </span>
                             </div>
                         </td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
-                        <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                            <div class='flex gap-2'>
-                                <a href="${this.config.viewUrl}${item.id}?ref=pencairan-dana" 
-                                   class='bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5 shadow-sm'>
-                                    <i class='fas fa-eye text-xs'></i>
-                                    <span class='hidden sm:inline'>Review</span>
-                                </a>
-                            </div>
-                        </td>
+                       <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
+    <div class='flex gap-2'>
+        <a href="${this.config.viewUrl}${item.id}?ref=pencairan-dana" 
+           class='bg-emerald-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-emerald-700 transition-all inline-flex items-center gap-2 shadow-sm hover:shadow'>
+            <i class='fas fa-hand-holding-usd'></i>
+            <span>Cairkan Dana</span>
+        </a>
+    </div>
+</td>
                     </tr>
                 `;
             }).join('');

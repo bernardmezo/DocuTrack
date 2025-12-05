@@ -208,10 +208,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return `
                     <tr class='${rowClass} hover:bg-green-50/50 transition-colors duration-150'>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                        <td class='px-6 py-4 text-sm text-gray-800'>
-                            <div class="flex flex-col gap-1">
-                                <span class="font-semibold text-gray-900">${this.escapeHtml(item.nama)}</span>
-                                <span class="text-xs text-gray-500">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
+                        <td class='px-6 py-5 text-sm'>
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
+                                <span class="text-gray-600 text-xs">
+                                    ${this.escapeHtml(namaMahasiswa)} 
+                                    <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
+                                </span>
+                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                    <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
+                                </span>
                             </div>
                         </td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
@@ -220,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
                             <a href="${this.config.viewUrl}${item.id}?ref=lpj" 
                                class='bg-green-600 text-white px-4 py-1.5 rounded-md text-xs font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-1.5'>
-                                Review
+                                Lihat
                             </a>
                         </td>
                     </tr>

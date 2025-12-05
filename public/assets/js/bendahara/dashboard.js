@@ -231,52 +231,72 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Untuk tabel LPJ - tambahkan kolom tenggat
                 if (this.config.type === 'lpj') {
-                    return `
-                        <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                            <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
-                                <div class="flex flex-col">
-                                    <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
-                                </div>
-                            </td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                                <div class='flex gap-2'>
-                                    <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                                       class='bg-${this.config.color}-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors'>
-                                        Review
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    // Untuk tabel KAK - tanpa kolom prodi
-                    return `
-                        <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                            <td class='px-6 py-4 text-sm text-gray-800 font-medium'>
-                                <div class="flex flex-col">
-                                    <span class="font-medium">${this.escapeHtml(item.nama)}</span>
-                                    <span class="text-xs text-gray-500 mt-1">${this.escapeHtml(namaMahasiswa)} (${this.escapeHtml(item.nim)}), ${this.escapeHtml(prodi)}</span>
-                                </div>
-                            </td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
-                            <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                                <div class='flex gap-2'>
-                                    <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                                       class='bg-${this.config.color}-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors'>
-                                        Review
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }
+                return `
+                    <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
+                        <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
+                        <td class='px-6 py-5 text-sm'>
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
+                                <span class="text-gray-600 text-xs">
+                                    ${this.escapeHtml(namaMahasiswa)} 
+                                    <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
+                                </span>
+                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                    <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
+                                </span>
+                            </div>
+                        </td>
+                        <td class='px-6 py-5 whitespace-nowrap text-sm text-gray-600'>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
+                                ${tglPengajuanDisplay}
+                            </div>
+                        </td>
+                        <td class='px-6 py-5 whitespace-nowrap text-sm'>${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</td>
+                        <td class='px-6 py-5 whitespace-nowrap text-xs font-semibold'>${this.getStatusBadge(item.status)}</td>
+                        <td class='px-6 py-5 whitespace-nowrap text-sm font-medium'>
+                            <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                            class='bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors inline-flex items-center gap-2'>
+                                <i class="fas fa-eye"></i>
+                                Lihat
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Untuk tabel KAK
+                return `
+                    <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
+                        <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
+                        <td class='px-6 py-5 text-sm'>
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
+                                <span class="text-gray-600 text-xs">
+                                    ${this.escapeHtml(namaMahasiswa)} 
+                                    <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
+                                </span>
+                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                    <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
+                                </span>
+                            </div>
+                        </td>
+                        <td class='px-6 py-5 whitespace-nowrap text-sm text-gray-600'>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
+                                ${tglPengajuanDisplay}
+                            </div>
+                        </td>
+                        <td class='px-6 py-5 whitespace-nowrap text-xs font-semibold'>${this.getStatusBadge(item.status)}</td>
+                        <td class='px-6 py-5 whitespace-nowrap text-sm font-medium'>
+                            <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                            class='bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors inline-flex items-center gap-2'>
+                                <i class="fas fa-eye"></i>
+                                Lihat
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            }
             }).join('');
         }
         
