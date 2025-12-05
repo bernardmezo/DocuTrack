@@ -53,7 +53,7 @@ class AdminPengajuanKegiatanController extends Controller {
         $statusId = (int) $statusId;
 
         // Hanya posisi = 1 (Admin) dan status = 3 (Disetujui)
-        return ($posisi === 1 && $statusId === 3);
+        return ($posisi === 1 && $statusId === 1);
     });
 
     // Re-index array agar urutan kunci rapi (0, 1, 2...) untuk View
