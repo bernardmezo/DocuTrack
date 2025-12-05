@@ -71,7 +71,7 @@ class adminModel {
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.statusUtamaId = 2 THEN 'Revisi'
-                        WHEN k.posisiId = 1 AND k.statusUtamaId = 3 THEN 'Usulan Disetujui'
+                        WHEN k.posisiId = 1 AND k.statusUtamaId = 3 THEN 'Disetujui'
                         WHEN k.posisiId = 1 AND k.statusUtamaId = 1 THEN 'Draft'
                         WHEN k.posisiId = 2 THEN 'Di Verifikator'
                         WHEN k.posisiId = 4 THEN 'Di PPK'
@@ -306,8 +306,8 @@ class adminModel {
                   JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   LEFT JOIN tbl_user u ON u.userId = k.userId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                  WHERE k.kegiatanId = ?
-                  LIMIT 1";
+                  WHERE k.kegiatanId = ?";
+                // --   LIMIT 1";
         
         $stmt = mysqli_prepare($this->db, $query);
         
@@ -474,14 +474,14 @@ class adminModel {
             $status_awal   = 1;
             $wadir_tujuan  = $data['wadir_tujuan'] ?? null; 
             
-            $posisi_awal = 2;
+            $posisi_tujuan = 2;
 
             $queryKegiatan = "INSERT INTO tbl_kegiatan 
             (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, createdAt, wadirTujuan, posisiId)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
             $stmt = mysqli_prepare($this->db, $queryKegiatan);
-            mysqli_stmt_bind_param($stmt, "ssssisisii", $nama_kegiatan, $prodi, $nama_pengusul, $nim, $user_id, $jurusan, $status_awal, $tgl_sekarang, $wadir_tujuan, $posisi_awal);
+            mysqli_stmt_bind_param($stmt, "ssssisisii", $nama_kegiatan, $prodi, $nama_pengusul, $nim, $user_id, $jurusan, $status_awal, $tgl_sekarang, $wadir_tujuan, $posisi_tujuan);
             
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception("Gagal insert kegiatan: " . mysqli_error($this->db));

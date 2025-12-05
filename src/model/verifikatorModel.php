@@ -280,7 +280,7 @@ class verifikatorModel
         $connection = $this->db;
         $currentPosisi = 2; // Verifikator
         $nextPosisi = 1;    // Admin (PENTING: Kembali ke Admin dulu)
-        $nextStatus = 3;    // Disetujui Verifikator - Menunggu Rincian
+        $nextStatus = 1;    // Disetujui Verifikator - statusnya masih menunggu untuk di uprove bendahara
 
         $userId = isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])
             ? (int) $_SESSION['user_id']

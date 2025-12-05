@@ -16,11 +16,9 @@ class AdminDashboardController extends Controller {
         
         // 2. ambil list lengkap kak (Filter by Jurusan user login)
         $jurusan = $_SESSION['user_jurusan'] ?? null;
-        if ($jurusan) {
-            $list_kak = $model->getDashboardKAKByJurusan($jurusan);
-        } else {
-            $list_kak = $model->getDashboardKAK(); 
-        } 
+        
+        $list_kak = $model->getDashboardKAK(); 
+        
         
         // 3. ambil list lengkap lpj
         $list_lpj = $model->getDashboardLPJ(); 

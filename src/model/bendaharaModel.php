@@ -322,6 +322,9 @@ class bendaharaModel {
         $baseDateForLpj = $tanggalCair;
         $jsonTahapan = null;
 
+        // TO DO : Handle Buat metode bertahap
+        // Tambahin tbl_tahapan_pencairan untuk simpan tahapannya. (metodenya sama kaya tbl_tahapan_pelaksanaan di KAK)
+
         if ($metode === 'bertahap' && !empty($tahapan)) {
             // Validasi total persentase
             $totalPersen = array_sum(array_column($tahapan, 'persentase'));
@@ -347,18 +350,16 @@ class bendaharaModel {
                       SET tanggalPencairan = ?, 
                           jumlahDicairkan = ?, 
                           metodePencairan = ?, 
-                          pencairan_tahap_json = ?, 
                           catatanBendahara = ?,
-                          statusUtamaId = 1,
+                          statusUtamaId = 3,
                           posisiId = 1 
                       WHERE kegiatanId = ?";
             
             $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "sdsssi", 
+            mysqli_stmt_bind_param($stmt, "sdssi", 
                 $tanggalCair, 
                 $jumlah, 
                 $metode, 
-                $jsonTahapan, 
                 $catatan, 
                 $kegiatanId
             );

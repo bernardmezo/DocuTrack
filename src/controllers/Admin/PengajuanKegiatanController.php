@@ -12,47 +12,65 @@ class AdminPengajuanKegiatanController extends Controller {
      * Menampilkan halaman daftar pengajuan kegiatan dengan filtering role-based.
      */
     public function index($data_dari_router = []) { 
-        $model = new adminModel($this->db);
-        
-        $userRole = $_SESSION['user_role'] ?? '';
-        $userJurusan = $_SESSION['user_jurusan'] ?? null;
-        
-        // Ambil data mentah dari Model
-        if ($userRole === 'super-admin' || $userRole === 'superadmin') {
-            $all_kegiatan = $model->getDashboardKAK();
+    $model = new adminModel($this->db);
+
+    // Ambil semua kegiatan (tanpa filter jurusan) agar halaman menampilkan SEMUA KAK
+    // yang memenuhi kriteria posisi = 1 dan status = 3.
+    $all_kegiatan = $model->getDashboardKAK();
+
+    // Filter: Hanya tampilkan kegiatan yang Posisi = Admin (1) DAN Status = Disetujui (3)
+    // Perhatian: beberapa fungsi/model mungkin memberi nama field berbeda (posisiId vs posisi, statusUtamaId vs statusId/status).
+    $list_kegiatan_disetujui = array_filter($all_kegiatan, function($item) {
+        // ambil nilai posisi dari beberapa kemungkinan key
+        $posisi = null;
+        if (isset($item['posisiId'])) {
+            $posisi = $item['posisiId'];
+        } elseif (isset($item['posisi'])) {
+            $posisi = $item['posisi'];
+        } elseif (isset($item['posisi_id'])) {
+            $posisi = $item['posisi_id'];
         } else {
-            // Jika jurusan tidak terdeteksi di session, kembalikan array kosong untuk keamanan
-            if (empty($userJurusan)) {
-                $all_kegiatan = [];
-            } else {
-                $all_kegiatan = $model->getDashboardKAKByJurusan($userJurusan);
-            }
+            $posisi = 0;
         }
-        
-        // Filter: Hanya tampilkan kegiatan yang Posisi = Admin (1) DAN Status = Disetujui (3)
-        // Ini adalah kegiatan yang dikembalikan Verifikator untuk dilengkapi rinciannya
-        $list_kegiatan_disetujui = array_filter($all_kegiatan, function($item) {
-            $posisi = (int) ($item['posisi'] ?? 0);
-            $statusId = (int) ($item['statusUtamaId'] ?? 0);
-            
-            // Logic Strict: Posisi di Admin (1) AND Status Disetujui (3)
-            return ($posisi === 1 && $statusId === 3);
-        });
 
-        $data = array_merge($data_dari_router, [
-            'title' => 'List Pengajuan Kegiatan',
-            // Re-index array agar urutan kunci rapi (0, 1, 2...) untuk View
-            'list_kegiatan' => array_values($list_kegiatan_disetujui),
-            'debug_info' => [
-                'role' => $userRole,
-                'jurusan' => $userJurusan,
-                'total_raw' => count($all_kegiatan),
-                'total_filtered' => count($list_kegiatan_disetujui)
-            ]
-        ]);
+        // ambil nilai status dari beberapa kemungkinan key
+        $statusId = null;
+        if (isset($item['statusUtamaId'])) {
+            $statusId = $item['statusUtamaId'];
+        } elseif (isset($item['statusId'])) {
+            $statusId = $item['statusId'];
+        } elseif (isset($item['statusUtama'])) {
+            $statusId = $item['statusUtama'];
+        } elseif (isset($item['status'])) {
+            // jika status berupa teks, coba parse numeric bila mungkin
+            $statusCandidate = $item['status'];
+            $statusId = is_numeric($statusCandidate) ? (int)$statusCandidate : 0;
+        } else {
+            $statusId = 0;
+        }
 
-        $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'app');
-    }
+        $posisi = (int) $posisi;
+        $statusId = (int) $statusId;
+
+        // Hanya posisi = 1 (Admin) dan status = 3 (Disetujui)
+        return ($posisi === 1 && $statusId === 3);
+    });
+
+    // Re-index array agar urutan kunci rapi (0, 1, 2...) untuk View
+    $list_kegiatan_disetujui = array_values($list_kegiatan_disetujui);
+
+    $data = array_merge($data_dari_router, [
+        'title' => 'List Pengajuan Kegiatan',
+        'list_kegiatan' => $list_kegiatan_disetujui,
+        'debug_info' => [
+            'total_raw' => count($all_kegiatan),
+            'total_filtered' => count($list_kegiatan_disetujui)
+        ]
+    ]);
+
+    $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'app');
+}
+
 
     /**
      * Menampilkan halaman detail atau rincian kegiatan.

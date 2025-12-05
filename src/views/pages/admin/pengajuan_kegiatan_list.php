@@ -121,7 +121,7 @@ sort($jurusan_list);
                                 <p class="text-gray-500 font-medium">Belum ada kegiatan yang perlu dilengkapi.</p>
                                 <p class="text-sm text-gray-400 mt-1">Kegiatan yang disetujui Verifikator akan muncul di sini.</p>
                                 
-                                <?php if (isset($debug_info)): ?>
+                                <!-- <?php if (isset($debug_info)): ?>
                                 <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-left text-xs text-yellow-800 max-w-md w-full font-mono">
                                     <p class="font-bold border-b border-yellow-200 pb-2 mb-2">Debug Info (Admin Only):</p>
                                     <p>Role: <?= htmlspecialchars($debug_info['role'] ?? '-') ?></p>
@@ -132,7 +132,7 @@ sort($jurusan_list);
                                         *Pastikan jurusan akun Anda sama dengan jurusan di usulan.
                                     </p>
                                 </div>
-                                <?php endif; ?>
+                                <?php endif; ?> -->
                             </div>
                         </td>
                     </tr>
