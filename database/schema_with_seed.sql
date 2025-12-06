@@ -87,7 +87,8 @@ INSERT INTO `tbl_status_utama` (`statusId`, `namaStatusUsulan`) VALUES
 (1, 'Menunggu'),
 (2, 'Revisi'),
 (3, 'Disetujui'),
-(4, 'Ditolak');
+(4, 'Ditolak'),
+(5, 'Dana diberikan');
 
 -- ============================================================
 -- TABLE: tbl_wadir (Master - Wadir Options)
