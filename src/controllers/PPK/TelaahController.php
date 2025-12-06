@@ -27,14 +27,17 @@ class PPKTelaahController extends Controller {
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
         $surat_url = !empty($dataDB['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $dataDB['suratPengantar'] : '';
 
-        $status_asli = ($dataDB['status_text'] ?? 'Menunggu');
+        $status_asli = ($dataDB['status_text'] ?? 'Menunggu'); // status asli dari DB = Disetujui (karna sudah disetujui oleh verifikator)
         $posisi_saat_ini = $dataDB['posisiId'];
         $role_ppk = 4;
+
+        // untuk menampilkan status telaah di PPK, agar bisa di approve / setujui usulan
+        $temp_status = 'Menunggu';
 
         if ($posisi_saat_ini != $role_ppk && $status_asli != 'Ditolak') {
             $status_tampilan = 'Disetujui';
         } else {
-            $status_tampilan = $status_asli;
+            $status_tampilan = $temp_status;
         }
 
         $kegiatan_data = [

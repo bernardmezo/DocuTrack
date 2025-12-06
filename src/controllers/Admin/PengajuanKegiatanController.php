@@ -25,10 +25,6 @@ class AdminPengajuanKegiatanController extends Controller {
         $posisi = null;
         if (isset($item['posisiId'])) {
             $posisi = $item['posisiId'];
-        } elseif (isset($item['posisi'])) {
-            $posisi = $item['posisi'];
-        } elseif (isset($item['posisi_id'])) {
-            $posisi = $item['posisi_id'];
         } else {
             $posisi = 0;
         }
@@ -37,14 +33,6 @@ class AdminPengajuanKegiatanController extends Controller {
         $statusId = null;
         if (isset($item['statusUtamaId'])) {
             $statusId = $item['statusUtamaId'];
-        } elseif (isset($item['statusId'])) {
-            $statusId = $item['statusId'];
-        } elseif (isset($item['statusUtama'])) {
-            $statusId = $item['statusUtama'];
-        } elseif (isset($item['status'])) {
-            // jika status berupa teks, coba parse numeric bila mungkin
-            $statusCandidate = $item['status'];
-            $statusId = is_numeric($statusCandidate) ? (int)$statusCandidate : 0;
         } else {
             $statusId = 0;
         }
@@ -53,7 +41,7 @@ class AdminPengajuanKegiatanController extends Controller {
         $statusId = (int) $statusId;
 
         // Hanya posisi = 1 (Admin) dan status = 3 (Disetujui)
-        return ($posisi === 1 && $statusId === 1);
+        return ($posisi === 1 && $statusId === 3);
     });
 
     // Re-index array agar urutan kunci rapi (0, 1, 2...) untuk View

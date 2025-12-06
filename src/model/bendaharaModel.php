@@ -48,7 +48,7 @@ class bendaharaModel {
                     SUM(CASE WHEN posisiId = 5 AND tanggalPencairan IS NULL THEN 1 ELSE 0 END) as menunggu,
                     
                     -- Sudah Dicairkan: Ada tanggal pencairan
-                    SUM(CASE WHEN tanggalPencairan IS NOT NULL THEN 1 ELSE 0 END) as dicairkan
+                    SUM(CASE WHEN statusUtamaId = 5 AND tanggalPencairan IS NOT NULL THEN 1 ELSE 0 END) as dicairkan
                     
                   FROM tbl_kegiatan";
         
@@ -351,7 +351,7 @@ class bendaharaModel {
                           jumlahDicairkan = ?, 
                           metodePencairan = ?, 
                           catatanBendahara = ?,
-                          statusUtamaId = 3,
+                          statusUtamaId = 5,
                           posisiId = 1 
                       WHERE kegiatanId = ?";
             

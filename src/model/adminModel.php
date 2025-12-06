@@ -41,9 +41,9 @@ class adminModel {
     public function getDashboardStats() {
         $query = "SELECT 
                     COUNT(*) as total,
-                    SUM(CASE WHEN posisiId = 5 AND tanggalPencairan IS NOT NULL THEN 1 ELSE 0 END) as disetujui,
+                    SUM(CASE WHEN statusUtamaId = 5 AND tanggalPencairan IS NOT NULL THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN statusUtamaId = 4 THEN 1 ELSE 0 END) as ditolak,
-                    SUM(CASE WHEN statusUtamaId != 4 AND (posisiId != 5 OR tanggalPencairan IS NULL) THEN 1 ELSE 0 END) as menunggu
+                    SUM(CASE WHEN statusUtamaId != 4 AND statusUtamaId != 3 AND statusUtamaId != 5 THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
@@ -56,6 +56,10 @@ class adminModel {
     /**
      * Mengambil daftar KAK (Kerangka Acuan Kegiatan) untuk tabel dashboard.
      */
+    /**
+ * Mengambil daftar KAK (Kerangka Acuan Kegiatan) untuk tabel dashboard.
+ * PENTING: HARUS mengembalikan posisiId dan statusUtamaId untuk filter!
+ */
     public function getDashboardKAK() {
         $query = "SELECT 
                     k.kegiatanId as id,
@@ -66,8 +70,9 @@ class adminModel {
                     k.jurusanPenyelenggara as jurusan,
                     CONCAT(k.pemilikKegiatan, ' (', k.nimPelaksana, '), ', k.prodiPenyelenggara) as pengusul,
                     k.createdAt as tanggal_pengajuan,
-                    k.posisiId as posisi,
-                    k.statusUtamaId,
+                    k.posisiId as posisi,           -- ✅ PENTING: Tambahkan ini
+                    k.posisiId,                     -- ✅ PENTING: Tambahkan ini juga
+                    k.statusUtamaId,                -- ✅ PENTING: Tambahkan ini
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.statusUtamaId = 2 THEN 'Revisi'
@@ -82,7 +87,7 @@ class adminModel {
                     END as status
                 FROM tbl_kegiatan k
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                JOIN tbl_role r ON k.posisiId = r.roleId
+                LEFT JOIN tbl_role r ON k.posisiId = r.roleId
                 ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
@@ -95,9 +100,16 @@ class adminModel {
                 } else {
                     $row['status'] = 'Menunggu';
                 }
+                
+                // Debug log untuk cek data
+                error_log("adminModel::getDashboardKAK() - Row Data:");
+                error_log("  ID: {$row['id']}, posisiId: {$row['posisiId']}, statusUtamaId: {$row['statusUtamaId']}");
+                
                 $data[] = $row;
             }
         }
+        
+        error_log("adminModel::getDashboardKAK() - Total rows: " . count($data));
         return $data;
     }
 
@@ -637,7 +649,7 @@ class adminModel {
      */
     public function updateRincianKegiatan($id, $data, $fileSurat = null) {
         $posisiIdPPK = 4;
-        $statusMenunggu = 1;
+        $statusMenunggu = 3;
         
         if ($fileSurat) {
             $query = "UPDATE tbl_kegiatan SET 

@@ -125,7 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
                 'menunggu': 'text-gray-700 bg-gray-100 border border-gray-200',
-                'menunggu_upload': 'text-orange-700 bg-orange-100 border border-orange-200'
+                'menunggu_upload': 'text-orange-700 bg-orange-100 border border-orange-200',
+                'dana diberikan': 'text-blue-700 bg-blue-100 border border-blue-200'
             };
             
             const icons = {
@@ -135,7 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'ditolak': 'fa-times-circle',
                 'revisi': 'fa-edit',
                 'menunggu': 'fa-clock',
-                'menunggu_upload': 'fa-upload'
+                'menunggu_upload': 'fa-upload',
+                'dana diberikan': 'fa-hand-holding-usd'
             };
             
             const displayText = {
@@ -145,7 +147,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'ditolak': 'Ditolak',
                 'revisi': 'Revisi',
                 'menunggu': 'Menunggu',
-                'menunggu_upload': 'Perlu Upload'
+                'menunggu_upload': 'Perlu Upload',
+                'dana diberikan': 'Dana Diberikan'
             };
             
             return `<span class='px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${badges[statusLower] || badges['menunggu']}'>

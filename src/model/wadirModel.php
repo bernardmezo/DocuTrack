@@ -38,15 +38,20 @@ class wadirModel {
     public function getDashboardStats() {
         $query = "SELECT 
                     SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as total,
-                    SUM(CASE WHEN posisiId = 5 AND statusUtamaId != 4 THEN 1 ELSE 0 END) as disetujui,
+                    SUM(CASE WHEN posisiId IN (1, 5) AND statusUtamaId != 4 AND (statusUtamaId = 3 OR statusUtamaId = 5) THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
         if ($result) {
             return mysqli_fetch_assoc($result);
+            return [
+                'total' => $row['total'] ?? 0,
+                'disetujui' => $row['disetujui'] ?? 0,
+                'menunggu' => $row['menunggu'] ?? 0
+            ];
         }
-        return ['total' => 0, 'disetujui' => 0, 'ditolak' => 0, 'menunggu' => 0];
+        return ['total' => 0, 'disetujui' => 0, 'menunggu' => 0];
     }
 
     /**
@@ -225,26 +230,35 @@ class wadirModel {
                     ) as tanggal_disetujui,
                     
                     CASE 
-                        WHEN k.posisiId >= 5 AND k.statusUtamaId != 4 THEN 'Disetujui'
+                        WHEN k.posisiId != 5 AND k.statusUtamaId != 4 AND k.statusUtamaId = 5 THEN 'Disetujui'
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         ELSE 'Diproses'
                     END as status
                     
                   FROM tbl_kegiatan k
-                  WHERE k.posisiId >= 4 OR k.statusUtamaId = 4
+                  WHERE k.posisiId = 1 AND k.statusUtamaId = 5
                   ORDER BY tanggal_disetujui DESC";
 
         $result = mysqli_query($this->db, $query);
+                
+        // Debug log
+        if ($result === false) {
+            error_log("wadirModel::getRiwayat() ERROR: " . mysqli_error($this->db));
+            return [];
+        }
+        
         $data = [];
         
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                // Pastikan field jurusan tidak null
+                // Pastikan field tidak null
                 $row['jurusan'] = $row['jurusan'] ?? '-';
                 $row['prodi'] = $row['prodi'] ?? '-';
                 $data[] = $row;
             }
         }
+        
+        error_log("wadirModel::getRiwayat() - Total rows: " . count($data));
         
         return $data;
     }
