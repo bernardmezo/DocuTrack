@@ -176,55 +176,64 @@ class AdminController extends \Controller
     }
 
     private function prepareSuratUpload($kegiatanId, $fileInfo): array
-    {
-        $uploadDir = realpath(__DIR__ . '/../../../public/uploads/surat/');  
-
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
-            throw new RuntimeException('Direktori upload surat tidak tersedia.');
+{
+    // Gunakan path absolut tanpa realpath dulu
+    $uploadDir = __DIR__ . '/../../../public/uploads/surat/';
+    
+    // Cek dan buat direktori jika belum ada
+    if (!is_dir($uploadDir)) {
+        if (!mkdir($uploadDir, 0755, true)) {
+            throw new RuntimeException('Gagal membuat direktori upload surat.');
         }
-
-        if (($fileInfo['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
-            throw new RuntimeException('Terjadi kesalahan saat mengunggah surat pengantar.');
-        }
-
-        if (($fileInfo['size'] ?? 0) > self::SURAT_MAX_SIZE_BYTES) {
-            throw new RuntimeException('Ukuran file surat pengantar melebihi 5MB.');
-        }
-
-        $originalName = $fileInfo['name'] ?? '';
-        $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
-        $allowedExtensions = ['pdf', 'doc', 'docx'];
-
-        if (!in_array($extension, $allowedExtensions, true)) {
-            throw new RuntimeException('Format file surat pengantar harus PDF atau DOC/DOCX.');
-        }
-
-        $tempPath = $fileInfo['tmp_name'] ?? null;
-        if ($tempPath === null || $tempPath === '') {
-            throw new RuntimeException('Path file surat pengantar tidak valid.');
-        }
-
-        // nama file baru untuk disimpan
-        $fileName = sprintf(
-            'surat_pengantar_%d_%s.%s',
-            $kegiatanId,
-            date('YmdHis'),
-            $extension
-        );
-
-        if(move_uploaded_file($tempPath, $uploadDir . DIRECTORY_SEPARATOR . $fileName)) {
-            // Jika berhasil dipindahkan ke direktori tujuan, kembalikan path tujuan
-            $destinationPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
-        } else {
-            throw new RuntimeException('Gagal memindahkan file surat pengantar ke direktori tujuan.');
-        }
-
-        $previousFilePath = null;
-
-        return [
-            'fileName' => $fileName,
-            'filePath' => $destinationPath,
-            'previousFilePath' => $previousFilePath
-        ];
     }
+    
+    // Sekarang baru gunakan realpath setelah direktori pasti ada
+    $uploadDir = realpath($uploadDir);
+    
+    if ($uploadDir === false) {
+        throw new RuntimeException('Path direktori upload tidak valid.');
+    }
+
+    // Validasi upload error
+    if (($fileInfo['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        throw new RuntimeException('Terjadi kesalahan saat mengunggah surat pengantar.');
+    }
+
+    if (($fileInfo['size'] ?? 0) > self::SURAT_MAX_SIZE_BYTES) {
+        throw new RuntimeException('Ukuran file surat pengantar melebihi 5MB.');
+    }
+
+    $originalName = $fileInfo['name'] ?? '';
+    $extension = strtolower((string) pathinfo($originalName, PATHINFO_EXTENSION));
+    $allowedExtensions = ['pdf', 'doc', 'docx'];
+
+    if (!in_array($extension, $allowedExtensions, true)) {
+        throw new RuntimeException('Format file surat pengantar harus PDF atau DOC/DOCX.');
+    }
+
+    $tempPath = $fileInfo['tmp_name'] ?? null;
+    if ($tempPath === null || $tempPath === '') {
+        throw new RuntimeException('Path file surat pengantar tidak valid.');
+    }
+
+    // Nama file baru
+    $fileName = sprintf(
+        'surat_pengantar_%d_%s.%s',
+        $kegiatanId,
+        date('YmdHis'),
+        $extension
+    );
+
+    $destinationPath = $uploadDir . DIRECTORY_SEPARATOR . $fileName;
+    
+    if (!move_uploaded_file($tempPath, $destinationPath)) {
+        throw new RuntimeException('Gagal memindahkan file surat pengantar ke direktori tujuan.');
+    }
+
+    return [
+        'fileName' => $fileName,
+        'filePath' => $destinationPath,
+        'previousFilePath' => null
+    ];
+}
 }
