@@ -185,8 +185,8 @@ class adminModel {
                     l.approvedAt,
                     l.tenggatLpj,
                     CASE 
-                        WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
-                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                        WHEN l.approvedAt IS NOT NULL THEN 'setuju'
+                        WHEN l.submittedAt IS NULL THEN 'menunggu'
                         WHEN EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
@@ -216,9 +216,20 @@ class adminModel {
     }
 
     /**
-     * Mengambil detail LPJ.
+     * Mengambil detail LPJ dengan status yang akurat.
+     * 
+     * STATUS FLOW:
+     * 1. 'setuju' - LPJ disetujui bendahara (approvedAt NOT NULL)
+     * 2. 'menunggu' - LPJ sudah disubmit, menunggu verifikasi (submittedAt NOT NULL)
+     * 3. 'draft' - LPJ baru dibuat, belum ada item atau sedang upload
      */
     public function getDetailLPJ($lpjId) {
+        error_log("=== adminModel::getDetailLPJ START ===");
+        error_log("lpjId: " . $lpjId);
+        
+        // Cast ke integer untuk keamanan
+        $lpjId = (int) $lpjId;
+        
         $query = "SELECT 
                     l.*,
                     k.namaKegiatan as nama_kegiatan,
@@ -229,59 +240,297 @@ class adminModel {
                     k.kegiatanId,
                     kak.kakId,
                     CASE 
-                        WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
-                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
-                        WHEN EXISTS (
-                            SELECT 1 FROM tbl_lpj_item li 
-                            WHERE li.lpjId = l.lpjId 
-                            AND (li.fileBukti IS NULL OR li.fileBukti = '')
-                        ) THEN 'Menunggu_Upload'
-                        ELSE 'Siap_Submit'
+                        WHEN l.approvedAt IS NOT NULL THEN 'setuju'
+                        WHEN l.submittedAt IS NULL THEN 'menunggu'
+                        ELSE 'draft'
                     END as status
-                  FROM tbl_lpj l
-                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
-                  LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
-                  WHERE l.lpjId = ?";
+                FROM tbl_lpj l
+                JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                WHERE l.lpjId = ?";
         
         $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log("ERROR prepare statement: " . mysqli_error($this->db));
+            return null;
+        }
+        
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        
+        if (!mysqli_stmt_execute($stmt)) {
+            error_log("ERROR execute statement: " . mysqli_stmt_error($stmt));
+            mysqli_stmt_close($stmt);
+            return null;
+        }
+        
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+        
+        mysqli_stmt_close($stmt);
+        
+        if (!$data) {
+            error_log("ERROR: No data found for lpjId: " . $lpjId);
+            return null;
+        }
+        
+        error_log("Raw DB Data:");
+        error_log("  - lpjId: " . $data['lpjId']);
+        error_log("  - kegiatanId: " . $data['kegiatanId']);
+        error_log("  - kakId: " . ($data['kakId'] ?? 'NULL'));
+        error_log("  - submittedAt: " . ($data['submittedAt'] ?? 'NULL'));
+        error_log("  - approvedAt: " . ($data['approvedAt'] ?? 'NULL'));
+        error_log("  - status (from query): " . $data['status']);
+        
+        // Cek jumlah item LPJ yang ada
+        $countItemQuery = "SELECT COUNT(*) as total FROM tbl_lpj_item WHERE lpjId = ?";
+        $stmtCount = mysqli_prepare($this->db, $countItemQuery);
+        mysqli_stmt_bind_param($stmtCount, "i", $lpjId);
+        mysqli_stmt_execute($stmtCount);
+        $resultCount = mysqli_stmt_get_result($stmtCount);
+        $countData = mysqli_fetch_assoc($resultCount);
+        mysqli_stmt_close($stmtCount);
+        
+        $totalItems = $countData['total'] ?? 0;
+        error_log("  - Total items in tbl_lpj_item: " . $totalItems);
+        
+        // Jika status draft, cek detail upload
+        if ($data['status'] === 'draft') {
+            if ($totalItems === 0) {
+                // Belum ada item sama sekali
+                $data['status'] = 'belum_ada_item';
+                error_log("Status updated to: belum_ada_item (no items in tbl_lpj_item)");
+            } else {
+                // Ada item, cek upload status
+                $checkBuktiQuery = "SELECT 
+                                        COUNT(*) as total,
+                                        SUM(CASE WHEN fileBukti IS NOT NULL AND fileBukti != '' THEN 1 ELSE 0 END) as uploaded
+                                    FROM tbl_lpj_item 
+                                    WHERE lpjId = ?";
+                
+                $stmtCheck = mysqli_prepare($this->db, $checkBuktiQuery);
+                mysqli_stmt_bind_param($stmtCheck, "i", $lpjId);
+                mysqli_stmt_execute($stmtCheck);
+                $resultCheck = mysqli_stmt_get_result($stmtCheck);
+                $buktiStatus = mysqli_fetch_assoc($resultCheck);
+                mysqli_stmt_close($stmtCheck);
+                
+                error_log("  - Bukti status - Total: {$buktiStatus['total']}, Uploaded: {$buktiStatus['uploaded']}");
+                
+                if ($buktiStatus['uploaded'] == $buktiStatus['total']) {
+                    $data['status'] = 'siap_submit';
+                    error_log("Status updated to: siap_submit (all bukti uploaded)");
+                } else {
+                    $data['status'] = 'menunggu_upload';
+                    error_log("Status updated to: menunggu_upload (partial upload)");
+                }
+            }
+        }
+        
+        error_log("Final status: " . $data['status']);
+        error_log("=== adminModel::getDetailLPJ END ===");
+        
+        return $data;
+    }
+
+    /**
+     * Auto-create LPJ items dari RAB jika belum ada.
+     * Dipanggil saat pertama kali buka halaman detail LPJ.
+     * 
+     * @param int $lpjId - ID LPJ
+     * @param int $kakId - ID KAK (untuk ambil data RAB)
+     * @return bool - Success status
+     */
+    public function autoPopulateLPJItems($lpjId, $kakId) {
+        error_log("=== autoPopulateLPJItems START ===");
+        error_log("lpjId: {$lpjId}, kakId: {$kakId}");
+        
+        $lpjId = (int) $lpjId;
+        $kakId = (int) $kakId;
+        
+        // 1. Cek apakah sudah ada items
+        $checkQuery = "SELECT COUNT(*) as total FROM tbl_lpj_item WHERE lpjId = ?";
+        $stmtCheck = mysqli_prepare($this->db, $checkQuery);
+        mysqli_stmt_bind_param($stmtCheck, "i", $lpjId);
+        mysqli_stmt_execute($stmtCheck);
+        $resultCheck = mysqli_stmt_get_result($stmtCheck);
+        $checkData = mysqli_fetch_assoc($resultCheck);
+        mysqli_stmt_close($stmtCheck);
+        
+        $existingItems = $checkData['total'];
+        error_log("Existing items in tbl_lpj_item: " . $existingItems);
+        
+        if ($existingItems > 0) {
+            error_log("Items already exist, skipping auto-populate");
+            return true; // Sudah ada, skip
+        }
+        
+        // 2. Ambil semua RAB items dari tbl_rab
+        $rabQuery = "SELECT 
+                        r.rabItemId,
+                        r.uraian,
+                        r.rincian,
+                        r.sat1,
+                        r.vol1,
+                        r.vol2,
+                        r.sat2,
+                        r.harga,
+                        r.totalHarga,
+                        cat.namaKategori as jenisBelanja
+                    FROM tbl_rab r
+                    JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                    WHERE r.kakId = ?
+                    ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+        
+        $stmtRAB = mysqli_prepare($this->db, $rabQuery);
+        mysqli_stmt_bind_param($stmtRAB, "i", $kakId);
+        mysqli_stmt_execute($stmtRAB);
+        $resultRAB = mysqli_stmt_get_result($stmtRAB);
+        
+        $rabItems = [];
+        while ($row = mysqli_fetch_assoc($resultRAB)) {
+            $rabItems[] = $row;
+        }
+        mysqli_stmt_close($stmtRAB);
+        
+        error_log("Total RAB items fetched: " . count($rabItems));
+        
+        if (empty($rabItems)) {
+            error_log("WARNING: No RAB items found for kakId: {$kakId}");
+            return false;
+        }
+        
+        // 3. Insert ke tbl_lpj_item
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // ✅ PERBAIKAN: Query INSERT yang benar
+            $insertQuery = "INSERT INTO tbl_lpj_item 
+                            (lpjId, jenisBelanja, uraian, rincian, vol1, sat1, vol2, sat2, totalHarga, subTotal, fileBukti) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)";
+            
+            $stmtInsert = mysqli_prepare($this->db, $insertQuery);
+            
+            if (!$stmtInsert) {
+                throw new Exception("Failed to prepare insert statement: " . mysqli_error($this->db));
+            }
+            
+            $insertCount = 0;
+            
+            foreach ($rabItems as $item) {
+                $jenisBelanja = $item['jenisBelanja'];
+                $uraian = $item['uraian'];
+                $rincian = $item['rincian'];
+                $vol1 = $item['vol1'] ?? '';
+                $sat1 = $item['sat1'] ?? '';
+                $vol2 = $item['vol2'] ?? '';
+                $sat2 = $item['sat2'] ?? '';
+                $totalHarga = $item['totalHarga']; // Rencana
+                $subTotal = $item['totalHarga'];   // Default realisasi = rencana
+                
+                // ✅ PERBAIKAN: Bind param yang benar (10 parameter)
+                mysqli_stmt_bind_param(
+                    $stmtInsert, 
+                    "isssssssdd", 
+                    $lpjId, 
+                    $jenisBelanja, 
+                    $uraian, 
+                    $rincian, 
+                    $vol1,
+                    $sat1,
+                    $vol2,
+                    $sat2, 
+                    $totalHarga, 
+                    $subTotal
+                );
+                
+                if (!mysqli_stmt_execute($stmtInsert)) {
+                    throw new Exception("Failed to insert item: " . mysqli_stmt_error($stmtInsert));
+                }
+                
+                $insertCount++;
+            }
+            
+            mysqli_stmt_close($stmtInsert);
+            mysqli_commit($this->db);
+            
+            error_log("Successfully inserted {$insertCount} items into tbl_lpj_item");
+            error_log("=== autoPopulateLPJItems END (SUCCESS) ===");
+            return true;
+            
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("ERROR: " . $e->getMessage());
+            error_log("=== autoPopulateLPJItems END (FAILED) ===");
+            return false;
+        }
+    }
+
+    /**
+     * Mengambil item RAB untuk LPJ dengan data dari tbl_lpj_item (jika ada).
+     * UPDATED: Ambil dari tbl_lpj_item, bukan langsung dari tbl_rab.
+     */
+    // Di adminModel.php, ganti method getRABForLPJ dengan yang sudah diperbaiki:
+
+    public function getRABForLPJ($lpjId, $kakId) {
+        error_log("=== adminModel::getRABForLPJ START ===");
+        error_log("lpjId: {$lpjId}, kakId: {$kakId}");
+        
+        $lpjId = (int) $lpjId;
+        $kakId = (int) $kakId;
+        
+        // PENTING: Auto-populate dulu jika belum ada items
+        $this->autoPopulateLPJItems($lpjId, $kakId);
+        
+        // ✅ PERBAIKAN: Query yang disesuaikan dengan struktur tbl_lpj_item
+        $query = "SELECT 
+                    li.lpjItemId as id,
+                    li.uraian,
+                    li.rincian,
+                    li.vol1,
+                    li.sat1,
+                    li.vol2,
+                    li.sat2,
+                    li.totalHarga as harga_satuan,
+                    li.totalHarga as harga_plan,
+                    li.subTotal as realisasi,
+                    li.fileBukti as bukti_file,
+                    li.komentar,
+                    li.jenisBelanja as namaKategori
+                FROM tbl_lpj_item li
+                WHERE li.lpjId = ?
+                ORDER BY li.lpjItemId ASC";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log("ERROR prepare: " . mysqli_error($this->db));
+            return [];
+        }
+        
         mysqli_stmt_bind_param($stmt, "i", $lpjId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         
-        return mysqli_fetch_assoc($result);
-    }
-
-    /**
-     * Mengambil item RAB untuk LPJ.
-     */
-    public function getRABForLPJ($kakId) {
-        $query = "SELECT 
-                    r.rabItemId as id,
-                    r.uraian,
-                    r.rincian,
-                    r.vol1,
-                    r.sat1,
-                    r.vol2,
-                    r.sat2,
-                    r.harga as harga_satuan,
-                    r.totalHarga as harga_plan,
-                    NULL as bukti_file,
-                    NULL as komentar,
-                    cat.namaKategori
-                FROM tbl_rab r
-                JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
-                WHERE r.kakId = ?
-                ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
-
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "i", $kakId);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-        
         $data = [];
+        $itemCount = 0;
+        
         while ($row = mysqli_fetch_assoc($result)) {
-            $data[$row['namaKategori']][] = $row;
+            $itemCount++;
+            
+            // Group by kategori
+            $kategori = $row['namaKategori'];
+            unset($row['namaKategori']); // Remove from row data
+            
+            $data[$kategori][] = $row;
         }
+        
+        mysqli_stmt_close($stmt);
+        
+        error_log("Total LPJ items fetched: " . $itemCount);
+        error_log("Categories: " . implode(', ', array_keys($data)));
+        error_log("=== adminModel::getRABForLPJ END ===");
+        
         return $data;
     }
 

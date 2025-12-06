@@ -19,9 +19,7 @@ if (!function_exists('formatRupiah')) {
 }
 
 /**
- * Helper render comment box RAB (mirip telaah_detail::render_comment_box)
- * - Ditampilkan hanya saat status MENUNGGU atau TELAH_DIREVISI (verifikator masih bisa minta revisi)
- * - Disembunyikan saat status REVISI (lagi dikerjakan admin) atau DISETUJUI
+ * Helper render comment box RAB
  */
 if (!function_exists('render_comment_box_rab_lpj')) {
     function render_comment_box_rab_lpj($field_name, $is_menunggu_status, $is_telah_direvisi_status) {
@@ -40,6 +38,18 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                           placeholder="Tulis catatan revisi di sini..."><?= htmlspecialchars($_POST['komentar'][$field_name] ?? '') ?></textarea>
             </div>
             <?php
+        }
+    }
+}
+
+/**
+ * Helper Show Comment Icon (Pastikan fungsi ini ada atau didefinisikan)
+ * Jika di file asli tidak ada function ini di scope global, kita buat dummy-nya agar tidak error
+ */
+if (!function_exists('showCommentIcon')) {
+    function showCommentIcon($itemId, $komentar, $isRevisi, $isTelahDirevisi) {
+        if (!empty($komentar)) {
+            echo '<span class="ml-2 text-yellow-600 cursor-help" title="'.htmlspecialchars($komentar).'"><i class="fas fa-comment-dots"></i></span>';
         }
     }
 }
@@ -105,9 +115,6 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                     <div>
                         <h4 class="text-sm font-semibold text-blue-800 mb-1">Status: Telah Direvisi</h4>
                         <p class="text-sm text-blue-700">Admin telah melakukan perbaikan. Silakan cek ulang dan putuskan untuk <strong>menyetujui</strong> atau <strong>meminta revisi kembali</strong>.</p>
-                        <p class="text-xs text-blue-600 mt-2 italic">
-                            <i class="fas fa-info-circle"></i> Item yang pernah direvisi ditandai dengan ikon komentar. Hover untuk melihat catatan.
-                        </p>
                     </div>
                 </div>
             </div>
@@ -128,16 +135,15 @@ if (!function_exists('render_comment_box_rab_lpj')) {
             <input type="hidden" name="action" id="form-action" value="">
 
             <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
-                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Rencana Anggaran Biaya (RAB)</h3>
+                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Realisasi Anggaran Biaya (LPJ Items)</h3>
                 
                 <?php 
-                    $grand_total_plan = 0;
+                    $grand_total_realisasi = 0;
                     if (!empty($rab_items)):
                         foreach ($rab_items as $kategori => $items): 
                             if (empty($items)) continue;
-                            $subtotal_plan = 0;
-
-                            // key komentar per-kategori (misal: rab_belanja_hadiah)
+                            $subtotal_kategori = 0;
+                            // key komentar per-kategori
                             $rab_comment_key = 'rab_' . strtolower(str_replace(' ', '_', $kategori));
                 ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?= htmlspecialchars($kategori) ?></h4>
@@ -154,55 +160,54 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                                     <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga (Rp)</th>
                                     <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th>
-                                    <!-- Kolom komentar verifikasi DIHAPUS, diganti comment box di bawah -->
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
                                 <?php foreach ($items as $item): 
                                     $item_id = $item['id'] ?? uniqid();
-                                    $plan = $item['harga_plan'] ?? 0;
-                                    $komentar_existing = $item['komentar'] ?? null;
-                                    $bukti_file = $item['bukti_file'] ?? null;
-                                    
-                                    // Data tambahan untuk format baru
+                                    $uraian = $item['uraian'] ?? '-';
                                     $rincian = $item['rincian'] ?? '-';
-                                    $vol1 = $item['vol1'] ?? '-';
+                                    $vol1 = $item['vol1'] ?? 0;
                                     $sat1 = $item['sat1'] ?? '-';
-                                    $vol2 = $item['vol2'] ?? '-';
+                                    $vol2 = $item['vol2'] ?? 1;
                                     $sat2 = $item['sat2'] ?? '-';
-                                    $harga_satuan = $item['harga_satuan'] ?? 0;
+                                    
+                                    // PERBAIKAN: Ambil variabel yang benar dari array $item
+                                    $harga_satuan = $item['harga_satuan'] ?? 0; 
+                                    $total_sub = $item['subtotal'] ?? 0; // Menggunakan key 'subtotal'
+                                    
+                                    $bukti_file = $item['bukti_file'] ?? null;
+                                    $komentar_existing = $item['komentar'] ?? null;
                                     
                                     $has_existing_comment = !empty($komentar_existing);
                                     $row_class = $has_existing_comment ? 'bg-yellow-50' : '';
 
-                                    $subtotal_plan += $plan;
+                                    $subtotal_kategori += $total_sub;
                                 ?>
                                 <tr class="<?= $row_class ?>">
-                                    <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
+                                    <td class="px-3 py-3 text-sm text-gray-800 font-medium">
                                         <div class="flex items-center gap-1">
-                                            <span><?= htmlspecialchars($item['uraian'] ?? '') ?></span>
-                                            <?php 
-                                                // Tampilkan ikon komentar dengan tooltip hover
-                                                showCommentIcon($item_id, $komentar_existing, $is_revisi, $is_telah_direvisi); 
-                                            ?>
+                                            <span><?= htmlspecialchars($uraian) ?></span>
+                                            <?php showCommentIcon($item_id, $komentar_existing, $is_revisi, $is_telah_direvisi); ?>
                                         </div>
                                     </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600" style="width: 180px;"><?= htmlspecialchars($rincian) ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($rincian) ?></td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;"><?= htmlspecialchars($vol1) ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?= $vol1 ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?= htmlspecialchars($sat1) ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?= $vol2 ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-center"><?= htmlspecialchars($sat2) ?></td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;"><?= htmlspecialchars($sat1) ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-700 text-right">
+                                        <?= number_format($harga_satuan, 0, ',', '.') ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;"><?= htmlspecialchars($vol2) ?></td>
+                                    <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right">
+                                        <?= formatRupiah($total_sub) ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;"><?= htmlspecialchars($sat2) ?></td>
-                                    
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-right" style="width: 130px;"><?= number_format($harga_satuan, 0, ',', '.') ?></td>
-                                    
-                                    <td class="px-3 py-3 text-sm text-blue-600 font-semibold text-right" style="width: 150px;"><?= formatRupiah($plan) ?></td>
-                                    
-                                    <td class="px-3 py-3 text-center" style="width: 100px;">
+                                    <td class="px-3 py-3 text-center">
                                         <?php if ($bukti_file): ?>
                                             <a href="/docutrack/public/uploads/lpj_bukti/<?= htmlspecialchars($bukti_file) ?>" 
                                                target="_blank"
@@ -215,11 +220,11 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                                         <?php endif; ?>
                                     </td>
                                 </tr>
-                                <?php endforeach; $grand_total_plan += $subtotal_plan; ?>
+                                <?php endforeach; $grand_total_realisasi += $subtotal_kategori; ?>
                                 
                                 <tr class="bg-gray-100 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?= htmlspecialchars($kategori) ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 text-right"><?= formatRupiah($subtotal_plan) ?></td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 text-right"><?= formatRupiah($subtotal_kategori) ?></td>
                                     <td></td>
                                 </tr>
                             </tbody>
@@ -227,8 +232,7 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                     </div>
 
                     <?php
-                        // Comment box seperti di foto (di bawah tabel kategori)
-                        // tidak tampil ketika status REVISI (menunggu admin) atau DISETUJUI
+                        // Comment box per kategori
                         if (!$is_revisi && !$is_disetujui) {
                             render_comment_box_rab_lpj($rab_comment_key, $is_menunggu, $is_telah_direvisi);
                         }
@@ -238,13 +242,13 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                         endforeach; 
                     else:
                 ?>
-                    <p class="text-sm text-gray-500 italic">Tidak ada data RAB untuk ditampilkan.</p>
+                    <p class="text-sm text-gray-500 italic p-4 text-center bg-gray-50 rounded-lg">Tidak ada data item LPJ untuk ditampilkan.</p>
                 <?php endif; ?>
                 
                 <div class="flex justify-end mt-6">
                     <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 w-full md:w-auto min-w-[350px]">
-                        <span class="text-lg font-semibold text-gray-800">Grand Total RAB:</span>
-                        <span class="text-2xl font-bold text-blue-600 text-right"><?= formatRupiah($grand_total_plan) ?></span>
+                        <span class="text-lg font-semibold text-gray-800">Grand Total Realisasi:</span>
+                        <span class="text-2xl font-bold text-blue-600 text-right"><?= formatRupiah($grand_total_realisasi) ?></span>
                     </div>
                 </div>
             </div>
@@ -332,7 +336,7 @@ function konfirmasiSetuju() {
 
 function konfirmasiRevisi() {
     const form = document.getElementById('form-lpj-verifikasi');
-    // Ambil semua textarea komentar (comment box bawah tabel)
+    // Ambil semua textarea komentar
     const komentarInputs = form.querySelectorAll('.comment-box textarea[name^="komentar"]');
     
     let hasComment = false;
@@ -342,16 +346,22 @@ function konfirmasiRevisi() {
         }
     });
     
+    // Juga cek jika ada catatan umum
+    const catatanUmum = form.querySelector('textarea[name="catatan_umum"]');
+    if (catatanUmum && catatanUmum.value.trim()) {
+        hasComment = true;
+    }
+    
     if (!hasComment) {
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'warning',
                 title: 'Komentar Diperlukan',
-                text: 'Mohon isi komentar pada bagian RAB yang perlu direvisi terlebih dahulu!',
+                text: 'Mohon isi komentar pada bagian item atau catatan umum untuk meminta revisi!',
                 confirmButtonColor: '#3B82F6'
             });
         } else {
-            alert('Mohon isi komentar pada bagian RAB yang perlu direvisi terlebih dahulu!');
+            alert('Mohon isi komentar pada bagian item atau catatan umum untuk meminta revisi!');
         }
         return;
     }
@@ -359,7 +369,7 @@ function konfirmasiRevisi() {
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             title: 'Minta Revisi?',
-            html: '<span class="text-yellow-600 font-bold">⚠️ PERMINTAAN REVISI</span><br><br>Apakah Anda yakin akan meminta <strong>revisi</strong> untuk LPJ ini?<br><small class="text-gray-600">Admin akan menerima notifikasi untuk memperbaiki item yang diberi komentar.</small>',
+            html: '<span class="text-yellow-600 font-bold">⚠️ PERMINTAAN REVISI</span><br><br>Apakah Anda yakin akan meminta <strong>revisi</strong> untuk LPJ ini?<br><small class="text-gray-600">Admin akan menerima notifikasi untuk memperbaiki.</small>',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#EAB308',
@@ -379,7 +389,7 @@ function konfirmasiRevisi() {
             }
         });
     } else {
-        if (confirm('Apakah Anda yakin akan meminta revisi untuk LPJ ini?\n\nAdmin akan menerima notifikasi untuk memperbaiki item yang diberi komentar.')) {
+        if (confirm('Apakah Anda yakin akan meminta revisi untuk LPJ ini?')) {
             document.getElementById('form-action').value = 'revisi';
             form.submit();
         }
@@ -388,48 +398,17 @@ function konfirmasiRevisi() {
 </script>
 
 <style>
-    /* ========================================
-       CSS UNTUK TOOLTIP KOMENTAR (BARU)
-       ======================================== */
-    .comment-icon-wrapper {
-        display: inline-flex;
-    }
+    /* CSS UNTUK TOOLTIP KOMENTAR */
+    .comment-icon-wrapper { display: inline-flex; }
+    .comment-icon { cursor: pointer; }
     
-    .comment-icon {
-        cursor: pointer;
+    /* Animasi Reveal */
+    .animate-reveal {
+        animation: reveal 0.5s ease-out forwards;
+        opacity: 0;
+        transform: translateY(10px);
     }
-    
-    .comment-tooltip {
-        pointer-events: none;
-        white-space: normal;
-        word-wrap: break-word;
-    }
-    
-    .comment-tooltip::after {
-        content: '';
-        position: absolute;
-        left: 50%;
-        top: 100%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 8px solid transparent;
-        border-right: 8px solid transparent;
-        border-top: 8px solid #1f2937;
-    }
-    
-    /* Animasi Pulse untuk Ikon */
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-    
-    .group:hover .group-hover\:animate-pulse {
-        animation: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-    
-    /* Transisi Smooth untuk Tooltip */
-    .comment-tooltip {
-        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    @keyframes reveal {
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>

@@ -37,8 +37,8 @@ class ppkModel {
      */
     public function getDashboardStats() {
         $query = "SELECT 
-                    sum(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as total,
-                    SUM(CASE WHEN posisiId IN (1, 3, 5) AND statusUtamaId != 4 AND (statusUtamaId = 3 OR statusUtamaId = 5) THEN 1 ELSE 0 END) as disetujui,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN posisiId IN (1, 3, 5) AND statusUtamaId != 4 THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
         

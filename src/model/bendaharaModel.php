@@ -494,42 +494,117 @@ class bendaharaModel {
     }
 
     /**
-     * Ambil detail LPJ
+     * Ambil detail LPJ dengan informasi lengkap
      */
     public function getDetailLPJ($lpjId) {
+        error_log("=== bendaharaModel::getDetailLPJ START ===");
+        error_log("lpjId: " . $lpjId);
+        
         $query = "SELECT 
-                    l.*,
+                    l.lpjId,
+                    l.kegiatanId,
+                    l.grandTotal,
+                    l.submittedAt,
+                    l.approvedAt,
+                    l.tenggatLpj,
                     k.namaKegiatan,
                     k.pemilikKegiatan,
                     k.nimPelaksana,
+                    k.prodiPenyelenggara,
+                    k.jurusanPenyelenggara,
                     k.jumlahDicairkan,
-                    k.tanggalPencairan
-                  FROM tbl_lpj l
-                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
-                  WHERE l.lpjId = ?";
+                    k.tanggalPencairan,
+                    k.createdAt as tanggal_pengajuan
+                FROM tbl_lpj l
+                JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                WHERE l.lpjId = ?";
         
         $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log("ERROR prepare: " . mysqli_error($this->db));
+            return null;
+        }
+        
         mysqli_stmt_bind_param($stmt, "i", $lpjId);
         mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
         
-        return mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        if (!$data) {
+            error_log("ERROR: No data found for lpjId: " . $lpjId);
+            return null;
+        }
+        
+        // ✅ Hitung grand total realisasi dari items
+        $totalQuery = "SELECT COALESCE(SUM(subTotal), 0) as grandTotalRealisasi 
+                    FROM tbl_lpj_item 
+                    WHERE lpjId = ?";
+        
+        $stmtTotal = mysqli_prepare($this->db, $totalQuery);
+        mysqli_stmt_bind_param($stmtTotal, "i", $lpjId);
+        mysqli_stmt_execute($stmtTotal);
+        $resultTotal = mysqli_stmt_get_result($stmtTotal);
+        $totalData = mysqli_fetch_assoc($resultTotal);
+        mysqli_stmt_close($stmtTotal);
+        
+        $data['grandTotalRealisasi'] = $totalData['grandTotalRealisasi'] ?? 0;
+        
+        error_log("Detail LPJ fetched - grandTotalRealisasi: " . $data['grandTotalRealisasi']);
+        error_log("=== bendaharaModel::getDetailLPJ END ===");
+        
+        return $data;
     }
 
-    /**
-     * Ambil item-item LPJ
-     */
-    public function getLPJItems($lpjId) {
-        $query = "SELECT * FROM tbl_lpj_item WHERE lpjId = ? ORDER BY lpjItemId ASC";
+        /**
+         * Ambil item-item LPJ
+         */
+        public function getLPJItems($lpjId) {
+        error_log("=== bendaharaModel::getLPJItems START ===");
+        error_log("lpjId: " . $lpjId);
+        
+        $query = "SELECT 
+                    lpjItemId,
+                    jenisBelanja,
+                    uraian,
+                    rincian,
+                    vol1,
+                    sat1,
+                    vol2,
+                    sat2,
+                    totalHarga,
+                    subTotal,
+                    fileBukti,
+                    komentar
+                FROM tbl_lpj_item 
+                WHERE lpjId = ? 
+                ORDER BY lpjItemId ASC";
         
         $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log("ERROR prepare: " . mysqli_error($this->db));
+            return [];
+        }
+        
         mysqli_stmt_bind_param($stmt, "i", $lpjId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         
         $data = [];
+        $itemCount = 0;
+        
         while ($row = mysqli_fetch_assoc($result)) {
+            $itemCount++;
             $data[] = $row;
         }
+        
+        mysqli_stmt_close($stmt);
+        
+        error_log("Total items fetched: " . $itemCount);
+        error_log("=== bendaharaModel::getLPJItems END ===");
+        
         return $data;
     }
 
