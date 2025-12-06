@@ -38,8 +38,8 @@ class ppkModel {
     public function getDashboardStats() {
         $query = "SELECT 
                     sum(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as total,
-                    SUM(CASE WHEN posisiId IN (3, 5) THEN 1 ELSE 0 END) as disetujui,
-                    SUM(CASE WHEN posisiId = 4 OR posisiId = 2 THEN 1 ELSE 0 END) as menunggu
+                    SUM(CASE WHEN posisiId IN (1, 3, 5) AND statusUtamaId != 4 AND (statusUtamaId = 3 OR statusUtamaId = 5) THEN 1 ELSE 0 END) as disetujui,
+                    SUM(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as menunggu
                 FROM tbl_kegiatan";   
         
         $result = mysqli_query($this->db, $query);
@@ -239,15 +239,16 @@ class ppkModel {
                     k.pemilikKegiatan as pengusul,
                     k.nimPelaksana as nim,
                     k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
                     k.createdAt as tanggal_pengajuan,
                     CASE 
-                        WHEN k.posisiId IN (3, 5) AND k.statusUtamaId != 4 THEN 'Disetujui'
+                        WHEN k.posisiId IN (1, 3, 5) AND k.statusUtamaId != 4 AND (k.statusUtamaId = 3 OR k.statusUtamaId = 5) THEN 'Disetujui'
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         ELSE 'Diproses'
                     END as status
                   FROM tbl_kegiatan k
                   WHERE 
-                    k.posisiId IN (3, 5) OR k.statusUtamaId = 4
+                    k.posisiId IN (1 ,3, 5) AND (k.statusUtamaId = 3 OR k.statusUtamaId = 5)
                   ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);

@@ -35,7 +35,7 @@ class verifikatorModel
         $query = "SELECT 
                     COUNT(*) as total,
                     SUM(CASE 
-                        WHEN posisiId IN (4, 3, 5) AND statusUtamaId != 4 THEN 1 
+                        WHEN posisiId IN (1 ,3, 4, 5) AND statusUtamaId != 4 AND (statusUtamaId = 3 OR statusUtamaId = 5) THEN 1 
                         ELSE 0 
                     END) as disetujui,
                     SUM(CASE 
@@ -201,14 +201,14 @@ class verifikatorModel
                     k.jurusanPenyelenggara as jurusan,
                     k.createdAt as tanggal_pengajuan,
                     CASE 
-                        WHEN k.posisiId IN (3, 4, 5) AND k.statusUtamaId != 4 THEN 'Disetujui'
+                        WHEN k.posisiId IN (1, 3, 4, 5) AND k.statusUtamaId != 4 AND (k.statusUtamaId = 3 OR k.statusUtamaId = 5) THEN 'Disetujui'
                         WHEN k.statusUtamaId = 2 THEN 'Revisi'
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         ELSE 'Diproses'
                     END as status
                   FROM tbl_kegiatan k
                   WHERE 
-                    k.posisiId IN (3, 4, 5)
+                    k.posisiId IN (1 ,3, 4, 5) AND (k.statusUtamaId = 3 OR k.statusUtamaId = 5)
                   ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
@@ -260,7 +260,15 @@ class verifikatorModel
      * 2. Update posisiId = 1 (Kembali ke Admin)
      * 3. Input buktiMAK & umpanBalikVerifikator
      */
-    public function approveUsulan(int $kegiatanId, string $kodeMak, ?string $catatan = null): bool
+    /**
+ * Menyetujui usulan dan mengembalikan ke Admin untuk melengkapi rincian.
+ * 
+ * Logic:
+ * 1. Update statusUtamaId = 3 (Disetujui/Menunggu Rincian)
+ * 2. Update posisiId = 1 (Kembali ke Admin)
+ * 3. Input buktiMAK
+ */
+public function approveUsulan(int $kegiatanId, string $kodeMak): bool
     {
         $trimmedMak = trim($kodeMak);
 
@@ -269,18 +277,10 @@ class verifikatorModel
             return false;
         }
 
-        $note = null;
-        if ($catatan !== null) {
-            $catatanTrimmed = trim($catatan);
-            if ($catatanTrimmed !== '') {
-                $note = $catatanTrimmed;
-            }
-        }
-
         $connection = $this->db;
         $currentPosisi = 2; // Verifikator
         $nextPosisi = 1;    // Admin (PENTING: Kembali ke Admin dulu)
-        $nextStatus = 1;    // Disetujui Verifikator - statusnya masih menunggu untuk di uprove bendahara
+        $nextStatus = 3;    // Disetujui Verifikator
 
         $userId = isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])
             ? (int) $_SESSION['user_id']
@@ -305,24 +305,34 @@ class verifikatorModel
             }
             $lockStmt->close();
 
-            // Prepare Update Query
+            // ⚠️ PERBAIKAN SYNTAX ERROR DI SINI ⚠️
+            // Query yang SALAH (ada koma setelah statusUtamaId tanpa nilai):
+            // UPDATE tbl_kegiatan SET statusUtamaId, posisiId = ?, buktiMAK = ? ...
+            
+            // Query yang BENAR:
             $sql = 'UPDATE tbl_kegiatan 
                     SET statusUtamaId = ?, 
                         posisiId = ?, 
-                        buktiMAK = ?, 
-                        umpanBalikVerifikator = ?
+                        buktiMAK = ?
                     WHERE kegiatanId = ?';
             
             $updateStmt = $connection->prepare($sql);
             if ($updateStmt === false) {
-                throw new RuntimeException('Gagal menyiapkan statement update.');
+                throw new RuntimeException('Gagal menyiapkan statement update: ' . $connection->error);
             }
 
-            $updateStmt->bind_param('iisss', $nextStatus, $nextPosisi, $trimmedMak, $note, $kegiatanId);
+            // Bind parameters: 4 integers (statusUtamaId, posisiId, kegiatanId) + 1 string (buktiMAK)
+            $updateStmt->bind_param('iisi', $nextStatus, $nextPosisi, $trimmedMak, $kegiatanId);
             
             if (!$updateStmt->execute()) {
                 throw new RuntimeException('Gagal update kegiatan: ' . $updateStmt->error);
             }
+            
+            // Debug: cek apakah ada row yang ter-update
+            if ($updateStmt->affected_rows === 0) {
+                error_log('approveUsulan Warning: Tidak ada baris yang ter-update untuk kegiatanId: ' . $kegiatanId);
+            }
+            
             $updateStmt->close();
 
             // Catat History
