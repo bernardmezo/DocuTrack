@@ -170,88 +170,199 @@ class VerifikatorTelaahController extends Controller {
     /**
      * Menolak usulan dengan ID tertentu.
      */
-    public function reject($routeId = null)
-    {
-        $kegiatanId = $routeId;
-        try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Invalid request method');
-            }
+    /**
+ * Menolak usulan dengan ID tertentu.
+ */
+public function reject($routeId = null)
+{
+    // Enable error reporting untuk debugging
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    
+    $kegiatanId = $routeId;
+    
+    try {
+        // Debug: Log semua data yang masuk
+        error_log("=== REJECT DEBUG START ===");
+        error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
+        error_log("routeId: " . ($routeId ?? 'NULL'));
+        error_log("POST data: " . print_r($_POST, true));
+        error_log("SESSION data: " . print_r($_SESSION, true));
+        
+        // Validasi request method
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
+        }
 
-            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
-            if (!$kegiatanId) {
-                throw new Exception('ID kegiatan tidak ditemukan');
-            }
+        // Ambil kegiatan ID dan CAST ke integer
+        $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
+        $kegiatanId = (int) $kegiatanId; // PENTING: Cast ke integer
+        
+        if (!$kegiatanId || $kegiatanId <= 0) {
+            error_log("ERROR: ID kegiatan tidak valid");
+            throw new Exception('ID kegiatan tidak valid');
+        }
+        
+        error_log("Kegiatan ID: " . $kegiatanId);
 
-            $alasanPenolakan = trim($_POST['alasan_penolakan'] ?? '');
-            if ($alasanPenolakan === '') {
-                throw new Exception('Alasan penolakan wajib diisi');
-            }
+        // Ambil alasan penolakan
+        $alasanPenolakan = trim($_POST['alasan_penolakan'] ?? '');
+        
+        if ($alasanPenolakan === '') {
+            error_log("ERROR: Alasan penolakan kosong");
+            throw new Exception('Alasan penolakan wajib diisi');
+        }
+        
+        error_log("Alasan: " . $alasanPenolakan);
 
-            $model = new verifikatorModel($this->db);
+        // Cek koneksi database
+        if (!$this->db) {
+            error_log("ERROR: Database connection is null");
+            throw new Exception('Database connection failed');
+        }
+        
+        error_log("Database connection OK");
 
-            if ($model->rejectUsulan($kegiatanId, $alasanPenolakan)) {
-                $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
-                header('Location: /docutrack/public/verifikator/dashboard?msg=rejected');
-                exit;
-            }
+        // Instantiate model
+        $model = new verifikatorModel($this->db);
+        error_log("Model instantiated OK");
 
-            throw new Exception('Gagal menolak usulan. Silakan coba lagi.');
-        } catch (Exception $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId);
+        // Panggil method reject
+        error_log("Calling rejectUsulan...");
+        $result = $model->rejectUsulan($kegiatanId, $alasanPenolakan);
+        error_log("rejectUsulan result: " . ($result ? 'TRUE' : 'FALSE'));
+
+        if ($result) {
+            $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
+            error_log("SUCCESS: Redirecting to dashboard");
+            header('Location: /docutrack/public/verifikator/dashboard?msg=rejected');
             exit;
         }
+
+        throw new Exception('Gagal menolak usulan. Silakan coba lagi.');
+        
+    } catch (Exception $e) {
+        error_log("EXCEPTION CAUGHT: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        error_log("=== REJECT DEBUG END ===");
+        
+        $_SESSION['flash_error'] = $e->getMessage();
+        $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+        
+        if (!empty($fallbackId)) {
+            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+        } else {
+            header('Location: /docutrack/public/verifikator/dashboard');
+        }
+        exit;
     }
+}
+
+    /**
+     * Mengirim usulan untuk direvisi.
+     */
+    // Ganti method revise di TelaahController.php dengan ini:
 
     /**
      * Mengirim usulan untuk direvisi.
      */
     public function revise($routeId = null)
-    {
-        $kegiatanId = $routeId;
-        try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Invalid request method');
+{
+    // Enable error reporting untuk debugging
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+    
+    $kegiatanId = $routeId;
+    
+    try {
+        // Debug: Log semua data yang masuk
+        error_log("=== REVISE DEBUG START ===");
+        error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
+        error_log("routeId: " . ($routeId ?? 'NULL'));
+        error_log("POST data: " . print_r($_POST, true));
+        
+        // Validasi request method
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
+        }
+
+        // Ambil kegiatan ID dan CAST ke integer
+        $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
+        $kegiatanId = (int) $kegiatanId; // PENTING: Cast ke integer
+        
+        if (!$kegiatanId || $kegiatanId <= 0) {
+            error_log("ERROR: ID kegiatan tidak valid");
+            throw new Exception('ID kegiatan tidak valid');
+        }
+        
+        error_log("Kegiatan ID: " . $kegiatanId);
+
+        // Ambil komentar revisi dari form
+        $rawKomentar = $_POST['komentar'] ?? [];
+        error_log("Raw komentar: " . print_r($rawKomentar, true));
+        
+        $komentarRevisi = [];
+
+        // Filter komentar yang tidak kosong
+        foreach ($rawKomentar as $targetKolom => $komentar) {
+            $trimmedKomentar = trim($komentar);
+            if (!empty($trimmedKomentar)) {
+                $komentarRevisi[] = [
+                    'targetKolom' => $targetKolom,
+                    'targetTabel' => 'tbl_kegiatan',
+                    'komentar' => $trimmedKomentar
+                ];
             }
+        }
+        
+        error_log("Filtered komentar: " . print_r($komentarRevisi, true));
 
-            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
-            if (!$kegiatanId) {
-                throw new Exception('ID kegiatan tidak ditemukan');
-            }
+        // Validasi minimal 1 komentar
+        if (empty($komentarRevisi)) {
+            error_log("ERROR: Tidak ada komentar revisi");
+            throw new Exception('Minimal isi satu catatan revisi');
+        }
 
-            $rawKomentar = $_POST['komentar'] ?? [];
-            $komentarRevisi = [];
+        // Cek koneksi database
+        if (!$this->db) {
+            error_log("ERROR: Database connection is null");
+            throw new Exception('Database connection failed');
+        }
+        
+        error_log("Database connection OK");
 
-            foreach ($rawKomentar as $targetKolom => $komentar) {
-                if (!empty(trim($komentar))) {
-                    $komentarRevisi[] = [
-                        'targetKolom' => $targetKolom,
-                        'targetTabel' => 'tbl_kegiatan',
-                        'komentar' => trim($komentar)
-                    ];
-                }
-            }
+        // Instantiate model
+        $model = new verifikatorModel($this->db);
+        error_log("Model instantiated OK");
 
-            if (empty($komentarRevisi)) {
-                throw new Exception('Minimal isi satu catatan revisi');
-            }
+        // Panggil method revise
+        error_log("Calling reviseUsulan...");
+        $result = $model->reviseUsulan($kegiatanId, $komentarRevisi);
+        error_log("reviseUsulan result: " . ($result ? 'TRUE' : 'FALSE'));
 
-            $model = new verifikatorModel($this->db);
-
-            if ($model->reviseUsulan($kegiatanId, $komentarRevisi)) {
-                $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';
-                header('Location: /docutrack/public/verifikator/dashboard?msg=revised');
-                exit;
-            }
-
-            throw new Exception('Gagal mengirim revisi. Silakan coba lagi.');
-        } catch (Exception $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId);
+        if ($result) {
+            $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';
+            error_log("SUCCESS: Redirecting to dashboard");
+            header('Location: /docutrack/public/verifikator/dashboard?msg=revised');
             exit;
         }
+
+        throw new Exception('Gagal mengirim revisi. Silakan coba lagi.');
+        
+    } catch (Exception $e) {
+        error_log("EXCEPTION CAUGHT: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        error_log("=== REVISE DEBUG END ===");
+        
+        $_SESSION['flash_error'] = $e->getMessage();
+        $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+        
+        if (!empty($fallbackId)) {
+            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+        } else {
+            header('Location: /docutrack/public/verifikator/dashboard');
+        }
+        exit;
     }
+}
 }

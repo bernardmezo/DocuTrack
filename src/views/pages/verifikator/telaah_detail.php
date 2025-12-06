@@ -593,42 +593,49 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             toggleReviewMode('review');
         });
         
-        btnKirimRevisi?.addEventListener('click', (e) => {
-            e.preventDefault();
+        // Di btnKirimRevisi click handler, pastikan code ini ada:
+btnKirimRevisi?.addEventListener('click', (e) => {
+    e.preventDefault();
+    
+    // Cek apakah ada komentar yang diisi
+    let hasComment = false;
+    commentBoxes.forEach(box => {
+        const textarea = box.querySelector('textarea');
+        if (textarea && textarea.value.trim() !== '') {
+            hasComment = true;
+        }
+    });
+
+    if (!hasComment) {
+        Swal.fire('Gagal', 'Anda harus mengisi setidaknya satu komentar revisi.', 'error');
+        return;
+    }
+
+    Swal.fire({
+        title: 'Kirim Komentar Revisi?',
+        text: "Usulan akan dikembalikan ke pengusul dengan catatan revisi Anda.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#F59E0B',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Ya, Kirim Revisi',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({ 
+                title: 'Mengirim...', 
+                allowOutsideClick: false, 
+                didOpen: () => Swal.showLoading() 
+            });
+
+            // PENTING: Set action URL dengan benar
+            formVerifikasi.action = "/docutrack/public/verifikator/telaah/revise/" + kegiatanId;
+            formVerifikasi.method = "POST";
             
-            let hasComment = false;
-            commentBoxes.forEach(box => {
-                const textarea = box.querySelector('textarea');
-                if (textarea && textarea.value.trim() !== '') {
-                    hasComment = true;
-                }
-            });
-
-            if (!hasComment) {
-                Swal.fire('Gagal', 'Anda harus mengisi setidaknya satu komentar revisi.', 'error');
-                return;
-            }
-
-            Swal.fire({
-                title: 'Kirim Komentar Revisi?',
-                text: "Usulan akan dikembalikan ke pengusul dengan catatan revisi Anda.",
-                icon: 'warning',
-                customClass: { popup: 'swal-konfirmasi' },
-                showCancelButton: true,
-                confirmButtonColor: '#F59E0B',
-                cancelButtonColor: '#6B7280',
-                confirmButtonText: 'Ya, Kirim Revisi',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({ title: 'Mengirim...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                    formVerifikasi.action = "/docutrack/public/verifikator/telaah/revise/" + kegiatanId + "?ref=detail";
-
-                    formVerifikasi.submit();
-                }
-            });
-        });
+            formVerifikasi.submit();
+        }
+    });
+});
 
         btnTolak?.addEventListener('click', () => {
             Swal.fire({

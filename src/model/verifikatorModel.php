@@ -251,24 +251,15 @@ class verifikatorModel
         
         return mysqli_fetch_assoc($result);
     }
-
     /**
      * Menyetujui usulan dan mengembalikan ke Admin untuk melengkapi rincian.
      * 
      * Logic:
      * 1. Update statusUtamaId = 3 (Disetujui/Menunggu Rincian)
      * 2. Update posisiId = 1 (Kembali ke Admin)
-     * 3. Input buktiMAK & umpanBalikVerifikator
+     * 3. Input buktiMAK
      */
-    /**
- * Menyetujui usulan dan mengembalikan ke Admin untuk melengkapi rincian.
- * 
- * Logic:
- * 1. Update statusUtamaId = 3 (Disetujui/Menunggu Rincian)
- * 2. Update posisiId = 1 (Kembali ke Admin)
- * 3. Input buktiMAK
- */
-public function approveUsulan(int $kegiatanId, string $kodeMak): bool
+    public function approveUsulan(int $kegiatanId, string $kodeMak): bool
     {
         $trimmedMak = trim($kodeMak);
 
@@ -360,45 +351,103 @@ public function approveUsulan(int $kegiatanId, string $kodeMak): bool
             return false;
         }
     }
-
     /**
-     * Menolak usulan.
+     * Buat Menolak usulan.
+     * 
+     * Logic:
+     * 1. Update statusUtamaId = 4 (Ditolak)
+     * 2. Update posisiId = 1 (Kembali ke Admin untuk info)
+     * 3. Simpan alasan penolakan di tbl_revisi_comment
      */
     public function rejectUsulan($kegiatanId, $alasanPenolakan = '') {
-        $statusDitolak = 4;
-        $currentPosisi = 2;
+        $statusDitolak = 4;      // Status: Ditolak
+        $currentPosisi = 2;       // Verifikator
+        $backToPosisi = 1;        // Kembali ke Admin
         $userId = $_SESSION['user_id'] ?? null;
-        $roleId = 2;
+        $roleId = 2;              // Role Verifikator
+        
+        // Validasi alasan penolakan
+        $trimmedAlasan = trim($alasanPenolakan);
+        if ($trimmedAlasan === '') {
+            error_log('rejectUsulan Error: Alasan penolakan tidak boleh kosong.');
+            return false;
+        }
         
         mysqli_begin_transaction($this->db);
         
         try {
-            $query = "UPDATE tbl_kegiatan 
-                      SET statusUtamaId = ? 
-                      WHERE kegiatanId = ?";
-            
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "ii", $statusDitolak, $kegiatanId);
-            
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal update status");
+            // Lock row untuk mencegah race condition
+            $lockQuery = "SELECT kegiatanId FROM tbl_kegiatan WHERE kegiatanId = ? FOR UPDATE";
+            $lockStmt = mysqli_prepare($this->db, $lockQuery);
+            if (!$lockStmt) {
+                throw new Exception("Gagal menyiapkan statement lock: " . mysqli_error($this->db));
             }
-            mysqli_stmt_close($stmt);
+            mysqli_stmt_bind_param($lockStmt, "i", $kegiatanId);
+            mysqli_stmt_execute($lockStmt);
+            $result = mysqli_stmt_get_result($lockStmt);
             
-            $historyId = $this->insertProgressHistory($kegiatanId, $statusDitolak, $currentPosisi, $currentPosisi, $userId, 'reject');
+            if (mysqli_num_rows($result) === 0) {
+                throw new Exception("Kegiatan dengan ID {$kegiatanId} tidak ditemukan");
+            }
+            mysqli_stmt_close($lockStmt);
             
-            if (!empty($alasanPenolakan) && $historyId) {
-                $this->insertRevisiComment(
+            // Update status dan posisi kegiatan
+            $updateQuery = "UPDATE tbl_kegiatan 
+                            SET statusUtamaId = ?, 
+                                posisiId = ? 
+                            WHERE kegiatanId = ?";
+            
+            $updateStmt = mysqli_prepare($this->db, $updateQuery);
+            if (!$updateStmt) {
+                throw new Exception("Gagal menyiapkan statement update: " . mysqli_error($this->db));
+            }
+            
+            mysqli_stmt_bind_param($updateStmt, "iii", $statusDitolak, $backToPosisi, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($updateStmt)) {
+                throw new Exception("Gagal update status: " . mysqli_stmt_error($updateStmt));
+            }
+            
+            $affectedRows = mysqli_stmt_affected_rows($updateStmt);
+            mysqli_stmt_close($updateStmt);
+            
+            if ($affectedRows === 0) {
+                error_log("rejectUsulan Warning: Tidak ada baris yang ter-update untuk kegiatanId: {$kegiatanId}");
+            }
+            
+            // Catat ke progress history
+            $historyId = $this->insertProgressHistory(
+                $kegiatanId, 
+                $statusDitolak, 
+                $currentPosisi, 
+                $backToPosisi, 
+                $userId, 
+                'reject'
+            );
+            
+            if (!$historyId || $historyId <= 0) {
+                throw new Exception("Gagal mencatat riwayat progress");
+            }
+            
+            // Simpan alasan penolakan sebagai komentar
+            if (!empty($trimmedAlasan)) {
+                $commentResult = $this->insertRevisiComment(
                     $historyId, 
                     $userId, 
                     $roleId, 
-                    $alasanPenolakan, 
-                    null, 
-                    null
+                    $trimmedAlasan, 
+                    'tbl_kegiatan',  // Target tabel
+                    'alasan_penolakan' // Target kolom
                 );
+                
+                if (!$commentResult) {
+                    error_log("rejectUsulan Warning: Gagal menyimpan alasan penolakan");
+                    // Tidak throw error karena ini optional
+                }
             }
             
             mysqli_commit($this->db);
+            error_log("rejectUsulan Success: Kegiatan {$kegiatanId} berhasil ditolak");
             return true;
             
         } catch (Exception $e) {
@@ -409,57 +458,11 @@ public function approveUsulan(int $kegiatanId, string $kodeMak): bool
     }
 
     /**
-     * Mengirim usulan untuk direvisi.
+     * Helper method untuk insert progress history
+     * (Pastikan method ini sudah ada di class Anda)
      */
-    public function reviseUsulan($kegiatanId, $komentarRevisi = []) {
-        $statusRevisi = 2;
-        $currentPosisi = 2;
-        $backToPosisi = 1;
-        $userId = $_SESSION['user_id'] ?? null;
-        $roleId = 2;
-        
-        mysqli_begin_transaction($this->db);
-        
-        try {
-            $query = "UPDATE tbl_kegiatan 
-                      SET statusUtamaId = ?, posisiId = ? 
-                      WHERE kegiatanId = ?";
-            
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "iii", $statusRevisi, $backToPosisi, $kegiatanId);
-            
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal update status");
-            }
-            mysqli_stmt_close($stmt);
-            
-            $historyId = $this->insertProgressHistory($kegiatanId, $statusRevisi, $currentPosisi, $backToPosisi, $userId, 'revise');
-            
-            if (!empty($komentarRevisi) && $historyId) {
-                foreach ($komentarRevisi as $komentar) {
-                    $this->insertRevisiComment(
-                        $historyId, 
-                        $userId, 
-                        $roleId, 
-                        $komentar['komentar'] ?? '',
-                        $komentar['targetTabel'] ?? 'tbl_kegiatan',
-                        $komentar['targetKolom'] ?? null
-                    );
-                }
-            }
-            
-            mysqli_commit($this->db);
-            return true;
-            
-        } catch (Exception $e) {
-            mysqli_rollback($this->db);
-            error_log("reviseUsulan Error: " . $e->getMessage());
-            return false;
-        }
-    }
-
     /**
-     * Memasukkan record ke tabel tbl_progress_history.
+     * Helper method untuk insert progress history
      */
     private function insertProgressHistory(
         int $kegiatanId,
@@ -474,7 +477,7 @@ public function approveUsulan(int $kegiatanId, string $kodeMak): bool
         $stmt = $this->db->prepare($sql . $placeholders);
 
         if ($stmt === false) {
-            throw new RuntimeException('Gagal menyiapkan statement progress history.');
+            throw new RuntimeException('Gagal menyiapkan statement progress history: ' . $this->db->error);
         }
 
         if ($userId === null) {
@@ -483,29 +486,209 @@ public function approveUsulan(int $kegiatanId, string $kodeMak): bool
             $stmt->bind_param('iii', $kegiatanId, $statusId, $userId);
         }
 
-        $stmt->execute();
+        if (!$stmt->execute()) {
+            throw new RuntimeException('Gagal execute progress history: ' . $stmt->error);
+        }
+
         $insertId = (int) $this->db->insert_id;
         $stmt->close();
 
         return $insertId;
     }
 
+
     /**
-     * Memasukkan komentar revisi ke tabel tbl_revisi_comment.
+     * Helper method untuk insert komentar revisi
+     * (Pastikan method ini sudah ada di class Anda)
+     */
+    /**
+     * Helper method untuk insert komentar revisi
      */
     private function insertRevisiComment($historyId, $userId, $roleId, $komentar, $targetTabel = null, $targetKolom = null) {
+        error_log("insertRevisiComment called with historyId={$historyId}, komentar={$komentar}");
+        
         $query = "INSERT INTO tbl_revisi_comment 
-                  (progressHistoryId, komentarRevisi, targetTabel, targetKolom) 
-                  VALUES (?, ?, ?, ?)";
+                (progressHistoryId, komentarRevisi, targetTabel, targetKolom) 
+                VALUES (?, ?, ?, ?)";
         
         $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log("ERROR prepare: " . mysqli_error($this->db));
+            return false;
+        }
+        
         mysqli_stmt_bind_param($stmt, "isss", $historyId, $komentar, $targetTabel, $targetKolom);
         
         $result = mysqli_stmt_execute($stmt);
+        
+        if (!$result) {
+            error_log("ERROR execute: " . mysqli_stmt_error($stmt));
+        } else {
+            error_log("Insert OK, affected rows: " . mysqli_stmt_affected_rows($stmt));
+        }
+        
         mysqli_stmt_close($stmt);
         
         return $result;
     }
+
+    /**
+     * Mengirim usulan untuk direvisi.
+     * 
+     * Logic:
+     * 1. Update statusUtamaId = 2 (Revisi)
+     * 2. Update posisiId = 1 (Kembali ke Admin)
+     * 3. Simpan semua komentar revisi ke tbl_revisi_comment
+     */
+    public function reviseUsulan($kegiatanId, $komentarRevisi = []) {
+        error_log("=== reviseUsulan START ===");
+        error_log("kegiatanId (raw): " . $kegiatanId . " (type: " . gettype($kegiatanId) . ")");
+        
+        // PENTING: Cast ke integer
+        $kegiatanId = (int) $kegiatanId;
+        error_log("kegiatanId (casted): " . $kegiatanId);
+        error_log("komentarRevisi: " . print_r($komentarRevisi, true));
+        
+        // Validasi input
+        if (empty($kegiatanId) || $kegiatanId <= 0) {
+            error_log("ERROR: kegiatanId tidak valid");
+            return false;
+        }
+        
+        if (empty($komentarRevisi) || !is_array($komentarRevisi)) {
+            error_log("ERROR: komentarRevisi kosong atau bukan array");
+            return false;
+        }
+        
+        $statusRevisi = 2;        // Status: Revisi
+        $currentPosisi = 2;       // Verifikator
+        $backToPosisi = 1;        // Kembali ke Admin
+        $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+        $roleId = 2;              // Role Verifikator
+        
+        error_log("userId: " . ($userId ?? 'NULL'));
+        error_log("Starting transaction...");
+        
+        // Mulai transaction
+        mysqli_begin_transaction($this->db);
+        
+        try {
+            // Lock row untuk mencegah race condition
+            $lockQuery = "SELECT kegiatanId FROM tbl_kegiatan WHERE kegiatanId = ? FOR UPDATE";
+            $lockStmt = mysqli_prepare($this->db, $lockQuery);
+            
+            if (!$lockStmt) {
+                throw new Exception("Gagal menyiapkan statement lock: " . mysqli_error($this->db));
+            }
+            
+            mysqli_stmt_bind_param($lockStmt, "i", $kegiatanId);
+            mysqli_stmt_execute($lockStmt);
+            $result = mysqli_stmt_get_result($lockStmt);
+            
+            if (mysqli_num_rows($result) === 0) {
+                throw new Exception("Kegiatan dengan ID {$kegiatanId} tidak ditemukan");
+            }
+            mysqli_stmt_close($lockStmt);
+            error_log("Lock OK");
+            
+            // Update status dan posisi kegiatan
+            $updateQuery = "UPDATE tbl_kegiatan 
+                            SET statusUtamaId = ?, 
+                                posisiId = ? 
+                            WHERE kegiatanId = ?";
+            
+            $updateStmt = mysqli_prepare($this->db, $updateQuery);
+            
+            if (!$updateStmt) {
+                throw new Exception("Gagal menyiapkan statement update: " . mysqli_error($this->db));
+            }
+            
+            mysqli_stmt_bind_param($updateStmt, "iii", $statusRevisi, $backToPosisi, $kegiatanId);
+            
+            if (!mysqli_stmt_execute($updateStmt)) {
+                throw new Exception("Gagal update status: " . mysqli_stmt_error($updateStmt));
+            }
+            
+            $affectedRows = mysqli_stmt_affected_rows($updateStmt);
+            mysqli_stmt_close($updateStmt);
+            error_log("Update OK, affected rows: " . $affectedRows);
+            
+            if ($affectedRows === 0) {
+                error_log("WARNING: Tidak ada baris yang ter-update");
+            }
+            
+            // Catat ke progress history
+            error_log("Inserting progress history...");
+            $historyId = $this->insertProgressHistory(
+                $kegiatanId, 
+                $statusRevisi, 
+                $currentPosisi, 
+                $backToPosisi, 
+                $userId, 
+                'revise'
+            );
+            
+            if (!$historyId || $historyId <= 0) {
+                throw new Exception("Gagal mencatat riwayat progress");
+            }
+            error_log("Progress history OK, ID: " . $historyId);
+            
+            // Simpan semua komentar revisi
+            $successCount = 0;
+            error_log("Inserting " . count($komentarRevisi) . " comments...");
+            
+            foreach ($komentarRevisi as $index => $komentar) {
+                error_log("Processing comment #{$index}: " . print_r($komentar, true));
+                
+                $targetKolom = $komentar['targetKolom'] ?? null;
+                $targetTabel = $komentar['targetTabel'] ?? 'tbl_kegiatan';
+                $komentarText = $komentar['komentar'] ?? '';
+                
+                if (empty($komentarText)) {
+                    error_log("WARNING: Komentar #{$index} kosong, skip");
+                    continue;
+                }
+                
+                $commentResult = $this->insertRevisiComment(
+                    $historyId, 
+                    $userId, 
+                    $roleId, 
+                    $komentarText, 
+                    $targetTabel,
+                    $targetKolom
+                );
+                
+                if ($commentResult) {
+                    $successCount++;
+                    error_log("Comment #{$index} inserted OK");
+                } else {
+                    error_log("WARNING: Gagal insert comment #{$index}");
+                }
+            }
+            
+            error_log("Successfully inserted {$successCount} comments");
+            
+            if ($successCount === 0) {
+                throw new Exception("Tidak ada komentar yang berhasil disimpan");
+            }
+            
+            // Commit transaction
+            mysqli_commit($this->db);
+            error_log("Transaction committed successfully");
+            error_log("=== reviseUsulan END (SUCCESS) ===");
+            return true;
+            
+        } catch (Exception $e) {
+            // Rollback jika error
+            mysqli_rollback($this->db);
+            error_log("Transaction rolled back");
+            error_log("ERROR: " . $e->getMessage());
+            error_log("=== reviseUsulan END (FAILED) ===");
+            return false;
+        }
+    }
+    
 
     /**
      * Mengambil data proposal untuk monitoring.
