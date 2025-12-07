@@ -55,11 +55,8 @@ class adminModel {
 
     /**
      * Mengambil daftar KAK (Kerangka Acuan Kegiatan) untuk tabel dashboard.
+     * PENTING: HARUS mengembalikan posisiId dan statusUtamaId untuk filter!
      */
-    /**
- * Mengambil daftar KAK (Kerangka Acuan Kegiatan) untuk tabel dashboard.
- * PENTING: HARUS mengembalikan posisiId dan statusUtamaId untuk filter!
- */
     public function getDashboardKAK() {
         $query = "SELECT 
                     k.kegiatanId as id,
@@ -70,9 +67,9 @@ class adminModel {
                     k.jurusanPenyelenggara as jurusan,
                     CONCAT(k.pemilikKegiatan, ' (', k.nimPelaksana, '), ', k.prodiPenyelenggara) as pengusul,
                     k.createdAt as tanggal_pengajuan,
-                    k.posisiId as posisi,           -- ✅ PENTING: Tambahkan ini
-                    k.posisiId,                     -- ✅ PENTING: Tambahkan ini juga
-                    k.statusUtamaId,                -- ✅ PENTING: Tambahkan ini
+                    k.posisiId as posisi,
+                    k.posisiId,
+                    k.statusUtamaId,
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.statusUtamaId = 2 THEN 'Revisi'
@@ -101,7 +98,6 @@ class adminModel {
                     $row['status'] = 'Menunggu';
                 }
                 
-                // Debug log untuk cek data
                 error_log("adminModel::getDashboardKAK() - Row Data:");
                 error_log("  ID: {$row['id']}, posisiId: {$row['posisiId']}, statusUtamaId: {$row['statusUtamaId']}");
                 
@@ -217,17 +213,11 @@ class adminModel {
 
     /**
      * Mengambil detail LPJ dengan status yang akurat.
-     * 
-     * STATUS FLOW:
-     * 1. 'setuju' - LPJ disetujui bendahara (approvedAt NOT NULL)
-     * 2. 'menunggu' - LPJ sudah disubmit, menunggu verifikasi (submittedAt NOT NULL)
-     * 3. 'draft' - LPJ baru dibuat, belum ada item atau sedang upload
      */
     public function getDetailLPJ($lpjId) {
         error_log("=== adminModel::getDetailLPJ START ===");
         error_log("lpjId: " . $lpjId);
         
-        // Cast ke integer untuk keamanan
         $lpjId = (int) $lpjId;
         
         $query = "SELECT 
@@ -282,7 +272,6 @@ class adminModel {
         error_log("  - approvedAt: " . ($data['approvedAt'] ?? 'NULL'));
         error_log("  - status (from query): " . $data['status']);
         
-        // Cek jumlah item LPJ yang ada
         $countItemQuery = "SELECT COUNT(*) as total FROM tbl_lpj_item WHERE lpjId = ?";
         $stmtCount = mysqli_prepare($this->db, $countItemQuery);
         mysqli_stmt_bind_param($stmtCount, "i", $lpjId);
@@ -294,14 +283,11 @@ class adminModel {
         $totalItems = $countData['total'] ?? 0;
         error_log("  - Total items in tbl_lpj_item: " . $totalItems);
         
-        // Jika status draft, cek detail upload
         if ($data['status'] === 'draft') {
             if ($totalItems === 0) {
-                // Belum ada item sama sekali
                 $data['status'] = 'belum_ada_item';
                 error_log("Status updated to: belum_ada_item (no items in tbl_lpj_item)");
             } else {
-                // Ada item, cek upload status
                 $checkBuktiQuery = "SELECT 
                                         COUNT(*) as total,
                                         SUM(CASE WHEN fileBukti IS NOT NULL AND fileBukti != '' THEN 1 ELSE 0 END) as uploaded
@@ -335,11 +321,6 @@ class adminModel {
 
     /**
      * Auto-create LPJ items dari RAB jika belum ada.
-     * Dipanggil saat pertama kali buka halaman detail LPJ.
-     * 
-     * @param int $lpjId - ID LPJ
-     * @param int $kakId - ID KAK (untuk ambil data RAB)
-     * @return bool - Success status
      */
     public function autoPopulateLPJItems($lpjId, $kakId) {
         error_log("=== autoPopulateLPJItems START ===");
@@ -348,7 +329,6 @@ class adminModel {
         $lpjId = (int) $lpjId;
         $kakId = (int) $kakId;
         
-        // 1. Cek apakah sudah ada items
         $checkQuery = "SELECT COUNT(*) as total FROM tbl_lpj_item WHERE lpjId = ?";
         $stmtCheck = mysqli_prepare($this->db, $checkQuery);
         mysqli_stmt_bind_param($stmtCheck, "i", $lpjId);
@@ -362,10 +342,9 @@ class adminModel {
         
         if ($existingItems > 0) {
             error_log("Items already exist, skipping auto-populate");
-            return true; // Sudah ada, skip
+            return true;
         }
         
-        // 2. Ambil semua RAB items dari tbl_rab
         $rabQuery = "SELECT 
                         r.rabItemId,
                         r.uraian,
@@ -400,11 +379,9 @@ class adminModel {
             return false;
         }
         
-        // 3. Insert ke tbl_lpj_item
         mysqli_begin_transaction($this->db);
         
         try {
-            // ✅ PERBAIKAN: Query INSERT yang benar
             $insertQuery = "INSERT INTO tbl_lpj_item 
                             (lpjId, jenisBelanja, uraian, rincian, vol1, sat1, vol2, sat2, totalHarga, subTotal, fileBukti) 
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)";
@@ -425,10 +402,9 @@ class adminModel {
                 $sat1 = $item['sat1'] ?? '';
                 $vol2 = $item['vol2'] ?? '';
                 $sat2 = $item['sat2'] ?? '';
-                $totalHarga = $item['totalHarga']; // Rencana
-                $subTotal = $item['totalHarga'];   // Default realisasi = rencana
+                $totalHarga = $item['totalHarga'];
+                $subTotal = $item['totalHarga'];
                 
-                // ✅ PERBAIKAN: Bind param yang benar (10 parameter)
                 mysqli_stmt_bind_param(
                     $stmtInsert, 
                     "isssssssdd", 
@@ -467,11 +443,8 @@ class adminModel {
     }
 
     /**
-     * Mengambil item RAB untuk LPJ dengan data dari tbl_lpj_item (jika ada).
-     * UPDATED: Ambil dari tbl_lpj_item, bukan langsung dari tbl_rab.
+     * Mengambil item RAB untuk LPJ dengan data dari tbl_lpj_item.
      */
-    // Di adminModel.php, ganti method getRABForLPJ dengan yang sudah diperbaiki:
-
     public function getRABForLPJ($lpjId, $kakId) {
         error_log("=== adminModel::getRABForLPJ START ===");
         error_log("lpjId: {$lpjId}, kakId: {$kakId}");
@@ -479,10 +452,8 @@ class adminModel {
         $lpjId = (int) $lpjId;
         $kakId = (int) $kakId;
         
-        // PENTING: Auto-populate dulu jika belum ada items
         $this->autoPopulateLPJItems($lpjId, $kakId);
         
-        // ✅ PERBAIKAN: Query yang disesuaikan dengan struktur tbl_lpj_item
         $query = "SELECT 
                     li.lpjItemId as id,
                     li.uraian,
@@ -518,9 +489,8 @@ class adminModel {
         while ($row = mysqli_fetch_assoc($result)) {
             $itemCount++;
             
-            // Group by kategori
             $kategori = $row['namaKategori'];
-            unset($row['namaKategori']); // Remove from row data
+            unset($row['namaKategori']);
             
             $data[$kategori][] = $row;
         }
@@ -535,40 +505,42 @@ class adminModel {
     }
 
     /**
-     * Mengambil detail lengkap kegiatan beserta data KAK, Penanggung Jawab, dan file pendukung.
-     *
-     * Method ini melakukan JOIN dengan beberapa tabel untuk mengumpulkan informasi lengkap:
-     * - Data kegiatan utama dari tbl_kegiatan
-     * - Data KAK dari tbl_kak
-     * - Data Penanggung Jawab dari tbl_user (via rancangan_kegiatan)
-     * - Tanggal mulai dan selesai dari tbl_rancangan_kegiatan
-     * - File surat pengantar dari tbl_rancangan_kegiatan
-     * - Status usulan dari tbl_status_utama
-     *
-     * @param int $kegiatanId ID dari kegiatan yang akan diambil detailnya
-     * @return array|null Array asosiatif berisi detail kegiatan, atau null jika tidak ditemukan
-     * @throws mysqli_sql_exception Jika terjadi kesalahan database
+     * Mengambil detail lengkap kegiatan beserta data KAK.
+     * ✅ DIPERBAIKI: Query disesuaikan dengan kebutuhan view
      */
     public function getDetailKegiatan($kegiatanId)
     {
         $query = "SELECT 
-                    k.*, 
-                    kak.*,
+                    k.kegiatanId,
+                    k.namaKegiatan,
+                    k.pemilikKegiatan as nama_pelaksana,
+                    k.nimPelaksana as nim_pelaksana,
+                    k.namaPJ as nama_pj,
+                    k.nip as nim_pj,
+                    k.prodiPenyelenggara,
+                    k.jurusanPenyelenggara,
                     k.tanggalMulai as tanggal_mulai,
                     k.tanggalSelesai as tanggal_selesai,
                     k.suratPengantar as file_surat_pengantar,
-                    k.pemilikKegiatan as nama_pengusul,
-                    k.namaPJ as nama_pj,
-                    k.nip as nim_pj,
-                    k.nimPelaksana as nim_pelaksana,
-                    k.pemilikKegiatan as nama_pelaksana,
+                    k.buktiMAK,
+                    k.statusUtamaId,
+                    k.posisiId,
+                    
+                    kak.kakId,
+                    kak.iku,
+                    kak.gambaranUmum,
+                    kak.penerimaMaanfaat,
+                    kak.metodePelaksanaan,
+                    kak.tglPembuatan,
+                    
+                    u.nama as nama_pengusul,
+                    
                     s.namaStatusUsulan as status_text
                   FROM tbl_kegiatan k
                   JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   LEFT JOIN tbl_user u ON u.userId = k.userId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                   WHERE k.kegiatanId = ?";
-                // --   LIMIT 1";
         
         $stmt = mysqli_prepare($this->db, $query);
         
@@ -606,6 +578,8 @@ class adminModel {
         while ($row = mysqli_fetch_assoc($result)) {
             $data[] = $row;
         }
+        mysqli_stmt_close($stmt);
+        
         return $data;
     }
 
@@ -624,6 +598,8 @@ class adminModel {
         while ($row = mysqli_fetch_assoc($result)) {
             $data[] = $row['namaTahapan'];
         }
+        mysqli_stmt_close($stmt);
+        
         return $data;
     }
 
@@ -648,6 +624,8 @@ class adminModel {
         while ($row = mysqli_fetch_assoc($result)) {
             $data[$row['namaKategori']][] = $row;
         }
+        mysqli_stmt_close($stmt);
+        
         return $data;
     }
 
@@ -716,236 +694,235 @@ class adminModel {
         mysqli_stmt_close($stmt);
         
         return $row['komentarRevisi'] ?? '';
-    }
+}
+/**
+ * Menyimpan pengajuan KAK lengkap.
+ */
+public function simpanPengajuan($data) {
+    mysqli_begin_transaction($this->db);
 
-    /**
-     * Menyimpan pengajuan KAK lengkap.
-     */
-    public function simpanPengajuan($data) {
-        mysqli_begin_transaction($this->db);
-
-        try {
-            $nama_pengusul = $data['nama_pengusul'] ?? '';
-            $nim           = $data['nim_nip'] ?? '';
-            $jurusan       = $data['jurusan'] ?? '';
-            $prodi         = $data['prodi'] ?? '';
-            $nama_kegiatan = $data['nama_kegiatan_step1'] ?? '';
-            $user_id       = $_SESSION['user_id'] ?? 0;
-            $tgl_sekarang  = date('Y-m-d H:i:s');
-            $status_awal   = 1;
-            $wadir_tujuan  = $data['wadir_tujuan'] ?? null; 
-            
-            $posisi_tujuan = 2;
-
-            $queryKegiatan = "INSERT INTO tbl_kegiatan 
-            (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, createdAt, wadirTujuan, posisiId)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    try {
+        $nama_pengusul = $data['nama_pengusul'] ?? '';
+        $nim           = $data['nim_nip'] ?? '';
+        $jurusan       = $data['jurusan'] ?? '';
+        $prodi         = $data['prodi'] ?? '';
+        $nama_kegiatan = $data['nama_kegiatan_step1'] ?? '';
+        $user_id       = $_SESSION['user_id'] ?? 0;
+        $tgl_sekarang  = date('Y-m-d H:i:s');
+        $status_awal   = 1;
+        $wadir_tujuan  = $data['wadir_tujuan'] ?? null; 
         
-            $stmt = mysqli_prepare($this->db, $queryKegiatan);
-            mysqli_stmt_bind_param($stmt, "ssssisisii", $nama_kegiatan, $prodi, $nama_pengusul, $nim, $user_id, $jurusan, $status_awal, $tgl_sekarang, $wadir_tujuan, $posisi_tujuan);
-            
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal insert kegiatan: " . mysqli_error($this->db));
-            }
-            
-            $kegiatanId = mysqli_insert_id($this->db);
-            mysqli_stmt_close($stmt);
+        $posisi_tujuan = 2;
 
-            $iku           = $data['indikator_kinerja'] ?? 'Belum pilih';
-            $gambaran_umum = $data['gambaran_umum'] ?? '';
-            $penerima      = $data['penerima_manfaat'] ?? '';
-            $metode        = $data['metode_pelaksanaan'] ?? '';
-            $tgl_only      = date('Y-m-d');
-            
-            $queryKAK = "INSERT INTO tbl_kak 
-                (kegiatanId, iku, gambaranUmum, penerimaMaanfaat, metodePelaksanaan, tglPembuatan)
-                VALUES (?, ?, ?, ?, ?, ?)";
-
-            $stmt = mysqli_prepare($this->db, $queryKAK);
-            mysqli_stmt_bind_param(
-                $stmt, "isssss", $kegiatanId, $iku, $gambaran_umum, $penerima, $metode, $tgl_only
-            );
-
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal insert KAK: " . mysqli_error($this->db));
-            }
-
-            $kakId = mysqli_insert_id($this->db);
-            mysqli_stmt_close($stmt);
-
-            if (!empty($data['tahapan']) && is_array($data['tahapan'])) {
-                $queryTahapan = "INSERT INTO tbl_tahapan_pelaksanaan (kakId, namaTahapan) VALUES (?, ?)";
-                $stmt = mysqli_prepare($this->db, $queryTahapan);
-                
-                foreach ($data['tahapan'] as $tahap) {
-                    if (!empty($tahap)) {
-                        mysqli_stmt_bind_param($stmt, "is", $kakId, $tahap);
-                        if (!mysqli_stmt_execute($stmt)) {
-                            throw new Exception("Gagal insert tahapan: " . mysqli_error($this->db));
-                        }
-                    }
-                }
-                mysqli_stmt_close($stmt);
-            }
-
-            if (!empty($data['indikator_nama']) && is_array($data['indikator_nama'])) {
-                $queryIndikator = "INSERT INTO tbl_indikator_kak (kakId, bulan, indikatorKeberhasilan, targetPersen) VALUES (?, ?, ?, ?)";
-                $stmt = mysqli_prepare($this->db, $queryIndikator);
-                
-                $count = count($data['indikator_nama']);
-                
-                for ($i = 0; $i < $count; $i++) {
-                    $bulan  = $data['indikator_bulan'][$i] ?? '';
-                    $nama   = $data['indikator_nama'][$i] ?? '';
-                    $target = $data['indikator_target'][$i] ?? '';
-                    
-                    if (!empty($nama)) {
-                        mysqli_stmt_bind_param($stmt, "isss", $kakId, $bulan, $nama, $target);
-                        if (!mysqli_stmt_execute($stmt)) {
-                            throw new Exception("Gagal insert indikator: " . mysqli_error($this->db));
-                        }
-                    }
-                }
-                mysqli_stmt_close($stmt);
-            }
-
-            $rab_json = $data['rab_data'] ?? '[]'; 
-            $budgetData = json_decode($rab_json, true);
-
-            if (!empty($budgetData) && is_array($budgetData)) {
-                
-                $queryKategori = "INSERT INTO tbl_kategori_rab (namaKategori) VALUES (?)";
-                $queryItemRAB  = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-                
-                foreach ($budgetData as $namaKategori => $items) {
-                    if (empty($items)) continue; 
-
-                    $kategoriId = 0;
-                    
-                    $checkKat = mysqli_prepare($this->db, "SELECT kategoriRabId FROM tbl_kategori_rab WHERE namaKategori = ? LIMIT 1");
-                    mysqli_stmt_bind_param($checkKat, "s", $namaKategori);
-                    mysqli_stmt_execute($checkKat);
-                    $resKat = mysqli_stmt_get_result($checkKat);
-                    
-                    if ($rowKat = mysqli_fetch_assoc($resKat)) {
-                        $kategoriId = $rowKat['kategoriRabId'];
-                    } 
-                    
-                    mysqli_stmt_close($checkKat); 
-
-                    if ($kategoriId == 0) {
-                        $stmtKat = mysqli_prepare($this->db, $queryKategori);
-                        mysqli_stmt_bind_param($stmtKat, "s", $namaKategori);
-                        if (!mysqli_stmt_execute($stmtKat)) {
-                            throw new Exception("Gagal insert kategori RAB: " . mysqli_error($this->db));
-                        }
-                        $kategoriId = mysqli_insert_id($this->db);
-                        mysqli_stmt_close($stmtKat);
-                    }
-
-                    $stmtItem = mysqli_prepare($this->db, $queryItemRAB);
-                    foreach ($items as $item) {
-                        $uraian  = $item['uraian'] ?? '';
-                        $rincian = $item['rincian'] ?? '';
-                        
-                        $vol1 = floatval($item['vol1'] ?? 0);
-                        $vol2 = floatval($item['vol2'] ?? 1);
-                        $sat1 = $item['sat1'] ?? '';
-                        $sat2 = $item['sat2'] ?? '';
-
-                        $volume = $vol1 * $vol2; 
-                        $harga   = floatval($item['harga'] ?? 0);
-                        $total   = $volume * $harga;
-
-                        mysqli_stmt_bind_param($stmtItem, "iissssdddd", $kakId, $kategoriId, $uraian, $rincian, $sat1, $sat2, $vol1, $vol2, $harga, $total);
-                        if (!mysqli_stmt_execute($stmtItem)) {
-                            throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
-                        }
-                    }
-                    mysqli_stmt_close($stmtItem);
-                }
-            }
-
-            mysqli_commit($this->db);
-            return true;
-
-        } catch (Exception $e) {
-            mysqli_rollback($this->db);
-            error_log("Gagal Simpan Pengajuan: " . $e->getMessage());
-            
-            return false;
-        }
-    }
-
-    /**
-     * Memperbarui surat pengantar.
-     */
-    public function updateSuratPengantar($kegiatanId, $fileName) {
-        $query = "UPDATE tbl_kegiatan SET suratPengantar = ? WHERE kegiatanId = ?";
+        $queryKegiatan = "INSERT INTO tbl_kegiatan 
+        (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, createdAt, wadirTujuan, posisiId)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+        $stmt = mysqli_prepare($this->db, $queryKegiatan);
+        mysqli_stmt_bind_param($stmt, "ssssisisii", $nama_kegiatan, $prodi, $nama_pengusul, $nim, $user_id, $jurusan, $status_awal, $tgl_sekarang, $wadir_tujuan, $posisi_tujuan);
         
-        $stmt = mysqli_prepare($this->db, $query);
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "si", $fileName, $kegiatanId);
-            $result = mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-            return $result;
+        if (!mysqli_stmt_execute($stmt)) {
+            throw new Exception("Gagal insert kegiatan: " . mysqli_error($this->db));
         }
+        
+        $kegiatanId = mysqli_insert_id($this->db);
+        mysqli_stmt_close($stmt);
+
+        $iku           = $data['indikator_kinerja'] ?? 'Belum pilih';
+        $gambaran_umum = $data['gambaran_umum'] ?? '';
+        $penerima      = $data['penerima_manfaat'] ?? '';
+        $metode        = $data['metode_pelaksanaan'] ?? '';
+        $tgl_only      = date('Y-m-d');
+        
+        $queryKAK = "INSERT INTO tbl_kak 
+            (kegiatanId, iku, gambaranUmum, penerimaMaanfaat, metodePelaksanaan, tglPembuatan)
+            VALUES (?, ?, ?, ?, ?, ?)";
+
+        $stmt = mysqli_prepare($this->db, $queryKAK);
+        mysqli_stmt_bind_param(
+            $stmt, "isssss", $kegiatanId, $iku, $gambaran_umum, $penerima, $metode, $tgl_only
+        );
+
+        if (!mysqli_stmt_execute($stmt)) {
+            throw new Exception("Gagal insert KAK: " . mysqli_error($this->db));
+        }
+
+        $kakId = mysqli_insert_id($this->db);
+        mysqli_stmt_close($stmt);
+
+        if (!empty($data['tahapan']) && is_array($data['tahapan'])) {
+            $queryTahapan = "INSERT INTO tbl_tahapan_pelaksanaan (kakId, namaTahapan) VALUES (?, ?)";
+            $stmt = mysqli_prepare($this->db, $queryTahapan);
+            
+            foreach ($data['tahapan'] as $tahap) {
+                if (!empty($tahap)) {
+                    mysqli_stmt_bind_param($stmt, "is", $kakId, $tahap);
+                    if (!mysqli_stmt_execute($stmt)) {
+                        throw new Exception("Gagal insert tahapan: " . mysqli_error($this->db));
+                    }
+                }
+            }
+            mysqli_stmt_close($stmt);
+        }
+
+        if (!empty($data['indikator_nama']) && is_array($data['indikator_nama'])) {
+            $queryIndikator = "INSERT INTO tbl_indikator_kak (kakId, bulan, indikatorKeberhasilan, targetPersen) VALUES (?, ?, ?, ?)";
+            $stmt = mysqli_prepare($this->db, $queryIndikator);
+            
+            $count = count($data['indikator_nama']);
+            
+            for ($i = 0; $i < $count; $i++) {
+                $bulan  = $data['indikator_bulan'][$i] ?? '';
+                $nama   = $data['indikator_nama'][$i] ?? '';
+                $target = $data['indikator_target'][$i] ?? '';
+                
+                if (!empty($nama)) {
+                    mysqli_stmt_bind_param($stmt, "isss", $kakId, $bulan, $nama, $target);
+                    if (!mysqli_stmt_execute($stmt)) {
+                        throw new Exception("Gagal insert indikator: " . mysqli_error($this->db));
+                    }
+                }
+            }
+            mysqli_stmt_close($stmt);
+        }
+
+        $rab_json = $data['rab_data'] ?? '[]'; 
+        $budgetData = json_decode($rab_json, true);
+
+        if (!empty($budgetData) && is_array($budgetData)) {
+            
+            $queryKategori = "INSERT INTO tbl_kategori_rab (namaKategori) VALUES (?)";
+            $queryItemRAB  = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            foreach ($budgetData as $namaKategori => $items) {
+                if (empty($items)) continue; 
+
+                $kategoriId = 0;
+                
+                $checkKat = mysqli_prepare($this->db, "SELECT kategoriRabId FROM tbl_kategori_rab WHERE namaKategori = ? LIMIT 1");
+                mysqli_stmt_bind_param($checkKat, "s", $namaKategori);
+                mysqli_stmt_execute($checkKat);
+                $resKat = mysqli_stmt_get_result($checkKat);
+                
+                if ($rowKat = mysqli_fetch_assoc($resKat)) {
+                    $kategoriId = $rowKat['kategoriRabId'];
+                } 
+                
+                mysqli_stmt_close($checkKat); 
+
+                if ($kategoriId == 0) {
+                    $stmtKat = mysqli_prepare($this->db, $queryKategori);
+                    mysqli_stmt_bind_param($stmtKat, "s", $namaKategori);
+                    if (!mysqli_stmt_execute($stmtKat)) {
+                        throw new Exception("Gagal insert kategori RAB: " . mysqli_error($this->db));
+                    }
+                    $kategoriId = mysqli_insert_id($this->db);
+                    mysqli_stmt_close($stmtKat);
+                }
+
+                $stmtItem = mysqli_prepare($this->db, $queryItemRAB);
+                foreach ($items as $item) {
+                    $uraian  = $item['uraian'] ?? '';
+                    $rincian = $item['rincian'] ?? '';
+                    
+                    $vol1 = floatval($item['vol1'] ?? 0);
+                    $vol2 = floatval($item['vol2'] ?? 1);
+                    $sat1 = $item['sat1'] ?? '';
+                    $sat2 = $item['sat2'] ?? '';
+
+                    $volume = $vol1 * $vol2; 
+                    $harga   = floatval($item['harga'] ?? 0);
+                    $total   = $volume * $harga;
+
+                    mysqli_stmt_bind_param($stmtItem, "iissssdddd", $kakId, $kategoriId, $uraian, $rincian, $sat1, $sat2, $vol1, $vol2, $harga, $total);
+                    if (!mysqli_stmt_execute($stmtItem)) {
+                        throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
+                    }
+                }
+                mysqli_stmt_close($stmtItem);
+            }
+        }
+
+        mysqli_commit($this->db);
+        return true;
+
+    } catch (Exception $e) {
+        mysqli_rollback($this->db);
+        error_log("Gagal Simpan Pengajuan: " . $e->getMessage());
+        
         return false;
     }
+}
 
-    /**
-     * Memperbarui rincian kegiatan (PJ, Tanggal, Surat).
-     */
-    public function updateRincianKegiatan($id, $data, $fileSurat = null) {
-        $posisiIdPPK = 4;
-        $statusMenunggu = 3;
-        
-        if ($fileSurat) {
-            $query = "UPDATE tbl_kegiatan SET 
-                        namaPJ = ?, 
-                        nip = ?, 
-                        tanggalMulai = ?, 
-                        tanggalSelesai = ?, 
-                        suratPengantar = ?,
-                        posisiId = ?,
-                        statusUtamaId = ?
-                      WHERE kegiatanId = ?";
-            
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "sssssiii", 
-                $data['namaPj'], 
-                $data['nip'], 
-                $data['tgl_mulai'], 
-                $data['tgl_selesai'], 
-                $fileSurat, 
-                $posisiIdPPK,
-                $statusMenunggu,
-                $id
-            );
-        } else {
-            $query = "UPDATE tbl_kegiatan SET 
-                        namaPJ = ?, 
-                        nip = ?, 
-                        tanggalMulai = ?, 
-                        tanggalSelesai = ?,
-                        posisiId = ?,
-                        statusUtamaId = ?
-                      WHERE kegiatanId = ?";
-            
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "ssssiii", 
-                $data['namaPj'], 
-                $data['nip'], 
-                $data['tgl_mulai'], 
-                $data['tgl_selesai'], 
-                $posisiIdPPK,
-                $statusMenunggu,
-                $id
-            );
-        }
-
+/**
+ * Memperbarui surat pengantar.
+ */
+public function updateSuratPengantar($kegiatanId, $fileName) {
+    $query = "UPDATE tbl_kegiatan SET suratPengantar = ? WHERE kegiatanId = ?";
+    
+    $stmt = mysqli_prepare($this->db, $query);
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "si", $fileName, $kegiatanId);
         $result = mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
         return $result;
     }
+    return false;
+}
+
+/**
+ * Memperbarui rincian kegiatan (PJ, Tanggal, Surat).
+ */
+public function updateRincianKegiatan($id, $data, $fileSurat = null) {
+    $posisiIdPPK = 4;
+    $statusMenunggu = 3;
+    
+    if ($fileSurat) {
+        $query = "UPDATE tbl_kegiatan SET 
+                    namaPJ = ?, 
+                    nip = ?, 
+                    tanggalMulai = ?, 
+                    tanggalSelesai = ?, 
+                    suratPengantar = ?,
+                    posisiId = ?,
+                    statusUtamaId = ?
+                  WHERE kegiatanId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "sssssiii", 
+            $data['namaPj'], 
+            $data['nip'], 
+            $data['tgl_mulai'], 
+            $data['tgl_selesai'], 
+            $fileSurat, 
+            $posisiIdPPK,
+            $statusMenunggu,
+            $id
+        );
+    } else {
+        $query = "UPDATE tbl_kegiatan SET 
+                    namaPJ = ?, 
+                    nip = ?, 
+                    tanggalMulai = ?, 
+                    tanggalSelesai = ?,
+                    posisiId = ?,
+                    statusUtamaId = ?
+                  WHERE kegiatanId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "ssssiii", 
+            $data['namaPj'], 
+            $data['nip'], 
+            $data['tgl_mulai'], 
+            $data['tgl_selesai'], 
+            $posisiIdPPK,
+            $statusMenunggu,
+            $id
+        );
+    }
+
+    $result = mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    return $result;
+}
 }

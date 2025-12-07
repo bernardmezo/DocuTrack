@@ -79,104 +79,110 @@ switch ($main_route) {
         $controller->logout();
         break;
 
-    case 'admin':
-        AuthMiddleware::check();
-        AdminMiddleware::check();
-        
-        $base_admin_path = '/admin';
-        
-        switch ($sub_route) {
-            case 'index': 
-            case 'dashboard': 
-                require_once '../src/controllers/Admin/DashboardController.php';
-                $controller = new AdminDashboardController($db); 
-                $controller->index(['active_page' => $base_admin_path . '/dashboard']);
+case 'admin':
+    AuthMiddleware::check();
+    AdminMiddleware::check();
+    
+    $base_admin_path = '/admin';
+    
+    switch ($sub_route) {
+        case 'index': 
+        case 'dashboard': 
+            require_once '../src/controllers/Admin/DashboardController.php';
+            $controller = new AdminDashboardController($db); 
+            $controller->index(['active_page' => $base_admin_path . '/dashboard']);
+            break;
+
+        case 'akun':
+            require_once '../src/controllers/Admin/AkunController.php';
+            $controller = new AdminAkunController($db);
+            
+            if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $controller->update();
+            } else {
+                $controller->index(['active_page' => $base_admin_path . '/akun']);
+            }
+            break;
+
+        case 'detail-kak':
+            require_once '../src/controllers/Admin/DetailKAK.php';
+            $controller = new AdminDetailKAKController($db); 
+            
+            if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                $controller->show($param2, ['active_page' => $base_admin_path . '/dashboard']);
+            } else {
+                header('Location: /docutrack/public/admin/dashboard');
+                exit;
+            }
+            break;
+
+        // ✅ TAMBAHKAN ROUTE BARU INI
+        case 'simpan-revisi':
+            error_log("=== ROUTE simpan-revisi TRIGGERED ===");
+            error_log("param1 (ID): " . ($param1 ?? 'NULL'));
+            
+            require_once '../src/controllers/Admin/DetailKAK.php';
+            $controller = new AdminDetailKAKController($db); 
+            
+            if (isset($param1) && !empty($param1)) {
+                error_log("Calling simpanRevisi($param1)");
+                $controller->simpanRevisi($param1);
+            } else {
+                error_log("ERROR: No ID provided");
+                $_SESSION['error_message'] = "ID kegiatan tidak ditemukan.";
+                header('Location: /docutrack/public/admin/dashboard');
+                exit;
+            }
+            break;
+
+        case 'pengajuan-usulan':
+            require_once '../src/controllers/Admin/PengajuanUsulanController.php';
+            $controller = new AdminPengajuanUsulanController($db); 
+
+            if (isset($param1) && $param1 === 'store') {
+                $controller->store(); 
+            } else {
+                $controller->index(['active_page' => $base_admin_path . '/pengajuan-usulan']);
+            }
+            break;
+
+        case 'pengajuan-kegiatan':
+            if (isset($param1) && $param1 === 'submitrincian') {
+                require_once '../src/controllers/Admin/AdminController.php';
+                $controller = new Controllers\Admin\AdminController($db);
+                $controller->submitRincian();
                 break;
+            }
 
-            case 'akun':
-                require_once '../src/controllers/Admin/AkunController.php';
-                $controller = new AdminAkunController($db);
-                
-                if (isset($param1) && $param1 === 'update' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $controller->update();
-                } else {
-                    $controller->index(['active_page' => $base_admin_path . '/akun']);
-                }
-                break;
+            require_once '../src/controllers/Admin/PengajuanKegiatanController.php';
+            $controller = new AdminPengajuanKegiatanController($db); 
 
-            case 'detail-kak':
-                require_once '../src/controllers/Admin/DetailKAK.php';
-                $controller = new AdminDetailKAKController($db); 
-                
-                if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    $controller->show($param2, ['active_page' => $base_admin_path . '/dashboard']);
-                } else {
-                    header('Location: /docutrack/public/admin/dashboard');
-                    exit;
-                }
-                break;
+            if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
+            } else {
+                $controller->index(['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
+            }
+            break;
 
-            case 'pengajuan-usulan':
-                require_once '../src/controllers/Admin/PengajuanUsulanController.php';
-                $controller = new AdminPengajuanUsulanController($db); 
+        case 'pengajuan-lpj':
+            require_once '../src/controllers/Admin/AdminPengajuanLpjController.php';
+            $controller = new AdminPengajuanLpjController($db); 
+            
+            if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-lpj']);
+            } elseif (isset($param1) && $param1 === 'upload-bukti') {
+                $controller->uploadBukti();
+            } elseif (isset($param1) && $param1 === 'submit') {
+                $controller->submitLpj();
+            } else {
+                $controller->index(['active_page' => $base_admin_path . '/pengajuan-lpj']);
+            }
+            break;
 
-                if (isset($param1) && $param1 === 'store') {
-                    $controller->store(); 
-                } else {
-                    $controller->index(['active_page' => $base_admin_path . '/pengajuan-usulan']);
-                }
-                break;
-
-            case 'pengajuan-kegiatan':
-                if (isset($param1) && $param1 === 'submitrincian') {
-                    require_once '../src/controllers/Admin/AdminController.php';
-                    $controller = new Controllers\Admin\AdminController($db);
-                    $controller->submitRincian();
-                    break;
-                }
-
-                require_once '../src/controllers/Admin/PengajuanKegiatanController.php';
-                $controller = new AdminPengajuanKegiatanController($db); 
-
-                if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
-                } else {
-                    $controller->index(['active_page' => $base_admin_path . '/pengajuan-kegiatan']);
-                }
-                break;
-
-            case 'pengajuan-lpj':
-                require_once '../src/controllers/Admin/AdminPengajuanLpjController.php';
-                $controller = new AdminPengajuanLpjController($db); 
-                
-                // Debug routing
-                error_log("Route: /admin/pengajuan-lpj");
-                error_log("param1: " . ($param1 ?? 'null'));
-                error_log("param2: " . ($param2 ?? 'null'));
-                
-                if (isset($param1) && $param1 === 'show' && isset($param2)) {
-                    // Route: /admin/pengajuan-lpj/show/{id}
-                    error_log("Calling show() with ID: " . $param2);
-                    $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-lpj']);
-                    
-                } elseif (isset($param1) && $param1 === 'upload-bukti') {
-                    // Route: /admin/pengajuan-lpj/upload-bukti
-                    error_log("Calling uploadBukti()");
-                    $controller->uploadBukti();
-                    
-                } elseif (isset($param1) && $param1 === 'submit') {
-                    // Route: /admin/pengajuan-lpj/submit
-                    error_log("Calling submitLpj()");
-                    $controller->submitLpj();
-                    
-                } else {
-                    // Route: /admin/pengajuan-lpj (default list)
-                    error_log("Calling index()");
-                    $controller->index(['active_page' => $base_admin_path . '/pengajuan-lpj']);
-                }
-                break;
-        }
-        break;
+        default:
+            not_found("Page Admin '/{$sub_route}' not found.");
+    }
+    break;
 
     case 'verifikator':
         AuthMiddleware::check();
