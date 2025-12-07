@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSearch = '';
     let debounceTimer;
 
-    // Render Progress Bar (Sama seperti Wadir)
+    // Render Progress Bar
     function renderProposalProgressJS(tahapSekarang, status) {
         const tahapanAll = ['Pengajuan', 'Verifikasi', 'ACC PPK', 'ACC WD', 'Dana Cair', 'LPJ'];
         
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="relative w-full h-10 flex items-center">${linesHTML}${nodesHTML}</div>`;
     }
     
-    // RENDER TABLE
+    // RENDER TABLE - FIXED: Sesuaikan dengan struktur data dari Model
     function renderTable(proposals) {
         if (!tableBody) return;
         tableBody.innerHTML = '';
@@ -179,21 +179,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 'in process': 'text-blue-700 bg-blue-100',
             }[statusLower] || 'text-yellow-700 bg-yellow-100';
 
-            // Logic tampilan Prodi (Jika ada, tampilkan prodi. Jika kosong, tampilkan jurusan)
-            const displayJurusan = item.prodi ? item.prodi : item.jurusan;
+            // FIXED: Ambil data dari field yang benar sesuai Model
+            const namaKegiatan = item.nama || '-';
+            const namaPengusul = item.pengusul || '-';
+            const nimPengusul = item.nim || '-';
+            const tahapSekarang = item.tahap_sekarang || 'Pengajuan';
+            const statusDisplay = item.status || 'Menunggu';
+            
+            // Logic tampilan Prodi/Jurusan
+            const displayJurusan = item.prodi ? item.prodi : (item.jurusan || '-');
 
             delay += 80;
             
             tableBody.insertAdjacentHTML('beforeend', `
                 <div class='monitoring-row grid grid-cols-3 gap-4 px-4 py-5 items-center transition-colors animate-reveal ${rowClass}' style="animation-delay: ${delay}ms; ${rowStyle}">
                     <div>
-                        <p class="text-sm text-gray-900 font-bold">${item.nama}</p>
-                        <p class="text-xs text-gray-600 mt-1">${item.pengusul} <span class="text-gray-400">(${item.nim})</span></p>
+                        <p class="text-sm text-gray-900 font-bold">${namaKegiatan}</p>
+                        <p class="text-xs text-gray-600 mt-1">${namaPengusul} <span class="text-gray-400">(${nimPengusul})</span></p>
                         <p class="text-xs text-gray-500 mt-0.5"><i class="fas fa-graduation-cap mr-1"></i>${displayJurusan}</p>
                     </div>
-                    <div class="px-2">${renderProposalProgressJS(item.tahap_sekarang, item.status)}</div>
+                    <div class="px-2">${renderProposalProgressJS(tahapSekarang, statusDisplay)}</div>
                     <div>
-                        <span class='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusClass}'>${item.status}</span>
+                        <span class='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusClass}'>${statusDisplay}</span>
                     </div>
                 </div>
             `);
@@ -221,17 +228,23 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchData() {
         if (loadingSpinner) loadingSpinner.classList.remove('hidden');
         
-        const url = `/docutrack/public/ppk/monitoring/data?page=${currentPage}&status=${currentStatus}&jurusan=${encodeURIComponent(currentJurusan)}&search=${encodeURIComponent(currentSearch)}`;
+        // FIXED: Sesuaikan dengan routing yang benar
+        const baseUrl = window.location.pathname.includes('/wadir/') ? '/docutrack/public/wadir/monitoring/data' : '/docutrack/public/ppk/monitoring/data';
+        const url = `${baseUrl}?page=${currentPage}&status=${currentStatus}&jurusan=${encodeURIComponent(currentJurusan)}&search=${encodeURIComponent(currentSearch)}`;
         
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
+            
+            // Debug log
+            console.log('Fetched data:', data);
+            
             renderTable(data.proposals);
             renderPagination(data.pagination);
         } catch (error) {
             console.error('Fetch error:', error);
-            if(tableBody) tableBody.innerHTML = `<div class="text-center py-10 text-red-500 italic">Gagal memuat data.</div>`;
+            if(tableBody) tableBody.innerHTML = `<div class="text-center py-10 text-red-500 italic">Gagal memuat data: ${error.message}</div>`;
         } finally {
             if (loadingSpinner) loadingSpinner.classList.add('hidden');
         }

@@ -304,12 +304,12 @@ class wadirModel {
                     END as tahap_sekarang,
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                        WHEN k.posisiId >= 4 AND k.statusUtamaId != 4 THEN 'Approved'
+                        WHEN k.posisiId >= 5 AND k.statusUtamaId != 4 THEN 'Approved'
                         WHEN k.posisiId = 3 AND k.statusUtamaId = 1 THEN 'Menunggu'
                         ELSE 'In Process'
                     END as status
-                  FROM tbl_kegiatan k
-                  WHERE 1=1 ";
+                FROM tbl_kegiatan k
+                WHERE 1=1 ";
         
         // Filter pencarian (escaped untuk mencegah SQL injection)
         if (!empty($search)) {
@@ -322,12 +322,14 @@ class wadirModel {
             if ($statusFilter === 'ditolak') {
                 $query .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
-                $query .= " AND k.posisiId >= 4 AND k.statusUtamaId != 4";
+                // FIXED: Approved = sudah melewati Wadir (posisiId >= 5)
+                $query .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
             } elseif ($statusFilter === 'menunggu') {
-                // FIXED: Menunggu = posisi di Wadir (3) DAN statusUtama = 1 (menunggu approval)
+                // Menunggu = posisi di Wadir (3) DAN statusUtama = 1 (menunggu approval)
                 $query .= " AND k.posisiId = 3 AND k.statusUtamaId = 1";
             } elseif ($statusFilter === 'in process') {
-                $query .= " AND k.statusUtamaId != 4 AND k.posisiId < 4";
+                // In Process = belum sampai approved, belum ditolak, bukan menunggu di Wadir
+                $query .= " AND k.statusUtamaId != 4 AND k.posisiId < 5 AND NOT (k.posisiId = 3 AND k.statusUtamaId = 1)";
             }
         }
 
@@ -348,12 +350,12 @@ class wadirModel {
             if ($statusFilter === 'ditolak') {
                 $countQuery .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
-                $countQuery .= " AND k.posisiId >= 4 AND k.statusUtamaId != 4";
-            } elseif ($statusFilter === 'menunggu') {
                 // FIXED: Konsisten dengan main query
+                $countQuery .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
+            } elseif ($statusFilter === 'menunggu') {
                 $countQuery .= " AND k.posisiId = 3 AND k.statusUtamaId = 1";
             } elseif ($statusFilter === 'in process') {
-                $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 4";
+                $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 5 AND NOT (k.posisiId = 3 AND k.statusUtamaId = 1)";
             }
         }
         
