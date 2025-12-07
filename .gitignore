@@ -45,6 +45,16 @@ yarn-error.log*
 tmp/
 temp/
 
+# Generated directories/files by tools or runtime
+/logs/
+/.phpunit.cache/
+/ppk/backup/
+AUDIT_REPORT.md
+DEVELOPMENT_SUMMARY.md
+FULL_PROJECT_ANALYSIS.md
+integration_plan_prompt.md
+database/revisionSchema_plan.sql
+
 # Uploads (Keep directory, ignore content)
 /public/assets/uploads/*
 !/public/assets/uploads/.gitkeep
