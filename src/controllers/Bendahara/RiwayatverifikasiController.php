@@ -1,15 +1,18 @@
 <?php
 // File: src/controllers/Bendahara/RiwayatverifikasiController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/bendaharaModel.php';
+namespace App\Controllers\Bendahara;
 
-class BendaharaRiwayatverifikasiController extends Controller {
+use App\Core\Controller;
+use App\Services\BendaharaService;
+
+class RiwayatverifikasiController extends Controller {
     
     private $model;
     
     public function __construct() {
-        $this->model = new bendaharaModel($this->db);
+        parent::__construct();
+        $this->model = new BendaharaService($this->db);
     }
     
     /**
@@ -19,8 +22,8 @@ class BendaharaRiwayatverifikasiController extends Controller {
     public function index($data_dari_router = []) { 
         
         // ✅ AMBIL DATA DARI DATABASE (bukan dummy)
-        $list_riwayat = $this->model->getRiwayatVerifikasi();
-        $jurusan_list = $this->model->getListJurusan();
+        $list_riwayat = $this->safeModelCall($this->model, 'getRiwayatVerifikasi', [], []);
+        $jurusan_list = $this->safeModelCall($this->model, 'getListJurusan', [], []);
 
         $data = array_merge($data_dari_router, [
             'title' => 'Riwayat Verifikasi',
@@ -40,7 +43,7 @@ class BendaharaRiwayatverifikasiController extends Controller {
         $back_url = $base_url . '/' . $ref;
 
         // ✅ AMBIL DATA DARI DATABASE
-        $kegiatan = $this->model->getDetailPencairan($id);
+        $kegiatan = $this->safeModelCall($this->model, 'getDetailPencairan', [$id], null);
         
         if (!$kegiatan) {
             $_SESSION['flash_error'] = 'Data tidak ditemukan.';
@@ -49,10 +52,10 @@ class BendaharaRiwayatverifikasiController extends Controller {
         }
         
         // Ambil data relasi
-        $rab_data = $this->model->getRABByKegiatan($id);
-        $iku_data = $this->model->getIKUByKegiatan($id);
-        $indikator_data = $this->model->getIndikatorByKegiatan($id);
-        $tahapan = $this->model->getTahapanByKegiatan($id);
+        $rab_data = $this->safeModelCall($this->model, 'getRABByKegiatan', [$id], []);
+        $iku_data = $this->safeModelCall($this->model, 'getIKUByKegiatan', [$id], []);
+        $indikator_data = $this->safeModelCall($this->model, 'getIndikatorByKegiatan', [$id], []);
+        $tahapan = $this->safeModelCall($this->model, 'getTahapanByKegiatan', [$id], []);
         
         // Format tahapan sebagai string bernomor
         $tahapan_string = "";

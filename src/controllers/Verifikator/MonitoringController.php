@@ -1,27 +1,23 @@
 <?php
-// File: src/controllers/Verifikator/MonitoringController.php
+namespace App\Controllers\Verifikator;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/verifikatorModel.php';
+use App\Core\Controller;
+use App\Services\VerifikatorService;
 
-class VerifikatorMonitoringController extends Controller {
+class MonitoringController extends Controller {
     
     private $model;
     
     public function __construct() {
-        $this->model = new VerifikatorModel($this->db);
+        parent::__construct();
+        $this->model = new VerifikatorService($this->db);
     }
     
-    /**
-     * Menampilkan halaman Monitoring Progres Proposal.
-     */
     public function index($data_dari_router = []) { 
         
-        // Definisikan tahapan universal
         $tahapan_all = ['Pengajuan', 'Verifikasi', 'ACC WD', 'ACC PPK', 'Dana Cair', 'LPJ'];
         
-        // ✅ AMBIL DATA DARI DATABASE
-        $list_proposal = $this->model->getProposalMonitoring();
+        $list_proposal = $this->safeModelCall($this->model, 'getProposalMonitoring', [], []);
 
         $data = array_merge($data_dari_router, [
             'title' => 'Monitoring Proposal',

@@ -17,29 +17,21 @@ if (getenv('APP_ENV') === 'production') {
     });
 }
 
-// Autoloader
+// Autoloader (PSR-4)
 spl_autoload_register(function ($class) {
-    $prefixes = [
-        'Core\\'         => DOCUTRACK_ROOT . '/src/core/',
-        'Controllers\\'  => DOCUTRACK_ROOT . '/src/controllers/',
-        'Models\\'       => DOCUTRACK_ROOT . '/src/model/',
-        'Helpers\\'      => DOCUTRACK_ROOT . '/src/helpers/',
-        'Middleware\\'   => DOCUTRACK_ROOT . '/src/middleware/',
-    ];
-
-    foreach ($prefixes as $prefix => $baseDir) {
-        $len = strlen($prefix);
-        if (strncmp($prefix, $class, $len) !== 0) {
-            continue;
-        }
-
-        $relativeClass = substr($class, $len);
-        $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
-
-        if (file_exists($file)) {
-            require $file;
-            return;
-        }
+    $prefix = 'App\\';
+    $base_dir = DOCUTRACK_ROOT . '/src/';
+    
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+    
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    
+    if (file_exists($file)) {
+        require $file;
     }
 });
 
@@ -76,6 +68,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Database Init
 require_once DOCUTRACK_ROOT . '/src/core/Database.php';
+require_once DOCUTRACK_ROOT . '/src/Core/Controller.php'; // Ensure Base Controller is loaded
 
 try {
     $database = \Core\Database::getInstance($config['db']);

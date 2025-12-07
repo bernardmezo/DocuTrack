@@ -1,43 +1,22 @@
 <?php
 // File: src/controllers/Admin/PengajuanUsulanController.php
 
-require_once '../src/core/Controller.php';
-// 1. Load Model Admin
-require_once '../src/model/adminModel.php';
+namespace App\Controllers\Admin;
 
-class AdminPengajuanUsulanController extends Controller {
+use App\Core\Controller;
+use App\Services\AdminService;
+
+class PengajuanUsulanController extends Controller {
     
     private $model;
     
     public function __construct() {
-        $this->model = new adminModel($this->db);
+        parent::__construct();
+        $this->model = new AdminService($this->db);
+        $this->validationService = new ValidationService();
     }
 
     public function index($data_dari_router = []) {
-        
-        // Handle action dari GET parameter
-        $action = $_GET['action'] ?? 'list';
-        $id = $_GET['id'] ?? null;
-        
-        // Route ke method yang sesuai
-        switch ($action) {
-            case 'detail':
-                if ($id) {
-                    return $this->detail($id, $data_dari_router);
-                }
-                break;
-            case 'edit':
-                if ($id) {
-                    return $this->edit($id, $data_dari_router);
-                }
-                break;
-            case 'delete':
-                if ($id) {
-                    return $this->delete($id);
-                }
-                break;
-        }
-        
         // Default: Tampilkan list
         $antrian_kak = $this->safeModelCall($this->model, 'getDashboardKAK', [], []);
         
@@ -53,7 +32,7 @@ class AdminPengajuanUsulanController extends Controller {
             'error_message' => $error_msg
         ]);
 
-        $this->view('pages/admin/pengajuan_usulan', $data, 'app'); 
+        $this->view('pages/admin/pengajuan_usulan', $data, 'app');
     }
     
     /**
@@ -101,11 +80,6 @@ class AdminPengajuanUsulanController extends Controller {
             );
         }
         
-        // Jika POST, process update
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            return $this->update($id);
-        }
-        
         // Tampilkan form edit
         $data = array_merge($data_dari_router, [
             'title' => 'Edit Pengajuan - ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
@@ -119,7 +93,7 @@ class AdminPengajuanUsulanController extends Controller {
     /**
      * Update Pengajuan Usulan (proses form edit)
      */
-    private function update($id) {
+    public function update($id) { // Changed to public
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-usulan',
@@ -142,7 +116,7 @@ class AdminPengajuanUsulanController extends Controller {
      * Delete Pengajuan Usulan
      */
     public function delete($id) {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['confirm'])) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { // Removed !isset($_GET['confirm'])
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-usulan',
                 'error',

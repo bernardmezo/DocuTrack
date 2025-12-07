@@ -1,26 +1,35 @@
 <?php
-// File: src/controllers/Wadir/TelaahController.php
+namespace App\Controllers\Wadir;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/wadirModel.php';
-require_once '../src/helpers/logger_helper.php';
+use App\Core\Controller;
+use App\Services\WadirService;
 
-class WadirTelaahController extends Controller {
+if (file_exists(DOCUTRACK_ROOT . '/src/helpers/logger_helper.php')) {
+    require_once DOCUTRACK_ROOT . '/src/helpers/logger_helper.php';
+}
+
+class TelaahController extends Controller {
     
+    private $model;
+
+    public function __construct() {
+        parent::__construct();
+        $this->model = new WadirService($this->db);
+    }
+
     public function show($id, $data_dari_router = []) {
         $ref = $_GET['ref'] ?? 'dashboard';
         $base_url = "/docutrack/public/wadir";
         $back_url = $base_url . '/' . $ref;
 
-        $model = new wadirModel($this->db);
-        $dataDB = $model->getDetailKegiatan($id);
+        $dataDB = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
         
         if (!$dataDB) { echo "Data tidak ditemukan."; return; }
 
         $kakId = $dataDB['kakId'];
-        $indikator = $model->getIndikatorByKAK($kakId);
-        $tahapan   = $model->getTahapanByKAK($kakId);
-        $rab       = $model->getRABByKAK($kakId);
+        $indikator = $this->safeModelCall($this->model, 'getIndikatorByKAK', [$kakId], []);
+        $tahapan   = $this->safeModelCall($this->model, 'getTahapanByKAK', [$kakId], []);
+        $rab       = $this->safeModelCall($this->model, 'getRABByKAK', [$kakId], []);
 
         $tahapan_string = "";
         foreach ($tahapan as $idx => $t) { $tahapan_string .= ($idx + 1) . ". " . $t . "\n"; }
@@ -73,16 +82,17 @@ class WadirTelaahController extends Controller {
 
     public function approve($id) {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model = new wadirModel($this->db);
             $userId = $_SESSION['user_id'] ?? 0;
             
-            $kegiatan = $model->getDetailKegiatan($id);
+            $kegiatan = $this->model->getDetailKegiatan($id);
             $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
             
-            if($model->approveUsulan($id)) {
-                logApproval($userId, $id, 'WADIR', true, 
-                    'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
-                    $oldStatusId, 3);
+            if($this->model->approveUsulan($id)) {
+                if(function_exists('logApproval')) {
+                    logApproval($userId, $id, 'WADIR', true, 
+                        'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
+                        $oldStatusId, 3);
+                }
                 
                 header('Location: /docutrack/public/wadir/dashboard?msg=approved');
                 exit;

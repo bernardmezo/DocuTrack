@@ -96,41 +96,7 @@ $formattedDate = $date->format('l, j F Y');
             
             <form id="profileForm" action="/docutrack/public/verifikator/akun/update" method="POST" enctype="multipart/form-data">
                 
-                <div class="w-full mb-6">
-                    <div class="max-w-[924px] mx-auto">
-                        <div id="profileHeader" 
-                             class="full-cover-header rounded-3xl p-8 relative text-white card-shadow min-h-[250px] flex flex-col justify-center w-full">
-                            
-                            <!-- Background Asset Container -->
-                            <div class="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-3xl">
-                                <img src="/docutrack/public/assets/images/icon/background-profile-header.svg" class="w-full h-full object-cover z-60" alt="">
-                            </div>
-                            
-                            <div class="relative z-10 w-full">
-                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <h1 class="text-3xl font-bold mb-1 flex items-center gap-2 drop-shadow-md">
-                                            Hi <span class="inline-block animate-wave">👋</span>, <?php echo htmlspecialchars($user['username']); ?>
-                                        </h1>
-                                        <p class="text-white/90 text-sm font-medium mb-1 drop-shadow-md">Role</p>
-                                        <div class="inline-block bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg border border-white/20 shadow-sm">
-                                            <p class="text-white text-sm font-semibold drop-shadow-sm"><?php echo htmlspecialchars($user['role']); ?></p>
-                                        </div>
-                                        <p class="mt-2 text-white/95 text-sm drop-shadow-md">
-                                            <i class="far fa-calendar-alt mr-1"></i> Bergabung: <?php echo $formattedDate; ?>
-                                        </p>
-                                    </div>
-                                    <div class="mt-4 sm:mt-0">
-                                        <div class="text-right">
-                                            <p class="text-5xl font-bold tracking-tight drop-shadow-lg" id="currentTime">12:00</p>
-                                            <p class="text-sm text-white/90 mt-1 drop-shadow-md">Waktu Server</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <?php include(DOCUTRACK_ROOT . '/src/views/partials/_profileHeader.php'); ?>
 
                 <div class="custom-grid grid grid-cols-1 md:grid-cols-[480px_420px] gap-6 items-start justify-center">
                     
@@ -239,14 +205,6 @@ $formattedDate = $date->format('l, j F Y');
     </div>
 
     <script>
-        function updateClock() {
-            const now = new Date();
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('currentTime').textContent = hours + ':' + minutes;
-        }
-        updateClock(); 
-        setInterval(updateClock, 1000);
 
         document.getElementById('profileImageInput').addEventListener('change', function(e) {
             const file = e.target.files[0];

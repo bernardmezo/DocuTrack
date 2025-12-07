@@ -1,20 +1,22 @@
 <?php
-// File: src/controllers/PPK/RiwayatController.php
+namespace App\Controllers\PPK;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/ppkModel.php';
+use App\Core\Controller;
+use App\Services\PpkService;
 
-class PPKRiwayatController extends Controller {
+class RiwayatController extends Controller {
     
+    private $model;
+
+    public function __construct() {
+        parent::__construct();
+        $this->model = new PpkService($this->db);
+    }
+
     public function index($data_dari_router = []) {
         
-        // 1. Panggil Model
-        $model = new ppkModel($this->db);
+        $list_riwayat = $this->safeModelCall($this->model, 'getRiwayat', [], []);
 
-        // 2. Ambil Data Riwayat
-        $list_riwayat = $model->getRiwayat();
-
-        // 3. Kirim ke View
         $data = array_merge($data_dari_router, [
             'title' => 'Riwayat Verifikasi PPK',
             'list_riwayat' => $list_riwayat
@@ -23,4 +25,3 @@ class PPKRiwayatController extends Controller {
         $this->view('pages/ppk/riwayat_verifikasi', $data, 'ppk');
     }
 }
-?>

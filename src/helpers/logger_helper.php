@@ -527,27 +527,19 @@ function getAvailableActionCodes(?string $category = null): array
 
 /**
  * Helper internal: Dapatkan koneksi database untuk logging
- * Menggunakan koneksi yang sudah ada atau membuat baru
+ * Menggunakan koneksi standar aplikasi dari bootstrap.
  * 
  * @return mysqli|null
  */
 function getLogDbConnection()
 {
-    global $conn;
-    
-    // Gunakan koneksi global jika sudah ada
-    if (isset($conn) && $conn instanceof mysqli && mysqli_ping($conn)) {
-        return $conn;
+    // Gunakan fungsi db() standar dari bootstrap untuk konsistensi
+    // Pastikan bootstrap.php sudah di-include di awal script yang memanggil logger.
+    if (function_exists('db')) {
+        return db();
     }
     
-    // Coba load dari file conn.php
-    $connFile = __DIR__ . '/../model/conn.php';
-    if (file_exists($connFile)) {
-        require_once $connFile;
-        if (isset($conn) && $conn instanceof mysqli) {
-            return $conn;
-        }
-    }
-    
+    // Fallback jika dipanggil dari konteks yang tidak biasa
+    error_log("[AUDIT WARNING] Cannot find db() connection function.");
     return null;
 }

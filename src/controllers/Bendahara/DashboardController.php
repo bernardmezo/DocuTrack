@@ -1,30 +1,25 @@
 <?php
-// File: src/controllers/Bendahara/DashboardController.php
-require_once '../src/core/Controller.php';
-require_once '../src/model/bendaharaModel.php';
+namespace App\Controllers\Bendahara;
 
-class BendaharaDashboardController extends Controller {
+use App\Core\Controller;
+use App\Services\BendaharaService;
+
+class DashboardController extends Controller {
     
-    private $model;
+    private $bendaharaService;
     
-    public function __construct() {
-        $this->model = new bendaharaModel($this->db);
+    public function __construct($db) {
+        parent::__construct($db);
+        $this->bendaharaService = new BendaharaService($this->db);
     }
     
     public function index($data_dari_router = []) {
-        
-        // ✅ AMBIL DATA DARI DATABASE dengan error handling
-        $stats = $this->safeModelCall($this->model, 'getDashboardStatistik', [], [
-            'total' => 0,
-            'danaDiberikan' => 0,
-            'ditolak' => 0,
-            'menunggu' => 0
+        $stats = $this->safeModelCall($this->bendaharaService, 'getDashboardStatistik', [], [
+            'total' => 0, 'danaDiberikan' => 0, 'ditolak' => 0, 'menunggu' => 0
         ]);
+        $list_kak = $this->safeModelCall($this->bendaharaService, 'getListKegiatanDashboard', [10], []);
+        $list_lpj = $this->safeModelCall($this->bendaharaService, 'getAntrianLPJ', [], []);
         
-        $list_kak = $this->safeModelCall($this->model, 'getListKegiatanDashboard', [10], []);
-        $list_lpj = $this->safeModelCall($this->model, 'getAntrianLPJ', [], []);
-        
-        // Get flash messages from session
         $success_msg = $_SESSION['flash_message'] ?? null;
         $error_msg = $_SESSION['flash_error'] ?? null;
         unset($_SESSION['flash_message'], $_SESSION['flash_error']);

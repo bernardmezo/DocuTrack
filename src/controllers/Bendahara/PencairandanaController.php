@@ -1,16 +1,19 @@
 <?php
-// File: src/controllers/Bendahara/PencairandanaController.php
+namespace App\Controllers\Bendahara;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/bendaharaModel.php';
-require_once '../src/helpers/logger_helper.php';
+use App\Core\Controller;
+use App\Services\PencairanService;
+use Exception;
 
-class BendaharaPencairandanaController extends Controller {
+require_once __DIR__ . '/../../helpers/logger_helper.php';
+
+class PencairandanaController extends Controller {
     
-    private $model;
+    private $pencairanService;
     
     public function __construct() {
-        $this->model = new bendaharaModel($this->db);
+        parent::__construct();
+        $this->pencairanService = new PencairanService($this->db);
     }
 
     /**
@@ -18,14 +21,9 @@ class BendaharaPencairandanaController extends Controller {
      */
     public function index($data_dari_router = []) {
         
-        $stats = $this->safeModelCall($this->model, 'getDashboardStats', [], [
-            'total' => 0,
-            'menunggu' => 0,
-            'dicairkan' => 0
-        ]);
-        
-        $list_antrian = $this->safeModelCall($this->model, 'getAntrianPencairan', [], []);
-        $jurusan_list = $this->safeModelCall($this->model, 'getListJurusan', [], []);
+        $stats = $this->pencairanService->getDashboardStats();
+        $list_antrian = $this->pencairanService->getAntrianPencairan();
+        $jurusan_list = $this->pencairanService->getListJurusan();
 
         // Support untuk feedback messages dari proses
         $success_msg = $_SESSION['flash_message'] ?? null;
@@ -56,7 +54,7 @@ class BendaharaPencairandanaController extends Controller {
         $base_url = "/docutrack/public/bendahara";
         $back_url = $base_url . '/' . $ref;
 
-        $kegiatan = $this->model->getDetailPencairan($id);
+        $kegiatan = $this->pencairanService->getDetailPencairan($id);
         
         if (!$kegiatan) {
             $_SESSION['flash_error'] = 'Data tidak ditemukan.';
@@ -64,14 +62,16 @@ class BendaharaPencairandanaController extends Controller {
             exit;
         }
         
-        $rab_data = $this->model->getRABByKegiatan($id);
-        $iku_data = $this->model->getIKUByKegiatan($id);
-        $indikator_data = $this->model->getIndikatorByKegiatan($id);
-        $tahapan = $this->model->getTahapanByKegiatan($id);
+        $rab_data = $this->pencairanService->getRABByKegiatan($id);
+        $iku_data = $this->pencairanService->getIKUByKegiatan($id);
+        $indikator_data = $this->pencairanService->getIndikatorByKegiatan($id);
+        $tahapan = $this->pencairanService->getTahapanByKegiatan($id);
         
         $tahapan_string = "";
-        foreach ($tahapan as $idx => $t) {
-            $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
+        if ($tahapan && is_array($tahapan)) {
+            foreach ($tahapan as $idx => $t) {
+                $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
+            }
         }
         
         $is_sudah_dicairkan = !empty($kegiatan['tanggalPencairan']);
@@ -204,8 +204,8 @@ class BendaharaPencairandanaController extends Controller {
                     $dataPencairan['tanggal'] = $tahapan[0]['tanggal'];
                 }
 
-                // Execute Model
-                if ($this->model->cairkanDana($kak_id, $dataPencairan)) {
+                // Execute Service
+                if ($this->pencairanService->cairkanDana($kak_id, $dataPencairan)) {
                     if (function_exists('logPencairan')) {
                         logPencairan($userId, $kak_id, $dataPencairan['jumlah'], $metode_pencairan, $catatan);
                     }
@@ -216,8 +216,7 @@ class BendaharaPencairandanaController extends Controller {
                 }
 
             } elseif ($action === 'tolak') {
-                // TODO: Implement rejection logic in model if not exists, or use existing reject flow
-                // Currently focusing on disbursement flow.
+                // TODO: Implement rejection logic in model/service
                 $_SESSION['flash_message'] = 'Fitur tolak belum diaktifkan di controller baru.';
             }
 

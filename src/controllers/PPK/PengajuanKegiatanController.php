@@ -1,30 +1,32 @@
 <?php
-// File: src/controllers/PPK/PengajuanKegiatanController.php
+namespace App\Controllers\PPK;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/ppkModel.php'; // Load Model
+use App\Core\Controller;
+use App\Services\PpkService;
 
-class PPKPengajuanKegiatanController extends Controller {
+class PengajuanKegiatanController extends Controller {
     
+    private $model;
+
+    public function __construct() {
+        parent::__construct();
+        $this->model = new PpkService($this->db);
+    }
+
     public function index($data_dari_router = []) { 
         
-        // 1. Panggil Model
-        $model = new ppkModel($this->db);
-
         // 2. Ambil Semua Data Real dari DB
-        $all_data = $model->getDashboardKAK();
+        $all_data = $this->safeModelCall($this->model, 'getDashboardKAK', [], []);
 
         // 3. Filter Data: Hanya Tampilkan yang Statusnya 'Disetujui Verifikator'
-        // Ini adalah antrian masuk untuk PPK (yang sudah lolos dari Verifikator)
         $antrian_ppk = array_filter($all_data, function($item) {
-            $posisi = isset($item['posisi']) ? strtolower($item['posisi']) : '4'; // Pastikan posisiId adalah 4 untuk PPK
+            $posisi = isset($item['posisi']) ? strtolower((string)$item['posisi']) : '4'; 
             return $posisi === 'ppk' || $posisi === '4';
         });
 
-        // Re-index array agar urut (0, 1, 2...) untuk JSON JS
         $antrian_ppk = array_values($antrian_ppk);
 
-        // 4. Siapkan Daftar Jurusan Unik untuk Filter Dropdown
+        // 4. Siapkan Daftar Jurusan Unik
         $jurusan_list = array_unique(array_column($antrian_ppk, 'jurusan'));
         $jurusan_list = array_filter($jurusan_list, fn($j) => !empty($j) && $j !== '-');
         sort($jurusan_list);
@@ -32,11 +34,10 @@ class PPKPengajuanKegiatanController extends Controller {
         // 5. Kirim Data ke View
         $data = array_merge($data_dari_router, [
             'title' => 'Antrian Persetujuan Kegiatan',
-            'list_usulan' => $antrian_ppk, // Data yang sudah difilter
+            'list_usulan' => $antrian_ppk,
             'jurusan_list' => $jurusan_list
         ]);
 
         $this->view('pages/ppk/pengajuan_kegiatan', $data, 'ppk');
     }
 }
-?>

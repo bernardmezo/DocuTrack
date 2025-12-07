@@ -1,4 +1,7 @@
 <?php
+namespace App\Core;
+
+use Exception;
 
 class Controller {
     
@@ -63,9 +66,9 @@ class Controller {
     public function viewLegacy($view, $data = [], $layout = 'app') {
         extract($data);
 
-        $header_file = '../src/views/layouts/' . $layout . '/header.php';
-        $footer_file = '../src/views/layouts/' . $layout . '/footer.php';
-        $view_file = '../src/views/' . $view . '.php';
+        $header_file = DOCUTRACK_ROOT . '/src/views/layouts/' . $layout . '/header.php';
+        $footer_file = DOCUTRACK_ROOT . '/src/views/layouts/' . $layout . '/footer.php';
+        $view_file = DOCUTRACK_ROOT . '/src/views/' . $view . '.php';
 
         if (file_exists($header_file) && file_exists($footer_file) && file_exists($view_file)) {
             require_once $header_file;

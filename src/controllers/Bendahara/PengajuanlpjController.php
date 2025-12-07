@@ -1,15 +1,19 @@
 <?php
 // File: src/controllers/Bendahara/PengajuanlpjController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/bendaharaModel.php'; // ✅ LOAD MODEL
+namespace App\Controllers\Bendahara;
 
-class BendaharaPengajuanlpjController extends Controller {
+use App\Core\Controller;
+use App\Services\BendaharaService;
+use Exception;
+
+class PengajuanLpjController extends Controller {
     
     private $model;
 
     public function __construct() {
-        $this->model = new bendaharaModel($this->db);
+        parent::__construct();
+        $this->model = new BendaharaService($this->db);
     }
 
     /**
@@ -39,7 +43,7 @@ class BendaharaPengajuanlpjController extends Controller {
      */
     public function getLPJData() {
         // ✅ AMBIL DATA DARI DATABASE
-        return $this->model->getAntrianLPJ();
+        return $this->safeModelCall($this->model, 'getAntrianLPJ', [], []);
     }
 
     /**
@@ -60,7 +64,7 @@ class BendaharaPengajuanlpjController extends Controller {
         }
 
         // ✅ Ambil data LPJ dari database
-        $lpj = $this->model->getDetailLPJ($id);
+        $lpj = $this->safeModelCall($this->model, 'getDetailLPJ', [$id], null);
         
         if (!$lpj) {
             error_log("ERROR: LPJ not found for ID: " . $id);
@@ -72,7 +76,7 @@ class BendaharaPengajuanlpjController extends Controller {
         error_log("LPJ Data: " . print_r($lpj, true));
 
         // ✅ Ambil item-item LPJ
-        $lpj_items = $this->model->getLPJItems($id);
+        $lpj_items = $this->safeModelCall($this->model, 'getLPJItems', [$id], []);
         
         error_log("Total LPJ Items: " . count($lpj_items));
 
@@ -161,7 +165,7 @@ class BendaharaPengajuanlpjController extends Controller {
         try {
             if ($action === 'setuju') {
                 // ✅ APPROVE LPJ
-                if ($this->model->approveLPJ($lpj_id)) {
+                if ($this->safeModelCall($this->model, 'approveLPJ', [$lpj_id], false)) {
                     $_SESSION['flash_message'] = 'LPJ berhasil disetujui!';
                     $_SESSION['flash_type'] = 'success';
                     

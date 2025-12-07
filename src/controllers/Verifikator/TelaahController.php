@@ -1,16 +1,21 @@
 <?php
-// File: src/controllers/Verifikator/TelaahController.php
+namespace App\Controllers\Verifikator;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/verifikatorModel.php';
+use App\Core\Controller;
+use App\Services\VerifikatorService;
+use Exception;
 
-class VerifikatorTelaahController extends Controller {
-    /**
-     * Menampilkan halaman daftar antrian telaah.
-     */
+class TelaahController extends Controller {
+
+    private $model;
+
+    public function __construct() {
+        parent::__construct();
+        $this->model = new VerifikatorService($this->db);
+    }
+    
     public function index($data_dari_router = []) {
-        $model = new verifikatorModel($this->db);
-        $all_usulan = $model->getDashboardKAK();
+        $all_usulan = $this->safeModelCall($this->model, 'getDashboardKAK', [], []);
 
         $list_usulan = [];
         $jurusan_set = [];
@@ -48,9 +53,6 @@ class VerifikatorTelaahController extends Controller {
         $this->view('pages/verifikator/pengajuan_telaah', $data, 'verifikator');
     }
 
-    /**
-     * Menampilkan detail telaah (KAK) untuk satu usulan berdasarkan ID.
-     */
     public function show($id, $data_dari_router = []) {
         $ref = $_GET['ref'] ?? '';
         $base_url = '/docutrack/public/verifikator';
@@ -67,8 +69,7 @@ class VerifikatorTelaahController extends Controller {
                 break;
         }
 
-        $model = new verifikatorModel($this->db);
-        $dataDB = $model->getDetailKegiatan($id);
+        $dataDB = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
 
         if (!$dataDB) {
             echo 'Data tidak ditemukan.';
@@ -76,13 +77,13 @@ class VerifikatorTelaahController extends Controller {
         }
 
         $kakId = $dataDB['kakId'];
-        $indikator = $model->getIndikatorByKAK($kakId);
-        $tahapan = $model->getTahapanByKAK($kakId);
-        $rab = $model->getRABByKAK($kakId);
+        $indikator = $this->safeModelCall($this->model, 'getIndikatorByKAK', [$kakId], []);
+        $tahapan = $this->safeModelCall($this->model, 'getTahapanByKAK', [$kakId], []);
+        $rab = $this->safeModelCall($this->model, 'getRABByKAK', [$kakId], []);
 
         $tahapan_string = '';
         foreach ($tahapan as $idx => $t) {
-            $tahapan_string .= ($idx + 1) . '. ' . $t . "\n";
+            $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
         }
 
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
@@ -127,9 +128,6 @@ class VerifikatorTelaahController extends Controller {
         $this->view('pages/verifikator/telaah_detail', $data, 'verifikator');
     }
 
-    /**
-     * Menyetujui usulan dengan ID tertentu.
-     */
     public function approve($routeId = null)
     {
         $kegiatanId = $routeId;
@@ -150,9 +148,7 @@ class VerifikatorTelaahController extends Controller {
                 throw new Exception('Kode MAK wajib diisi.');
             }
 
-            $model = new verifikatorModel($this->db);
-
-            if ($model->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
+            if ($this->model->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
                 $_SESSION['flash_message'] = 'Usulan berhasil disetujui.';
                 header('Location: /docutrack/public/verifikator/dashboard?msg=approved');
                 exit;
@@ -167,202 +163,105 @@ class VerifikatorTelaahController extends Controller {
         }
     }
 
-    /**
-     * Menolak usulan dengan ID tertentu.
-     */
-    /**
- * Menolak usulan dengan ID tertentu.
- */
-public function reject($routeId = null)
-{
-    // Enable error reporting untuk debugging
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-    
-    $kegiatanId = $routeId;
-    
-    try {
-        // Debug: Log semua data yang masuk
-        error_log("=== REJECT DEBUG START ===");
-        error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
-        error_log("routeId: " . ($routeId ?? 'NULL'));
-        error_log("POST data: " . print_r($_POST, true));
-        error_log("SESSION data: " . print_r($_SESSION, true));
+    public function reject($routeId = null)
+    {
+        $kegiatanId = $routeId;
         
-        // Validasi request method
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
-        }
-
-        // Ambil kegiatan ID dan CAST ke integer
-        $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
-        $kegiatanId = (int) $kegiatanId; // PENTING: Cast ke integer
-        
-        if (!$kegiatanId || $kegiatanId <= 0) {
-            error_log("ERROR: ID kegiatan tidak valid");
-            throw new Exception('ID kegiatan tidak valid');
-        }
-        
-        error_log("Kegiatan ID: " . $kegiatanId);
-
-        // Ambil alasan penolakan
-        $alasanPenolakan = trim($_POST['alasan_penolakan'] ?? '');
-        
-        if ($alasanPenolakan === '') {
-            error_log("ERROR: Alasan penolakan kosong");
-            throw new Exception('Alasan penolakan wajib diisi');
-        }
-        
-        error_log("Alasan: " . $alasanPenolakan);
-
-        // Cek koneksi database
-        if (!$this->db) {
-            error_log("ERROR: Database connection is null");
-            throw new Exception('Database connection failed');
-        }
-        
-        error_log("Database connection OK");
-
-        // Instantiate model
-        $model = new verifikatorModel($this->db);
-        error_log("Model instantiated OK");
-
-        // Panggil method reject
-        error_log("Calling rejectUsulan...");
-        $result = $model->rejectUsulan($kegiatanId, $alasanPenolakan);
-        error_log("rejectUsulan result: " . ($result ? 'TRUE' : 'FALSE'));
-
-        if ($result) {
-            $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
-            error_log("SUCCESS: Redirecting to dashboard");
-            header('Location: /docutrack/public/verifikator/dashboard?msg=rejected');
-            exit;
-        }
-
-        throw new Exception('Gagal menolak usulan. Silakan coba lagi.');
-        
-    } catch (Exception $e) {
-        error_log("EXCEPTION CAUGHT: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
-        error_log("=== REJECT DEBUG END ===");
-        
-        $_SESSION['flash_error'] = $e->getMessage();
-        $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-        
-        if (!empty($fallbackId)) {
-            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
-        } else {
-            header('Location: /docutrack/public/verifikator/dashboard');
-        }
-        exit;
-    }
-}
-
-    /**
-     * Mengirim usulan untuk direvisi.
-     */
-    // Ganti method revise di TelaahController.php dengan ini:
-
-    /**
-     * Mengirim usulan untuk direvisi.
-     */
-    public function revise($routeId = null)
-{
-    // Enable error reporting untuk debugging
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-    
-    $kegiatanId = $routeId;
-    
-    try {
-        // Debug: Log semua data yang masuk
-        error_log("=== REVISE DEBUG START ===");
-        error_log("REQUEST_METHOD: " . $_SERVER['REQUEST_METHOD']);
-        error_log("routeId: " . ($routeId ?? 'NULL'));
-        error_log("POST data: " . print_r($_POST, true));
-        
-        // Validasi request method
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
-        }
-
-        // Ambil kegiatan ID dan CAST ke integer
-        $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
-        $kegiatanId = (int) $kegiatanId; // PENTING: Cast ke integer
-        
-        if (!$kegiatanId || $kegiatanId <= 0) {
-            error_log("ERROR: ID kegiatan tidak valid");
-            throw new Exception('ID kegiatan tidak valid');
-        }
-        
-        error_log("Kegiatan ID: " . $kegiatanId);
-
-        // Ambil komentar revisi dari form
-        $rawKomentar = $_POST['komentar'] ?? [];
-        error_log("Raw komentar: " . print_r($rawKomentar, true));
-        
-        $komentarRevisi = [];
-
-        // Filter komentar yang tidak kosong
-        foreach ($rawKomentar as $targetKolom => $komentar) {
-            $trimmedKomentar = trim($komentar);
-            if (!empty($trimmedKomentar)) {
-                $komentarRevisi[] = [
-                    'targetKolom' => $targetKolom,
-                    'targetTabel' => 'tbl_kegiatan',
-                    'komentar' => $trimmedKomentar
-                ];
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
             }
-        }
-        
-        error_log("Filtered komentar: " . print_r($komentarRevisi, true));
 
-        // Validasi minimal 1 komentar
-        if (empty($komentarRevisi)) {
-            error_log("ERROR: Tidak ada komentar revisi");
-            throw new Exception('Minimal isi satu catatan revisi');
-        }
+            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
+            $kegiatanId = (int) $kegiatanId;
+            
+            if (!$kegiatanId || $kegiatanId <= 0) {
+                throw new Exception('ID kegiatan tidak valid');
+            }
+            
+            $alasanPenolakan = trim($_POST['alasan_penolakan'] ?? '');
+            
+            if ($alasanPenolakan === '') {
+                throw new Exception('Alasan penolakan wajib diisi');
+            }
 
-        // Cek koneksi database
-        if (!$this->db) {
-            error_log("ERROR: Database connection is null");
-            throw new Exception('Database connection failed');
-        }
-        
-        error_log("Database connection OK");
+            $result = $this->model->rejectUsulan($kegiatanId, $alasanPenolakan);
 
-        // Instantiate model
-        $model = new verifikatorModel($this->db);
-        error_log("Model instantiated OK");
+            if ($result) {
+                $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
+                header('Location: /docutrack/public/verifikator/dashboard?msg=rejected');
+                exit;
+            }
 
-        // Panggil method revise
-        error_log("Calling reviseUsulan...");
-        $result = $model->reviseUsulan($kegiatanId, $komentarRevisi);
-        error_log("reviseUsulan result: " . ($result ? 'TRUE' : 'FALSE'));
-
-        if ($result) {
-            $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';
-            error_log("SUCCESS: Redirecting to dashboard");
-            header('Location: /docutrack/public/verifikator/dashboard?msg=revised');
+            throw new Exception('Gagal menolak usulan. Silakan coba lagi.');
+            
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+            
+            if (!empty($fallbackId)) {
+                header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+            } else {
+                header('Location: /docutrack/public/verifikator/dashboard');
+            }
             exit;
         }
-
-        throw new Exception('Gagal mengirim revisi. Silakan coba lagi.');
-        
-    } catch (Exception $e) {
-        error_log("EXCEPTION CAUGHT: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
-        error_log("=== REVISE DEBUG END ===");
-        
-        $_SESSION['flash_error'] = $e->getMessage();
-        $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-        
-        if (!empty($fallbackId)) {
-            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
-        } else {
-            header('Location: /docutrack/public/verifikator/dashboard');
-        }
-        exit;
     }
-}
+
+    public function revise($routeId = null)
+    {
+        $kegiatanId = $routeId;
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
+            }
+
+            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
+            $kegiatanId = (int) $kegiatanId;
+            
+            if (!$kegiatanId || $kegiatanId <= 0) {
+                throw new Exception('ID kegiatan tidak valid');
+            }
+            
+            $rawKomentar = $_POST['komentar'] ?? [];
+            $komentarRevisi = [];
+
+            foreach ($rawKomentar as $targetKolom => $komentar) {
+                $trimmedKomentar = trim($komentar);
+                if (!empty($trimmedKomentar)) {
+                    $komentarRevisi[] = [
+                        'targetKolom' => $targetKolom,
+                        'targetTabel' => 'tbl_kegiatan',
+                        'komentar' => $trimmedKomentar
+                    ];
+                }
+            }
+            
+            if (empty($komentarRevisi)) {
+                throw new Exception('Minimal isi satu catatan revisi');
+            }
+
+            $result = $this->model->reviseUsulan($kegiatanId, $komentarRevisi);
+
+            if ($result) {
+                $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';
+                header('Location: /docutrack/public/verifikator/dashboard?msg=revised');
+                exit;
+            }
+
+            throw new Exception('Gagal mengirim revisi. Silakan coba lagi.');
+            
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+            
+            if (!empty($fallbackId)) {
+                header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+            } else {
+                header('Location: /docutrack/public/verifikator/dashboard');
+            }
+            exit;
+        }
+    }
 }

@@ -1,13 +1,21 @@
 <?php
-// File: src/controllers/Wadir/MonitoringController.php
-require_once '../src/core/Controller.php';
-require_once '../src/model/wadirModel.php'; 
+namespace App\Controllers\Wadir;
 
-class WadirMonitoringController extends Controller {
+use App\Core\Controller;
+use App\Services\WadirService;
+use Exception;
+
+class MonitoringController extends Controller {
     
+    private $model;
+
+    public function __construct() {
+        parent::__construct();
+        $this->model = new WadirService($this->db);
+    }
+
     public function index($data_dari_router = []) { 
-        $model = new wadirModel($this->db);
-        $list_jurusan = $model->getListJurusanDistinct();
+        $list_jurusan = $this->safeModelCall($this->model, 'getListJurusanDistinct', [], []);
 
         $data = array_merge($data_dari_router, [
             'title' => 'Monitoring Proposal (Wadir)',
@@ -18,7 +26,6 @@ class WadirMonitoringController extends Controller {
     }
 
     public function getData() {
-        // Matikan error display
         error_reporting(0);
         ini_set('display_errors', 0);
         header('Content-Type: application/json');
@@ -30,10 +37,7 @@ class WadirMonitoringController extends Controller {
             $search_text = isset($_GET['search']) ? trim(urldecode($_GET['search'])) : '';
             $per_page = 5;
 
-            $model = new wadirModel($this->db);
-            
-            // Panggil Fungsi dari Model
-            $result = $model->getMonitoringData($page, $per_page, $search_text, $status_filter, $jurusan_filter);
+            $result = $this->model->getMonitoringData($page, $per_page, $search_text, $status_filter, $jurusan_filter);
 
             $proposals = $result['data'] ?? [];
             $total_items = $result['totalItems'] ?? 0;
@@ -62,4 +66,3 @@ class WadirMonitoringController extends Controller {
         exit;
     }
 }
-?>

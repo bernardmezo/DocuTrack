@@ -1,25 +1,26 @@
 <?php
-// File: src/controllers/Verifikator/RiwayatController.php
+namespace App\Controllers\Verifikator;
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/verifikatorModel.php'; // Load Model
+use App\Core\Controller;
+use App\Services\VerifikatorService;
 
-class VerifikatorRiwayatController extends Controller {
+class RiwayatController extends Controller {
     
+    private $model;
+
+    public function __construct() {
+        parent::__construct();
+        $this->model = new VerifikatorService($this->db);
+    }
+
     public function index($data_dari_router = []) { 
         
-        // 1. Panggil Model
-        $model = new verifikatorModel($this->db);
-        
-        // 2. Ambil Data Riwayat Real dari DB
-        $list_riwayat = $model->getRiwayat();
+        $list_riwayat = $this->safeModelCall($this->model, 'getRiwayat', [], []);
 
-        // 3. Siapkan Daftar Jurusan untuk Filter (Ambil unik dari data riwayat)
-        $jurusan_list = array_unique(array_column($list_riwayat, 'jurusan')); // Bisa pakai 'jurusan' atau 'prodi'
-        $jurusan_list = array_filter($jurusan_list, fn($j) => !empty($j)); // Hapus yang kosong
+        $jurusan_list = array_unique(array_column($list_riwayat, 'jurusan'));
+        $jurusan_list = array_filter($jurusan_list, fn($j) => !empty($j));
         sort($jurusan_list);
 
-        // 4. Kirim ke View
         $data = array_merge($data_dari_router, [
             'title' => 'Riwayat Verifikasi',
             'list_riwayat' => $list_riwayat,
@@ -29,4 +30,3 @@ class VerifikatorRiwayatController extends Controller {
         $this->view('pages/verifikator/riwayat_verifikasi', $data, 'verifikator');
     }
 }
-?>
