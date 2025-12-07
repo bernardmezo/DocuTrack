@@ -138,4 +138,14 @@ class LpjService {
         }
         return $result;
     }
+
+    /**
+     * Mengambil data LPJ untuk tampilan dashboard.
+     *
+     * @return array Array berisi data LPJ.
+     */
+    public function getDashboardLPJ(): array
+    {
+        return $this->lpjModel->getDashboardLPJ();
+    }
 }

@@ -5,15 +5,17 @@ namespace App\Controllers\Admin;
 
 use App\Core\Controller;
 use App\Services\AdminService;
+use App\Services\ValidationService; // Added this line
 
 class PengajuanUsulanController extends Controller {
     
     private $model;
+    private $validationService; // Added this line
     
-    public function __construct() {
-        parent::__construct();
+    public function __construct($db) { // Added $db parameter
+        parent::__construct($db); // Passed $db to parent constructor
         $this->model = new AdminService($this->db);
-        $this->validationService = new ValidationService();
+        $this->validationService = new ValidationService(); 
     }
 
     public function index($data_dari_router = []) {

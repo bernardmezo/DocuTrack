@@ -57,8 +57,8 @@ class Router
 
     protected function matchRoute($routePattern, $requestPath)
     {
-        $regex = $routePattern;
-        
+        $regex = preg_quote($routePattern, '#');
+
         // Keep track of parameter names
         preg_match_all('/\{([a-zA-Z0-9_]+)\??\}/', $routePattern, $paramMatches);
         $paramNames = $paramMatches[1];

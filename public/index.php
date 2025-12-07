@@ -43,9 +43,8 @@ function globalExceptionHandler(Throwable $exception) {
         );
     }
 
-    // Always show detailed error in development for debugging purposes
     if (getenv('APP_ENV') === 'development') {
-        http_response_code(500); // Default to 500 for dev display
+        http_response_code(500);
         echo "<h1>Exception Occurred</h1>";
         echo "<p><strong>Type:</strong> " . get_class($exception) . "</p>";
         echo "<p><strong>Message:</strong> " . htmlspecialchars($exception->getMessage()) . "</p>";
@@ -54,11 +53,9 @@ function globalExceptionHandler(Throwable $exception) {
         exit;
     }
 
-    // Handle specific exceptions for production environment
     switch (get_class($exception)) {
         case ValidationException::class:
-            http_response_code(422); // Unprocessable Entity
-            // In a real app, you'd redirect back with errors in session
+            http_response_code(422);
             if (isset($_SERVER['HTTP_REFERER'])) {
                 $_SESSION['flash_errors'] = $exception->getErrors();
                 $_SESSION['old_input'] = $_POST;

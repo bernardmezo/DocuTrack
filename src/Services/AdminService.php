@@ -73,5 +73,9 @@ class AdminService {
         return $this->adminModel->getListJurusan();
     }
 
+    public function getDashboardKAK() {
+        return $this->adminModel->getDashboardKAK();
+    }
+
     // ... tambahkan metode lain sesuai kebutuhan dari AdminModel
 }

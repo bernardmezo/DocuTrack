@@ -96,7 +96,7 @@ class KegiatanService {
                     k.*, 
                     kak.kakId,
                     kak.gambaranUmum,
-                    kak.penerimaMaanfaat,
+                    kak.penerimaManfaat,
                     kak.metodePelaksanaan,
                     s.namaStatusUsulan as status_text
                   FROM tbl_kegiatan k

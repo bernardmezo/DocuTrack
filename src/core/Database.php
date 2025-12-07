@@ -1,6 +1,6 @@
 <?php
 
-namespace Core;
+namespace App\Core;
 
 use mysqli;
 use mysqli_sql_exception;

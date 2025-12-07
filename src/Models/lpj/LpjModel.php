@@ -86,14 +86,37 @@ class LpjModel {
      * Mengupdate status LPJ (submittedAt atau approvedAt)
      */
     public function updateLpjStatus($lpj_id, $new_status) {
-        $query = "";
-        if ($new_status == 'Submitted') {
-            $query = "UPDATE tbl_lpj SET submittedAt = NOW() WHERE lpjId = ?";
-        } else if ($new_status == 'Approved') {
-            $query = "UPDATE tbl_lpj SET approvedAt = NOW() WHERE lpjId = ?";
-        } else {
-            return false;
+        $statusId = null;
+        $timestampColumn = null;
+
+        switch ($new_status) {
+            case 'Submitted':
+                $statusId = 1; // Menunggu (LPJ submitted, awaiting review)
+                $timestampColumn = 'submittedAt';
+                break;
+            case 'Approved':
+                $statusId = 3; // Disetujui (LPJ approved)
+                $timestampColumn = 'approvedAt';
+                break;
+            case 'Rejected':
+                $statusId = 4; // Ditolak (LPJ rejected)
+                break;
+            case 'Revised':
+                $statusId = 2; // Revisi (LPJ sent back for revision)
+                break;
+            default:
+                error_log('LpjModel::updateLpjStatus - Invalid status provided: ' . $new_status);
+                return false;
         }
+
+        $query = "UPDATE tbl_lpj SET statusId = ?";
+        $bind_params = 'ii';
+        $bind_values = [$statusId, $lpj_id];
+
+        if ($timestampColumn) {
+            $query .= ", {$timestampColumn} = NOW()";
+        }
+        $query .= " WHERE lpjId = ?";
 
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
@@ -101,7 +124,7 @@ class LpjModel {
             return false;
         }
 
-        mysqli_stmt_bind_param($stmt, 'i', $lpj_id);
+        mysqli_stmt_bind_param($stmt, $bind_params, ...$bind_values);
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
@@ -325,7 +348,7 @@ class LpjModel {
     }
 
     public function tolakLpj(int $lpjId, string $komentar): bool {
-        $query = "UPDATE tbl_lpj SET status = 'Rejected', komentarPenolakan = ?, submittedAt = NOW() WHERE lpjId = ?";
+        $query = "UPDATE tbl_lpj SET statusId = 4, komentarPenolakan = ?, submittedAt = NOW() WHERE lpjId = ?";
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::tolakLpj - Prepare failed: ' . mysqli_error($this->db));
@@ -342,18 +365,17 @@ class LpjModel {
         }
     }
 
-    public function submitRevisiLpj(int $lpjId, array $komentarRevisi): bool {
+    public function submitRevisiLpj(int $lpjId, string $komentarRevisi): bool {
         // Asumsi struktur tabel untuk komentar revisi dan cara menyimpannya
         // Ini adalah contoh, perlu disesuaikan dengan struktur DB yang sebenarnya
-        $query = "UPDATE tbl_lpj SET status = 'Revised', komentarRevisi = ?, submittedAt = NOW() WHERE lpjId = ?";
-        $komentarRevisiJson = json_encode($komentarRevisi); // Simpan sebagai JSON
+        $query = "UPDATE tbl_lpj SET statusId = 2, komentarRevisi = ?, submittedAt = NOW() WHERE lpjId = ?";
         
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::submitRevisiLpj - Prepare failed: ' . mysqli_error($this->db));
             return false;
         }
-        mysqli_stmt_bind_param($stmt, 'si', $komentarRevisiJson, $lpjId);
+        mysqli_stmt_bind_param($stmt, 'si', $komentarRevisi, $lpjId);
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
             return true;
@@ -362,6 +384,47 @@ class LpjModel {
             mysqli_stmt_close($stmt);
             return false;
         }
+    }
+
+    /**
+     * Mengambil data LPJ untuk tampilan dashboard.
+     *
+     * @return array Array berisi data LPJ.
+     */
+    public function getDashboardLPJ(): array
+    {
+        $query = "SELECT
+                    lpj.lpjId,
+                    lpj.kegiatanId,
+                    keg.namaKegiatan,
+                    lpj.grandTotalRealisasi,
+                    lpj.submittedAt,
+                    lpj.approvedAt,
+                    lpj.tenggatLpj,
+                    lpj.statusId,
+                    su.namaStatusUsulan AS namaStatusLpj
+                FROM
+                    tbl_lpj AS lpj
+                JOIN
+                    tbl_kegiatan AS keg ON lpj.kegiatanId = keg.kegiatanId
+                JOIN
+                    tbl_status_utama AS su ON lpj.statusId = su.statusId
+                ORDER BY
+                    lpj.submittedAt DESC";
+
+        $result = mysqli_query($this->db, $query);
+        if ($result === false) {
+            error_log('LpjModel::getDashboardLPJ - Query failed: ' . mysqli_error($this->db));
+            return [];
+        }
+
+        $lpjData = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $lpjData[] = $row;
+        }
+
+        mysqli_free_result($result);
+        return $lpjData;
     }
 }
 

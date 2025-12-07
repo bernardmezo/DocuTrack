@@ -6,7 +6,7 @@ function getBaseUrl_500() {
     $script_name = $_SERVER['SCRIPT_NAME'];
     $dir = dirname($script_name);
     // Ensure the directory path ends with a slash
-    $base_path = rtrim($dir, '/\') . '/';
+    $base_path = rtrim($dir, '/\\') . '/';
     return $protocol . $host . $base_path;
 }
 $baseUrl = getBaseUrl_500();

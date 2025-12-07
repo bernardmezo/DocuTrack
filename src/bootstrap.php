@@ -31,7 +31,7 @@ spl_autoload_register(function ($class) {
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
     
     if (file_exists($file)) {
-        require $file;
+        require_once $file;
     }
 });
 
@@ -67,11 +67,10 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Database Init
-require_once DOCUTRACK_ROOT . '/src/core/Database.php';
-require_once DOCUTRACK_ROOT . '/src/Core/Controller.php'; // Ensure Base Controller is loaded
+
 
 try {
-    $database = \Core\Database::getInstance($config['db']);
+    $database = \App\Core\Database::getInstance($config['db']);
     $conn = $database->getConnection();
 } catch (Exception $e) {
     error_log('Bootstrap: ' . $e->getMessage());
@@ -86,7 +85,7 @@ try {
 // Helper Functions
 function db(): mysqli
 {
-    return \Core\Database::getInstance()->getConnection();
+    return \App\Core\Database::getInstance()->getConnection();
 }
 
 function redirect(string $path, int $statusCode = 302): void

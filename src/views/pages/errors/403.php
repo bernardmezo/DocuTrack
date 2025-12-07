@@ -6,7 +6,7 @@ function getBaseUrl_403() {
     $script_name = $_SERVER['SCRIPT_NAME'];
     $dir = dirname($script_name);
     // Ensure the directory path ends with a slash
-    $base_path = rtrim($dir, '/\') . '/';
+    $base_path = rtrim($dir, '/\\') . '/';
     return $protocol . $host . $base_path;
 }
 $baseUrl = getBaseUrl_403();
@@ -17,7 +17,7 @@ $baseUrl = getBaseUrl_403();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>403 - Akses Ditolak</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php echo '<script src="https://cdn.tailwindcss.com"></script>'; ?>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
         body {
