@@ -149,15 +149,32 @@ switch ($main_route) {
                 require_once '../src/controllers/Admin/AdminPengajuanLpjController.php';
                 $controller = new AdminPengajuanLpjController($db); 
                 
+                // Debug routing
+                error_log("Route: /admin/pengajuan-lpj");
+                error_log("param1: " . ($param1 ?? 'null'));
+                error_log("param2: " . ($param2 ?? 'null'));
+                
                 if (isset($param1) && $param1 === 'show' && isset($param2)) {
+                    // Route: /admin/pengajuan-lpj/show/{id}
+                    error_log("Calling show() with ID: " . $param2);
                     $controller->show($param2, ['active_page' => $base_admin_path . '/pengajuan-lpj']);
+                    
+                } elseif (isset($param1) && $param1 === 'upload-bukti') {
+                    // Route: /admin/pengajuan-lpj/upload-bukti
+                    error_log("Calling uploadBukti()");
+                    $controller->uploadBukti();
+                    
+                } elseif (isset($param1) && $param1 === 'submit') {
+                    // Route: /admin/pengajuan-lpj/submit
+                    error_log("Calling submitLpj()");
+                    $controller->submitLpj();
+                    
                 } else {
+                    // Route: /admin/pengajuan-lpj (default list)
+                    error_log("Calling index()");
                     $controller->index(['active_page' => $base_admin_path . '/pengajuan-lpj']);
                 }
                 break;
-
-            default:
-                not_found("Page Admin '/{$sub_route}' not found.");
         }
         break;
 

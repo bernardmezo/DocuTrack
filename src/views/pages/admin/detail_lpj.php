@@ -1,24 +1,42 @@
 <?php
-// File: src/views/pages/admin/detail_lpj.php
+error_log("=== VIEW detail_lpj.php START ===");
 
-// --- PERBAIKAN STATUS DI SINI ---
-$status = $status ?? 'Menunggu';
-$is_revisi = (strtolower($status) === 'revisi');
-$is_selesai = (strtolower($status) === 'setuju');
-$is_menunggu = (strtolower($status) === 'menunggu');
+// Status sudah lowercase dari controller
+$status = trim($status ?? 'draft');
+$total_items = $total_items ?? 0;
+$uploaded_items = $uploaded_items ?? 0;
 
-// Cek apakah sudah upload semua bukti (untuk status menunggu)
-$all_bukti_uploaded = true;
-if ($is_menunggu && !empty($rab_items)) {
-    foreach ($rab_items as $kategori => $items) {
-        foreach ($items as $item) {
-            if (empty($item['bukti_file'])) {
-                $all_bukti_uploaded = false;
-                break 2;
-            }
-        }
-    }
-}
+error_log("View Variables:");
+error_log("  - status: '{$status}'");
+error_log("  - total_items: {$total_items}");
+error_log("  - uploaded_items: {$uploaded_items}");
+
+// Define status flags
+$is_setuju = ($status === 'setuju');
+$is_menunggu = ($status === 'menunggu');
+$is_siap_submit = ($status === 'siap_submit');
+$is_menunggu_upload = ($status === 'menunggu_upload');
+$is_belum_ada_item = ($status === 'belum_ada_item');
+$is_draft = ($status === 'draft');
+$is_revisi = ($status === 'revisi');
+
+// Gabungkan flag untuk kondisi "bisa upload"
+$can_upload = ($is_draft || $is_menunggu_upload || $is_siap_submit || $is_revisi || $is_belum_ada_item);
+
+// Tentukan apakah perlu tampilkan info banner
+$show_info_banner = (
+    ($is_menunggu_upload || $is_belum_ada_item || ($is_draft && $total_items > 0)) 
+    && !$all_bukti_uploaded
+);
+
+error_log("View Flags:");
+error_log("  - is_setuju: " . ($is_setuju ? 'Y' : 'N'));
+error_log("  - is_menunggu: " . ($is_menunggu ? 'Y' : 'N'));
+error_log("  - is_siap_submit: " . ($is_siap_submit ? 'Y' : 'N'));
+error_log("  - is_menunggu_upload: " . ($is_menunggu_upload ? 'Y' : 'N'));
+error_log("  - is_belum_ada_item: " . ($is_belum_ada_item ? 'Y' : 'N'));
+error_log("  - can_upload: " . ($can_upload ? 'Y' : 'N'));
+error_log("  - show_info_banner: " . ($show_info_banner ? 'Y' : 'N'));
 
 $kegiatan_data = $kegiatan_data ?? [];
 $rab_items = $rab_items ?? [];
@@ -38,29 +56,48 @@ if (!function_exists('formatRupiah')) {
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Detail RAB untuk LPJ</h2>
                 <p class="text-sm text-gray-500 mt-1">Kegiatan: <strong><?php echo htmlspecialchars($kegiatan_data['nama_kegiatan'] ?? 'N/A'); ?></strong></p>
             </div>
+            
+            <!-- Status Badge -->
             <div class="flex flex-col items-end gap-2">
-                <?php if ($is_selesai): ?>
+                <?php if ($is_setuju): ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-700">
                         <i class="fas fa-check-circle"></i> Disetujui Bendahara
                     </span>
-                <?php elseif ($is_revisi): ?>
+                    
+                <?php elseif ($is_menunggu): ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
+                        <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi Bendahara
+                    </span>
+                    
+                <?php elseif ($is_revisi): ?>
+                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-700">
                         <i class="fas fa-exclamation-triangle"></i> Perlu Revisi
                     </span>
-                <?php else: ?>
+                    
+                <?php elseif ($is_siap_submit): ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
-                        <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi
+                        <i class="fas fa-check-double"></i> Siap Diajukan
+                    </span>
+                    
+                <?php elseif ($is_menunggu_upload): ?>
+                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-orange-100 text-orange-700">
+                        <i class="fas fa-upload"></i> Menunggu Upload Bukti
                     </span>
                     <?php if (!$all_bukti_uploaded): ?>
                         <span class="text-xs text-orange-600 font-medium flex items-center gap-1">
                             <i class="fas fa-info-circle"></i> Mohon upload semua bukti terlebih dahulu
                         </span>
                     <?php endif; ?>
+                    
+                <?php else: // draft or belum_ada_item ?>
+                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
+                        <i class="fas fa-file"></i> Draft
+                    </span>
                 <?php endif; ?>
             </div>
         </div>
 
-        <?php if ($is_menunggu && !$all_bukti_uploaded): ?>
+        <?php if (($is_menunggu_upload || $is_draft) && !$all_bukti_uploaded): ?>
             <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-info-circle text-blue-600 text-xl mt-0.5"></i>
@@ -124,12 +161,8 @@ if (!function_exists('formatRupiah')) {
                                     $subtotal_plan += $plan;
                                 ?>
                                 <tr class="<?php echo $has_comment ? 'bg-yellow-50' : ''; ?>" 
-                                    data-row-id="<?php echo $item_id; ?>"
+                                    data-lpj-item-id="<?php echo $item_id; ?>"
                                     data-uraian="<?php echo htmlspecialchars($item['uraian'] ?? ''); ?>"
-                                    data-rincian="<?php echo htmlspecialchars($rincian); ?>"
-                                    data-satuan="<?php echo htmlspecialchars($sat1); ?>"
-                                    data-harga="<?php echo $harga_satuan; ?>"
-                                    data-total-plan="<?php echo $plan; ?>"
                                     data-uploaded-file="<?php echo htmlspecialchars($item['bukti_file'] ?? ''); ?>">
 
                                     <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
@@ -141,37 +174,54 @@ if (!function_exists('formatRupiah')) {
                                         <?php endif; ?>
                                     </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600" style="width: 180px;"><?php echo htmlspecialchars($rincian); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600" style="width: 180px;">
+                                        <?php echo htmlspecialchars($rincian); ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;"><?php echo htmlspecialchars($vol1); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;">
+                                        <?php echo htmlspecialchars($vol1); ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;"><?php echo htmlspecialchars($sat1); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;">
+                                        <?php echo htmlspecialchars($sat1); ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;"><?php echo htmlspecialchars($vol2); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;">
+                                        <?php echo htmlspecialchars($vol2); ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;"><?php echo htmlspecialchars($sat2); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;">
+                                        <?php echo htmlspecialchars($sat2); ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-right" style="width: 130px;"><?php echo number_format($harga_satuan, 0, ',', '.'); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-right" style="width: 130px;">
+                                        <?php echo number_format($harga_satuan, 0, ',', '.'); ?>
+                                    </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-right font-medium" style="width: 150px;"><?php echo formatRupiah($plan); ?></td>
+                                    <td class="px-3 py-3 text-sm text-gray-600 text-right font-medium" style="width: 150px;">
+                                        <?php echo formatRupiah($plan); ?>
+                                    </td>
 
+                                    <!-- Kolom Realisasi -->
                                     <td class="px-3 py-3" style="width: 150px;">
-                                        <?php if ($is_menunggu || $is_revisi): ?>
+                                        <?php if ($is_draft || $is_menunggu_upload || $is_siap_submit): ?>
                                             <div class="relative">
                                                 <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
                                                 <input type="number" 
-                                                       class="realisasi-input w-full pl-6 pr-2 py-1 text-sm text-right border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                                       value="<?php echo $plan; ?>" 
-                                                       min="0" 
-                                                       step="1">
+                                                    class="realisasi-input w-full pl-6 pr-2 py-1 text-sm text-right border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                                    value="<?php echo $plan; ?>" 
+                                                    min="0" 
+                                                    step="1"
+                                                    data-item-id="<?php echo $item_id; ?>">
                                             </div>
                                         <?php else: ?>
                                             <div class="text-right text-sm font-bold text-blue-600">
-                                                <?php echo formatRupiah($plan); // Default fallback or fetch from DB if available ?>
+                                                <?php echo formatRupiah($item['realisasi'] ?? $plan); ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>
 
+                                    <!-- Kolom Bukti -->
                                     <td class='px-3 py-3 text-center' style="width: 100px;">
                                         <?php if ($bukti_uploaded && !$has_comment): ?>
                                             <div class="flex items-center justify-center gap-2 text-green-600">
@@ -179,13 +229,15 @@ if (!function_exists('formatRupiah')) {
                                                 <span class="text-xs font-medium">Ada</span>
                                             </div>
                                         <?php else: ?>
-                                            <button type="button" class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors <?php echo $has_comment ? 'ring-2 ring-yellow-400' : ''; ?> <?php echo !$bukti_uploaded && $is_menunggu ? 'animate-pulse' : ''; ?>" 
-                                                    data-item-id="<?php echo $item_id; ?>" 
+                                            <button type="button" 
+                                                    class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors <?php echo $has_comment ? 'ring-2 ring-yellow-400' : ''; ?> <?php echo !$bukti_uploaded ? 'animate-pulse' : ''; ?>" 
+                                                    data-lpj-item-id="<?php echo $item_id; ?>"
                                                     data-item-name="<?php echo htmlspecialchars($item['uraian'] ?? 'Item'); ?>"
-                                                    <?php echo $is_selesai ? 'disabled' : ''; ?>>
+                                                    <?php echo ($is_setuju || $is_menunggu) ; ?>> <!-- ? 'disabled' : ''; = penting, disable jika statusnya is_setuju-->
                                                 <i class='fas fa-upload'></i>
                                             </button>
-                                            <div id="bukti-display-<?php echo $item_id; ?>" class="<?php echo $bukti_uploaded ? 'flex' : 'hidden'; ?> items-center justify-center gap-2 text-green-600">
+                                            <div id="bukti-display-<?php echo $item_id; ?>" 
+                                                class="<?php echo $bukti_uploaded ? 'flex' : 'hidden'; ?> items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
                                                 <span class="text-xs font-medium">Ada</span>
                                             </div>
@@ -321,6 +373,8 @@ if (!function_exists('formatRupiah')) {
 </style>
 
 <script>
+// Di detail_lpj.php bagian <script>, ganti bagian upload dengan:
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- MODAL VARIABLES ---
     const backdrop = document.getElementById('upload-modal-backdrop');
@@ -342,6 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- MODAL FUNCTIONS ---
     function openModal(itemId, itemName) {
+        console.log('Opening modal for item:', itemId, itemName); // Debug
         currentItemId = itemId;
         modalItemName.textContent = itemName;
         modalItemIdInput.value = itemId;
@@ -385,11 +440,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- EVENT LISTENERS: UPLOAD BUTTONS ---
+    // ✅ PERBAIKAN: Event listener untuk tombol upload
     document.querySelectorAll('.btn-upload-bukti').forEach(btn => {
         btn.addEventListener('click', () => {
-            const itemId = btn.dataset.itemId;
+            // Ambil dari data-lpj-item-id, bukan data-item-id
+            const itemId = btn.dataset.lpjItemId || btn.dataset.itemId;
             const itemName = btn.dataset.itemName;
+            
+            console.log('Button clicked - itemId:', itemId, 'itemName:', itemName); // Debug
+            
+            if (!itemId) {
+                alert('Error: Item ID tidak ditemukan');
+                return;
+            }
+            
             openModal(itemId, itemName);
         });
     });
@@ -421,16 +485,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     removeFileBtn.addEventListener('click', resetForm);
 
-    // --- AJAX UPLOAD BUKTI ---
+    // ✅ PERBAIKAN: AJAX UPLOAD dengan FormData yang benar
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
         if (!selectedFile) {
             alert('Pilih file terlebih dahulu');
+            return;
+        }
+        
+        if (!currentItemId) {
+            alert('Error: Item ID tidak valid');
             return;
         }
 
         const formData = new FormData();
         formData.append('file', selectedFile);
+        formData.append('item_id', currentItemId); // ✅ Kirim item_id
 
         const submitBtn = document.getElementById('confirm-upload-btn');
         const originalText = submitBtn.innerHTML;
@@ -438,16 +509,19 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
 
         try {
+            console.log('Uploading file for item:', currentItemId); // Debug
+            
             const response = await fetch('/docutrack/public/admin/pengajuan-lpj/upload-bukti', {
                 method: 'POST',
                 body: formData
             });
 
             const result = await response.json();
+            console.log('Upload response:', result); // Debug
 
             if (result.success) {
-                // 1. Update UI Row
-                const row = document.querySelector(`tr[data-row-id="${currentItemId}"]`);
+                // Update UI Row
+                const row = document.querySelector(`tr[data-lpj-item-id="${currentItemId}"]`);
                 if (row) {
                     row.dataset.uploadedFile = result.filename;
                     
@@ -481,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CHECK ALL BUKTI ---
     function checkAllBuktiUploaded() {
-        const rows = document.querySelectorAll('tbody tr[data-row-id]');
+        const rows = document.querySelectorAll('tbody tr[data-lpj-item-id]');
         let allUploaded = true;
 
         rows.forEach(row => {
@@ -491,19 +565,131 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (submitLpjBtn) {
-            if (allUploaded) {
-                submitLpjBtn.disabled = false;
-                submitLpjBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
-            } else {
+            submitLpjBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                
+                if (submitLpjBtn.disabled) return;
+
+                // Validasi semua bukti sudah terupload
+                const rows = document.querySelectorAll('tbody tr[data-lpj-item-id]');
+                let allUploaded = true;
+                let missingCount = 0;
+                
+                rows.forEach(row => {
+                    if (!row.dataset.uploadedFile || row.dataset.uploadedFile === '') {
+                        allUploaded = false;
+                        missingCount++;
+                    }
+                });
+
+                if (!allUploaded) {
+                    alert(`Masih ada ${missingCount} bukti yang belum diupload. Mohon upload semua bukti terlebih dahulu.`);
+                    return;
+                }
+
+                // Validasi Realisasi
+                const realisasiInputs = document.querySelectorAll('.realisasi-input');
+                let validRealisasi = true;
+                
+                realisasiInputs.forEach(input => {
+                    const val = parseFloat(input.value);
+                    if (isNaN(val) || val < 0) {
+                        validRealisasi = false;
+                    }
+                });
+
+                if (!validRealisasi) {
+                    alert('Mohon isi semua kolom Realisasi dengan nilai yang valid (>= 0).');
+                    return;
+                }
+
+                if (!confirm('Apakah Anda yakin semua bukti dan data realisasi sudah benar? Data akan dikirim ke Bendahara untuk verifikasi.')) {
+                    return;
+                }
+
+                // Disable button dan update text
+                submitLpjBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
                 submitLpjBtn.disabled = true;
-                submitLpjBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Upload Bukti Terlebih Dahulu';
-            }
+
+                // ✅ PERBAIKAN: Kumpulkan data dengan format yang benar
+                const items = [];
+                
+                rows.forEach(row => {
+                    const lpjItemId = row.dataset.lpjItemId;
+                    const uraian = row.dataset.uraian;
+                    const uploadedFile = row.dataset.uploadedFile;
+                    
+                    // Ambil realisasi dari input
+                    const realisasiInput = row.querySelector('.realisasi-input');
+                    let realisasi = 0;
+                    
+                    if (realisasiInput) {
+                        realisasi = parseFloat(realisasiInput.value) || 0;
+                    } else {
+                        // Jika tidak ada input (status selain draft/revisi), ambil dari text
+                        const realisasiText = row.querySelector('td:nth-child(9)'); // Kolom realisasi
+                        if (realisasiText) {
+                            const textContent = realisasiText.textContent.trim();
+                            realisasi = parseFloat(textContent.replace(/[^0-9]/g, '')) || 0;
+                        }
+                    }
+                    
+                    console.log('Item data:', {
+                        lpjItemId,
+                        uraian,
+                        realisasi,
+                        uploadedFile
+                    });
+
+                    items.push({
+                        lpj_item_id: lpjItemId,
+                        uraian: uraian,
+                        realisasi: realisasi,
+                        file_bukti: uploadedFile
+                    });
+                });
+
+                const kegiatanId = document.getElementById('kegiatan_id').value;
+
+                console.log('Submitting data:', {
+                    kegiatan_id: kegiatanId,
+                    total_items: items.length,
+                    items: items
+                });
+
+                // ✅ Kirim data ke server
+                const payload = new FormData();
+                payload.append('kegiatan_id', kegiatanId);
+                payload.append('items', JSON.stringify(items));
+
+                try {
+                    const response = await fetch('/docutrack/public/admin/pengajuan-lpj/submit', {
+                        method: 'POST',
+                        body: payload
+                    });
+
+                    const result = await response.json();
+                    console.log('Server response:', result);
+
+                    if (result.success) {
+                        alert(result.message || 'LPJ berhasil diajukan ke Bendahara!');
+                        window.location.href = '/docutrack/public/admin/pengajuan-lpj';
+                    } else {
+                        alert('Gagal Submit: ' + (result.message || 'Terjadi kesalahan'));
+                        submitLpjBtn.disabled = false;
+                        submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Terjadi kesalahan koneksi: ' + error.message);
+                    submitLpjBtn.disabled = false;
+                    submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
+                }
+            });
         }
     }
 
-    // --- REALISASI CALCULATION ---
+    // --- REALISASI CALCULATION (tetap sama) ---
     const realisasiInputs = document.querySelectorAll('.realisasi-input');
     const grandTotalRealisasiEl = document.getElementById('grand-total-realisasi');
 
@@ -514,13 +700,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateGrandTotalRealisasi() {
         let grandTotal = 0;
         
-        // Hitung per row
         realisasiInputs.forEach(input => {
             const val = parseFloat(input.value) || 0;
             grandTotal += val;
         });
         
-        // Update Subtotal per kategori
         document.querySelectorAll('table[data-kategori]').forEach(table => {
             let subtotalKategori = 0;
             table.querySelectorAll('.realisasi-input').forEach(inp => {
@@ -536,84 +720,6 @@ document.addEventListener('DOMContentLoaded', () => {
     realisasiInputs.forEach(input => {
         input.addEventListener('input', updateGrandTotalRealisasi);
     });
-
-    // --- AJAX SUBMIT LPJ ---
-    if (submitLpjBtn) {
-        submitLpjBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            
-            if (submitLpjBtn.disabled) return;
-
-            // Validasi Realisasi
-            let validRealisasi = true;
-            realisasiInputs.forEach(input => {
-                if (!input.value || parseFloat(input.value) < 0) validRealisasi = false;
-            });
-
-            if (!validRealisasi) {
-                alert('Mohon isi semua kolom Realisasi dengan nilai yang valid (>= 0).');
-                return;
-            }
-
-            if (!confirm('Apakah Anda yakin semua bukti dan data realisasi sudah benar? Data akan dikirim ke Bendahara.')) {
-                return;
-            }
-
-            submitLpjBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
-            submitLpjBtn.disabled = true;
-
-            const items = [];
-            const tables = document.querySelectorAll('table[data-kategori]');
-            
-            tables.forEach(table => {
-                const kategori = table.dataset.kategori;
-                const rows = table.querySelectorAll('tbody tr[data-row-id]');
-                
-                rows.forEach(row => {
-                    const realisasiInput = row.querySelector('.realisasi-input');
-                    // Ambil nilai realisasi dari input, fallback ke rencana jika error (seharusnya tidak terjadi karena validasi)
-                    const realisasiVal = realisasiInput ? parseFloat(realisasiInput.value) : parseFloat(row.dataset.totalPlan);
-
-                    items.push({
-                        kategori: kategori,
-                        uraian: row.dataset.uraian,
-                        rincian: row.dataset.rincian,
-                        satuan: row.dataset.satuan,
-                        harga_satuan: parseFloat(row.dataset.harga),
-                        total: realisasiVal, // Use REALISASI value for 'sub_total' in DB
-                        file_bukti: row.dataset.uploadedFile
-                    });
-                });
-            });
-
-            const payload = new FormData();
-            payload.append('kegiatan_id', document.getElementById('kegiatan_id').value);
-            payload.append('items', JSON.stringify(items));
-
-            try {
-                const response = await fetch('/docutrack/public/admin/pengajuan-lpj/submit', {
-                    method: 'POST',
-                    body: payload
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    alert(result.message);
-                    window.location.href = '/docutrack/public/admin/pengajuan-lpj';
-                } else {
-                    alert('Gagal Submit: ' + result.message);
-                    submitLpjBtn.disabled = false;
-                    submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan koneksi.');
-                submitLpjBtn.disabled = false;
-                submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
-            }
-        });
-    }
 
     // Initial check on load
     checkAllBuktiUploaded();
