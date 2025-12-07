@@ -30,6 +30,27 @@ return [
         'method'     => 'api',
         'middleware' => [],
     ],
+
+    // API routes for Notifications
+    '/api/notifikasi' => [
+        'controller' => 'Api\NotifikasiController',
+        'method'     => 'get',
+        'middleware' => ['AuthMiddleware'],
+        'methods'    => ['GET'],
+    ],
+    '/api/notifikasi/baca/{id}' => [
+        'controller' => 'Api\NotifikasiController',
+        'method'     => 'markAsRead',
+        'middleware' => ['AuthMiddleware'],
+        'methods'    => ['POST'],
+    ],
+    '/api/notifikasi/baca-semua' => [
+        'controller' => 'Api\NotifikasiController',
+        'method'     => 'markAllAsRead',
+        'middleware' => ['AuthMiddleware'],
+        'methods'    => ['POST'],
+    ],
+
     // Admin routes
     '/admin/dashboard' => [
         'controller' => 'Admin\DashboardController',
@@ -378,93 +399,93 @@ return [
     ],
 
     // Super Admin routes
-    '/super_admin' => [
+    '/superadmin' => [
         'controller' => 'SuperAdmin\SuperAdminController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/dashboard' => [
+    '/superadmin/dashboard' => [
         'controller' => 'SuperAdmin\DashboardController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/akun' => [
+    '/superadmin/akun' => [
         'controller' => 'SuperAdmin\AkunController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/akun/update' => [
+    '/superadmin/akun/update' => [
         'controller' => 'SuperAdmin\AkunController',
         'method'     => 'update',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/super_admin/kelola-akun' => [
+    '/superadmin/kelola-akun' => [
         'controller' => 'SuperAdmin\KelolaakunController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/kelola-akun/create' => [
+    '/superadmin/kelola-akun/create' => [
         'controller' => 'SuperAdmin\KelolaakunController',
         'method'     => 'create',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/kelola-akun/store' => [
+    '/superadmin/kelola-akun/store' => [
         'controller' => 'SuperAdmin\KelolaakunController',
         'method'     => 'store',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/super_admin/kelola-akun/show/{id}' => [
+    '/superadmin/kelola-akun/show/{id}' => [
         'controller' => 'SuperAdmin\KelolaakunController',
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/kelola-akun/update/{id}' => [
+    '/superadmin/kelola-akun/update/{id}' => [
         'controller' => 'SuperAdmin\KelolaakunController',
         'method'     => 'update',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/super_admin/kelola-akun/delete/{id}' => [
+    '/superadmin/kelola-akun/delete/{id}' => [
         'controller' => 'SuperAdmin\KelolaakunController',
         'method'     => 'delete',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/super_admin/monitoring' => [
+    '/superadmin/monitoring' => [
         'controller' => 'SuperAdmin\MonitoringController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/buat-iku' => [
+    '/superadmin/buat-iku' => [
         'controller' => 'SuperAdmin\BuatikuController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/buat-iku/create' => [
+    '/superadmin/buat-iku/create' => [
         'controller' => 'SuperAdmin\BuatikuController',
         'method'     => 'create',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/buat-iku/store' => [
+    '/superadmin/buat-iku/store' => [
         'controller' => 'SuperAdmin\BuatikuController',
         'method'     => 'store',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/super_admin/buat-iku/edit/{id}' => [
+    '/superadmin/buat-iku/edit/{id}' => [
         'controller' => 'SuperAdmin\BuatikuController',
         'method'     => 'edit',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
-    '/super_admin/buat-iku/update/{id}' => [
+    '/superadmin/buat-iku/update/{id}' => [
         'controller' => 'SuperAdmin\BuatikuController',
         'method'     => 'update',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/super_admin/buat-iku/delete/{id}' => [
+    '/superadmin/buat-iku/delete/{id}' => [
         'controller' => 'SuperAdmin\BuatikuController',
         'method'     => 'delete',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],

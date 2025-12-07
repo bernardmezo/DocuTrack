@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Admin;
@@ -31,9 +32,8 @@ class AdminController extends Controller
 
         try {
             $this->kegiatanService->processRincianKegiatan($_POST, $_FILES['surat_pengantar'] ?? null);
-            
-            $this->redirectWithMessage('/docutrack/public/admin/pengajuan-kegiatan', 'success', 'Rincian kegiatan berhasil disimpan dan dikirim ke PPK.');
 
+            $this->redirectWithMessage('/docutrack/public/admin/pengajuan-kegiatan', 'success', 'Rincian kegiatan berhasil disimpan dan dikirim ke PPK.');
         } catch (ValidationException $e) {
             $_SESSION['flash_errors'] = $e->getErrors();
             $_SESSION['old_input'] = $_POST;

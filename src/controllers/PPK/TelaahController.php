@@ -1,38 +1,59 @@
 <?php
+
 namespace App\Controllers\PPK;
 
 use App\Core\Controller;
+use App\Models\kegiatan\KegiatanModel;
+use App\Models\PpkModel;
+use App\Services\LogStatusService;
 use App\Services\PpkService;
+use App\Services\ValidationService;
+use Exception;
 
-if (file_exists(DOCUTRACK_ROOT . '/src/helpers/logger_helper.php')) {
-    require_once DOCUTRACK_ROOT . '/src/helpers/logger_helper.php';
-}
+class TelaahController extends Controller
+{
+    private PpkService $service;
 
-class TelaahController extends Controller {
-
-    private $model;
-
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
-        $this->model = new PpkService($this->db);
+
+        $dbConnection = $this->db;
+        $ppkModel = new PpkModel($dbConnection);
+        $logStatusService = new LogStatusService($dbConnection);
+        $validationService = new ValidationService();
+        $kegiatanModel = new KegiatanModel($dbConnection);
+
+        $this->service = new PpkService(
+            $ppkModel,
+            $logStatusService,
+            $validationService,
+            $kegiatanModel
+        );
     }
 
-    public function show($id, $data_dari_router = []) {
+    public function show($id, $data_dari_router = [])
+    {
         $ref = $_GET['ref'] ?? 'dashboard';
         $base_url = "/docutrack/public/ppk";
         $back_url = $base_url . '/' . $ref;
 
-        $dataDB = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
-        
-        if (!$dataDB) { echo "Data tidak ditemukan."; return; }
+        $dataDB = $this->safeModelCall($this->service, 'getDetailKegiatan', [$id], null);
+
+        if (!$dataDB) {
+            echo "Data tidak ditemukan.";
+            return;
+        }
 
         $kakId = $dataDB['kakId'];
-        $indikator = $this->safeModelCall($this->model, 'getIndikatorByKAK', [$kakId], []);
-        $tahapan   = $this->safeModelCall($this->model, 'getTahapanByKAK', [$kakId], []);
-        $rab       = $this->safeModelCall($this->model, 'getRABByKAK', [$kakId], []);
+        $indikator = $this->safeModelCall($this->service, 'getIndikatorByKAK', [$kakId], []);
+        $tahapan   = $this->safeModelCall($this->service, 'getTahapanByKAK', [$kakId], []);
+        $rab       = $this->safeModelCall($this->service, 'getRABByKAK', [$kakId], []);
 
         $tahapan_string = "";
-        foreach ($tahapan as $idx => $t) { $tahapan_string .= ($idx + 1) . ". " . $t . "\n"; }
+        foreach ($tahapan as $idx => $t) {
+            $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
+        }
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
         $surat_url = !empty($dataDB['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $dataDB['suratPengantar'] : '';
 
@@ -82,24 +103,27 @@ class TelaahController extends Controller {
         $this->view('pages/ppk/telaah_detail', $data, 'ppk');
     }
 
-    public function approve($id) {
+    public function approve($id)
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $userId = $_SESSION['user_id'] ?? 0;
-            
-            $kegiatan = $this->model->getDetailKegiatan($id);
-            $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
-            
-            if($this->model->approveUsulan($id)) {
-                if (function_exists('logApproval')) {
-                    logApproval($userId, $id, 'PPK', true, 
-                        'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
-                        $oldStatusId, 3);
+            try {
+                $rekomendasi = trim($_POST['rekomendasi'] ?? '');
+
+                if ($this->service->approveUsulan((int)$id, $rekomendasi)) {
+                    $_SESSION['flash_message'] = 'Usulan berhasil disetujui dan diteruskan ke Bendahara.';
+                    header('Location: /docutrack/public/ppk/dashboard?msg=approved');
+                    exit;
+                } else {
+                    throw new Exception('Gagal memproses persetujuan.');
                 }
-                
-                header('Location: /docutrack/public/ppk/dashboard?msg=approved');
+            } catch (Exception $e) {
+                $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                header('Location: /docutrack/public/ppk/telaah/show/' . $id);
                 exit;
             }
         }
-        header('Location: /docutrack/public/ppk/telaah/show/'.$id);
+        // Jika bukan POST, redirect kembali
+        header('Location: /docutrack/public/ppk/telaah/show/' . $id);
+        exit;
     }
 }

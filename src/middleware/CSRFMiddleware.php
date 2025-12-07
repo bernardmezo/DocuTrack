@@ -4,27 +4,27 @@ namespace App\Middleware;
 
 /**
  * CSRFMiddleware - Cross-Site Request Forgery Protection
- * 
+ *
  * Middleware untuk melindungi aplikasi dari CSRF attacks dengan menggunakan
  * token-based validation pada setiap POST/PUT/DELETE request.
- * 
+ *
  * @category Security
  * @package  DocuTrack\Middleware
  * @version  2.0.0
  * @author   DocuTrack Security Team
  * @license  MIT
- * 
+ *
  * USAGE:
  * ------
  * 1. Add to routes.php:
  *    'middleware' => ['AuthMiddleware', 'CSRFMiddleware']
- * 
+ *
  * 2. In forms (view layer):
  *    <?php echo csrf_field(); ?>
- * 
+ *
  * 3. In AJAX requests:
  *    headers: { 'X-CSRF-TOKEN': '<?php echo csrf_token(); ?>' }
- * 
+ *
  * SECURITY FEATURES:
  * ------------------
  * - Token regeneration setiap request untuk mencegah fixation
@@ -32,7 +32,7 @@ namespace App\Middleware;
  * - Token expiry (1 hour default)
  * - Origin header validation
  * - Referer header validation (sebagai fallback)
- * 
+ *
  * EXCEPTIONS:
  * -----------
  * - GET requests tidak divalidasi (safe method)
@@ -46,17 +46,17 @@ class CSRFMiddleware
      * Token key name di session
      */
     const TOKEN_KEY = 'csrf_token';
-    
+
     /**
      * Token timestamp key
      */
     const TOKEN_TIME_KEY = 'csrf_token_time';
-    
+
     /**
      * Token expiry time (dalam detik) - default 1 jam
      */
     const TOKEN_EXPIRY = 3600;
-    
+
     /**
      * Exempt routes (tidak perlu CSRF check)
      * Untuk API endpoints yang menggunakan Bearer token
@@ -67,7 +67,7 @@ class CSRFMiddleware
 
     /**
      * Main validation method - dipanggil dari Router
-     * 
+     *
      * @throws \Exception Jika CSRF validation gagal
      * @return void
      */
@@ -87,7 +87,7 @@ class CSRFMiddleware
 
         // Ambil token dari request
         $submittedToken = self::getTokenFromRequest();
-        
+
         // Validasi token
         if (!self::validateToken($submittedToken)) {
             self::handleCSRFViolation();
@@ -99,24 +99,24 @@ class CSRFMiddleware
 
     /**
      * Generate CSRF token baru dan simpan di session
-     * 
+     *
      * @return string Generated token
      */
     public static function generateToken(): string
     {
         // Generate cryptographically secure random token
         $token = bin2hex(random_bytes(32)); // 64 characters hex
-        
+
         // Store di session
         $_SESSION[self::TOKEN_KEY] = $token;
         $_SESSION[self::TOKEN_TIME_KEY] = time();
-        
+
         return $token;
     }
 
     /**
      * Get current CSRF token (generate jika belum ada)
-     * 
+     *
      * @return string Current token
      */
     public static function getToken(): string
@@ -125,13 +125,13 @@ class CSRFMiddleware
         if (!isset($_SESSION[self::TOKEN_KEY]) || self::isTokenExpired()) {
             return self::generateToken();
         }
-        
+
         return $_SESSION[self::TOKEN_KEY];
     }
 
     /**
      * Validasi token yang di-submit dengan token di session
-     * 
+     *
      * @param string|null $submittedToken Token dari request
      * @return bool True jika valid, false jika tidak
      */
@@ -173,12 +173,12 @@ class CSRFMiddleware
 
     /**
      * Ambil token dari berbagai sumber request
-     * 
+     *
      * Priority:
      * 1. POST body (_token field)
      * 2. HTTP Header (X-CSRF-TOKEN)
      * 3. HTTP Header (X-XSRF-TOKEN) - untuk compatibility
-     * 
+     *
      * @return string|null Token jika ditemukan
      */
     private static function getTokenFromRequest(): ?string
@@ -193,7 +193,7 @@ class CSRFMiddleware
         if (isset($headers['X-CSRF-TOKEN'])) {
             return $headers['X-CSRF-TOKEN'];
         }
-        
+
         if (isset($headers['X-XSRF-TOKEN'])) {
             return $headers['X-XSRF-TOKEN'];
         }
@@ -203,7 +203,7 @@ class CSRFMiddleware
 
     /**
      * Check apakah token sudah expired
-     * 
+     *
      * @return bool True jika expired
      */
     private static function isTokenExpired(): bool
@@ -219,7 +219,7 @@ class CSRFMiddleware
     /**
      * Regenerate token untuk rotating token pattern
      * Dipanggil setelah successful validation
-     * 
+     *
      * @return void
      */
     private static function regenerateToken(): void
@@ -230,7 +230,7 @@ class CSRFMiddleware
     /**
      * Validasi Origin atau Referer header
      * Untuk mencegah CSRF dari domain lain
-     * 
+     *
      * @return bool True jika valid
      */
     private static function validateOrigin(): bool
@@ -245,10 +245,10 @@ class CSRFMiddleware
         // Fallback: Check Referer header
         if (isset($_SERVER['HTTP_REFERER'])) {
             $refererHost = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
-            $allowedHosts = array_map(function($origin) {
+            $allowedHosts = array_map(function ($origin) {
                 return parse_url($origin, PHP_URL_HOST);
             }, $allowedOrigins);
-            
+
             return in_array($refererHost, $allowedHosts);
         }
 
@@ -260,13 +260,13 @@ class CSRFMiddleware
 
     /**
      * Get allowed origins dari environment atau config
-     * 
+     *
      * @return array List of allowed origins
      */
     private static function getAllowedOrigins(): array
     {
         $baseUrl = getenv('APP_URL') ?: 'http://localhost';
-        
+
         return [
             $baseUrl,
             // Add production domains jika ada
@@ -276,7 +276,7 @@ class CSRFMiddleware
 
     /**
      * Check apakah route exempt dari CSRF protection
-     * 
+     *
      * @param string $uri Request URI
      * @return bool True jika exempt
      */
@@ -289,13 +289,13 @@ class CSRFMiddleware
                 return true;
             }
         }
-        
+
         return false;
     }
 
     /**
      * Handle CSRF violation - log dan terminate request
-     * 
+     *
      * @throws \Exception
      * @return void (never returns)
      */
@@ -310,7 +310,7 @@ class CSRFMiddleware
             'referer' => $_SERVER['HTTP_REFERER'] ?? 'none',
             'user_id' => $_SESSION['user_id'] ?? 'anonymous',
         ];
-        
+
         error_log('CSRF VIOLATION: ' . json_encode($logData));
 
         // Audit log ke database (jika function tersedia)
@@ -325,10 +325,12 @@ class CSRFMiddleware
 
         // Response dengan 419 status (CSRF Token Mismatch)
         http_response_code(419);
-        
+
         // Jika AJAX request, return JSON
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        if (
+            !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+        ) {
             header('Content-Type: application/json');
             echo json_encode([
                 'success' => false,

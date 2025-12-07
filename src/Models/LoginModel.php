@@ -4,13 +4,14 @@ namespace App\Models;
 
 /**
  * LoginModel - Authentication Model
- * 
+ *
  * @category Model
  * @package  DocuTrack
  * @version  2.0.0 - Refactored to remove constructor trap
  */
 
-class LoginModel {
+class LoginModel
+{
     /**
      * @var mysqli Database connection instance
      */
@@ -21,7 +22,8 @@ class LoginModel {
      *
      * @param mysqli|null $db Database connection (optional for backward compatibility)
      */
-    public function __construct($db = null) {
+    public function __construct($db = null)
+    {
         if ($db !== null) {
             $this->db = $db;
         } else {
@@ -37,8 +39,9 @@ class LoginModel {
     /**
      * Mengambil data user berdasarkan email
      */
-    public function getUserByEmail($email) {
-        // Catatan: Parameter $password dihapus dari sini. 
+    public function getUserByEmail($email)
+    {
+        // Catatan: Parameter $password dihapus dari sini.
         // Model tugasnya hanya mengambil data. Pengecekan password dilakukan di Controller (AuthController).
 
         // 3. Perbaikan Query: Gunakan '?' bukan ':email' untuk MySQLi
@@ -67,7 +70,7 @@ class LoginModel {
 
             // 7. Ambil Hasilnya
             $result = mysqli_stmt_get_result($stmt);
-            
+
             // 8. Kembalikan data dalam bentuk Array Asosiatif (agar enak dipakai $user['nama'])
             if ($row = mysqli_fetch_assoc($result)) {
                 mysqli_stmt_close($stmt);

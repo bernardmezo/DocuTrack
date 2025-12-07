@@ -1,12 +1,14 @@
 <?php
+
 namespace App\Controllers\Direktur;
 
 use App\Core\Controller;
 
-class DashboardController extends Controller {
-    
-    public function index($data_dari_router = []) {
-        
+class DashboardController extends Controller
+{
+    public function index($data_dari_router = [])
+    {
+
         // Data masih dummy
         $stats = [
             'total' => 255, 'disetujui' => 10, 'ditolak' => 2, 'menunggu' => 3, 'revisi' => 1
@@ -23,6 +25,6 @@ class DashboardController extends Controller {
             'list_lpj' => $list_lpj_dummy
         ]);
 
-        $this->view('pages/Direktur/dashboard', $data, 'direktur'); 
+        $this->view('pages/Direktur/dashboard', $data, 'direktur');
     }
 }

@@ -6,10 +6,10 @@ use Exception;
 
 /**
  * UserModel - OOP Implementation with Dependency Injection
- * 
+ *
  * Model untuk mengelola tbl_users dan tbl_roles dengan pola OOP dan DI.
  * Menghilangkan global $conn dan menggunakan constructor injection.
- * 
+ *
  * @category Model
  * @package  DocuTrack
  * @author   DocuTrack Team
@@ -38,7 +38,7 @@ class UserModel
 
     /**
      * Mengambil semua data role dari tbl_roles.
-     * 
+     *
      * Berguna untuk mengisi <select> dropdown saat membuat/mengedit user.
      *
      * @return array Array of role records
@@ -79,7 +79,7 @@ class UserModel
                   FROM tbl_users u 
                   JOIN tbl_roles r ON u.role_id = r.role_id
                   WHERE u.email = ? AND u.is_active = 1";
-                  
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('UserModel::verifyUserLogin - Prepare failed: ' . mysqli_error($this->db));
@@ -87,7 +87,7 @@ class UserModel
         }
 
         mysqli_stmt_bind_param($stmt, 's', $email);
-        
+
         if (mysqli_stmt_execute($stmt)) {
             $result = mysqli_stmt_get_result($stmt);
             $user = mysqli_fetch_assoc($result);
@@ -109,7 +109,7 @@ class UserModel
 
     /**
      * Menambah user baru ke tbl_users.
-     * 
+     *
      * User akan di-set aktif (is_active = 1) secara default.
      *
      * @param string $userName Username for the new user
@@ -228,7 +228,7 @@ class UserModel
         }
 
         $passwordHased = password_hash($newPassword, PASSWORD_BCRYPT);
-        
+
         $query = "UPDATE tbl_user SET password = ? WHERE userId = ?";
         $stmt = mysqli_prepare($this->db, $query);
 

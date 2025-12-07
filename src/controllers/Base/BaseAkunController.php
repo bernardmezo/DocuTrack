@@ -1,20 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers\Base;
 
 use App\Core\Controller;
 use App\Services\AuthService;
-use App\Services\FileUploadService;
-use App\Services\ValidationService;
+// Removed: use App\Services\FileUploadService;
+// Removed: use App\Services\ValidationService;
 use App\Exceptions\ValidationException;
 use Exception;
 
 abstract class BaseAkunController extends Controller
 {
     private $authService;
-    private $fileUploadService;
-    private $validationService;
+    // fileUploadService and validationService are now inherited from base Controller
 
     // Abstract methods to be implemented by child controllers
     abstract protected function getAkunViewPath(): string;
@@ -24,13 +24,14 @@ abstract class BaseAkunController extends Controller
     public function __construct($db)
     {
         parent::__construct($db);
-        if (session_status() === PHP_SESSION_NONE) { session_start(); }
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         if (!isset($_SESSION['user_id'])) {
             $this->redirect('/docutrack/public/');
         }
         $this->authService = new AuthService($this->db);
-        $this->fileUploadService = new FileUploadService();
-        $this->validationService = new ValidationService();
+        // $this->fileUploadService and $this->validationService are already set in parent::__construct()
     }
 
     public function index($options = [])
@@ -51,12 +52,12 @@ abstract class BaseAkunController extends Controller
             'profile_image' => $_SESSION['user_data']['profile_image'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($dbUser['nama'] ?? 'U') . '&background=0D8ABC&color=fff&size=150',
             'header_bg' => $_SESSION['user_data']['header_bg'] ?? 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
         ];
-        
+
         $data = array_merge($options, [
             'title' => 'Pengaturan Akun',
             'user' => $viewUser
         ]);
-        
+
         $this->view($this->getAkunViewPath(), $data, $this->getAkunLayout());
     }
 
@@ -67,7 +68,7 @@ abstract class BaseAkunController extends Controller
         }
 
         $userId = $_SESSION['user_id'];
-        
+
         try {
             $rules = [
                 'username' => 'required',
@@ -91,7 +92,7 @@ abstract class BaseAkunController extends Controller
                 }
                 $this->authService->changePassword($userId, $validatedData['password']);
             }
-            
+
             // Handle file uploads
             if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
                 $publicPath = $this->fileUploadService->uploadProfileImage($_FILES['profile_image']);
@@ -109,7 +110,6 @@ abstract class BaseAkunController extends Controller
             $_SESSION['user_data']['email'] = $updatedUser['email'];
 
             $this->redirectWithMessage($this->getAkunRedirectUrl(), 'success', 'Profil berhasil diperbarui!');
-
         } catch (ValidationException $e) {
             $_SESSION['flash_errors'] = $e->getErrors();
             $_SESSION['old_input'] = $_POST;

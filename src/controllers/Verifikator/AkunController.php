@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers\Verifikator;
 
 use App\Controllers\Base\BaseAkunController;

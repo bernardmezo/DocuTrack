@@ -1,8 +1,9 @@
 <?php
-// File: src/views/pages/super_admin/kelola-akun.php
+
+// File: src/views/pages/superadmin/kelola-akun.php
 
 // Data Simulasi: Role Baru & Jurusan PNJ
-if (!isset($list_users)) { 
+if (!isset($list_users)) {
     $list_users = [
         ['id' => 1, 'nama' => 'Dr. Ahmad Pengusul', 'email' => 'ahmad.p@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Informatika dan Komputer', 'status' => 'Aktif', 'last_login' => '2024-01-15 08:30:00'],
         ['id' => 2, 'nama' => 'Siti Verifikator, M.Ak', 'email' => 'siti.v@pnj.ac.id', 'role' => 'Verifikator', 'jurusan' => 'Akuntansi', 'status' => 'Aktif', 'last_login' => '2024-01-15 09:15:00'],
@@ -12,7 +13,7 @@ if (!isset($list_users)) {
         ['id' => 6, 'nama' => 'Dian Grafika', 'email' => 'dian.g@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Grafika dan Penerbitan', 'status' => 'Tidak Aktif', 'last_login' => '2023-12-20 15:00:00'],
         ['id' => 7, 'nama' => 'Joko Mesin', 'email' => 'joko.m@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Mesin', 'status' => 'Aktif', 'last_login' => '2024-01-15 13:30:00'],
         ['id' => 8, 'nama' => 'Sarah Elektro', 'email' => 'sarah.e@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Elektro', 'status' => 'Aktif', 'last_login' => '2024-01-12 09:00:00'],
-    ]; 
+    ];
 }
 ?>
 

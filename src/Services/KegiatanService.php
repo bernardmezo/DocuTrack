@@ -13,15 +13,16 @@ use Exception;
 
 /**
  * KegiatanService - Business logic untuk Kegiatan
- * 
+ *
  * Service layer untuk orchestrate business logic kegiatan,
  * memisahkan business rules dari data access layer.
- * 
+ *
  * @category Service
  * @package  DocuTrack\Services
  * @version  2.1.0 - Added ViewCache invalidation
  */
-class KegiatanService {
+class KegiatanService
+{
     /**
      * @var mysqli Database connection
      */
@@ -54,10 +55,11 @@ class KegiatanService {
 
     /**
      * Constructor
-     * 
+     *
      * @param mysqli $db Database connection
      */
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
         $this->kegiatanModel = new KegiatanModel($db);
         $this->kakModel = new KakModel($db);
@@ -69,10 +71,11 @@ class KegiatanService {
     /**
      * Get dashboard statistics
      * REFACTORED: Now delegates to Model layer (MVC Compliance - Dec 2025)
-     * 
+     *
      * @return array Statistics data
      */
-    public function getDashboardStats() {
+    public function getDashboardStats()
+    {
         // Status 5 = Dana Diberikan (Disetujui & Cair)
         $query = "SELECT 
                     COUNT(*) as total,
@@ -86,12 +89,13 @@ class KegiatanService {
 
     /**
      * Get kegiatan based on position and status
-     * 
+     *
      * @param int $posisiId
      * @param int $statusUtamaId
      * @return array
      */
-    public function getKegiatanByStatus($posisiId, $statusUtamaId) {
+    public function getKegiatanByStatus($posisiId, $statusUtamaId)
+    {
         $query = "SELECT 
                     k.*, 
                     kak.kakId,
@@ -103,12 +107,12 @@ class KegiatanService {
                   JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                   WHERE k.posisiId = ? AND k.statusUtamaId = ?";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "ii", $posisiId, $statusUtamaId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         $data = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $data[] = $row;
@@ -119,22 +123,24 @@ class KegiatanService {
     /**
      * Get dashboard KAK list (all or by jurusan)
      * REFACTORED: Now delegates to Model layer (MVC Compliance - Dec 2025)
-     * 
+     *
      * @param string|null $jurusan Filter by jurusan
      * @return array
      */
-    public function getDashboardKAK($jurusan = null) {
+    public function getDashboardKAK($jurusan = null)
+    {
         // ✅ FIXED: Delegate to Model instead of direct SQL
         return $this->kegiatanModel->getDashboardKAK($jurusan);
     }
 
     /**
      * Get kegiatan detail with full relations
-     * 
+     *
      * @param int $kegiatanId
      * @return array|null
      */
-    public function getDetailKegiatan($kegiatanId) {
+    public function getDetailKegiatan($kegiatanId)
+    {
         $query = "SELECT 
                     k.*, 
                     kak.*,
@@ -153,33 +159,34 @@ class KegiatanService {
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                   WHERE k.kegiatanId = ?
                   LIMIT 1";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
-        
+
         if (!$stmt) {
             error_log('Failed to prepare statement in getDetailKegiatan: ' . mysqli_error($this->db));
             return null;
         }
-        
+
         mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $data = mysqli_fetch_assoc($result);
         mysqli_stmt_close($stmt);
-        
+
         return $data;
     }
 
     /**
      * Get full details of a kegiatan including KAK, Relations, and RAB
-     * 
+     *
      * @param int $kegiatanId
      * @return array
      */
-    public function getDetailLengkap($kegiatanId) {
+    public function getDetailLengkap($kegiatanId)
+    {
         // 1. Get Main Kegiatan Details
         $kegiatanData = $this->getDetailKegiatan($kegiatanId);
-        
+
         if (!$kegiatanData) {
             return null;
         }
@@ -190,13 +197,13 @@ class KegiatanService {
         if ($kakId) {
             // 3. Fetch KAK Relations (Indicators & Stages)
             $kakRelations = $this->kakModel->getKAKWithRelationsById($kakId);
-            
+
             if ($kakRelations) {
                 $kegiatanData['indikator_list'] = $kakRelations['indikator_list'] ?? [];
                 $kegiatanData['tahapan_list'] = $kakRelations['tahapan_list'] ?? [];
                 // Ensure compatible keys for view
-                $kegiatanData['indikator_data'] = $kegiatanData['indikator_list']; 
-                $kegiatanData['tahapan_data'] = array_column($kegiatanData['tahapan_list'], 'nama_tahapan'); 
+                $kegiatanData['indikator_data'] = $kegiatanData['indikator_list'];
+                $kegiatanData['tahapan_data'] = array_column($kegiatanData['tahapan_list'], 'nama_tahapan');
             } else {
                 $kegiatanData['indikator_list'] = [];
                 $kegiatanData['tahapan_list'] = [];
@@ -206,7 +213,6 @@ class KegiatanService {
 
             // 4. Fetch RAB
             $kegiatanData['rab_data'] = $this->rabModel->getRabByKegiatanId($kegiatanId);
-
         } else {
             $kegiatanData['indikator_list'] = [];
             $kegiatanData['tahapan_list'] = [];
@@ -218,15 +224,16 @@ class KegiatanService {
 
     /**
      * Create new kegiatan with complete data (transaction)
-     * 
+     *
      * Business logic: Create kegiatan with KAK, indikator, tahapan, and RAB
-     * 
+     *
      * @param array $data Complete kegiatan data
      * @return int Kegiatan ID
      * @throws ValidationException
      * @throws BusinessLogicException
      */
-    public function createKegiatan($data) {
+    public function createKegiatan($data)
+    {
         // Validate input
         $this->validateKegiatanData($data);
 
@@ -255,12 +262,11 @@ class KegiatanService {
             }
 
             mysqli_commit($this->db);
-            
+
             // 6. Invalidate dashboard cache after successful create
             $this->invalidateDashboardCache();
-            
-            return $kegiatanId;
 
+            return $kegiatanId;
         } catch (Exception $e) {
             mysqli_rollback($this->db);
             throw new BusinessLogicException("Gagal membuat kegiatan: " . $e->getMessage(), [
@@ -293,7 +299,7 @@ class KegiatanService {
         // Ensure 'kegiatan_id' is also validated if it comes as 'id_kegiatan'
         if (isset($formData['id_kegiatan'])) {
             // Create a mutable copy to modify
-            $dataToValidate = $formData; 
+            $dataToValidate = $formData;
             $dataToValidate['kegiatan_id'] = $dataToValidate['id_kegiatan'];
             unset($dataToValidate['id_kegiatan']);
         } else {
@@ -342,20 +348,21 @@ class KegiatanService {
         if (!$success) {
             throw new BusinessLogicException('Gagal memperbarui data kegiatan di database.');
         }
-        
+
         return true;
     }
 
 
     /**
      * Update rincian kegiatan (PJ, dates, surat)
-     * 
+     *
      * @param int $kegiatanId
      * @param array $data
      * @param string|null $fileSurat
      * @return bool
      */
-    public function updateRincianKegiatan($kegiatanId, $data, $fileSurat = null) {
+    public function updateRincianKegiatan($kegiatanId, $data, $fileSurat = null)
+    {
         $posisiIdPPK = 4;
         $statusMenunggu = 1;
 
@@ -369,14 +376,16 @@ class KegiatanService {
                         posisiId = ?,
                         statusUtamaId = ?
                       WHERE kegiatanId = ?";
-            
+
             $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "sssssiii", 
-                $data['namaPj'], 
-                $data['nip'], 
-                $data['tgl_mulai'], 
-                $data['tgl_selesai'], 
-                $fileSurat, 
+            mysqli_stmt_bind_param(
+                $stmt,
+                "sssssiii",
+                $data['namaPj'],
+                $data['nip'],
+                $data['tgl_mulai'],
+                $data['tgl_selesai'],
+                $fileSurat,
                 $posisiIdPPK,
                 $statusMenunggu,
                 $kegiatanId
@@ -390,13 +399,15 @@ class KegiatanService {
                         posisiId = ?,
                         statusUtamaId = ?
                       WHERE kegiatanId = ?";
-            
+
             $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "ssssiii", 
-                $data['namaPj'], 
-                $data['nip'], 
-                $data['tgl_mulai'], 
-                $data['tgl_selesai'], 
+            mysqli_stmt_bind_param(
+                $stmt,
+                "ssssiii",
+                $data['namaPj'],
+                $data['nip'],
+                $data['tgl_mulai'],
+                $data['tgl_selesai'],
                 $posisiIdPPK,
                 $statusMenunggu,
                 $kegiatanId
@@ -405,22 +416,23 @@ class KegiatanService {
 
         $result = mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
-        
+
         // Invalidate dashboard cache after update
         if ($result) {
             $this->invalidateDashboardCache();
         }
-        
+
         return $result;
     }
 
     /**
      * Validate kegiatan data (business rules)
-     * 
+     *
      * @param array $data
      * @throws ValidationException
      */
-    private function validateKegiatanData($data) {
+    private function validateKegiatanData($data)
+    {
         $errors = [];
 
         // Required fields
@@ -456,11 +468,12 @@ class KegiatanService {
 
     /**
      * Insert kegiatan record
-     * 
+     *
      * @param array $data
      * @return int Kegiatan ID
      */
-    private function insertKegiatan($data) {
+    private function insertKegiatan($data)
+    {
         $nama_pengusul = $data['nama_pengusul'] ?? '';
         $nim           = $data['nim_nip'] ?? '';
         $jurusan       = $data['jurusan'] ?? '';
@@ -475,17 +488,27 @@ class KegiatanService {
         $query = "INSERT INTO tbl_kegiatan 
             (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, createdAt, wadirTujuan, posisiId)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    
+
         $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "ssssisisii", 
-            $nama_kegiatan, $prodi, $nama_pengusul, $nim, $user_id, 
-            $jurusan, $status_awal, $tgl_sekarang, $wadir_tujuan, $posisi_awal
+        mysqli_stmt_bind_param(
+            $stmt,
+            "ssssisisii",
+            $nama_kegiatan,
+            $prodi,
+            $nama_pengusul,
+            $nim,
+            $user_id,
+            $jurusan,
+            $status_awal,
+            $tgl_sekarang,
+            $wadir_tujuan,
+            $posisi_awal
         );
-        
+
         if (!mysqli_stmt_execute($stmt)) {
             throw new Exception("Gagal insert kegiatan: " . mysqli_error($this->db));
         }
-        
+
         $kegiatanId = mysqli_insert_id($this->db);
         mysqli_stmt_close($stmt);
 
@@ -494,25 +517,33 @@ class KegiatanService {
 
     /**
      * Insert KAK record
-     * 
+     *
      * @param int $kegiatanId
      * @param array $data
      * @return int KAK ID
      */
-    private function insertKAK($kegiatanId, $data) {
+    private function insertKAK($kegiatanId, $data)
+    {
         $iku           = $data['indikator_kinerja'] ?? 'Belum pilih';
         $gambaran_umum = $data['gambaran_umum'] ?? '';
         $penerima      = $data['penerima_manfaat'] ?? '';
         $metode        = $data['metode_pelaksanaan'] ?? '';
         $tgl_only      = date('Y-m-d');
-        
+
         $query = "INSERT INTO tbl_kak 
             (kegiatanId, iku, gambaranUmum, penerimaMaanfaat, metodePelaksanaan, tglPembuatan)
             VALUES (?, ?, ?, ?, ?, ?)";
 
         $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "isssss", 
-            $kegiatanId, $iku, $gambaran_umum, $penerima, $metode, $tgl_only
+        mysqli_stmt_bind_param(
+            $stmt,
+            "isssss",
+            $kegiatanId,
+            $iku,
+            $gambaran_umum,
+            $penerima,
+            $metode,
+            $tgl_only
         );
 
         if (!mysqli_stmt_execute($stmt)) {
@@ -527,14 +558,15 @@ class KegiatanService {
 
     /**
      * Insert tahapan pelaksanaan
-     * 
+     *
      * @param int $kakId
      * @param array $tahapanList
      */
-    private function insertTahapan($kakId, $tahapanList) {
+    private function insertTahapan($kakId, $tahapanList)
+    {
         $query = "INSERT INTO tbl_tahapan_pelaksanaan (kakId, namaTahapan) VALUES (?, ?)";
         $stmt = mysqli_prepare($this->db, $query);
-        
+
         foreach ($tahapanList as $tahap) {
             if (!empty($tahap)) {
                 mysqli_stmt_bind_param($stmt, "is", $kakId, $tahap);
@@ -548,14 +580,15 @@ class KegiatanService {
 
     /**
      * Insert indikator keberhasilan
-     * 
+     *
      * @param int $kakId
      * @param array $data
      */
-    private function insertIndikator($kakId, $data) {
+    private function insertIndikator($kakId, $data)
+    {
         $query = "INSERT INTO tbl_indikator_kak (kakId, bulan, indikatorKeberhasilan, targetPersen) VALUES (?, ?, ?, ?)";
         $stmt = mysqli_prepare($this->db, $query);
-        
+
         $count = count($data['indikator_nama']);
         for ($i = 0; $i < $count; $i++) {
             $bulan     = $data['indikator_bulan'][$i] ?? '';
@@ -574,11 +607,12 @@ class KegiatanService {
 
     /**
      * Insert RAB with categories
-     * 
+     *
      * @param int $kakId
      * @param string $rabJson JSON string of RAB data
      */
-    private function insertRAB($kakId, $rabJson) {
+    private function insertRAB($kakId, $rabJson)
+    {
         $budgetData = is_string($rabJson) ? json_decode($rabJson, true) : $rabJson;
 
         if (empty($budgetData) || !is_array($budgetData)) {
@@ -586,7 +620,9 @@ class KegiatanService {
         }
 
         foreach ($budgetData as $namaKategori => $items) {
-            if (empty($items)) continue;
+            if (empty($items)) {
+                continue;
+            }
 
             // Get or create category
             $kategoriId = $this->getOrCreateKategori($namaKategori);
@@ -598,18 +634,19 @@ class KegiatanService {
 
     /**
      * Get existing kategori or create new one
-     * 
+     *
      * @param string $namaKategori
      * @return int Kategori ID
      */
-    private function getOrCreateKategori($namaKategori) {
+    private function getOrCreateKategori($namaKategori)
+    {
         // Check existing
         $checkQuery = "SELECT kategoriRabId FROM tbl_kategori_rab WHERE namaKategori = ? LIMIT 1";
         $stmt = mysqli_prepare($this->db, $checkQuery);
         mysqli_stmt_bind_param($stmt, "s", $namaKategori);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         if ($row = mysqli_fetch_assoc($result)) {
             mysqli_stmt_close($stmt);
             return $row['kategoriRabId'];
@@ -629,15 +666,16 @@ class KegiatanService {
 
     /**
      * Insert RAB items for a category
-     * 
+     *
      * @param int $kakId
      * @param int $kategoriId
      * @param array $items
      */
-    private function insertRABItems($kakId, $kategoriId, $items) {
+    private function insertRABItems($kakId, $kategoriId, $items)
+    {
         $query = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
 
         foreach ($items as $item) {
@@ -650,11 +688,21 @@ class KegiatanService {
             $harga   = floatval($item['harga'] ?? 0);
             $total   = ($vol1 * $vol2) * $harga;
 
-            mysqli_stmt_bind_param($stmt, "iissssdddd", 
-                $kakId, $kategoriId, $uraian, $rincian, 
-                $sat1, $sat2, $vol1, $vol2, $harga, $total
+            mysqli_stmt_bind_param(
+                $stmt,
+                "iissssdddd",
+                $kakId,
+                $kategoriId,
+                $uraian,
+                $rincian,
+                $sat1,
+                $sat2,
+                $vol1,
+                $vol2,
+                $harga,
+                $total
             );
-            
+
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
             }
@@ -664,32 +712,34 @@ class KegiatanService {
 
     /**
      * Invalidate dashboard cache
-     * 
+     *
      * Called after create/update/delete operations to ensure fresh data
      */
-    private function invalidateDashboardCache() {
+    private function invalidateDashboardCache()
+    {
         $cache = new ViewCache();
-        
+
         // Invalidate all dashboard-related caches
         $cache->invalidatePattern("dashboard_stats_*");
         $cache->invalidatePattern("recent_activity_*");
         $cache->invalidatePattern("notification_panel_*");
-        
+
         error_log("KegiatanService: Dashboard cache invalidated after data change");
     }
 
     /**
      * Delete kegiatan (with cache invalidation)
-     * 
+     *
      * @param int $kegiatanId
      * @return bool
      */
-    public function deleteKegiatan($kegiatanId) {
+    public function deleteKegiatan($kegiatanId)
+    {
         // TODO: Implement delete logic with transaction
-        
+
         // Invalidate cache after delete
         $this->invalidateDashboardCache();
-        
+
         return true;
     }
 }

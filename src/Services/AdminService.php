@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\AdminModel;
@@ -6,32 +7,38 @@ use App\Models\Lpj\LpjModel; // Tambahkan LpjModel jika diperlukan untuk operasi
 use App\Exceptions\BusinessLogicException;
 use Exception;
 
-class AdminService {
+class AdminService
+{
     private $adminModel;
     private $lpjModel; // Tambahkan ini jika AdminService akan berinteraksi langsung dengan LPJModel
     private $db;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
         $this->adminModel = new AdminModel($db);
         $this->lpjModel = new LpjModel($db); // Inisialisasi LpjModel
     }
 
     // Metode eksplisit yang dibutuhkan oleh controller
-    public function getDashboardLPJ() {
+    public function getDashboardLPJ()
+    {
         return $this->adminModel->getDashboardLPJ();
     }
 
-    public function getDetailLPJ(int $lpjId) {
+    public function getDetailLPJ(int $lpjId)
+    {
         return $this->adminModel->getDetailLPJ($lpjId);
     }
 
-    public function getRABForLPJ(int $kakId) {
+    public function getRABForLPJ(int $kakId)
+    {
         return $this->adminModel->getRABForLPJ($kakId);
     }
-    
+
     // Metode untuk aksi LPJ yang perlu dipindahkan dari AdminPengajuanLpjController
-    public function verifikasiLpj(int $lpjId): bool {
+    public function verifikasiLpj(int $lpjId): bool
+    {
         // Logika verifikasi LPJ
         // Contoh: Update status LPJ di LpjModel
         // Asumsi LpjModel memiliki metode approve/verify
@@ -42,7 +49,8 @@ class AdminService {
         return $result;
     }
 
-    public function tolakLpj(int $lpjId, string $komentar): bool {
+    public function tolakLpj(int $lpjId, string $komentar): bool
+    {
         // Logika penolakan LPJ
         // Asumsi LpjModel memiliki metode reject
         $result = $this->lpjModel->updateLpjStatus($lpjId, 'Rejected'); // Asumsi 'Rejected' adalah status baru
@@ -53,7 +61,8 @@ class AdminService {
         return $result;
     }
 
-    public function submitRevisiLpj(int $lpjId, array $komentarRevisi): bool {
+    public function submitRevisiLpj(int $lpjId, array $komentarRevisi): bool
+    {
         // Logika submit revisi LPJ
         // Asumsi LpjModel memiliki metode untuk menyimpan revisi
         $result = $this->lpjModel->updateLpjStatus($lpjId, 'Revised'); // Asumsi 'Revised' adalah status baru
@@ -65,15 +74,18 @@ class AdminService {
     }
 
     // Metode lain dari AdminModel yang mungkin digunakan
-    public function getAllUsers() {
+    public function getAllUsers()
+    {
         return $this->adminModel->getAllUsers();
     }
 
-    public function getListJurusan() {
+    public function getListJurusan()
+    {
         return $this->adminModel->getListJurusan();
     }
 
-    public function getDashboardKAK() {
+    public function getDashboardKAK()
+    {
         return $this->adminModel->getDashboardKAK();
     }
 

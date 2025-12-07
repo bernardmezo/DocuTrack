@@ -3,21 +3,25 @@
 namespace App\Controllers\SuperAdmin;
 
 use App\Core\Controller;
-use App\Models\SuperAdminModel; // Load Model
+use App\Models\SuperAdminModel;
 
-class MonitoringController extends Controller {
-    
+// Load Model
+
+class MonitoringController extends Controller
+{
     private $model;
-    
-    public function __construct() {
+
+    public function __construct()
+    {
         parent::__construct(); // Initialize $this->db from parent Controller
         $this->model = new SuperAdminModel($this->db); // Instantiate Model
     }
-    
+
     /**
      * Method INDEX - Server-side Processing dengan data real dari Database
      */
-    public function index($data_dari_router = []) { 
+    public function index($data_dari_router = [])
+    {
         // Ambil parameter filter dari URL
         $page = (int)($_GET['page'] ?? 1);
         $status_filter = strtolower($_GET['status'] ?? 'semua');
@@ -31,7 +35,7 @@ class MonitoringController extends Controller {
             'jurusan' => $jurusan_filter,
             'search' => $search_text
         ];
-        
+
         $all_proposals = $this->model->getProposalMonitoring($filters);
         $list_jurusan = $this->model->getListJurusan();
 
@@ -39,7 +43,7 @@ class MonitoringController extends Controller {
         $total_items = count($all_proposals);
         $total_pages = ceil($total_items / $per_page);
         $page = max(1, min($page, $total_pages ?: 1));
-        
+
         $offset = ($page - 1) * $per_page;
         $paginated_items = array_slice($all_proposals, $offset, $per_page);
 
@@ -66,7 +70,7 @@ class MonitoringController extends Controller {
                 'search' => $_GET['search'] ?? ''
             ]
         ]);
-        
-        $this->view('pages/super_admin/monitoring', $data, 'super_admin'); 
+
+        $this->view('pages/superadmin/monitoring', $data, 'superadmin');
     }
 }

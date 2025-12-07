@@ -6,13 +6,14 @@ use App\Models\Lpj\LpjModel;
 use App\Services\FileUploadService;
 use Exception;
 
-class LpjService {
-    
+class LpjService
+{
     private $db;
     private $lpjModel;
     private $fileUploadService;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
         $this->lpjModel = new LpjModel($this->db);
         $this->fileUploadService = new FileUploadService();
@@ -31,7 +32,7 @@ class LpjService {
     {
         try {
             $this->db->begin_transaction();
-            
+
             $existingLpj = $this->lpjModel->getLpjWithItemsByKegiatanId($kegiatanId);
             $lpjId = $existingLpj ? $existingLpj['lpj_id'] : $this->lpjModel->insertLpj($kegiatanId);
 
@@ -53,7 +54,7 @@ class LpjService {
                     'sub_total' => floatval($item['total'] ?? 0),
                     'file_bukti_nota' => $item['file_bukti'] ?? null
                 ], $items);
-                
+
                 if (!$this->lpjModel->insertLpjItems($lpjId, $dbItems)) {
                     throw new Exception("Gagal menyimpan item LPJ.");
                 }
@@ -63,9 +64,8 @@ class LpjService {
             $this->lpjModel->updateLpjStatus($lpjId, 'Submitted');
 
             $this->db->commit();
-            
-            return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara'];
 
+            return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara'];
         } catch (Exception $e) {
             if ($this->db->in_transaction) {
                 $this->db->rollback();
@@ -95,16 +95,16 @@ class LpjService {
 
         // Gunakan FileUploadService untuk mengunggah
         $filename = $this->fileUploadService->uploadLpjDocument($fileData, $itemId);
-        
+
         // Perbarui database melalui model
         $updated = $this->lpjModel->updateFileBukti($itemId, $filename);
         if (!$updated) {
             // Seharusnya ada mekanisme untuk menghapus file jika DB update gagal
             throw new Exception('Gagal memperbarui database dengan file bukti baru.');
         }
-        
+
         return [
-            'success' => true, 
+            'success' => true,
             'message' => 'Bukti berhasil diunggah',
             'filename' => $filename
         ];

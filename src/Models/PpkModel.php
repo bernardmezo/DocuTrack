@@ -6,13 +6,14 @@ use Exception;
 
 /**
  * PpkModel - PPK Management Model
- * 
+ *
  * @category Model
  * @package  DocuTrack
  * @version  2.0.0 - Refactored to remove constructor trap
  */
 
-class PpkModel {
+class PpkModel
+{
     /**
      * @var mysqli Database connection instance
      */
@@ -23,7 +24,8 @@ class PpkModel {
      *
      * @param mysqli|null $db Database connection (optional for backward compatibility)
      */
-    public function __construct($db = null) {
+    public function __construct($db = null)
+    {
         if ($db !== null) {
             $this->db = $db;
         } else {
@@ -39,13 +41,14 @@ class PpkModel {
     /**
      * Mengambil data statistik untuk dashboard.
      */
-    public function getDashboardStats() {
+    public function getDashboardStats()
+    {
         $query = "SELECT 
                     sum(CASE WHEN posisiId = 4 THEN 1 ELSE 0 END) as total,
                     SUM(CASE WHEN posisiId IN (3, 5) THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN posisiId = 4 OR posisiId = 2 THEN 1 ELSE 0 END) as menunggu
-                FROM tbl_kegiatan";   
-        
+                FROM tbl_kegiatan";
+
         $result = mysqli_query($this->db, $query);
         if ($result) {
             $row = mysqli_fetch_assoc($result);
@@ -61,7 +64,8 @@ class PpkModel {
     /**
      * Mengambil daftar usulan untuk tabel dashboard.
      */
-    public function getDashboardKAK() {
+    public function getDashboardKAK()
+    {
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -79,18 +83,18 @@ class PpkModel {
 
         $result = mysqli_query($this->db, $query);
         $data = [];
-        
+
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 if (isset($row['status'])) {
-                    $row['status'] = ucfirst($row['status']); 
+                    $row['status'] = ucfirst($row['status']);
                 } else {
                     $row['status'] = 'Menunggu';
                 }
-                
+
                 $row['jurusan'] = $row['jurusan'] ?? '-';
                 $row['prodi'] = $row['prodi'] ?? '-';
-                
+
                 $data[] = $row;
             }
         }
@@ -100,7 +104,8 @@ class PpkModel {
     /**
      * Mengambil detail utama kegiatan.
      */
-    public function getDetailKegiatan($kegiatanId) {
+    public function getDetailKegiatan($kegiatanId)
+    {
         $query = "SELECT 
                     k.*, 
                     kak.*,
@@ -118,49 +123,56 @@ class PpkModel {
                 LEFT JOIN tbl_user u ON u.userId = k.userId
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                 WHERE k.kegiatanId = ?";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         return mysqli_fetch_assoc($result);
     }
 
     /**
      * Mengambil indikator KAK.
      */
-    public function getIndikatorByKAK($kakId) {
+    public function getIndikatorByKAK($kakId)
+    {
         $query = "SELECT bulan, indikatorKeberhasilan as nama, targetPersen as target FROM tbl_indikator_kak WHERE kakId = ?";
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $kakId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         $data = [];
-        while ($row = mysqli_fetch_assoc($result)) { $data[] = $row; }
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
+        }
         return $data;
     }
 
     /**
      * Mengambil tahapan pelaksanaan.
      */
-    public function getTahapanByKAK($kakId) {
+    public function getTahapanByKAK($kakId)
+    {
         $query = "SELECT namaTahapan FROM tbl_tahapan_pelaksanaan WHERE kakId = ? ORDER BY tahapanId ASC";
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $kakId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         $data = [];
-        while ($row = mysqli_fetch_assoc($result)) { $data[] = $row['namaTahapan']; }
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row['namaTahapan'];
+        }
         return $data;
     }
 
     /**
      * Mengambil RAB (dikelompokkan berdasarkan kategori).
      */
-    public function getRABByKAK($kakId) {
+    public function getRABByKAK($kakId)
+    {
         $query = "SELECT r.*, cat.namaKategori 
                   FROM tbl_rab r
                   JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
@@ -171,7 +183,7 @@ class PpkModel {
         mysqli_stmt_bind_param($stmt, "i", $kakId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         $data = [];
         while ($row = mysqli_fetch_assoc($result)) {
             $data[$row['namaKategori']][] = $row;
@@ -180,41 +192,41 @@ class PpkModel {
     }
 
     /**
-     * Menyetujui usulan dan meneruskan ke Wadir.
+     * Menyetujui usulan dan meneruskan ke Bendahara (PRIVATE METHOD).
+     * Logika bisnis dan notifikasi akan ditangani oleh PpkService.
      */
-    public function approveUsulan($kegiatanId, $rekomendasi = '') {
-        $nextPosisi = 3;  // WADIR
+    public function approveUsulan(int $kegiatanId, string $rekomendasi = ''): bool
+    {
+        $nextPosisi = 5;  // BENDAHARA
         $currentPosisi = 4; // PPK
-        $statusProses = 1; // Masih dalam proses
+        $statusProses = 3; // Disetujui (oleh PPK)
         $userId = $_SESSION['user_id'] ?? null;
-        
+
         mysqli_begin_transaction($this->db);
-        
+
         try {
             // Update status kegiatan
             $query = "UPDATE tbl_kegiatan SET posisiId = ?, statusUtamaId = ? WHERE kegiatanId = ?";
             $stmt = mysqli_prepare($this->db, $query);
             mysqli_stmt_bind_param($stmt, "iii", $nextPosisi, $statusProses, $kegiatanId);
-            
+
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception("Gagal update kegiatan");
             }
             mysqli_stmt_close($stmt);
-            
+
             // Insert History
             $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, changedByUserId, timestamp) VALUES (?, ?, ?, NOW())";
             $stmtHistory = mysqli_prepare($this->db, $historyQuery);
             mysqli_stmt_bind_param($stmtHistory, "iii", $kegiatanId, $statusProses, $userId);
-            
+
             if (!mysqli_stmt_execute($stmtHistory)) {
                  throw new Exception("Gagal catat history");
             }
-            
+
             $historyId = mysqli_insert_id($this->db);
             mysqli_stmt_close($stmtHistory);
 
-             // Jika ada rekomendasi, simpan ke tabel komentar (opsional, jika ada tabel khusus untuk rekomendasi PPK bisa disesuaikan)
-             // Saat ini kita simpan sebagai komentar 'rekomendasi' di history jika tidak kosong
             if (!empty($rekomendasi)) {
                 $commentQuery = "INSERT INTO tbl_revisi_comment (progressHistoryId, komentarRevisi, targetTabel) VALUES (?, ?, 'ppk_rekomendasi')";
                 $stmtComment = mysqli_prepare($this->db, $commentQuery);
@@ -222,13 +234,12 @@ class PpkModel {
                 mysqli_stmt_execute($stmtComment);
                 mysqli_stmt_close($stmtComment);
             }
-            
+
             mysqli_commit($this->db);
             return true;
-            
         } catch (Exception $e) {
             mysqli_rollback($this->db);
-            error_log("PPK approveUsulan Error: " . $e->getMessage());
+            error_log("PPK _approveUsulan (Model) Error: " . $e->getMessage());
             return false;
         }
     }
@@ -236,7 +247,8 @@ class PpkModel {
     /**
      * Mengambil data riwayat PPK.
      */
-    public function getRiwayat() {
+    public function getRiwayat()
+    {
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -256,7 +268,7 @@ class PpkModel {
 
         $result = mysqli_query($this->db, $query);
         $data = [];
-        
+
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 $data[] = $row;
@@ -284,7 +296,7 @@ class PpkModel {
     public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter)
     {
         $offset = ($page - 1) * $perPage;
-        
+
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -312,7 +324,7 @@ class PpkModel {
                     END as status
                   FROM tbl_kegiatan k
                   WHERE 1=1 ";
-        
+
         // Filter pencarian (escaped untuk mencegah SQL injection)
         if (!empty($search)) {
             $search = mysqli_real_escape_string($this->db, $search);
@@ -341,11 +353,11 @@ class PpkModel {
 
         // Build count query dengan filter yang sama
         $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-        
+
         if (!empty($search)) {
             $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
         }
-        
+
         if ($statusFilter !== 'semua') {
             if ($statusFilter === 'ditolak') {
                 $countQuery .= " AND k.statusUtamaId = 4";
@@ -358,7 +370,7 @@ class PpkModel {
                 $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
             }
         }
-        
+
         if ($jurusanFilter !== 'semua') {
             $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
         }
@@ -382,7 +394,8 @@ class PpkModel {
         ];
     }
 
-    public function getListJurusanDistinct() {
+    public function getListJurusanDistinct()
+    {
         $query = "SELECT DISTINCT jurusanPenyelenggara as jurusan FROM tbl_kegiatan WHERE jurusanPenyelenggara IS NOT NULL AND jurusanPenyelenggara != '' ORDER BY jurusanPenyelenggara ASC";
         $result = mysqli_query($this->db, $query);
         $list = [];

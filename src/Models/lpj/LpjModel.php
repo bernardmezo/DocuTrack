@@ -3,20 +3,24 @@
 namespace App\Models\Lpj;
 
 use Exception;
-use mysqli; // Ensure mysqli is available if not globally imported
+use mysqli;
+
+// Ensure mysqli is available if not globally imported
 
 /**
  * LpjModel - LPJ (Laporan Pertanggungjawaban) Management Model
- * 
+ *
  * @category Model
  * @package  DocuTrack
  * @version  2.0.0 - Converted from procedural to class-based with DI
  */
 
-class LpjModel {
+class LpjModel
+{
     private $db;
 
-    public function __construct($db = null) {
+    public function __construct($db = null)
+    {
         if ($db !== null) {
             $this->db = $db;
         } else {
@@ -32,11 +36,12 @@ class LpjModel {
     /**
      * Membuat record LPJ baru
      */
-    public function insertLpj($kegiatan_id) {
+    public function insertLpj($kegiatan_id)
+    {
         $grand_total_default = 0.00;
         $query = "INSERT INTO tbl_lpj (kegiatanId, grandTotalRealisasi, submittedAt, approvedAt) 
                   VALUES (?, ?, NULL, NULL)";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::insertLpj - Prepare failed: ' . mysqli_error($this->db));
@@ -59,11 +64,12 @@ class LpjModel {
     /**
      * Mengupdate grandTotalRealisasi di tbl_lpj
      */
-    public function updateLpjGrandTotal($lpj_id) {
+    public function updateLpjGrandTotal($lpj_id)
+    {
         $query = "UPDATE tbl_lpj SET grandTotalRealisasi = 
                     (SELECT COALESCE(SUM(subtotal), 0) FROM tbl_lpj_item WHERE lpjId = ?)
                   WHERE lpjId = ?";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::updateLpjGrandTotal - Prepare failed: ' . mysqli_error($this->db));
@@ -85,7 +91,8 @@ class LpjModel {
     /**
      * Mengupdate status LPJ (submittedAt atau approvedAt)
      */
-    public function updateLpjStatus($lpj_id, $new_status) {
+    public function updateLpjStatus($lpj_id, $new_status)
+    {
         $statusId = null;
         $timestampColumn = null;
 
@@ -146,7 +153,7 @@ class LpjModel {
     public function updateFileBukti(int $lpjItemId, string $filename): bool
     {
         $query = "UPDATE tbl_lpj_item SET fileBukti = ? WHERE lpjItemId = ?";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::updateFileBukti - Prepare failed: ' . mysqli_error($this->db));
@@ -154,7 +161,7 @@ class LpjModel {
         }
 
         mysqli_stmt_bind_param($stmt, "si", $filename, $lpjItemId);
-        
+
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
             return true;
@@ -168,10 +175,11 @@ class LpjModel {
     /**
      * Menyisipkan BANYAK item LPJ (dari array)
      */
-    public function insertLpjItems($lpj_id, $itemsList) {
+    public function insertLpjItems($lpj_id, $itemsList)
+    {
         $query = "INSERT INTO tbl_lpj_item (lpjId, jenisBelanja, uraian, rincian, satuan, totalHarga, subtotal, fileBukti) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::insertLpjItems - Prepare failed: ' . mysqli_error($this->db));
@@ -179,7 +187,9 @@ class LpjModel {
         }
 
         foreach ($itemsList as $item) {
-            mysqli_stmt_bind_param($stmt, 'issssdds',
+            mysqli_stmt_bind_param(
+                $stmt,
+                'issssdds',
                 $lpj_id,
                 $item['jenis_belanja'],
                 $item['uraian'],
@@ -204,7 +214,8 @@ class LpjModel {
     /**
      * Menghapus semua item LPJ berdasarkan lpjId
      */
-    public function deleteLpjItemsByLpjId($lpj_id) {
+    public function deleteLpjItemsByLpjId($lpj_id)
+    {
         $query = "DELETE FROM tbl_lpj_item WHERE lpjId = ?";
         $stmt = mysqli_prepare($this->db, $query);
 
@@ -228,11 +239,12 @@ class LpjModel {
     /**
      * Mengambil satu data LPJ lengkap dengan semua item-itemnya
      */
-    public function getLpjWithItemsById($lpj_id) {
+    public function getLpjWithItemsById($lpj_id)
+    {
         $query = "SELECT l.*, i.* FROM tbl_lpj l
                   LEFT JOIN tbl_lpj_item i ON l.lpjId = i.lpjId
                   WHERE l.lpjId = ?";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::getLpjWithItemsById - Prepare failed: ' . mysqli_error($this->db));
@@ -240,7 +252,7 @@ class LpjModel {
         }
 
         mysqli_stmt_bind_param($stmt, 'i', $lpj_id);
-        
+
         if (!mysqli_stmt_execute($stmt)) {
             error_log('LpjModel::getLpjWithItemsById - Execute failed: ' . mysqli_stmt_error($this->db));
             mysqli_stmt_close($stmt);
@@ -279,24 +291,25 @@ class LpjModel {
 
         mysqli_free_result($result);
         mysqli_stmt_close($stmt);
-        
-        return $lpjData; 
+
+        return $lpjData;
     }
 
     /**
      * Mengambil data LPJ (dengan item) berdasarkan ID Kegiatan
      */
-    public function getLpjWithItemsByKegiatanId($kegiatan_id) {
+    public function getLpjWithItemsByKegiatanId($kegiatan_id)
+    {
         $query_lpj_id = "SELECT lpjId FROM tbl_lpj WHERE kegiatanId = ? LIMIT 1";
         $stmt_find = mysqli_prepare($this->db, $query_lpj_id);
-        
+
         if ($stmt_find === false) {
              error_log('LpjModel::getLpjWithItemsByKegiatanId - Prepare failed: ' . mysqli_error($this->db));
              return null;
         }
-        
+
         mysqli_stmt_bind_param($stmt_find, 'i', $kegiatan_id);
-        
+
         if (mysqli_stmt_execute($stmt_find)) {
             $result = mysqli_stmt_get_result($stmt_find);
             $lpj = mysqli_fetch_assoc($result);
@@ -317,7 +330,8 @@ class LpjModel {
     /**
      * Menghapus LPJ dan SEMUA item-itemnya secara aman (Transactional Delete)
      */
-    public function deleteLpjWithItems($lpj_id) {
+    public function deleteLpjWithItems($lpj_id)
+    {
         mysqli_begin_transaction($this->db);
 
         try {
@@ -339,7 +353,6 @@ class LpjModel {
 
             mysqli_commit($this->db);
             return true;
-
         } catch (Exception $e) {
             mysqli_rollback($this->db);
             error_log('LpjModel::deleteLpjWithItems - Transaction failed: ' . $e->getMessage());
@@ -347,7 +360,8 @@ class LpjModel {
         }
     }
 
-    public function tolakLpj(int $lpjId, string $komentar): bool {
+    public function tolakLpj(int $lpjId, string $komentar): bool
+    {
         $query = "UPDATE tbl_lpj SET statusId = 4, komentarPenolakan = ?, submittedAt = NOW() WHERE lpjId = ?";
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
@@ -365,11 +379,12 @@ class LpjModel {
         }
     }
 
-    public function submitRevisiLpj(int $lpjId, string $komentarRevisi): bool {
+    public function submitRevisiLpj(int $lpjId, string $komentarRevisi): bool
+    {
         // Asumsi struktur tabel untuk komentar revisi dan cara menyimpannya
         // Ini adalah contoh, perlu disesuaikan dengan struktur DB yang sebenarnya
         $query = "UPDATE tbl_lpj SET statusId = 2, komentarRevisi = ?, submittedAt = NOW() WHERE lpjId = ?";
-        
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
             error_log('LpjModel::submitRevisiLpj - Prepare failed: ' . mysqli_error($this->db));
@@ -427,4 +442,3 @@ class LpjModel {
         return $lpjData;
     }
 }
-

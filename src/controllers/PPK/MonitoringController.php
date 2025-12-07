@@ -1,31 +1,35 @@
 <?php
+
 namespace App\Controllers\PPK;
 
 use App\Core\Controller;
 use App\Services\PpkService;
 use Exception;
 
-class MonitoringController extends Controller {
-    
+class MonitoringController extends Controller
+{
     private $model;
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->model = new PpkService($this->db);
     }
 
-    public function index($data_dari_router = []) { 
+    public function index($data_dari_router = [])
+    {
         $list_jurusan = $this->safeModelCall($this->model, 'getListJurusanDistinct', [], []);
 
         $data = array_merge($data_dari_router, [
             'title' => 'Monitoring Proposal',
             'list_jurusan' => $list_jurusan
         ]);
-        
+
         $this->view('pages/ppk/monitoring', $data, 'ppk');
     }
 
-    public function getData() {
+    public function getData()
+    {
         error_reporting(0);
         ini_set('display_errors', 0);
         header('Content-Type: application/json');
@@ -41,9 +45,9 @@ class MonitoringController extends Controller {
 
             $proposals = $result['data'] ?? [];
             $total_items = $result['totalItems'] ?? 0;
-            
+
             $total_pages = ($total_items > 0) ? ceil($total_items / $per_page) : 1;
-            
+
             $offset = ($page - 1) * $per_page;
             $showingFrom = $total_items > 0 ? $offset + 1 : 0;
             $showingTo = $total_items > 0 ? min($offset + count($proposals), $total_items) : 0;

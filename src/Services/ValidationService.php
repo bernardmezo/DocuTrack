@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Services;
 
 use App\Exceptions\ValidationException;
 
-class ValidationService {
-    
+class ValidationService
+{
     private $errors = [];
     private $data = [];
 
@@ -48,7 +49,7 @@ class ValidationService {
         $sanitized = [];
         foreach ($data as $key => $value) {
             $fieldRules = isset($rules[$key]) ? explode('|', $rules[$key]) : [];
-            
+
             // By default, sanitize. If 'nosanitize' rule exists, keep it raw.
             $shouldSanitize = !in_array('nosanitize', $fieldRules);
 

@@ -3,9 +3,12 @@
 namespace App\Models\Kak;
 
 use Exception;
-use mysqli; // Ensure mysqli is available if not globally imported
+use mysqli;
 
-class KakModel {
+// Ensure mysqli is available if not globally imported
+
+class KakModel
+{
     /**
      * @var mysqli Database connection instance
      */
@@ -16,7 +19,8 @@ class KakModel {
      *
      * @param mysqli|null $db Database connection (optional for backward compatibility)
      */
-    public function __construct($db = null) {
+    public function __construct($db = null)
+    {
         if ($db !== null) {
             $this->db = $db;
         } else {
@@ -41,7 +45,8 @@ class KakModel {
      * @param string|null $indikatorKerjaUtamaRenstra
      * @return int|false New KAK ID on success, false on failure.
      */
-    public function insertKAK($kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null) {
+    public function insertKAK($kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null)
+    {
         $stmt = mysqli_prepare($this->db, "
             INSERT INTO tbl_kak (kegiatan_id, gambaran_umum, penerima_manfaat, metode_pelaksanaan, indikator_kerja_utama_renstra)
             VALUES (?, ?, ?, ?, ?)
@@ -74,7 +79,8 @@ class KakModel {
      * @param string|null $indikatorKerjaUtamaRenstra
      * @return bool True on success, false on failure.
      */
-    public function updateKAK($kakId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null) {
+    public function updateKAK($kakId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null)
+    {
         $stmt = mysqli_prepare($this->db, "
             UPDATE tbl_kak SET 
                 gambaran_umum = ?, 
@@ -106,7 +112,8 @@ class KakModel {
      * @param int $kakId
      * @return array|null KAK data array on success, null if not found.
      */
-    public function getKAKWithRelationsById($kakId) {
+    public function getKAKWithRelationsById($kakId)
+    {
         $query = "
             SELECT 
                 k.kak_id, 
@@ -135,7 +142,7 @@ class KakModel {
         }
 
         mysqli_stmt_bind_param($stmt, 'i', $kakId);
-        
+
         if (!mysqli_stmt_execute($stmt)) {
             error_log('KakModel::getKAKWithRelationsById - Execute failed: ' . mysqli_stmt_error($this->db));
             mysqli_stmt_close($stmt);
@@ -184,7 +191,7 @@ class KakModel {
 
         mysqli_free_result($result);
         mysqli_stmt_close($stmt);
-        
+
         return $kakData;
     }
 
@@ -193,7 +200,8 @@ class KakModel {
      *
      * @return array Array of KAK records.
      */
-    public function getAllKAKWithRelations() {
+    public function getAllKAKWithRelations()
+    {
         $query = "
             SELECT 
                 k.kak_id, 
@@ -268,36 +276,48 @@ class KakModel {
      * @return bool True on success, false on failure.
      * @throws Exception If a database operation fails.
      */
-    public function deleteKAK($kakId) {
+    public function deleteKAK($kakId)
+    {
         // Start Transaction
         mysqli_begin_transaction($this->db);
 
         try {
             // 1. Prepare & Execute Delete Stages
             $stmt1 = mysqli_prepare($this->db, "DELETE FROM tbl_kak_tahapan_pelaksanaan WHERE kak_id = ?");
-            if ($stmt1 === false) { throw new Exception("KakModel::deleteKAK - Prepare tahapan failed: " . mysqli_error($this->db)); }
+            if ($stmt1 === false) {
+                throw new Exception("KakModel::deleteKAK - Prepare tahapan failed: " . mysqli_error($this->db));
+            }
             mysqli_stmt_bind_param($stmt1, 'i', $kakId);
-            if (!mysqli_stmt_execute($stmt1)) { throw new Exception(mysqli_stmt_error($stmt1)); }
+            if (!mysqli_stmt_execute($stmt1)) {
+                throw new Exception(mysqli_stmt_error($stmt1));
+            }
             mysqli_stmt_close($stmt1);
 
             // 2. Prepare & Execute Delete Indicators
             $stmt2 = mysqli_prepare($this->db, "DELETE FROM tbl_kak_indikator WHERE kak_id = ?");
-            if ($stmt2 === false) { throw new Exception("KakModel::deleteKAK - Prepare indikator failed: " . mysqli_error($this->db)); }
+            if ($stmt2 === false) {
+                throw new Exception("KakModel::deleteKAK - Prepare indikator failed: " . mysqli_error($this->db));
+            }
             mysqli_stmt_bind_param($stmt2, 'i', $kakId);
-            if (!mysqli_stmt_execute($stmt2)) { throw new Exception(mysqli_stmt_error($stmt2)); }
+            if (!mysqli_stmt_execute($stmt2)) {
+                throw new Exception(mysqli_stmt_error($stmt2));
+            }
             mysqli_stmt_close($stmt2);
 
             // 3. Prepare & Execute Delete Main KAK
             $stmt3 = mysqli_prepare($this->db, "DELETE FROM tbl_kak WHERE kak_id = ?");
-            if ($stmt3 === false) { throw new Exception("KakModel::deleteKAK - Prepare main KAK failed: " . mysqli_error($this->db)); }
+            if ($stmt3 === false) {
+                throw new Exception("KakModel::deleteKAK - Prepare main KAK failed: " . mysqli_error($this->db));
+            }
             mysqli_stmt_bind_param($stmt3, 'i', $kakId);
-            if (!mysqli_stmt_execute($stmt3)) { throw new Exception(mysqli_stmt_error($stmt3)); }
+            if (!mysqli_stmt_execute($stmt3)) {
+                throw new Exception(mysqli_stmt_error($stmt3));
+            }
             mysqli_stmt_close($stmt3);
 
             // If all successful, commit
             mysqli_commit($this->db);
             return true;
-
         } catch (Exception $e) {
             // If any fails, rollback
             mysqli_rollback($this->db);
@@ -315,7 +335,8 @@ class KakModel {
      * @param array $tahapanList
      * @return bool True on success, false on failure.
      */
-    public function insertTahapanPelaksanaan($kakId, $tahapanList) {
+    public function insertTahapanPelaksanaan($kakId, $tahapanList)
+    {
         $stmt = mysqli_prepare($this->db, "
             INSERT INTO tbl_kak_tahapan_pelaksanaan (kak_id, nama_tahapan)
             VALUES (?, ?)
@@ -345,7 +366,8 @@ class KakModel {
      * @param array $indikatorList
      * @return bool True on success, false on failure.
      */
-    public function insertIndikatorKinerja($kakId, $indikatorList) {
+    public function insertIndikatorKinerja($kakId, $indikatorList)
+    {
         $stmt = mysqli_prepare($this->db, "
             INSERT INTO tbl_kak_indikator (kak_id, bulan, indikator_keberhasilan, target_persen)
             VALUES (?, ?, ?, ?)
@@ -356,7 +378,9 @@ class KakModel {
         }
 
         foreach ($indikatorList as $indikator) {
-            mysqli_stmt_bind_param($stmt, 'iisi',
+            mysqli_stmt_bind_param(
+                $stmt,
+                'iisi',
                 $kakId,
                 $indikator['bulan'],
                 $indikator['indikator_keberhasilan'],

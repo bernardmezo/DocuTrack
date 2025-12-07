@@ -5,26 +5,28 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Services\AdminService;
 use App\Services\LpjService; // Diganti dari BendaharaService
-use App\Services\ValidationService;
+// Removed: use App\Services\ValidationService;
 use App\Exceptions\ValidationException;
 use Exception;
 
-class PengajuanLpjController extends Controller {
-    
+class PengajuanLpjController extends Controller
+{
     private $adminService;
     private $lpjService;
-    private $validationService;
+    // validationService is now inherited from base Controller
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->adminService = new AdminService($this->db);
         $this->lpjService = new LpjService($this->db); // Menggunakan LpjService
-        $this->validationService = new ValidationService();
+        // $this->validationService is already set in parent::__construct()
     }
 
-    public function index($data_dari_router = []) { 
+    public function index($data_dari_router = [])
+    {
         $list_lpj = $this->safeModelCall($this->adminService, 'getDashboardLPJ', [], []);
-        
+
         $data = array_merge($data_dari_router, [
             'title' => 'List Pengajuan LPJ',
             'list_lpj' => $list_lpj ?? []
@@ -32,29 +34,30 @@ class PengajuanLpjController extends Controller {
 
         $this->view('pages/admin/pengajuan_lpj_list', $data, 'app');
     }
-    
-    public function show($id, $data_dari_router = []) {
-        $ref = $_GET['ref'] ?? 'lpj'; 
+
+    public function show($id, $data_dari_router = [])
+    {
+        $ref = $_GET['ref'] ?? 'lpj';
         $base_url = "/docutrack/public/admin";
         $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-lpj';
 
         $lpj_detail = $this->safeModelCall($this->adminService, 'getDetailLPJ', [$id], null);
-        
+
         if (!$lpj_detail) {
             $this->redirectWithMessage($back_url, 'error', 'Data LPJ tidak ditemukan.');
         }
-        
+
         $status = $lpj_detail['status'];
         $kegiatan_data = [
             'nama_kegiatan' => $lpj_detail['nama_kegiatan'],
             'pengusul' => $lpj_detail['pengusul']
         ];
-        
+
         $rab_items_merged = [];
         if (!empty($lpj_detail['kakId'])) {
             $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId']], []);
         }
-        
+
         $data = array_merge($data_dari_router, [
             'title' => 'Detail LPJ - ' . htmlspecialchars($kegiatan_data['nama_kegiatan']),
             'status' => $status,
@@ -66,10 +69,11 @@ class PengajuanLpjController extends Controller {
 
         $this->view('pages/admin/detail_lpj', $data, 'app');
     }
-    
-    public function uploadBukti() {
+
+    public function uploadBukti()
+    {
         header('Content-Type: application/json');
-        
+
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Metode tidak diizinkan', 405);
@@ -78,16 +82,15 @@ class PengajuanLpjController extends Controller {
             // Validasi input
             $rules = ['item_id' => 'required|numeric'];
             $validatedData = $this->validationService->validate($_POST, $rules);
-            
+
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 throw new ValidationException('File tidak valid atau tidak ditemukan', ['file' => ['File bukti wajib diunggah.']]);
             }
 
             // Panggil service
             $result = $this->lpjService->uploadLpjBukti((int)$validatedData['item_id'], $_FILES['file']);
-            
-            echo json_encode($result);
 
+            echo json_encode($result);
         } catch (ValidationException $e) {
             http_response_code(422); // Unprocessable Entity
             echo json_encode(['success' => false, 'message' => 'Data tidak valid.', 'errors' => $e->getErrors()]);
@@ -96,8 +99,9 @@ class PengajuanLpjController extends Controller {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
-    
-    public function submitLpj() {
+
+    public function submitLpj()
+    {
         header('Content-Type: application/json');
 
         try {
@@ -108,7 +112,7 @@ class PengajuanLpjController extends Controller {
             // Validasi input dasar
             $rules = ['kegiatan_id' => 'required|numeric'];
             $validatedData = $this->validationService->validate($_POST, $rules);
-            
+
             $itemsJson = $_POST['items'] ?? '[]';
             $items = json_decode($itemsJson, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -117,9 +121,8 @@ class PengajuanLpjController extends Controller {
 
             // Panggil service dengan data yang sudah divalidasi dan di-decode
             $result = $this->lpjService->submitLpj((int)$validatedData['kegiatan_id'], $items);
-            
-            echo json_encode($result);
 
+            echo json_encode($result);
         } catch (ValidationException $e) {
             http_response_code(422);
             echo json_encode(['success' => false, 'message' => 'Data tidak valid.', 'errors' => $e->getErrors()]);
@@ -129,7 +132,8 @@ class PengajuanLpjController extends Controller {
         }
     }
 
-    public function verifikasi($lpjId) {
+    public function verifikasi($lpjId)
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-lpj',
@@ -157,7 +161,8 @@ class PengajuanLpjController extends Controller {
         }
     }
 
-    public function tolak($lpjId) {
+    public function tolak($lpjId)
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-lpj',
@@ -169,7 +174,7 @@ class PengajuanLpjController extends Controller {
         try {
             $rules = ['komentar' => 'required'];
             $validatedData = $this->validationService->validate($_POST, $rules);
-            
+
             if ($this->lpjService->tolakLpj((int)$lpjId, $validatedData['komentar'])) {
                 $this->redirectWithMessage(
                     '/docutrack/public/admin/pengajuan-lpj',
@@ -196,7 +201,8 @@ class PengajuanLpjController extends Controller {
         }
     }
 
-    public function submitRevisi($lpjId) {
+    public function submitRevisi($lpjId)
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-lpj',
@@ -208,7 +214,7 @@ class PengajuanLpjController extends Controller {
         try {
             $rawKomentar = $_POST['komentar'] ?? [];
             $komentarRevisi = [];
-            
+
             // Basic check if any comment is provided
             $hasComment = false;
             foreach ($rawKomentar as $kategori => $comment) {
@@ -221,7 +227,7 @@ class PengajuanLpjController extends Controller {
                     $hasComment = true;
                 }
             }
-            
+
             if (!$hasComment) {
                 throw new ValidationException('Minimal isi satu catatan revisi.', ['komentar' => ['Minimal satu komentar revisi wajib diisi.']]);
             }

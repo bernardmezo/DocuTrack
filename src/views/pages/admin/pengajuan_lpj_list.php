@@ -18,7 +18,7 @@ sort($jurusan_list);
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
-    <?php if($success_msg): ?>
+    <?php if ($success_msg) : ?>
     <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
         <div class="flex items-center">
             <i class="fas fa-check-circle text-green-500 mr-3"></i>
@@ -27,7 +27,7 @@ sort($jurusan_list);
     </div>
     <?php endif; ?>
 
-    <?php if($error_msg): ?>
+    <?php if ($error_msg) : ?>
     <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
         <div class="flex items-center">
             <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
@@ -49,7 +49,7 @@ sort($jurusan_list);
                 <div class="relative w-full md:w-auto">
                     <select id="filter-jurusan" style="color: #1f2937;" class="w-full md:min-w-[220px] pl-4 pr-10 py-2.5 text-sm font-medium bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm cursor-pointer appearance-none hover:border-gray-400">
                         <option value="" style="color: #6b7280;">Semua Jurusan</option>
-                        <?php foreach ($jurusan_list as $jurusan): ?>
+                        <?php foreach ($jurusan_list as $jurusan) : ?>
                             <option value="<?= htmlspecialchars($jurusan) ?>" style="color: #1f2937;"><?= htmlspecialchars($jurusan) ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -93,13 +93,13 @@ sort($jurusan_list);
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100" id="table-body">
-                    <?php if (!empty($list_lpj)): 
+                    <?php if (!empty($list_lpj)) :
                         $nomor = 1;
-                        foreach ($list_lpj as $item): 
+                        foreach ($list_lpj as $item) :
                             $status_raw = strtolower($item['status'] ?? 'menunggu');
                             $tgl_pengajuan_ts = strtotime($item['tanggal_pengajuan'] ?? 'now');
                             $tenggat_lpj = $item['tenggatLpj'] ?? null;
-                            
+
                             // --- LOGIKA TENGGAT WAKTU ---
                             $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 border border-gray-200 text-gray-600"><i class="fas fa-clock"></i><span>Menunggu</span></div>';
 
@@ -128,7 +128,7 @@ sort($jurusan_list);
                                         $icon = 'fa-calendar-day';
                                         $text_status = 'Sisa ' . $sisa_hari . ' hari';
                                     }
-                                    $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border '.$badge_class.'"><i class="fas '.$icon.'"></i><span>'.$text_status.'</span></div>';
+                                    $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border ' . $badge_class . '"><i class="fas ' . $icon . '"></i><span>' . $text_status . '</span></div>';
                                 } else {
                                     $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 border border-orange-200 text-orange-700"><i class="fas fa-upload"></i><span>Perlu Upload Bukti</span></div>';
                                 }
@@ -143,7 +143,7 @@ sort($jurusan_list);
                                 'siap_submit' => 'text-blue-600 bg-blue-100',
                                 default => 'text-gray-600 bg-gray-100',
                             };
-                            
+
                             // Status Display Text
                             $status_display = match ($status_raw) {
                                 'setuju' => 'Disetujui',
@@ -152,7 +152,7 @@ sort($jurusan_list);
                                 'siap_submit' => 'Siap Submit',
                                 default => 'Menunggu',
                             };
-                    ?>
+                            ?>
                     <tr class="data-row hover:bg-gray-50 transition-colors"
                         data-jurusan="<?php echo strtolower($item['jurusan'] ?? ''); ?>"
                         data-status="<?php echo $status_raw; ?>"
@@ -191,7 +191,7 @@ sort($jurusan_list);
 
                         <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex gap-2 items-center">
-                                <?php 
+                                <?php
                                 $button_text = match ($status_raw) {
                                     'menunggu_upload' => 'Upload Bukti',
                                     'siap_submit' => 'Submit LPJ',
@@ -206,7 +206,7 @@ sort($jurusan_list);
                                     'setuju' => 'bg-green-600 hover:bg-green-700',
                                     default => 'bg-gray-600 hover:bg-gray-700',
                                 };
-                                ?>
+                            ?>
                                 <a href="/docutrack/public/admin/pengajuan-lpj/show/<?php echo $item['id'] ?? 0; ?>" 
                                    class="<?php echo $button_color; ?> text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium transition-colors">
                                     <?php echo $button_text; ?>
@@ -214,7 +214,8 @@ sort($jurusan_list);
                             </div>
                         </td>
                     </tr>
-                    <?php endforeach; else: ?>
+                        <?php endforeach;
+                    else : ?>
                     <tr id="empty-row">
                         <td colspan="6" class="text-center py-10 text-gray-500 italic">
                             Belum ada data pengajuan LPJ.

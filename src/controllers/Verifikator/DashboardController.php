@@ -1,19 +1,22 @@
 <?php
+
 namespace App\Controllers\Verifikator;
 
 use App\Core\Controller;
 use App\Services\VerifikatorService;
 
-class DashboardController extends Controller {
-    
+class DashboardController extends Controller
+{
     private $service;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         parent::__construct($db);
         $this->service = new VerifikatorService($this->db);
     }
-    
-    public function index($data_dari_router = []) {
+
+    public function index($data_dari_router = [])
+    {
         $stats = $this->safeModelCall($this->service, 'getDashboardStats', [], []);
         $list_usulan = $this->safeModelCall($this->service, 'getDashboardKAK', [], []);
         $stats = [
@@ -31,7 +34,7 @@ class DashboardController extends Controller {
             $jurusan_list = array_values(array_unique(array_column($list_usulan, 'jurusan')));
             sort($jurusan_list);
         }
-        
+
         $data = array_merge($data_dari_router, [
             'title' => 'Dashboard Verifikator', 'stats' => $stats, 'list_usulan' => $list_usulan,
             'jurusan_list' => $jurusan_list, 'current_page' => 1, 'total_pages' => 1

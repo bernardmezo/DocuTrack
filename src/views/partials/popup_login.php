@@ -48,15 +48,15 @@
             
             <h2 class="mb-8 text-center text-4xl font-bold text-[#0A2540]">Log In</h2>
             
-            <?php 
+            <?php
                 // Tampilkan pesan error jika ada di session
-                if (isset($_SESSION['login_error'])): 
-            ?>
+            if (isset($_SESSION['login_error'])) :
+                ?>
                 <div class="mb-4 rounded bg-red-100 p-3 text-center text-sm text-red-700">
-                    <?php 
-                        echo htmlspecialchars($_SESSION['login_error']); 
-                        unset($_SESSION['login_error']); 
-                    ?>
+                <?php
+                    echo htmlspecialchars($_SESSION['login_error']);
+                    unset($_SESSION['login_error']);
+                ?>
                 </div>
             <?php endif; ?>
             

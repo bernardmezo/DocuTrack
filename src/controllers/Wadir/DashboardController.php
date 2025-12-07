@@ -1,30 +1,33 @@
 <?php
+
 namespace App\Controllers\Wadir;
 
 use App\Core\Controller;
 use App\Services\WadirService;
 
-class DashboardController extends Controller {
-    
+class DashboardController extends Controller
+{
     private $service;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         parent::__construct($db);
         $this->service = new WadirService($this->db);
     }
 
-    public function index($data_dari_router = []) {
+    public function index($data_dari_router = [])
+    {
         $stats = $this->safeModelCall($this->service, 'getDashboardStats', [], []);
         $stats = [
             'total' => $stats['total'] ?? 0,
-            'disetujui'=> $stats['disetujui'] ?? 0,
-            'menunggu'=> $stats['menunggu'] ?? 0
+            'disetujui' => $stats['disetujui'] ?? 0,
+            'menunggu' => $stats['menunggu'] ?? 0
         ];
         $list_usulan_all = $this->safeModelCall($this->service, 'getDashboardKAK', [], []);
         $selected_jurusan = isset($_GET['jurusan']) ? $_GET['jurusan'] : '';
         $list_usulan_filtered = $list_usulan_all;
         if (!empty($selected_jurusan)) {
-            $list_usulan_filtered = array_filter($list_usulan_all, function($item) use ($selected_jurusan) {
+            $list_usulan_filtered = array_filter($list_usulan_all, function ($item) use ($selected_jurusan) {
                 return strtolower($item['jurusan']) === strtolower($selected_jurusan);
             });
         }
@@ -44,6 +47,6 @@ class DashboardController extends Controller {
             'current_page' => $current_page, 'total_pages' => $total_pages,
             'jurusan_list' => $jurusan_list, 'selected_jurusan' => $selected_jurusan
         ]);
-        $this->view('pages/wadir/dashboard', $data, 'wadir'); 
+        $this->view('pages/wadir/dashboard', $data, 'wadir');
     }
 }

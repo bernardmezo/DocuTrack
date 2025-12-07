@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers\Wadir;
 
 use App\Core\Controller;
@@ -8,23 +9,28 @@ if (file_exists(DOCUTRACK_ROOT . '/src/helpers/logger_helper.php')) {
     require_once DOCUTRACK_ROOT . '/src/helpers/logger_helper.php';
 }
 
-class TelaahController extends Controller {
-    
+class TelaahController extends Controller
+{
     private $model;
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->model = new WadirService($this->db);
     }
 
-    public function show($id, $data_dari_router = []) {
+    public function show($id, $data_dari_router = [])
+    {
         $ref = $_GET['ref'] ?? 'dashboard';
         $base_url = "/docutrack/public/wadir";
         $back_url = $base_url . '/' . $ref;
 
         $dataDB = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
-        
-        if (!$dataDB) { echo "Data tidak ditemukan."; return; }
+
+        if (!$dataDB) {
+            echo "Data tidak ditemukan.";
+            return;
+        }
 
         $kakId = $dataDB['kakId'];
         $indikator = $this->safeModelCall($this->model, 'getIndikatorByKAK', [$kakId], []);
@@ -32,9 +38,11 @@ class TelaahController extends Controller {
         $rab       = $this->safeModelCall($this->model, 'getRABByKAK', [$kakId], []);
 
         $tahapan_string = "";
-        foreach ($tahapan as $idx => $t) { $tahapan_string .= ($idx + 1) . ". " . $t . "\n"; }
+        foreach ($tahapan as $idx => $t) {
+            $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
+        }
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
-        
+
         $status_asli = ucfirst($dataDB['status_text'] ?? 'Menunggu');
         $posisi_saat_ini = $dataDB['posisiId'];
         $role_wadir = 3;
@@ -80,24 +88,24 @@ class TelaahController extends Controller {
         $this->view('pages/wadir/telaah_detail', $data, 'wadir');
     }
 
-    public function approve($id) {
+    public function approve($id)
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId = $_SESSION['user_id'] ?? 0;
-            
+
             $kegiatan = $this->model->getDetailKegiatan($id);
             $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
-            
-            if($this->model->approveUsulan($id)) {
-                if(function_exists('logApproval')) {
-                    logApproval($userId, $id, 'WADIR', true, 
-                        'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
-                        $oldStatusId, 3);
+
+            if ($this->model->approveUsulan($id)) {
+                if (function_exists('logApproval')) {
+                    logApproval($userId, $id, 'WADIR', true, 'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'), $oldStatusId, 3);
                 }
-                
+
                 header('Location: /docutrack/public/wadir/dashboard?msg=approved');
                 exit;
             }
         }
-        header('Location: /docutrack/public/wadir/telaah/show/'.$id);
+        header('Location: /docutrack/public/wadir/telaah/show/' . $id);
+        exit;
     }
 }

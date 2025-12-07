@@ -40,9 +40,9 @@ class Router
                 if (!class_exists($controllerName)) {
                      throw new NotFoundException("Controller $controllerName not found");
                 }
-                
+
                 $controller = new $controllerName($this->db);
-                
+
                 if (!method_exists($controller, $methodName)) {
                      throw new NotFoundException("Method $methodName not found in $controllerName");
                 }

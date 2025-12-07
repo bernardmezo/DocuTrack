@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers\Wadir;
 
 use App\Controllers\Base\BaseAkunController;

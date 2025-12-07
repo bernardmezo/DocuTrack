@@ -45,14 +45,15 @@ yarn-error.log*
 tmp/
 temp/
 
+# Documentation & Analysis Artifacts
+*.md
+!README.md
+!public/uploads/README.md
+
 # Generated directories/files by tools or runtime
 /logs/
 /.phpunit.cache/
 /ppk/backup/
-AUDIT_REPORT.md
-DEVELOPMENT_SUMMARY.md
-FULL_PROJECT_ANALYSIS.md
-integration_plan_prompt.md
 database/revisionSchema_plan.sql
 
 # Uploads (Keep directory, ignore content)

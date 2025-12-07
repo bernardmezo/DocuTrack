@@ -47,5 +47,8 @@
 
 
 
+<!-- Custom Page-specific Scripts -->
+<script src="/docutrack/public/assets/js/page-scripts/notifikasi.js"></script>
+
 </body>
 </html>

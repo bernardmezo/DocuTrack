@@ -1,6 +1,8 @@
 <?php
+
 // Function to get the base URL
-function getBaseUrl_404() {
+function getBaseUrl_404()
+{
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'];
     $script_name = $_SERVER['SCRIPT_NAME'];

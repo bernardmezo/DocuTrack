@@ -1,22 +1,26 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\LoginModel;
 use App\Models\SuperAdminModel;
 use Exception;
 
-class AuthService {
+class AuthService
+{
     private $loginModel;
     private $userModel;
     private $db;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
         $this->loginModel = new LoginModel($this->db);
-        $this->userModel = new SuperAdminModel($this->db); 
+        $this->userModel = new SuperAdminModel($this->db);
     }
 
-    public function login($email, $password) {
+    public function login($email, $password)
+    {
         $user = $this->loginModel->getUserByEmail($email);
 
         if (!$user) {
@@ -31,11 +35,12 @@ class AuthService {
         }
     }
 
-    public function getUserProfile($userId) {
+    public function getUserProfile($userId)
+    {
         return $this->userModel->getUserById($userId);
     }
 
-    public function updateUserProfile(int $userId, array $data): bool 
+    public function updateUserProfile(int $userId, array $data): bool
     {
         $updateData = [];
         if (isset($data['nama'])) {
@@ -44,7 +49,7 @@ class AuthService {
         if (isset($data['email'])) {
             $updateData['email'] = $data['email'];
         }
-        
+
         if (empty($updateData)) {
             return true;
         }
@@ -57,7 +62,7 @@ class AuthService {
         if (strlen($newPassword) < 8) {
             throw new Exception("Password terlalu pendek, minimal 8 karakter.");
         }
-        
+
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
         return $this->userModel->updateUser($userId, ['password' => $hashedPassword]);

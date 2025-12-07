@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Middleware;
 
-class RegisterMiddleware {
-    
-    public static function check() {
+class RegisterMiddleware
+{
+    public static function check()
+    {
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }

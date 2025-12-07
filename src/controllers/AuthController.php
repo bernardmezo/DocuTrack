@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use App\Core\Controller;
 use App\Services\AuthService;
-use App\Services\ValidationService;
+// Removed: use App\Services\ValidationService;
 use App\Exceptions\ValidationException;
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -15,26 +15,29 @@ if (file_exists(DOCUTRACK_ROOT . '/src/helpers/logger_helper.php')) {
     require_once DOCUTRACK_ROOT . '/src/helpers/logger_helper.php';
 }
 
-class AuthController extends Controller {
-
+class AuthController extends Controller
+{
     private $authService;
-    private $validationService;
+    // validationService is now inherited from base Controller
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         parent::__construct($db);
         $this->authService = new AuthService($this->db);
-        $this->validationService = new ValidationService();
+        // $this->validationService is already set in parent::__construct()
     }
 
-    public function index() {
+    public function index()
+    {
         $this->redirect('/docutrack/public/');
     }
 
-    public function handleLogin() {
+    public function handleLogin()
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirect('/docutrack/public/');
         }
-        
+
         try {
             $rules = [
                 'login_email'    => 'required|email',
@@ -92,7 +95,6 @@ class AuthController extends Controller {
             }
 
             $this->redirectBasedOnRole($normalized_role, $user);
-
         } catch (ValidationException $e) {
             // The global exception handler will now catch this and redirect.
             // Storing errors in session for the view to display.
@@ -102,15 +104,16 @@ class AuthController extends Controller {
         }
     }
 
-    private function redirectBasedOnRole($normalized_role, $user) {
+    private function redirectBasedOnRole($normalized_role, $user)
+    {
         $dashboardMap = [
             'verifikator' => '/verifikator/dashboard',
             'wadir' => '/wadir/dashboard',
             'ppk' => '/ppk/dashboard',
             'bendahara' => '/bendahara/dashboard',
             'admin' => '/admin/dashboard',
-            'super-admin' => '/super_admin/dashboard',
-            'superadmin' => '/super_admin/dashboard',
+            'super-admin' => '/superadmin/dashboard',
+            'superadmin' => '/superadmin/dashboard',
             'direktur' => '/direktur/dashboard'
         ];
 
@@ -123,13 +126,14 @@ class AuthController extends Controller {
         }
     }
 
-    public function logout() {
+    public function logout()
+    {
         $userId = $_SESSION['user_id'] ?? 0;
         if ($userId > 0 && function_exists('logLogout')) {
             logLogout($userId);
         }
-        
+
         session_destroy();
-        $this->redirect('/docutrack/public/'); 
+        $this->redirect('/docutrack/public/');
     }
 }

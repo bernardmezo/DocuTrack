@@ -1,9 +1,10 @@
 <?php
+
 /**
  * URL Helper Functions - DocuTrack
  * =================================
  * File ini berisi fungsi-fungsi helper untuk URL.
- * 
+ *
  * @package DocuTrack
  * @category Helper
  * @author DocuTrack Team
@@ -17,7 +18,7 @@ if (!function_exists('baseUrl')) {
      *
      * @param string $path Path opsional yang akan digabungkan dengan base URL.
      * @return string URL lengkap.
-     * 
+     *
      * @example
      * ```php
      * echo baseUrl();          // Output: http://localhost/docutrack/public
@@ -29,7 +30,7 @@ if (!function_exists('baseUrl')) {
         global $config; // Akses variabel $config global
 
         $base = $config['app']['base_url'] ?? '/';
-        
+
         // Hapus trailing slash dari base URL jika ada
         if (substr($base, -1) === '/') {
             $base = rtrim($base, '/');
@@ -39,7 +40,7 @@ if (!function_exists('baseUrl')) {
         if ($path !== '' && substr($path, 0, 1) !== '/') {
             $path = '/' . $path;
         }
-        
+
         return $base . $path;
     }
 }
@@ -60,21 +61,21 @@ if (!function_exists('isActive')) {
     {
         // Pastikan $currentUrl dimulai dengan base URL untuk perbandingan yang akurat
         $base = baseUrl();
-        
+
         // Hapus protokol dan host dari $currentUrl dan $base untuk perbandingan path murni
         $parsedCurrent = parse_url($currentUrl, PHP_URL_PATH);
         $parsedBase = parse_url($base, PHP_URL_PATH);
 
         // Hapus trailing slash dari base path
         $trimmedBasePath = rtrim($parsedBase, '/');
-        
+
         // Hapus base path dari current URL untuk mendapatkan path relatif aplikasi
         if (strpos($parsedCurrent, $trimmedBasePath) === 0) {
             $currentRelativePath = substr($parsedCurrent, strlen($trimmedBasePath));
         } else {
             $currentRelativePath = $parsedCurrent; // Fallback jika base path tidak ditemukan
         }
-        
+
         // Pastikan target path juga dimulai dengan slash untuk konsistensi
         if (substr($targetPath, 0, 1) !== '/') {
             $targetPath = '/' . $targetPath;

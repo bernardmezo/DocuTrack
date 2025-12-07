@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Controllers\Bendahara;
 
 use App\Core\Controller;
@@ -7,11 +8,12 @@ use Exception;
 
 require_once __DIR__ . '/../../helpers/logger_helper.php';
 
-class PencairandanaController extends Controller {
-    
+class PencairandanaController extends Controller
+{
     private $pencairanService;
-    
-    public function __construct() {
+
+    public function __construct()
+    {
         parent::__construct();
         $this->pencairanService = new PencairanService($this->db);
     }
@@ -19,8 +21,9 @@ class PencairandanaController extends Controller {
     /**
      * Halaman List Pencairan Dana
      */
-    public function index($data_dari_router = []) {
-        
+    public function index($data_dari_router = [])
+    {
+
         $stats = $this->pencairanService->getDashboardStats();
         $list_antrian = $this->pencairanService->getAntrianPencairan();
         $jurusan_list = $this->pencairanService->getListJurusan();
@@ -49,33 +52,34 @@ class PencairandanaController extends Controller {
     /**
      * Halaman Detail Pencairan
      */
-    public function show($id, $data_dari_router = []) {
+    public function show($id, $data_dari_router = [])
+    {
         $ref = $_GET['ref'] ?? 'pencairan-dana';
         $base_url = "/docutrack/public/bendahara";
         $back_url = $base_url . '/' . $ref;
 
         $kegiatan = $this->pencairanService->getDetailPencairan($id);
-        
+
         if (!$kegiatan) {
             $_SESSION['flash_error'] = 'Data tidak ditemukan.';
             header('Location: ' . $back_url);
             exit;
         }
-        
+
         $rab_data = $this->pencairanService->getRABByKegiatan($id);
         $iku_data = $this->pencairanService->getIKUByKegiatan($id);
         $indikator_data = $this->pencairanService->getIndikatorByKegiatan($id);
         $tahapan = $this->pencairanService->getTahapanByKegiatan($id);
-        
+
         $tahapan_string = "";
         if ($tahapan && is_array($tahapan)) {
             foreach ($tahapan as $idx => $t) {
                 $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
             }
         }
-        
+
         $is_sudah_dicairkan = !empty($kegiatan['tanggalPencairan']);
-        
+
         if ($is_sudah_dicairkan) {
             $status_display = 'Dana Diberikan';
         } else {
@@ -86,7 +90,7 @@ class PencairandanaController extends Controller {
             'title' => 'Detail Pencairan - ' . htmlspecialchars($kegiatan['namaKegiatan']),
             'id' => $id,
             'status' => $status_display,
-            
+
             'nama_kegiatan' => $kegiatan['namaKegiatan'],
             'nama_mahasiswa' => $kegiatan['pemilikKegiatan'],
             'nim' => $kegiatan['nimPelaksana'],
@@ -94,7 +98,7 @@ class PencairandanaController extends Controller {
             'prodi' => $kegiatan['prodiPenyelenggara'] ?? '-',
             'tanggal_pengajuan' => $kegiatan['createdAt'],
             'kode_mak' => $kegiatan['buktiMAK'] ?? '-',
-            
+
             'kegiatan_data' => [
                 'id' => $id,
                 'nama_pengusul' => $kegiatan['nama_pengusul'] ?? '-',
@@ -110,20 +114,20 @@ class PencairandanaController extends Controller {
                 'tanggal_mulai' => $kegiatan['tanggalMulai'] ?? '',
                 'tanggal_selesai' => $kegiatan['tanggalSelesai'] ?? ''
             ],
-            
+
             'iku_data' => $iku_data,
             'indikator_data' => $indikator_data,
-            
+
             'rab_data' => $rab_data,
             'anggaran_disetujui' => $kegiatan['total_rab'] ?? 0,
-            
+
             'surat_pengantar_url' => !empty($kegiatan['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $kegiatan['suratPengantar'] : '',
-            
+
             'jumlah_dicairkan' => $kegiatan['jumlahDicairkan'] ?? 0,
             'tanggal_pencairan' => $kegiatan['tanggalPencairan'] ?? null,
             'metode_pencairan' => $kegiatan['metodePencairan'] ?? 'uang_muka',
             'catatan_bendahara' => $kegiatan['catatanBendahara'] ?? '',
-            
+
             'back_url' => $back_url,
             'back_text' => 'Kembali'
         ]);
@@ -145,7 +149,7 @@ class PencairandanaController extends Controller {
         $kak_id = (int) ($_POST['kak_id'] ?? 0);
         $action = $_POST['action'] ?? null;
         $userId = (int) ($_SESSION['user_id'] ?? 0);
-        
+
         if (!$kak_id || !$action) {
             $_SESSION['flash_error'] = 'Data tidak lengkap!';
             header('Location: /docutrack/public/bendahara/pencairan-dana');
@@ -156,7 +160,7 @@ class PencairandanaController extends Controller {
             if ($action === 'cairkan') {
                 $metode_pencairan = $_POST['metode_pencairan'] ?? 'penuh';
                 $catatan = trim($_POST['catatan'] ?? '');
-                
+
                 $dataPencairan = [
                     'metode' => $metode_pencairan,
                     'catatan' => $catatan,
@@ -166,8 +170,10 @@ class PencairandanaController extends Controller {
                 // 1. Logika Pencairan Penuh
                 if ($metode_pencairan === 'penuh') {
                     $jumlah = (float) ($_POST['jumlah_dicairkan'] ?? 0);
-                    if ($jumlah <= 0) throw new Exception('Jumlah pencairan harus lebih dari 0');
-                    
+                    if ($jumlah <= 0) {
+                        throw new Exception('Jumlah pencairan harus lebih dari 0');
+                    }
+
                     $dataPencairan['jumlah'] = $jumlah;
                     $dataPencairan['tanggal'] = date('Y-m-d'); // Pencairan penuh selalu hari ini
 
@@ -175,29 +181,39 @@ class PencairandanaController extends Controller {
                 } elseif ($metode_pencairan === 'bertahap') {
                     $total_anggaran = (float) ($_POST['total_anggaran'] ?? 0);
                     $jumlah_tahap = (int) ($_POST['jumlah_tahap'] ?? 0);
-                    
-                    if ($jumlah_tahap < 2 || $jumlah_tahap > 5) throw new Exception('Jumlah tahap harus antara 2-5');
-                    if ($total_anggaran <= 0) throw new Exception('Total anggaran tidak valid');
-                    
+
+                    if ($jumlah_tahap < 2 || $jumlah_tahap > 5) {
+                        throw new Exception('Jumlah tahap harus antara 2-5');
+                    }
+                    if ($total_anggaran <= 0) {
+                        throw new Exception('Total anggaran tidak valid');
+                    }
+
                     $tahapan = [];
                     $totalPersentase = 0;
-                    
+
                     for ($i = 1; $i <= $jumlah_tahap; $i++) {
                         $tanggal = $_POST["tanggal_tahap_{$i}"] ?? null;
                         $persentase = (float) ($_POST["persentase_tahap_{$i}"] ?? 0);
-                        
-                        if (empty($tanggal)) throw new Exception("Tanggal tahap {$i} wajib diisi");
-                        if ($persentase <= 0 || $persentase > 100) throw new Exception("Persentase tahap {$i} tidak valid");
-                        
+
+                        if (empty($tanggal)) {
+                            throw new Exception("Tanggal tahap {$i} wajib diisi");
+                        }
+                        if ($persentase <= 0 || $persentase > 100) {
+                            throw new Exception("Persentase tahap {$i} tidak valid");
+                        }
+
                         $tahapan[] = [
                             'tanggal' => $tanggal,
                             'persentase' => $persentase
                         ];
                         $totalPersentase += $persentase;
                     }
-                    
-                    if (abs($totalPersentase - 100) > 0.01) throw new Exception("Total persentase harus 100%");
-                    
+
+                    if (abs($totalPersentase - 100) > 0.01) {
+                        throw new Exception("Total persentase harus 100%");
+                    }
+
                     $dataPencairan['jumlah'] = $total_anggaran;
                     $dataPencairan['tahapan'] = $tahapan;
                     // Tanggal pencairan utama diambil dari tahap pertama
@@ -214,12 +230,10 @@ class PencairandanaController extends Controller {
                 } else {
                     throw new Exception('Gagal memproses pencairan dana.');
                 }
-
             } elseif ($action === 'tolak') {
                 // TODO: Implement rejection logic in model/service
                 $_SESSION['flash_message'] = 'Fitur tolak belum diaktifkan di controller baru.';
             }
-
         } catch (Exception $e) {
             error_log("Pencairan Error: " . $e->getMessage());
             $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();

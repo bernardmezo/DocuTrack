@@ -5,17 +5,17 @@ namespace App\ViewModels;
 use App\Services\KegiatanService;
 use App\Services\LpjService;
 
-class DashboardViewModel {
-    
+class DashboardViewModel
+{
     private $kegiatanService;
     private $lpjService;
 
     // Static configuration for UI steps
     private $tahapan_kak = [
-        'Draft', 
-        'Verifikasi', 
-        'Validasi', 
-        'Persetujuan', 
+        'Draft',
+        'Verifikasi',
+        'Validasi',
+        'Persetujuan',
         'Disetujui'
     ];
 
@@ -41,12 +41,14 @@ class DashboardViewModel {
         'Disetujui' => 'fa-check-double'
     ];
 
-    public function __construct(KegiatanService $kegiatanService, LpjService $lpjService) {
+    public function __construct(KegiatanService $kegiatanService, LpjService $lpjService)
+    {
         $this->kegiatanService = $kegiatanService;
         $this->lpjService = $lpjService;
     }
 
-    public function getDashboardData($userId, $jurusan = null) {
+    public function getDashboardData($userId, $jurusan = null)
+    {
         // 1. Get Statistics
         $stats = $this->kegiatanService->getDashboardStats();
 
@@ -56,7 +58,7 @@ class DashboardViewModel {
 
         // 3. Determine Current Global Status (Mock logic for dashboard visualization)
         // In a real app, this might be aggregated or specific to the user's latest item
-        $tahap_sekarang_kak = 'Verifikasi'; 
+        $tahap_sekarang_kak = 'Verifikasi';
         if (!empty($list_kak)) {
              // Example: Take the status of the most recent item
              $latest = $list_kak[0];
@@ -74,12 +76,12 @@ class DashboardViewModel {
             'stats' => $stats,
             'list_kak' => $list_kak,
             'list_lpj' => $list_lpj,
-            
+
             // UI Configurations
             'tahapan_kak' => $this->tahapan_kak,
             'icons_kak' => $this->icons_kak,
             'tahap_sekarang_kak' => $tahap_sekarang_kak,
-            
+
             'tahapan_lpj' => $this->tahapan_lpj,
             'icons_lpj' => $this->icons_lpj,
             'tahap_sekarang_lpj' => $tahap_sekarang_lpj

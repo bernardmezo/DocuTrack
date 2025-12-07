@@ -1,5 +1,5 @@
 <?php
-// File: src/views/pages/super_admin/akun.php
+// File: src/views/pages/superadmin/akun.php
 // Pastikan $user sudah di-set dari controller
 $user = $user ?? [
     'username' => $_SESSION['username'] ?? 'Maha Admin',
@@ -94,7 +94,7 @@ $formattedDate = $date->format('l, j F Y');
     <div class="min-h-screen p-4 md:p-8">
         <div class="max-w-7xl mx-auto">
             
-            <form id="profileForm" action="/docutrack/public/super_admin/akun/update" method="POST" enctype="multipart/form-data">
+            <form id="profileForm" action="/docutrack/public/superadmin/akun/update" method="POST" enctype="multipart/form-data">
                 
                 <?php include(DOCUTRACK_ROOT . '/src/views/partials/_profileHeader.php'); ?>
 

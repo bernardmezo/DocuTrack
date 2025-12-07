@@ -1,19 +1,22 @@
 <?php
+
 namespace App\Controllers\PPK;
 
 use App\Core\Controller;
 use App\Services\PpkService;
 
-class DashboardController extends Controller {
-    
+class DashboardController extends Controller
+{
     private $service;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         parent::__construct($db);
         $this->service = new PpkService($this->db);
     }
 
-    public function index($data_dari_router = []) {
+    public function index($data_dari_router = [])
+    {
         $stats = $this->safeModelCall($this->service, 'getDashboardStats', [], []);
         $stats = [
             'total' => $stats['total'] ?? 0,
@@ -24,7 +27,7 @@ class DashboardController extends Controller {
         $selected_jurusan = isset($_GET['jurusan']) ? $_GET['jurusan'] : '';
         $list_usulan_filtered = $list_usulan_all;
         if (!empty($selected_jurusan)) {
-            $list_usulan_filtered = array_filter($list_usulan_all, function($item) use ($selected_jurusan) {
+            $list_usulan_filtered = array_filter($list_usulan_all, function ($item) use ($selected_jurusan) {
                 return strtolower($item['jurusan']) === strtolower($selected_jurusan);
             });
         }
@@ -40,10 +43,10 @@ class DashboardController extends Controller {
         sort($jurusan_list);
 
         $data = array_merge($data_dari_router, [
-            'title' => 'Dashboard PPK', 'stats' => $stats, 'list_usulan' => $list_usulan_paginated, 
+            'title' => 'Dashboard PPK', 'stats' => $stats, 'list_usulan' => $list_usulan_paginated,
             'current_page' => $current_page, 'total_pages' => $total_pages,
             'jurusan_list' => $jurusan_list, 'selected_jurusan' => $selected_jurusan
         ]);
-        $this->view('pages/ppk/dashboard', $data, 'ppk'); 
+        $this->view('pages/ppk/dashboard', $data, 'ppk');
     }
 }

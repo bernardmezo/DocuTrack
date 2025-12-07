@@ -14,6 +14,7 @@ use App\Core\Router;
 use App\Exceptions\NotFoundException;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\ValidationException;
+use App\Exceptions\BusinessLogicException;
 
 // 2. Set up Global Exception Handling
 require_once __DIR__ . '/../src/helpers/error_logger_helper.php';
@@ -32,9 +33,20 @@ function globalExceptionHandler(Throwable $exception) {
 
     $request_uri = $_SERVER['REQUEST_URI'] ?? '';
 
+    // Determine log level based on exception type
+    $logLevel = 'ERROR';
+    if ($exception instanceof ValidationException) {
+        $logLevel = 'WARNING';
+    } elseif ($exception instanceof ForbiddenException) {
+        $logLevel = 'WARNING';
+    } elseif ($exception instanceof BusinessLogicException) {
+        $logLevel = 'INFO'; // Business logic errors might be expected, not necessarily critical
+    }
+
     // Log the error for all exception types except for 404s
     if (!($exception instanceof NotFoundException)) {
         log_error(
+            $logLevel,
             $exception->getCode(),
             $exception->getMessage(),
             $exception->getFile(),

@@ -1,8 +1,12 @@
 <?php
 // File: src/views/pages/PPK/monitoring.php
 
-if (!isset($list_proposal)) { $list_proposal = []; }
-if (!isset($list_jurusan)) { $list_jurusan = []; }
+if (!isset($list_proposal)) {
+    $list_proposal = [];
+}
+if (!isset($list_jurusan)) {
+    $list_jurusan = [];
+}
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -38,7 +42,7 @@ if (!isset($list_jurusan)) { $list_jurusan = []; }
                     <select id="filter-jurusan" 
                             class="w-full px-4 py-2.5 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm appearance-none cursor-pointer">
                         <option value="semua" class="text-gray-800 bg-white">Semua Jurusan</option>
-                        <?php foreach ($list_jurusan as $jurusan): ?>
+                        <?php foreach ($list_jurusan as $jurusan) : ?>
                             <option value="<?= htmlspecialchars($jurusan) ?>" class="text-gray-800 bg-white"><?= htmlspecialchars($jurusan) ?></option>
                         <?php endforeach; ?>
                     </select>

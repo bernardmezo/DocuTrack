@@ -30,7 +30,7 @@ $controllerPaths = [
     '../src/controllers/Bendahara/*.php',
     '../src/controllers/Verifikator/*.php',
     '../src/controllers/Wadir/*.php',
-    '../src/controllers/Super_Admin/*.php',
+    '../src/controllers/SuperAdmin/*.php',
 ];
 
 $allFiles = [];

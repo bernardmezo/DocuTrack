@@ -1,8 +1,12 @@
 <?php
 // File: src/views/pages/Wadir/riwayat_verifikasi.php
 
-if (!isset($list_riwayat)) { $list_riwayat = []; }
-if (!isset($jurusan_list)) { $jurusan_list = []; }
+if (!isset($list_riwayat)) {
+    $list_riwayat = [];
+}
+if (!isset($jurusan_list)) {
+    $jurusan_list = [];
+}
 ?>
 
 <main class="main-content font-poppins p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
@@ -29,7 +33,7 @@ if (!isset($jurusan_list)) { $jurusan_list = []; }
                             style="color: #374151 !important;"
                             class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
                         <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
-                        <?php foreach ($jurusan_list as $jurusan): ?>
+                        <?php foreach ($jurusan_list as $jurusan) : ?>
                             <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" style="color: #374151 !important; font-weight: 600;"><?php echo htmlspecialchars($jurusan); ?></option>
                         <?php endforeach; ?>
                     </select>

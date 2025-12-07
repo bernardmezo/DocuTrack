@@ -12,7 +12,7 @@ ini_set('error_log', DOCUTRACK_ROOT . '/logs/php_error.log');
 error_reporting(E_ALL);
 
 if (getenv('APP_ENV') === 'production') {
-    set_error_handler(function($severity, $message, $file, $line) {
+    set_error_handler(function ($severity, $message, $file, $line) {
         throw new ErrorException($message, 0, $severity, $file, $line);
     });
 }
@@ -21,15 +21,15 @@ if (getenv('APP_ENV') === 'production') {
 spl_autoload_register(function ($class) {
     $prefix = 'App\\';
     $base_dir = DOCUTRACK_ROOT . '/src/';
-    
+
     $len = strlen($prefix);
     if (strncmp($prefix, $class, $len) !== 0) {
         return;
     }
-    
+
     $relative_class = substr($class, $len);
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-    
+
     if (file_exists($file)) {
         require_once $file;
     }
@@ -37,6 +37,12 @@ spl_autoload_register(function ($class) {
 
 if (file_exists(DOCUTRACK_ROOT . '/vendor/autoload.php')) {
     require DOCUTRACK_ROOT . '/vendor/autoload.php';
+}
+
+// Load .env file variables
+if (class_exists('Dotenv\Dotenv') && file_exists(DOCUTRACK_ROOT . '/.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(DOCUTRACK_ROOT);
+    $dotenv->safeLoad();
 }
 
 // Config
@@ -74,7 +80,7 @@ try {
     $conn = $database->getConnection();
 } catch (Exception $e) {
     error_log('Bootstrap: ' . $e->getMessage());
-    
+
     if (getenv('APP_ENV') === 'development') {
         die('Database Error: ' . $e->getMessage());
     } else {

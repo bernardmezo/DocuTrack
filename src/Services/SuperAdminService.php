@@ -1,33 +1,41 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\SuperAdminModel;
 use Exception;
 
-class SuperAdminService {
+class SuperAdminService
+{
     private $model;
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->model = new SuperAdminModel($db);
     }
 
-    public function getAllUsers() {
+    public function getAllUsers()
+    {
         return $this->model->getAllUsers();
     }
 
-    public function getAllRoles() {
+    public function getAllRoles()
+    {
         return $this->model->getAllRoles();
     }
 
-    public function getListJurusan() {
+    public function getListJurusan()
+    {
         return $this->model->getListJurusan();
     }
 
-    public function getUserById(int $id) {
+    public function getUserById(int $id)
+    {
         return $this->model->getUserById($id);
     }
 
-    public function deleteUser(int $id): bool {
+    public function deleteUser(int $id): bool
+    {
         return $this->model->deleteUser($id);
     }
 
@@ -37,7 +45,8 @@ class SuperAdminService {
      * @param array $data Validated user data.
      * @return bool
      */
-    public function createUser(array $data): bool {
+    public function createUser(array $data): bool
+    {
         // Hash password before sending to model
         if (isset($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
@@ -52,7 +61,8 @@ class SuperAdminService {
      * @param array $data Validated data to update.
      * @return bool
      */
-    public function updateUser(int $id, array $data): bool {
+    public function updateUser(int $id, array $data): bool
+    {
         // Hash password only if it is being changed
         if (isset($data['password']) && !empty($data['password'])) {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);

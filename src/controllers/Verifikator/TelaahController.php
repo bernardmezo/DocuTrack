@@ -1,21 +1,41 @@
 <?php
+
 namespace App\Controllers\Verifikator;
 
 use App\Core\Controller;
+use App\Models\kegiatan\KegiatanModel;
+use App\Models\VerifikatorModel;
+use App\Services\LogStatusService;
+use App\Services\ValidationService;
 use App\Services\VerifikatorService;
 use Exception;
 
-class TelaahController extends Controller {
+class TelaahController extends Controller
+{
+    private VerifikatorService $service;
 
-    private $model;
-
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
-        $this->model = new VerifikatorService($this->db);
+
+        // Manual dependency instantiation
+        $dbConnection = $this->db;
+        $verifikatorModel = new VerifikatorModel($dbConnection);
+        $logStatusService = new LogStatusService($dbConnection);
+        $validationService = new ValidationService();
+        $kegiatanModel = new KegiatanModel($dbConnection);
+
+        $this->service = new VerifikatorService(
+            $verifikatorModel,
+            $logStatusService,
+            $validationService,
+            $kegiatanModel
+        );
     }
-    
-    public function index($data_dari_router = []) {
-        $all_usulan = $this->safeModelCall($this->model, 'getDashboardKAK', [], []);
+
+    public function index($data_dari_router = [])
+    {
+        $all_usulan = $this->safeModelCall($this->service, 'getDashboardKAK', [], []);
 
         $list_usulan = [];
         $jurusan_set = [];
@@ -53,7 +73,8 @@ class TelaahController extends Controller {
         $this->view('pages/verifikator/pengajuan_telaah', $data, 'verifikator');
     }
 
-    public function show($id, $data_dari_router = []) {
+    public function show($id, $data_dari_router = [])
+    {
         $ref = $_GET['ref'] ?? '';
         $base_url = '/docutrack/public/verifikator';
 
@@ -69,7 +90,7 @@ class TelaahController extends Controller {
                 break;
         }
 
-        $dataDB = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
+        $dataDB = $this->safeModelCall($this->service, 'getDetailKegiatan', [$id], null);
 
         if (!$dataDB) {
             echo 'Data tidak ditemukan.';
@@ -77,9 +98,9 @@ class TelaahController extends Controller {
         }
 
         $kakId = $dataDB['kakId'];
-        $indikator = $this->safeModelCall($this->model, 'getIndikatorByKAK', [$kakId], []);
-        $tahapan = $this->safeModelCall($this->model, 'getTahapanByKAK', [$kakId], []);
-        $rab = $this->safeModelCall($this->model, 'getRABByKAK', [$kakId], []);
+        $indikator = $this->safeModelCall($this->service, 'getIndikatorByKAK', [$kakId], []);
+        $tahapan = $this->safeModelCall($this->service, 'getTahapanByKAK', [$kakId], []);
+        $rab = $this->safeModelCall($this->service, 'getRABByKAK', [$kakId], []);
 
         $tahapan_string = '';
         foreach ($tahapan as $idx => $t) {
@@ -87,7 +108,7 @@ class TelaahController extends Controller {
         }
 
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
-        
+
         $surat_url = !empty($dataDB['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $dataDB['suratPengantar'] : '';
 
         $kegiatan_data = [
@@ -148,7 +169,7 @@ class TelaahController extends Controller {
                 throw new Exception('Kode MAK wajib diisi.');
             }
 
-            if ($this->model->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
+            if ($this->service->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
                 $_SESSION['flash_message'] = 'Usulan berhasil disetujui.';
                 header('Location: /docutrack/public/verifikator/dashboard?msg=approved');
                 exit;
@@ -158,7 +179,7 @@ class TelaahController extends Controller {
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
             $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-            header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+            header('Location: /docutrack/public/verifikator/telaah/show/' . $fallbackId . '?ref=dashboard');
             exit;
         }
     }
@@ -166,7 +187,7 @@ class TelaahController extends Controller {
     public function reject($routeId = null)
     {
         $kegiatanId = $routeId;
-        
+
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
@@ -174,18 +195,18 @@ class TelaahController extends Controller {
 
             $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
             $kegiatanId = (int) $kegiatanId;
-            
+
             if (!$kegiatanId || $kegiatanId <= 0) {
                 throw new Exception('ID kegiatan tidak valid');
             }
-            
+
             $alasanPenolakan = trim($_POST['alasan_penolakan'] ?? '');
-            
+
             if ($alasanPenolakan === '') {
                 throw new Exception('Alasan penolakan wajib diisi');
             }
 
-            $result = $this->model->rejectUsulan($kegiatanId, $alasanPenolakan);
+            $result = $this->service->rejectUsulan($kegiatanId, $alasanPenolakan);
 
             if ($result) {
                 $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
@@ -194,13 +215,12 @@ class TelaahController extends Controller {
             }
 
             throw new Exception('Gagal menolak usulan. Silakan coba lagi.');
-            
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
             $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-            
+
             if (!empty($fallbackId)) {
-                header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+                header('Location: /docutrack/public/verifikator/telaah/show/' . $fallbackId . '?ref=dashboard');
             } else {
                 header('Location: /docutrack/public/verifikator/dashboard');
             }
@@ -211,7 +231,7 @@ class TelaahController extends Controller {
     public function revise($routeId = null)
     {
         $kegiatanId = $routeId;
-        
+
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
@@ -219,11 +239,11 @@ class TelaahController extends Controller {
 
             $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
             $kegiatanId = (int) $kegiatanId;
-            
+
             if (!$kegiatanId || $kegiatanId <= 0) {
                 throw new Exception('ID kegiatan tidak valid');
             }
-            
+
             $rawKomentar = $_POST['komentar'] ?? [];
             $komentarRevisi = [];
 
@@ -237,12 +257,12 @@ class TelaahController extends Controller {
                     ];
                 }
             }
-            
+
             if (empty($komentarRevisi)) {
                 throw new Exception('Minimal isi satu catatan revisi');
             }
 
-            $result = $this->model->reviseUsulan($kegiatanId, $komentarRevisi);
+            $result = $this->service->reviseUsulan($kegiatanId, $komentarRevisi);
 
             if ($result) {
                 $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';
@@ -251,13 +271,12 @@ class TelaahController extends Controller {
             }
 
             throw new Exception('Gagal mengirim revisi. Silakan coba lagi.');
-            
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
             $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
-            
+
             if (!empty($fallbackId)) {
-                header('Location: /docutrack/public/verifikator/telaah/show/'.$fallbackId.'?ref=dashboard');
+                header('Location: /docutrack/public/verifikator/telaah/show/' . $fallbackId . '?ref=dashboard');
             } else {
                 header('Location: /docutrack/public/verifikator/dashboard');
             }

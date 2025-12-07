@@ -8,36 +8,44 @@ use App\Services\ValidationService; // Use Validation Service
 use App\Exceptions\ValidationException;
 use Exception;
 
-class BuatikuController extends Controller {
-    
+class BuatikuController extends Controller
+{
     private $superAdminService; // Changed from $model to $superAdminService
     private $validationService;
-    
-    public function __construct() {
+
+    public function __construct()
+    {
         parent::__construct();
         $this->superAdminService = new SuperAdminService($this->db);
         $this->validationService = new ValidationService();
     }
-    
-    public function index() { 
+
+    public function index()
+    {
         $page = (int)($_GET['page'] ?? 1);
         $search_text = strtolower($_GET['search'] ?? '');
         $per_page = 5;
 
         // Fetch data via Service
         $all_iku = $this->superAdminService->getAllIKU();
-        
-        $filtered_data = array_filter($all_iku, function($item) use ($search_text) {
-            if (empty($search_text)) return true;
+
+        $filtered_data = array_filter($all_iku, function ($item) use ($search_text) {
+            if (empty($search_text)) {
+                return true;
+            }
             return str_contains(strtolower($item['nama']), $search_text);
         });
 
         $filtered_data = array_values($filtered_data);
         $total_items = count($filtered_data);
         $total_pages = ceil($total_items / $per_page);
-        
-        if ($page < 1) $page = 1;
-        if ($page > $total_pages && $total_pages > 0) $page = $total_pages;
+
+        if ($page < 1) {
+            $page = 1;
+        }
+        if ($page > $total_pages && $total_pages > 0) {
+            $page = $total_pages;
+        }
 
         $offset = ($page - 1) * $per_page;
         $display_data = array_slice($filtered_data, $offset, $per_page);
@@ -58,13 +66,14 @@ class BuatikuController extends Controller {
             ]
         ];
 
-        $this->view('pages/super_admin/buat-iku', $data, 'super_admin'); 
+        $this->view('pages/super_admin/buat-iku', $data, 'super_admin');
     }
-    
+
     /**
      * Show form to create new IKU
      */
-    public function create() {
+    public function create()
+    {
         $data = [
             'title' => 'Tambah IKU Baru'
         ];
@@ -74,9 +83,10 @@ class BuatikuController extends Controller {
     /**
      * Store new IKU (POST request)
      */
-    public function store() {
+    public function store()
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->redirect('/docutrack/public/super_admin/buat-iku/create');
+            $this->redirect('/docutrack/public/superadmin/buat-iku/create');
         }
 
         try {
@@ -87,26 +97,27 @@ class BuatikuController extends Controller {
             $validatedData = $this->validationService->validate($_POST, $rules);
 
             if ($this->superAdminService->createIKU($validatedData['nama'], $validatedData['deskripsi'])) {
-                $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku', 'success', 'IKU berhasil ditambahkan!');
+                $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku', 'success', 'IKU berhasil ditambahkan!');
             } else {
                 throw new Exception('Gagal menambahkan IKU.');
             }
         } catch (ValidationException $e) {
             $_SESSION['flash_errors'] = $e->getErrors();
             $_SESSION['old_input'] = $_POST;
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku/create', 'error', 'Validasi gagal, periksa kembali input Anda.');
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku/create', 'error', 'Validasi gagal, periksa kembali input Anda.');
         } catch (Exception $e) {
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku/create', 'error', $e->getMessage());
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku/create', 'error', $e->getMessage());
         }
     }
-    
+
     /**
      * Show form to edit existing IKU
      */
-    public function edit($id) {
+    public function edit($id)
+    {
         $iku = $this->superAdminService->getIKUById((int)$id);
         if (!$iku) {
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku', 'error', 'IKU tidak ditemukan.');
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku', 'error', 'IKU tidak ditemukan.');
         }
         $data = [
             'title' => 'Edit IKU',
@@ -118,9 +129,10 @@ class BuatikuController extends Controller {
     /**
      * Update existing IKU (POST request)
      */
-    public function update($id) {
+    public function update($id)
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->redirect('/docutrack/public/super_admin/buat-iku/edit/' . $id);
+            $this->redirect('/docutrack/public/superadmin/buat-iku/edit/' . $id);
         }
 
         try {
@@ -131,27 +143,28 @@ class BuatikuController extends Controller {
             $validatedData = $this->validationService->validate($_POST, $rules);
 
             if ($this->superAdminService->updateIKU((int)$id, $validatedData['nama'], $validatedData['deskripsi'])) {
-                $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku', 'success', 'IKU berhasil diupdate!');
+                $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku', 'success', 'IKU berhasil diupdate!');
             } else {
                 throw new Exception('Gagal mengupdate IKU.');
             }
         } catch (ValidationException $e) {
             $_SESSION['flash_errors'] = $e->getErrors();
             $_SESSION['old_input'] = $_POST;
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku/edit/' . $id, 'error', 'Validasi gagal, periksa kembali input Anda.');
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku/edit/' . $id, 'error', 'Validasi gagal, periksa kembali input Anda.');
         } catch (Exception $e) {
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku/edit/' . $id, 'error', $e->getMessage());
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku/edit/' . $id, 'error', $e->getMessage());
         }
     }
-    
+
     /**
      * Delete IKU
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         if ($this->superAdminService->deleteIKU((int)$id)) {
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku', 'success', 'IKU berhasil dihapus!');
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku', 'success', 'IKU berhasil dihapus!');
         } else {
-            $this->redirectWithMessage('/docutrack/public/super_admin/buat-iku', 'error', 'Gagal menghapus IKU.');
+            $this->redirectWithMessage('/docutrack/public/superadmin/buat-iku', 'error', 'Gagal menghapus IKU.');
         }
     }
 }

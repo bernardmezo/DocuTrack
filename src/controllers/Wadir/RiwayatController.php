@@ -1,20 +1,23 @@
 <?php
+
 namespace App\Controllers\Wadir;
 
 use App\Core\Controller;
 use App\Services\WadirService;
 
-class RiwayatController extends Controller {
-    
+class RiwayatController extends Controller
+{
     private $model;
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct();
         $this->model = new WadirService($this->db);
     }
 
-    public function index($data_dari_router = []) { 
-        
+    public function index($data_dari_router = [])
+    {
+
         $list_riwayat = $this->safeModelCall($this->model, 'getRiwayat', [], []);
 
         $jurusan_list = array_unique(array_column($list_riwayat, 'prodi'));

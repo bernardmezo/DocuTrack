@@ -3,25 +3,31 @@
 namespace App\Controllers\Admin;
 
 use App\Core\Controller;
-use App\Model\AdminModel; // Corrected to use namespaced AdminModel
+use App\Models\AdminModel;
 
-class DetailKakController extends Controller { // Renamed class to match file naming convention
-    
+// Corrected to use namespaced AdminModel
+
+class DetailKakController extends Controller
+{
+ // Renamed class to match file naming convention
+
     private $model;
 
-    public function __construct() {
+    public function __construct()
+    {
         parent::__construct(); // Initialize $this->db from parent Controller
         // Use the fully qualified class name for AdminModel
         $this->model = new AdminModel($this->db);
     }
 
-    public function show($id, $ref = 'kegiatan', $data_dari_router = []) {
+    public function show($id, $ref = 'kegiatan', $data_dari_router = [])
+    {
         $base_url = "/docutrack/public/admin";
         $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-kegiatan';
 
-        
+
         $dataDB = $this->model->getDetailKegiatan($id); // Use $this->model
-        
+
         if (!$dataDB) {
             echo "Kegiatan dengan ID $id tidak ditemukan.";
             return;
@@ -65,25 +71,24 @@ class DetailKakController extends Controller { // Renamed class to match file na
             'title' => 'Detail Kegiatan - ' . htmlspecialchars($dataDB['namaKegiatan']),
             'status' => ucfirst($dataDB['status_text'] ?? 'Menunggu'),
             'user_role' => $_SESSION['user_role'] ?? 'admin',
-            
+
             'kegiatan_data' => $kegiatan_data,
             'iku_data' => $iku_array,
             'indikator_data' => $indikator,
             'rab_data' => $rab,
-            
+
             'kode_mak' => $dataDB['buktiMAK'] ?? '-',
             'komentar_revisi' => $komentar,
             'komentar_penolakan' => $komentarPenolakan,
-            
+
             // Generate URL untuk surat pengantar (jika ada)
-            'surat_pengantar_url' => !empty($dataDB['file_surat_pengantar']) 
-                ? '/docutrack/public/uploads/surat/' . basename($dataDB['file_surat_pengantar']) 
+            'surat_pengantar_url' => !empty($dataDB['file_surat_pengantar'])
+                ? '/docutrack/public/uploads/surat/' . basename($dataDB['file_surat_pengantar'])
                 : null,
-            
+
             'back_url' => $back_url
         ]);
 
         $this->view('pages/admin/detail_kak', $data, 'app');
     }
 }
-

@@ -3,19 +3,23 @@
 namespace App\Controllers\SuperAdmin;
 
 use App\Core\Controller;
-use App\Services\SuperAdminService; // Use Service instead of Model
+use App\Services\SuperAdminService;
 
-class DashboardController extends Controller {
-    
+// Use Service instead of Model
+
+class DashboardController extends Controller
+{
     private $service; // Changed from $model to $service for clarity
-    
-    public function __construct($db) {
+
+    public function __construct($db)
+    {
         parent::__construct($db);
         $this->service = new SuperAdminService($this->db); // Instantiate Service
     }
-    
-    public function index($data_dari_router = []) {
-        
+
+    public function index($data_dari_router = [])
+    {
+
         // Call methods via the service layer
         $stats = $this->service->getDashboardStats();
         $list_prodi = $this->service->getListProdi();
@@ -30,6 +34,6 @@ class DashboardController extends Controller {
             'list_lpj' => $list_lpj
         ]);
 
-        $this->view('pages/super_admin/dashboard', $data, 'super_admin'); 
+        $this->view('pages/superadmin/dashboard', $data, 'superadmin');
     }
 }

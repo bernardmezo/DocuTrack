@@ -2,10 +2,10 @@
 
 /**
  * CSRF Helper Functions
- * 
+ *
  * Helper functions untuk CSRF protection di views dan controllers.
  * File ini di-load otomatis oleh bootstrap.php
- * 
+ *
  * @package DocuTrack\Helpers
  * @version 2.0.0
  */
@@ -13,16 +13,16 @@
 if (!function_exists('csrf_token')) {
     /**
      * Get current CSRF token
-     * 
+     *
      * Mengambil atau generate CSRF token untuk current session.
      * Token ini digunakan untuk validasi form submissions dan AJAX requests.
-     * 
+     *
      * @return string CSRF token (64 character hex string)
-     * 
+     *
      * @example
      * // Di JavaScript
      * const token = '<?php echo csrf_token(); ?>';
-     * 
+     *
      * // Di AJAX request
      * headers: { 'X-CSRF-TOKEN': '<?php echo csrf_token(); ?>' }
      */
@@ -35,12 +35,12 @@ if (!function_exists('csrf_token')) {
 if (!function_exists('csrf_field')) {
     /**
      * Generate hidden input field dengan CSRF token
-     * 
+     *
      * Digunakan di dalam <form> tags untuk menyisipkan CSRF token.
      * Output: <input type="hidden" name="_token" value="...token...">
-     * 
+     *
      * @return string HTML input element
-     * 
+     *
      * @example
      * <form method="POST" action="/admin/akun/update">
      *     <?php echo csrf_field(); ?>
@@ -58,18 +58,18 @@ if (!function_exists('csrf_field')) {
 if (!function_exists('csrf_meta')) {
     /**
      * Generate meta tag untuk CSRF token (untuk global JavaScript access)
-     * 
+     *
      * Digunakan di <head> section untuk expose token ke JavaScript.
      * Berguna untuk SPA atau AJAX-heavy applications.
-     * 
+     *
      * @return string HTML meta tag
-     * 
+     *
      * @example
      * // Di header.php
      * <head>
      *     <?php echo csrf_meta(); ?>
      * </head>
-     * 
+     *
      * // Di JavaScript
      * const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
      */
@@ -83,13 +83,13 @@ if (!function_exists('csrf_meta')) {
 if (!function_exists('verify_csrf')) {
     /**
      * Manually verify CSRF token (untuk custom validation)
-     * 
+     *
      * Biasanya tidak diperlukan karena CSRFMiddleware sudah handle otomatis.
      * Tapi berguna untuk edge cases atau custom endpoints.
-     * 
+     *
      * @param string|null $token Token to verify (null = ambil dari request)
      * @return bool True jika valid, false jika tidak
-     * 
+     *
      * @example
      * if (!verify_csrf($_POST['_token'] ?? null)) {
      *     die('Invalid CSRF token');
@@ -117,12 +117,12 @@ if (!function_exists('verify_csrf')) {
 if (!function_exists('regenerate_csrf_token')) {
     /**
      * Force regenerate CSRF token
-     * 
+     *
      * Berguna setelah sensitive operations (login, password change, dll)
      * untuk mencegah session fixation.
-     * 
+     *
      * @return string New token
-     * 
+     *
      * @example
      * // Setelah login success
      * session_regenerate_id(true);

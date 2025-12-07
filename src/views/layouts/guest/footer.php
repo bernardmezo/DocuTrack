@@ -91,14 +91,14 @@
         // Include Popup Login & Register
         $popup_login_path = '../src/views/partials/popup_login.php';
         $popup_register_path = '../src/views/partials/popup_register.php';
-        
-        if (file_exists($popup_login_path)) {
-            include $popup_login_path;
-        }
-        
-        if (file_exists($popup_register_path)) {
-            include $popup_register_path;
-        }
+
+    if (file_exists($popup_login_path)) {
+        include $popup_login_path;
+    }
+
+    if (file_exists($popup_register_path)) {
+        include $popup_register_path;
+    }
     ?>
 
     <script>

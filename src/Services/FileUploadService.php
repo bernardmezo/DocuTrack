@@ -1,21 +1,23 @@
 <?php
+
 namespace App\Services;
 
 use App\Exceptions\UploadException;
 use Exception;
 
-class FileUploadService {
-    
+class FileUploadService
+{
     private $uploadBasePath;
-    
+
     private $allowedMimes = [
         'image' => ['image/jpeg', 'image/png', 'image/gif'],
         'document' => ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
     ];
-    
+
     private $maxFileSize = 5 * 1024 * 1024; // 5 MB
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->uploadBasePath = DOCUTRACK_ROOT . '/public/uploads';
         if (!is_dir($this->uploadBasePath)) {
             mkdir($this->uploadBasePath, 0777, true);
@@ -28,7 +30,8 @@ class FileUploadService {
      * @return string The public path to the uploaded file.
      * @throws UploadException
      */
-    public function uploadProfileImage(array $file): string {
+    public function uploadProfileImage(array $file): string
+    {
         return $this->handleUpload($file, 'profiles', 'image', 2 * 1024 * 1024); // 2MB limit for profiles
     }
 
@@ -38,11 +41,12 @@ class FileUploadService {
      * @return string The public URL path for CSS.
      * @throws UploadException
      */
-    public function uploadHeaderBackground(array $file): string {
+    public function uploadHeaderBackground(array $file): string
+    {
         $publicPath = $this->handleUpload($file, 'profiles', 'image', 2 * 1024 * 1024);
         return "url('$publicPath')";
     }
-    
+
     /**
      * Handles LPJ document uploads.
      * @param array $file The file array from $_FILES.
@@ -50,18 +54,20 @@ class FileUploadService {
      * @return string The filename of the uploaded file.
      * @throws UploadException
      */
-    public function uploadLpjDocument(array $file, int $itemId): string {
+    public function uploadLpjDocument(array $file, int $itemId): string
+    {
         $relativePath = $this->handleUpload($file, 'lpj', 'image', 5 * 1024 * 1024, "bukti_lpj_{$itemId}");
         return basename($relativePath);
     }
-    
+
     /**
      * Handles 'surat pengantar' uploads.
      * @param array $file The file array from $_FILES.
      * @return string The filename of the uploaded file.
      * @throws UploadException
      */
-    public function uploadSuratPengantar(array $file): string {
+    public function uploadSuratPengantar(array $file): string
+    {
         $relativePath = $this->handleUpload($file, 'surat', 'document', 2 * 1024 * 1024, "surat_pengantar");
         return basename($relativePath);
     }
@@ -69,7 +75,8 @@ class FileUploadService {
     /**
      * Core upload handling logic.
      */
-    private function handleUpload(array $file, string $category, string $fileType, int $maxSize, string $fileNamePrefix = ''): string {
+    private function handleUpload(array $file, string $category, string $fileType, int $maxSize, string $fileNamePrefix = ''): string
+    {
         $this->validateFile($file, $this->allowedMimes[$fileType] ?? [], $maxSize);
 
         $uploadDir = $this->uploadBasePath . '/' . $category;
@@ -91,7 +98,8 @@ class FileUploadService {
     /**
      * Validates a file.
      */
-    private function validateFile(array $file, array $allowedMimes, int $maxSize): void {
+    private function validateFile(array $file, array $allowedMimes, int $maxSize): void
+    {
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new UploadException('Error unggah file (kode: ' . $file['error'] . ')');
         }

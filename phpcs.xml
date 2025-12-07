@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<ruleset name="DocuTrackStandard">
+    <description>DocuTrack custom coding standard based on PSR12.</description>
+
+    <!-- Use the PSR12 standard -->
+    <rule ref="PSR12"/>
+
+    <!-- Set a specific tab width for the Fuzzy indent check -->
+    <arg name="tab-width" value="4"/>
+
+    <!-- Show progression -->
+    <arg value="p"/>
+
+    <!-- Show warnings -->
+    <arg value="w"/>
+
+    <!-- Set the minimum PHP version -->
+    <config name="php_version" value="70400"/>
+
+    <!-- Exclude vendor directory -->
+    <exclude-pattern>./vendor/*</exclude-pattern>
+    <!-- Exclude node_modules directory -->
+    <exclude-pattern>./node_modules/*</exclude-pattern>
+    <!-- Exclude logs directory -->
+    <exclude-pattern>./logs/*</exclude-pattern>
+    <!-- Exclude public/assets/js/superadmin (generated/third-party JS) -->
+    <exclude-pattern>./public/assets/js/superadmin/*</exclude-pattern>
+    <!-- Exclude public/assets/css/superadmin (generated/third-party CSS) -->
+    <exclude-pattern>./public/assets/css/superadmin/*</exclude-pattern>
+    <!-- Exclude public/assets/css/output.css (compiled CSS) -->
+    <exclude-pattern>./public/assets/css/output.css</exclude-pattern>
+    <!-- Exclude .git and .vscode directories -->
+    <exclude-pattern>./.git/*</exclude-pattern>
+    <exclude-pattern>./.vscode/*</exclude-pattern>
+    <!-- Exclude tools directory -->
+    <exclude-pattern>./tools/*</exclude-pattern>
+
+    <!-- Define default file extensions to check -->
+    <file extensions="php"/>
+
+    <!-- Sniffs you might want to adjust or add later -->
+    <!-- <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="150"/>
+        </properties>
+    </rule> -->
+</ruleset>
