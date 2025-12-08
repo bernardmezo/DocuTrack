@@ -191,7 +191,7 @@ class PencairanService
             mysqli_stmt_close($stmtHist);
 
             mysqli_commit($this->db);
-            
+
             // --- NOTIFICATION TRIGGER ---
             try {
                 $kegiatan = $this->bendaharaModel->getDetailPencairan($kegiatanId);
@@ -200,7 +200,7 @@ class PencairanService
                     if ($metode === 'bertahap') {
                          $pesan .= " (Metode Bertahap)";
                     }
-                    
+
                     $this->logStatusService->createNotification(
                         (int) $kegiatan['userId'],
                         'PENCAIRAN',

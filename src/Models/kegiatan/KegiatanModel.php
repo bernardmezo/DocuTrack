@@ -304,7 +304,7 @@ class KegiatanModel
      */
     public function deleteKegiatan($kegiatan_id)
     {
-        $query = "DELETE FROM tbl_kegiatan WHERE kegiatan_id = ?";
+        $query = "DELETE FROM tbl_kegiatan WHERE kegiatanId = ?";
         $stmt = mysqli_prepare($this->db, $query);
 
         if ($stmt === false) {

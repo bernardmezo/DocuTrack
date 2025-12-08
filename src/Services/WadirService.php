@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\WadirModel;
+use App\Services\WorkflowService;
 use App\Services\LogStatusService;
 use Exception;
 use Throwable;
@@ -11,11 +12,13 @@ class WadirService
 {
     private $model;
     private $logStatusService;
+    private WorkflowService $workflowService;
 
     public function __construct($db)
     {
         $this->model = new WadirModel($db);
         $this->logStatusService = new LogStatusService($db);
+        $this->workflowService = new WorkflowService($db);
     }
 
     // Explicit proxy methods to resolve "Method not found" errors
@@ -37,6 +40,26 @@ class WadirService
     public function getRiwayat()
     {
         return $this->model->getRiwayat();
+    }
+
+    public function getDetailKegiatan($kegiatanId)
+    {
+        return $this->model->getDetailKegiatan($kegiatanId);
+    }
+
+    public function getIndikatorByKAK($kakId)
+    {
+        return $this->model->getIndikatorByKAK($kakId);
+    }
+
+    public function getTahapanByKAK($kakId)
+    {
+        return $this->model->getTahapanByKAK($kakId);
+    }
+
+    public function getRABByKAK($kakId)
+    {
+        return $this->model->getRABByKAK($kakId);
     }
 
     /**

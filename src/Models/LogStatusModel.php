@@ -2,10 +2,46 @@
 
 namespace App\Models;
 
-use App\Core\Model;
+use Exception;
+use mysqli;
 
-class LogStatusModel extends Model
+class LogStatusModel
 {
+    private $db;
+
+    public function __construct($db)
+    {
+        $this->db = $db;
+    }
+
+    private function executeQuery($sql, $params = [])
+    {
+        $stmt = $this->db->prepare($sql);
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $this->db->error);
+        }
+
+        if (!empty($params)) {
+            $types = "";
+            foreach ($params as $param) {
+                if (is_int($param)) {
+                    $types .= "i";
+                } elseif (is_float($param)) {
+                    $types .= "d";
+                } else {
+                    $types .= "s";
+                }
+            }
+            $stmt->bind_param($types, ...$params);
+        }
+
+        if (!$stmt->execute()) {
+            throw new Exception("Execute failed: " . $stmt->error);
+        }
+
+        return $stmt;
+    }
+
     /**
      * Get unread notifications for a user.
      * @param int $userId
@@ -18,7 +54,9 @@ class LogStatusModel extends Model
                 WHERE user_id = ? AND tipe_log LIKE 'NOTIFIKASI_%'
                 ORDER BY created_at DESC
                 LIMIT ?";
-        return $this->db->fetchAll($sql, [$userId, $limit]);
+        $stmt = $this->executeQuery($sql, [$userId, $limit]);
+        $result = $stmt->get_result();
+        return $result->fetch_all(MYSQLI_ASSOC);
     }
 
     /**
@@ -30,8 +68,10 @@ class LogStatusModel extends Model
     {
         $sql = "SELECT COUNT(id) as count FROM tbl_log_status 
                 WHERE user_id = ? AND tipe_log LIKE 'NOTIFIKASI_%' AND status = 'BELUM_DIBACA'";
-        $result = $this->db->fetch($sql, [$userId]);
-        return $result['count'] ?? 0;
+        $stmt = $this->executeQuery($sql, [$userId]);
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        return $row['count'] ?? 0;
     }
 
     /**
@@ -41,7 +81,12 @@ class LogStatusModel extends Model
      */
     public function create(array $data)
     {
-        return $this->db->insert('tbl_log_status', $data);
+        $columns = implode(", ", array_keys($data));
+        $placeholders = implode(", ", array_fill(0, count($data), "?"));
+        $sql = "INSERT INTO tbl_log_status ($columns) VALUES ($placeholders)";
+
+        $stmt = $this->executeQuery($sql, array_values($data));
+        return $this->db->insert_id;
     }
 
     /**
@@ -52,9 +97,9 @@ class LogStatusModel extends Model
      */
     public function markAsRead(int $logId, int $userId): bool
     {
-        $data = ['status' => 'DIBACA'];
-        $where = ['id' => $logId, 'user_id' => $userId]; // Ensure user can only mark their own
-        return $this->db->update('tbl_log_status', $data, $where);
+        $sql = "UPDATE tbl_log_status SET status = 'DIBACA' WHERE id = ? AND user_id = ?";
+        $this->executeQuery($sql, [$logId, $userId]);
+        return $this->db->affected_rows > 0;
     }
 
     /**
@@ -64,9 +109,9 @@ class LogStatusModel extends Model
      */
     public function markAllAsRead(int $userId): bool
     {
-        $data = ['status' => 'DIBACA'];
-        $where = ['user_id' => $userId, 'status' => 'BELUM_DIBACA'];
-        return $this->db->update('tbl_log_status', $data, $where);
+        $sql = "UPDATE tbl_log_status SET status = 'DIBACA' WHERE user_id = ? AND status = 'BELUM_DIBACA'";
+        $this->executeQuery($sql, [$userId]);
+        return true;
     }
 
     /**
@@ -77,7 +122,9 @@ class LogStatusModel extends Model
     public function getUserInfo(int $userId)
     {
         $sql = "SELECT nama, email FROM tbl_user WHERE userId = ?";
-        return $this->db->fetch($sql, [$userId]);
+        $stmt = $this->executeQuery($sql, [$userId]);
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
     }
 
     /**
@@ -88,6 +135,8 @@ class LogStatusModel extends Model
     public function getKegiatanInfo(int $kegiatanId)
     {
         $sql = "SELECT namaKegiatan, pemilikKegiatan, createdAt FROM tbl_kegiatan WHERE kegiatanId = ?";
-        return $this->db->fetch($sql, [$kegiatanId]);
+        $stmt = $this->executeQuery($sql, [$kegiatanId]);
+        $result = $stmt->get_result();
+        return $result->fetch_assoc();
     }
 }

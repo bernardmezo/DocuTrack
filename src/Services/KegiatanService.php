@@ -4,11 +4,12 @@ namespace App\Services;
 
 use App\Models\Kegiatan\KegiatanModel;
 use App\Models\Kak\KakModel;
-use App\Models\Rab\RabModel;
+use App\Models\Rab\RabItemModel; // Changed from RabModel
+use App\Models\KategoriRabModel; // Added
 use App\Exceptions\ValidationException;
 use App\Exceptions\BusinessLogicException;
 use App\Core\ViewCache;
-use DateTimeImmutable; // Diperlukan untuk validasi tanggal
+use DateTimeImmutable;
 use Exception;
 
 /**
@@ -39,9 +40,14 @@ class KegiatanService
     private $kakModel;
 
     /**
-     * @var RabModel
+     * @var RabItemModel // Changed from RabModel
      */
-    private $rabModel;
+    private $rabItemModel; // Changed from rabModel
+
+    /**
+     * @var KategoriRabModel // Added
+     */
+    private $kategoriRabModel; // Added
 
     /**
      * @var ValidationService
@@ -63,7 +69,8 @@ class KegiatanService
         $this->db = $db;
         $this->kegiatanModel = new KegiatanModel($db);
         $this->kakModel = new KakModel($db);
-        $this->rabModel = new RabModel($db);
+        $this->rabItemModel = new RabItemModel($db); // Changed from RabModel
+        $this->kategoriRabModel = new KategoriRabModel($db); // Added
         $this->validationService = new ValidationService();
         $this->fileUploadService = new FileUploadService();
     }
@@ -77,7 +84,7 @@ class KegiatanService
     public function getDashboardStats()
     {
         // Status 5 = Dana Diberikan (Disetujui & Cair)
-        $query = "SELECT 
+        $query = "SELECT
                     COUNT(*) as total,
                     SUM(CASE WHEN statusUtamaId = 5 THEN 1 ELSE 0 END) as disetujui,
                     SUM(CASE WHEN statusUtamaId = 4 THEN 1 ELSE 0 END) as ditolak,
@@ -96,17 +103,28 @@ class KegiatanService
      */
     public function getKegiatanByStatus($posisiId, $statusUtamaId)
     {
-        $query = "SELECT 
-                    k.*, 
+        $query = "SELECT
+                    k.*,
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as nama_mahasiswa,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.createdAt as tanggal_pengajuan,
+                    k.posisiId as posisi,
                     kak.kakId,
                     kak.gambaranUmum,
                     kak.penerimaManfaat,
                     kak.metodePelaksanaan,
-                    s.namaStatusUsulan as status_text
+                    s.namaStatusUsulan as status_text,
+                    s.namaStatusUsulan as status
                   FROM tbl_kegiatan k
                   JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                  WHERE k.posisiId = ? AND k.statusUtamaId = ?";
+                  WHERE k.posisiId = ? AND k.statusUtamaId = ?
+                  ORDER BY k.createdAt DESC";
 
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "ii", $posisiId, $statusUtamaId);
@@ -141,8 +159,8 @@ class KegiatanService
      */
     public function getDetailKegiatan($kegiatanId)
     {
-        $query = "SELECT 
-                    k.*, 
+        $query = "SELECT
+                    k.*,
                     kak.*,
                     k.tanggalMulai as tanggal_mulai,
                     k.tanggalSelesai as tanggal_selesai,
@@ -154,7 +172,7 @@ class KegiatanService
                     k.pemilikKegiatan as nama_pelaksana,
                     s.namaStatusUsulan as status_text
                   FROM tbl_kegiatan k
-                  JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                  LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   LEFT JOIN tbl_user u ON u.userId = k.userId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                   WHERE k.kegiatanId = ?
@@ -212,7 +230,7 @@ class KegiatanService
             }
 
             // 4. Fetch RAB
-            $kegiatanData['rab_data'] = $this->rabModel->getRabByKegiatanId($kegiatanId);
+            $kegiatanData['rab_data'] = $this->rabItemModel->getRabByKegiatanId($kegiatanId); // Changed
         } else {
             $kegiatanData['indikator_list'] = [];
             $kegiatanData['tahapan_list'] = [];
@@ -367,11 +385,11 @@ class KegiatanService
         $statusMenunggu = 1;
 
         if ($fileSurat) {
-            $query = "UPDATE tbl_kegiatan SET 
-                        namaPJ = ?, 
-                        nip = ?, 
-                        tanggalMulai = ?, 
-                        tanggalSelesai = ?, 
+            $query = "UPDATE tbl_kegiatan SET
+                        namaPJ = ?,
+                        nip = ?,
+                        tanggalMulai = ?,
+                        tanggalSelesai = ?,
                         suratPengantar = ?,
                         posisiId = ?,
                         statusUtamaId = ?
@@ -391,10 +409,10 @@ class KegiatanService
                 $kegiatanId
             );
         } else {
-            $query = "UPDATE tbl_kegiatan SET 
-                        namaPJ = ?, 
-                        nip = ?, 
-                        tanggalMulai = ?, 
+            $query = "UPDATE tbl_kegiatan SET
+                        namaPJ = ?,
+                        nip = ?,
+                        tanggalMulai = ?,
                         tanggalSelesai = ?,
                         posisiId = ?,
                         statusUtamaId = ?
@@ -485,7 +503,7 @@ class KegiatanService
         $wadir_tujuan  = $data['wadir_tujuan'] ?? null;
         $posisi_awal   = 2;
 
-        $query = "INSERT INTO tbl_kegiatan 
+        $query = "INSERT INTO tbl_kegiatan
             (namaKegiatan, prodiPenyelenggara, pemilikKegiatan, nimPelaksana, userId, jurusanPenyelenggara, statusUtamaId, createdAt, wadirTujuan, posisiId)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -530,10 +548,9 @@ class KegiatanService
         $metode        = $data['metode_pelaksanaan'] ?? '';
         $tgl_only      = date('Y-m-d');
 
-        $query = "INSERT INTO tbl_kak 
-            (kegiatanId, iku, gambaranUmum, penerimaMaanfaat, metodePelaksanaan, tglPembuatan)
-            VALUES (?, ?, ?, ?, ?, ?)";
-
+                    $queryKAK = "INSERT INTO tbl_kak
+                        (kegiatanId, iku, gambaranUmum, penerimaManfaat, metodePelaksanaan, tglPembuatan)
+                        VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param(
             $stmt,
@@ -609,11 +626,12 @@ class KegiatanService
      * Insert RAB with categories
      *
      * @param int $kakId
-     * @param string $rabJson JSON string of RAB data
+     * @param string|array $rabData JSON string or decoded array of RAB data
+     * @throws Exception If database operation fails.
      */
-    private function insertRAB($kakId, $rabJson)
+    private function insertRAB(int $kakId, $rabData): void
     {
-        $budgetData = is_string($rabJson) ? json_decode($rabJson, true) : $rabJson;
+        $budgetData = is_string($rabData) ? json_decode($rabData, true) : $rabData;
 
         if (empty($budgetData) || !is_array($budgetData)) {
             return;
@@ -624,90 +642,35 @@ class KegiatanService
                 continue;
             }
 
-            // Get or create category
-            $kategoriId = $this->getOrCreateKategori($namaKategori);
+            // Get or create category using the dedicated model
+            $kategoriId = $this->kategoriRabModel->getOrCreateKategori($namaKategori);
 
-            // Insert items
-            $this->insertRABItems($kakId, $kategoriId, $items);
-        }
-    }
+            // Insert items using the dedicated item model
+            foreach ($items as $item) {
+                // Ensure all required fields exist or set defaults
+                $uraian     = $item['uraian'] ?? '';
+                $rincian    = $item['rincian'] ?? '';
+                $vol1       = floatval($item['vol1'] ?? 0);
+                $vol2       = floatval($item['vol2'] ?? 1);
+                $sat1       = $item['sat1'] ?? '';
+                $sat2       = $item['sat2'] ?? '';
+                $harga      = floatval($item['harga'] ?? 0);
+                $totalHarga = ($vol1 * $vol2) * $harga;
 
-    /**
-     * Get existing kategori or create new one
-     *
-     * @param string $namaKategori
-     * @return int Kategori ID
-     */
-    private function getOrCreateKategori($namaKategori)
-    {
-        // Check existing
-        $checkQuery = "SELECT kategoriRabId FROM tbl_kategori_rab WHERE namaKategori = ? LIMIT 1";
-        $stmt = mysqli_prepare($this->db, $checkQuery);
-        mysqli_stmt_bind_param($stmt, "s", $namaKategori);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        if ($row = mysqli_fetch_assoc($result)) {
-            mysqli_stmt_close($stmt);
-            return $row['kategoriRabId'];
-        }
-        mysqli_stmt_close($stmt);
-
-        // Create new
-        $insertQuery = "INSERT INTO tbl_kategori_rab (namaKategori) VALUES (?)";
-        $stmt = mysqli_prepare($this->db, $insertQuery);
-        mysqli_stmt_bind_param($stmt, "s", $namaKategori);
-        mysqli_stmt_execute($stmt);
-        $kategoriId = mysqli_insert_id($this->db);
-        mysqli_stmt_close($stmt);
-
-        return $kategoriId;
-    }
-
-    /**
-     * Insert RAB items for a category
-     *
-     * @param int $kakId
-     * @param int $kategoriId
-     * @param array $items
-     */
-    private function insertRABItems($kakId, $kategoriId, $items)
-    {
-        $query = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-        $stmt = mysqli_prepare($this->db, $query);
-
-        foreach ($items as $item) {
-            $uraian  = $item['uraian'] ?? '';
-            $rincian = $item['rincian'] ?? '';
-            $vol1    = floatval($item['vol1'] ?? 0);
-            $vol2    = floatval($item['vol2'] ?? 1);
-            $sat1    = $item['sat1'] ?? '';
-            $sat2    = $item['sat2'] ?? '';
-            $harga   = floatval($item['harga'] ?? 0);
-            $total   = ($vol1 * $vol2) * $harga;
-
-            mysqli_stmt_bind_param(
-                $stmt,
-                "iissssdddd",
-                $kakId,
-                $kategoriId,
-                $uraian,
-                $rincian,
-                $sat1,
-                $sat2,
-                $vol1,
-                $vol2,
-                $harga,
-                $total
-            );
-
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
+                $this->rabItemModel->insertRabItem(
+                    $kakId,
+                    $kategoriId,
+                    $uraian,
+                    $rincian,
+                    $sat1,
+                    $sat2,
+                    $vol1,
+                    $vol2,
+                    $harga,
+                    $totalHarga
+                );
             }
         }
-        mysqli_stmt_close($stmt);
     }
 
     /**
@@ -743,3 +706,4 @@ class KegiatanService
         return true;
     }
 }
+

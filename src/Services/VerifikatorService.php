@@ -7,6 +7,7 @@ use App\Models\kegiatan\KegiatanModel;
 use App\Models\VerifikatorModel;
 use App\Services\LogStatusService;
 use App\Services\ValidationService;
+use App\Services\WorkflowService;
 use Throwable;
 
 class VerifikatorService
@@ -15,17 +16,28 @@ class VerifikatorService
     private LogStatusService $logStatusService;
     private ValidationService $validationService;
     private KegiatanModel $kegiatanModel;
+    private WorkflowService $workflowService;
 
     public function __construct(
-        VerifikatorModel $verifikatorModel,
-        LogStatusService $logStatusService,
-        ValidationService $validationService,
-        KegiatanModel $kegiatanModel
+        $verifikatorModelOrDb,
+        $logStatusService = null,
+        $validationService = null,
+        $kegiatanModel = null
     ) {
-        $this->verifikatorModel = $verifikatorModel;
-        $this->logStatusService = $logStatusService;
-        $this->validationService = $validationService;
-        $this->kegiatanModel = $kegiatanModel;
+        if ($verifikatorModelOrDb instanceof VerifikatorModel) {
+            $this->verifikatorModel = $verifikatorModelOrDb;
+            $this->logStatusService = $logStatusService;
+            $this->validationService = $validationService;
+            $this->kegiatanModel = $kegiatanModel;
+        } else {
+             // Assume $verifikatorModelOrDb is $db
+            $db = $verifikatorModelOrDb;
+            $this->verifikatorModel = new VerifikatorModel($db);
+            $this->logStatusService = new LogStatusService($db);
+            $this->validationService = new ValidationService();
+            $this->kegiatanModel = new KegiatanModel($db);
+            $this->workflowService = new WorkflowService($db);
+        }
     }
 
     public function getDashboardStats()
@@ -88,7 +100,7 @@ class VerifikatorService
                     $this->logStatusService->createNotification(
                         (int) $kegiatan['userId'],
                         'APPROVAL',
-                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda telah disetujui oleh Verifikator.",
+                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda telah disetujui oleh Verifikator. Silakan lengkapi rincian kegiatan di menu Pengajuan Kegiatan.",
                         $kegiatanId
                     );
                 }

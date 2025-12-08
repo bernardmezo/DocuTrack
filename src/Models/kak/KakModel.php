@@ -48,7 +48,7 @@ class KakModel
     public function insertKAK($kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null)
     {
         $stmt = mysqli_prepare($this->db, "
-            INSERT INTO tbl_kak (kegiatan_id, gambaran_umum, penerima_manfaat, metode_pelaksanaan, indikator_kerja_utama_renstra)
+            INSERT INTO tbl_kak (kegiatan_id, gambaran_umum, penerimaManfaat, metode_pelaksanaan, indikator_kerja_utama_renstra)
             VALUES (?, ?, ?, ?, ?)
         ");
         if ($stmt === false) {
@@ -84,7 +84,7 @@ class KakModel
         $stmt = mysqli_prepare($this->db, "
             UPDATE tbl_kak SET 
                 gambaran_umum = ?, 
-                penerima_manfaat = ?, 
+                penerimaManfaat = ?, 
                 metode_pelaksanaan = ?, 
                 indikator_kerja_utama_renstra = ?
             WHERE kak_id = ?
@@ -116,23 +116,23 @@ class KakModel
     {
         $query = "
             SELECT 
-                k.kak_id, 
-                k.kegiatan_id, 
-                k.gambaran_umum, 
-                k.penerima_manfaat, 
-                k.metode_pelaksanaan, 
-                k.indikator_kerja_utama_renstra,
-                i.indikator_id,
+                k.kakId, 
+                k.kegiatanId, 
+                k.gambaranUmum, 
+                k.penerimaManfaat, 
+                k.metodePelaksanaan, 
+                k.iku,
+                i.indikatorId,
                 i.bulan,
-                i.indikator_keberhasilan,
-                i.target_persen,
-                t.tahapan_id,
-                t.nama_tahapan
+                i.indikatorKeberhasilan,
+                i.targetPersen,
+                t.tahapanId,
+                t.namaTahapan
             FROM tbl_kak k
-            LEFT JOIN tbl_kak_indikator i ON k.kak_id = i.kak_id
-            LEFT JOIN tbl_kak_tahapan_pelaksanaan t ON k.kak_id = t.kak_id
-            WHERE k.kak_id = ?
-            ORDER BY k.kak_id ASC
+            LEFT JOIN tbl_indikator_kak i ON k.kakId = i.kakId
+            LEFT JOIN tbl_tahapan_pelaksanaan t ON k.kakId = t.kakId
+            WHERE k.kakId = ?
+            ORDER BY k.kakId ASC
         ";
 
         $stmt = mysqli_prepare($this->db, $query);
@@ -155,35 +155,35 @@ class KakModel
         while ($row = mysqli_fetch_assoc($result)) {
             if ($kakData === null) {
                 $kakData = [
-                    'kak_id' => $row['kak_id'],
-                    'kegiatan_id' => $row['kegiatan_id'],
-                    'gambaran_umum' => $row['gambaran_umum'],
-                    'penerima_manfaat' => $row['penerima_manfaat'],
-                    'metode_pelaksanaan' => $row['metode_pelaksanaan'],
-                    'indikator_kerja_utama_renstra' => $row['indikator_kerja_utama_renstra'],
+                    'kakId' => $row['kakId'],
+                    'kegiatanId' => $row['kegiatanId'],
+                    'gambaranUmum' => $row['gambaranUmum'],
+                    'penerimaManfaat' => $row['penerimaManfaat'],
+                    'metodePelaksanaan' => $row['metodePelaksanaan'],
+                    'iku' => $row['iku'],
                     'indikator_list' => [],
                     'tahapan_list' => []
                 ];
             }
 
-            if (!empty($row['indikator_id'])) {
-                $indikator_exists = array_column($kakData['indikator_list'], 'indikator_id');
-                if (!in_array($row['indikator_id'], $indikator_exists)) {
+            if (!empty($row['indikatorId'])) {
+                $indikator_exists = array_column($kakData['indikator_list'], 'indikatorId');
+                if (!in_array($row['indikatorId'], $indikator_exists)) {
                     $kakData['indikator_list'][] = [
-                        'indikator_id' => $row['indikator_id'],
+                        'indikatorId' => $row['indikatorId'],
                         'bulan' => $row['bulan'],
-                        'indikator_keberhasilan' => $row['indikator_keberhasilan'],
-                        'target_persen' => $row['target_persen']
+                        'indikatorKeberhasilan' => $row['indikatorKeberhasilan'],
+                        'targetPersen' => $row['targetPersen']
                     ];
                 }
             }
 
-            if (!empty($row['tahapan_id'])) {
-                $tahapan_exists = array_column($kakData['tahapan_list'], 'tahapan_id');
-                if (!in_array($row['tahapan_id'], $tahapan_exists)) {
+            if (!empty($row['tahapanId'])) {
+                $tahapan_exists = array_column($kakData['tahapan_list'], 'tahapanId');
+                if (!in_array($row['tahapanId'], $tahapan_exists)) {
                     $kakData['tahapan_list'][] = [
-                        'tahapan_id' => $row['tahapan_id'],
-                        'nama_tahapan' => $row['nama_tahapan']
+                        'tahapanId' => $row['tahapanId'],
+                        'namaTahapan' => $row['namaTahapan']
                     ];
                 }
             }
@@ -204,22 +204,22 @@ class KakModel
     {
         $query = "
             SELECT 
-                k.kak_id, 
-                k.kegiatan_id, 
-                k.gambaran_umum, 
-                k.penerima_manfaat, 
-                k.metode_pelaksanaan, 
-                k.indikator_kerja_utama_renstra,
-                i.indikator_id,
+                k.kakId, 
+                k.kegiatanId, 
+                k.gambaranUmum, 
+                k.penerimaManfaat, 
+                k.metodePelaksanaan, 
+                k.iku,
+                i.indikatorId,
                 i.bulan,
-                i.indikator_keberhasilan,
-                i.target_persen,
-                t.tahapan_id,
-                t.nama_tahapan
+                i.indikatorKeberhasilan,
+                i.targetPersen,
+                t.tahapanId,
+                t.namaTahapan
             FROM tbl_kak k
-            LEFT JOIN tbl_kak_indikator i ON k.kak_id = i.kak_id
-            LEFT JOIN tbl_kak_tahapan_pelaksanaan t ON k.kak_id = t.kak_id
-            ORDER BY k.kak_id ASC
+            LEFT JOIN tbl_indikator_kak i ON k.kakId = i.kakId
+            LEFT JOIN tbl_tahapan_pelaksanaan t ON k.kakId = t.kakId
+            ORDER BY k.kakId ASC
         ";
 
         $result = mysqli_query($this->db, $query);
@@ -237,7 +237,7 @@ class KakModel
                     'kak_id' => $row['kak_id'],
                     'kegiatan_id' => $row['kegiatan_id'],
                     'gambaran_umum' => $row['gambaran_umum'],
-                    'penerima_manfaat' => $row['penerima_manfaat'],
+                    'penerimaManfaat' => $row['penerimaManfaat'],
                     'metode_pelaksanaan' => $row['metode_pelaksanaan'],
                     'indikator_kerja_utama_renstra' => $row['indikator_kerja_utama_renstra'],
                     'indikator_list' => [],
@@ -283,7 +283,7 @@ class KakModel
 
         try {
             // 1. Prepare & Execute Delete Stages
-            $stmt1 = mysqli_prepare($this->db, "DELETE FROM tbl_kak_tahapan_pelaksanaan WHERE kak_id = ?");
+            $stmt1 = mysqli_prepare($this->db, "DELETE FROM tbl_tahapan_pelaksanaan WHERE kakId = ?");
             if ($stmt1 === false) {
                 throw new Exception("KakModel::deleteKAK - Prepare tahapan failed: " . mysqli_error($this->db));
             }
@@ -294,7 +294,7 @@ class KakModel
             mysqli_stmt_close($stmt1);
 
             // 2. Prepare & Execute Delete Indicators
-            $stmt2 = mysqli_prepare($this->db, "DELETE FROM tbl_kak_indikator WHERE kak_id = ?");
+            $stmt2 = mysqli_prepare($this->db, "DELETE FROM tbl_indikator_kak WHERE kakId = ?");
             if ($stmt2 === false) {
                 throw new Exception("KakModel::deleteKAK - Prepare indikator failed: " . mysqli_error($this->db));
             }
@@ -305,7 +305,7 @@ class KakModel
             mysqli_stmt_close($stmt2);
 
             // 3. Prepare & Execute Delete Main KAK
-            $stmt3 = mysqli_prepare($this->db, "DELETE FROM tbl_kak WHERE kak_id = ?");
+            $stmt3 = mysqli_prepare($this->db, "DELETE FROM tbl_kak WHERE kakId = ?");
             if ($stmt3 === false) {
                 throw new Exception("KakModel::deleteKAK - Prepare main KAK failed: " . mysqli_error($this->db));
             }
@@ -329,7 +329,7 @@ class KakModel
     // ==== STAGE METHODS ====
 
     /**
-     * Insert multiple stages into tbl_kak_tahapan_pelaksanaan.
+     * Insert multiple stages into tbl_tahapan_pelaksanaan.
      *
      * @param int $kakId
      * @param array $tahapanList
@@ -338,7 +338,7 @@ class KakModel
     public function insertTahapanPelaksanaan($kakId, $tahapanList)
     {
         $stmt = mysqli_prepare($this->db, "
-            INSERT INTO tbl_kak_tahapan_pelaksanaan (kak_id, nama_tahapan)
+            INSERT INTO tbl_tahapan_pelaksanaan (kakId, namaTahapan)
             VALUES (?, ?)
         ");
         if ($stmt === false) {

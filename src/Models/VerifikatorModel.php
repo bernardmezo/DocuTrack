@@ -442,7 +442,7 @@ class VerifikatorModel
 
         $connection = $this->db;
         $currentPosisi = 2; // Verifikator
-        $nextPosisi = 3;    // Wadir (PENTING: Diteruskan ke Wadir)
+        $nextPosisi = 1;    // Admin/Pengusul (DIKEMBALIKAN: untuk input rincian kegiatan)
         $nextStatus = 3;    // Disetujui Verifikator - Menunggu Rincian
 
         $userId = isset($_SESSION['user_id']) && is_numeric($_SESSION['user_id'])

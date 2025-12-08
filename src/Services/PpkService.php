@@ -6,6 +6,7 @@ use App\Models\kegiatan\KegiatanModel;
 use App\Models\PpkModel;
 use App\Services\LogStatusService;
 use App\Services\ValidationService;
+use App\Services\WorkflowService;
 use Exception;
 use Throwable;
 
@@ -15,17 +16,32 @@ class PpkService
     private LogStatusService $logStatusService;
     private ValidationService $validationService;
     private KegiatanModel $kegiatanModel;
+    private WorkflowService $workflowService;
 
     public function __construct(
-        PpkModel $ppkModel,
-        LogStatusService $logStatusService,
-        ValidationService $validationService,
-        KegiatanModel $kegiatanModel
+        $ppkModelOrDb,
+        $logStatusService = null,
+        $validationService = null,
+        $kegiatanModel = null
     ) {
-        $this->ppkModel = $ppkModel;
-        $this->logStatusService = $logStatusService;
-        $this->validationService = $validationService;
-        $this->kegiatanModel = $kegiatanModel;
+        if ($ppkModelOrDb instanceof PpkModel) {
+            $this->ppkModel = $ppkModelOrDb;
+            $this->logStatusService = $logStatusService;
+            $this->validationService = $validationService;
+            $this->kegiatanModel = $kegiatanModel;
+            
+            // Get database from model for WorkflowService
+            $db = $this->ppkModel->db ?? db();
+            $this->workflowService = new WorkflowService($db);
+        } else {
+             // Assume $ppkModelOrDb is $db
+            $db = $ppkModelOrDb;
+            $this->ppkModel = new PpkModel($db);
+            $this->logStatusService = new LogStatusService($db);
+            $this->validationService = new ValidationService();
+            $this->kegiatanModel = new KegiatanModel($db);
+            $this->workflowService = new WorkflowService($db);
+        }
     }
 
     public function getDashboardStats()

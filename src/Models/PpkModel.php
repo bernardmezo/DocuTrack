@@ -192,12 +192,12 @@ class PpkModel
     }
 
     /**
-     * Menyetujui usulan dan meneruskan ke Bendahara (PRIVATE METHOD).
+     * Menyetujui usulan dan meneruskan ke Wadir (PRIVATE METHOD).
      * Logika bisnis dan notifikasi akan ditangani oleh PpkService.
      */
     public function approveUsulan(int $kegiatanId, string $rekomendasi = ''): bool
     {
-        $nextPosisi = 5;  // BENDAHARA
+        $nextPosisi = 3;  // WADIR (setelah PPK, harus ke Wadir dulu sebelum Bendahara)
         $currentPosisi = 4; // PPK
         $statusProses = 3; // Disetujui (oleh PPK)
         $userId = $_SESSION['user_id'] ?? null;

@@ -228,14 +228,23 @@ class AdminModel
                     k.kegiatanId,
                     kak.kakId,
                     CASE 
-                        WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
-                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                        -- Priority 1: Cek apakah sudah approved (harus setelah submitted)
+                        WHEN l.approvedAt IS NOT NULL AND l.submittedAt IS NOT NULL THEN 'Setuju'
+                        -- Priority 2: Cek apakah sudah submitted (menunggu approval)
+                        WHEN l.submittedAt IS NOT NULL AND l.approvedAt IS NULL THEN 'Menunggu'
+                        -- Priority 3: Jika ada item dengan bukti kosong (belum upload semua)
                         WHEN EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
                             AND (li.fileBukti IS NULL OR li.fileBukti = '')
                         ) THEN 'Menunggu_Upload'
-                        ELSE 'Siap_Submit'
+                        -- Priority 4: Semua bukti sudah ada, siap submit
+                        WHEN EXISTS (
+                            SELECT 1 FROM tbl_lpj_item li 
+                            WHERE li.lpjId = l.lpjId
+                        ) THEN 'Siap_Submit'
+                        -- Priority 5: Belum ada item sama sekali (LPJ baru dibuat)
+                        ELSE 'Belum_Ada_Item'
                     END as status
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
@@ -251,30 +260,63 @@ class AdminModel
     }
 
     /**
-     * Mengambil item RAB untuk LPJ.
+     * Mengambil item RAB untuk LPJ dengan data bukti yang sudah diupload.
+     * JOIN dengan tbl_lpj_item untuk mendapatkan fileBukti dan komentar.
+     * 
+     * @param int $kakId ID KAK
+     * @param int|null $lpjId ID LPJ (optional, untuk join dengan lpj_item)
      */
-    public function getRABForLPJ($kakId)
+    public function getRABForLPJ($kakId, $lpjId = null)
     {
-        $query = "SELECT 
-                    r.rabItemId as id,
-                    r.uraian,
-                    r.rincian,
-                    r.vol1,
-                    r.sat1,
-                    r.vol2,
-                    r.sat2,
-                    r.harga as harga_satuan,
-                    r.totalHarga as harga_plan,
-                    NULL as bukti_file,
-                    NULL as komentar,
-                    cat.namaKategori
-                FROM tbl_rab r
-                JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
-                WHERE r.kakId = ?
-                ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+        if ($lpjId) {
+            // JOIN dengan tbl_lpj_item untuk mendapatkan bukti yang sudah diupload
+            $query = "SELECT 
+                        r.rabItemId as id,
+                        r.uraian,
+                        r.rincian,
+                        r.vol1,
+                        r.sat1,
+                        r.vol2,
+                        r.sat2,
+                        r.harga as harga_satuan,
+                        r.totalHarga as harga_plan,
+                        li.fileBukti as bukti_file,
+                        li.komentar as komentar,
+                        li.lpjItemId as lpj_item_id,
+                        cat.namaKategori
+                    FROM tbl_rab r
+                    JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                    LEFT JOIN tbl_lpj_item li ON r.rabItemId = li.lpjItemId AND li.lpjId = ?
+                    WHERE r.kakId = ?
+                    ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
 
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "i", $kakId);
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "ii", $lpjId, $kakId);
+        } else {
+            // Query original tanpa JOIN lpj_item
+            $query = "SELECT 
+                        r.rabItemId as id,
+                        r.uraian,
+                        r.rincian,
+                        r.vol1,
+                        r.sat1,
+                        r.vol2,
+                        r.sat2,
+                        r.harga as harga_satuan,
+                        r.totalHarga as harga_plan,
+                        NULL as bukti_file,
+                        NULL as komentar,
+                        NULL as lpj_item_id,
+                        cat.namaKategori
+                    FROM tbl_rab r
+                    JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                    WHERE r.kakId = ?
+                    ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "i", $kakId);
+        }
+
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 
@@ -515,7 +557,7 @@ class AdminModel
             $tgl_only      = date('Y-m-d');
 
             $queryKAK = "INSERT INTO tbl_kak 
-                (kegiatanId, iku, gambaranUmum, penerimaMaanfaat, metodePelaksanaan, tglPembuatan)
+                (kegiatanId, iku, gambaranUmum, penerimaManfaat, metodePelaksanaan, tglPembuatan)
                 VALUES (?, ?, ?, ?, ?, ?)";
 
             $stmt = mysqli_prepare($this->db, $queryKAK);

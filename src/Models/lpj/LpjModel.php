@@ -144,29 +144,70 @@ class LpjModel
     }
 
     /**
-     * Memperbarui nama file bukti untuk item LPJ tertentu.
+     * Memperbarui atau membuat file bukti untuk item LPJ tertentu (UPSERT).
+     * 
+     * Jika record belum ada di tbl_lpj_item, akan create record baru dari data RAB.
+     * Jika sudah ada, akan update fileBukti saja.
      *
-     * @param int    $lpjItemId ID dari item LPJ.
-     * @param string $filename  Nama file yang baru.
-     * @return bool True jika berhasil, false jika gagal.
+     * @param int $lpjItemId  ID dari RAB item (rabItemId)
+     * @param string $filename  Nama file yang diupload
+     * @param int|null $lpjId  ID LPJ (optional untuk UPSERT)
+     * @param array $rabData  Data dari RAB untuk create record baru
+     * @return bool True jika berhasil, false jika gagal
      */
-    public function updateFileBukti(int $lpjItemId, string $filename): bool
+    public function updateFileBukti(int $lpjItemId, string $filename, int $lpjId = null, array $rabData = []): bool
     {
-        $query = "UPDATE tbl_lpj_item SET fileBukti = ? WHERE lpjItemId = ?";
-
-        $stmt = mysqli_prepare($this->db, $query);
-        if ($stmt === false) {
-            error_log('LpjModel::updateFileBukti - Prepare failed: ' . mysqli_error($this->db));
-            return false;
+        if ($lpjId) {
+            // Check if record exists
+            $checkQuery = "SELECT lpjItemId FROM tbl_lpj_item WHERE lpjItemId = ? AND lpjId = ?";
+            $checkStmt = mysqli_prepare($this->db, $checkQuery);
+            mysqli_stmt_bind_param($checkStmt, "ii", $lpjItemId, $lpjId);
+            mysqli_stmt_execute($checkStmt);
+            $result = mysqli_stmt_get_result($checkStmt);
+            $exists = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($checkStmt);
+            
+            if ($exists) {
+                // UPDATE existing record
+                $query = "UPDATE tbl_lpj_item SET fileBukti = ? WHERE lpjItemId = ? AND lpjId = ?";
+                $stmt = mysqli_prepare($this->db, $query);
+                if (!$stmt) {
+                    error_log('LpjModel::updateFileBukti - UPDATE Prepare failed: ' . mysqli_error($this->db));
+                    return false;
+                }
+                mysqli_stmt_bind_param($stmt, "sii", $filename, $lpjItemId, $lpjId);
+            } else {
+                // INSERT new record
+                $jenisBelanja = $rabData['kategori'] ?? 'Lainnya';
+                $uraian = $rabData['uraian'] ?? '';
+                $rincian = $rabData['rincian'] ?? '';
+                $totalHarga = $rabData['harga_plan'] ?? 0;
+                
+                $query = "INSERT INTO tbl_lpj_item (lpjItemId, lpjId, jenisBelanja, uraian, rincian, totalHarga, fileBukti, createdAt) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                $stmt = mysqli_prepare($this->db, $query);
+                if (!$stmt) {
+                    error_log('LpjModel::updateFileBukti - INSERT Prepare failed: ' . mysqli_error($this->db));
+                    return false;
+                }
+                mysqli_stmt_bind_param($stmt, "iisssds", $lpjItemId, $lpjId, $jenisBelanja, $uraian, $rincian, $totalHarga, $filename);
+            }
+        } else {
+            // Fallback: Simple UPDATE (backward compatibility)
+            $query = "UPDATE tbl_lpj_item SET fileBukti = ? WHERE lpjItemId = ?";
+            $stmt = mysqli_prepare($this->db, $query);
+            if (!$stmt) {
+                error_log('LpjModel::updateFileBukti - Fallback Prepare failed: ' . mysqli_error($this->db));
+                return false;
+            }
+            mysqli_stmt_bind_param($stmt, "si", $filename, $lpjItemId);
         }
-
-        mysqli_stmt_bind_param($stmt, "si", $filename, $lpjItemId);
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
             return true;
         } else {
-            error_log('LpjModel::updateFileBukti - Execute failed: ' . mysqli_stmt_error($this->db));
+            error_log('LpjModel::updateFileBukti - Execute failed: ' . mysqli_stmt_error($stmt));
             mysqli_stmt_close($stmt);
             return false;
         }

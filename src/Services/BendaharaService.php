@@ -3,15 +3,18 @@
 namespace App\Services;
 
 use App\Models\BendaharaModel;
+use App\Services\WorkflowService;
 use Exception;
 
 class BendaharaService
 {
     private $model;
+    private WorkflowService $workflowService;
 
     public function __construct($db)
     {
         $this->model = new BendaharaModel($db);
+        $this->workflowService = new WorkflowService($db);
     }
 
     public function getDashboardStatistik()

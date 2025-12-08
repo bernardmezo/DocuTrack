@@ -36,7 +36,7 @@ class LogStatusService
         if ($refId) {
             // Asumsi link default ke detail kegiatan, bisa disesuaikan per role nanti jika perlu
             // Namun karena ini notifikasi untuk Pengusul, biasanya ke detail pengajuan mereka
-            $link = "/docutrack/public/pengajuan/detail/" . $refId; 
+            $link = "/docutrack/public/pengajuan/detail/" . $refId;
         }
 
         $judul = "Notifikasi DocuTrack";
@@ -50,7 +50,7 @@ class LogStatusService
             'judul' => $judul,
             'konten_json' => json_encode(['pesan' => $pesan, 'link' => $link])
         ];
-        
+
         // 1. Simpan ke Database
         $created = (bool)$this->logStatusModel->create($data);
 
@@ -75,7 +75,7 @@ class LogStatusService
 
             // Inisialisasi Mailer
             $mailer = new Mailer();
-            
+
             // Persiapkan Data View
             $kegiatan = null;
             if ($kegiatanId) {
@@ -85,7 +85,7 @@ class LogStatusService
             // Tentukan Warna & Label
             $statusColorClass = 'bg-blue';
             $statusLabel = 'INFORMASI';
-            
+
             switch (strtoupper($tipe)) {
                 case 'APPROVAL':
                     $statusColorClass = 'bg-green';
@@ -127,7 +127,6 @@ class LogStatusService
 
             // Kirim
             $mailer->send($user['email'], $subject, 'notification', $emailData);
-
         } catch (Throwable $e) {
             // Jangan biarkan error email menghentikan proses utama
             error_log("Gagal mengirim email notifikasi ke UserID {$userId}: " . $e->getMessage());

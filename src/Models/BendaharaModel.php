@@ -361,14 +361,16 @@ class BendaharaModel
         mysqli_begin_transaction($this->db);
         try {
             // 1. Update Kegiatan
-            // REVISI: Kembalikan posisi ke Admin (1) dengan status (1) agar Admin bisa submit LPJ
+            // Setelah dana dicairkan:
+            // - statusUtamaId = 5 (Dana diberikan)
+            // - posisiId = 1 (Dikembalikan ke Admin/Pengusul untuk submit LPJ)
             $query = "UPDATE tbl_kegiatan 
                       SET tanggalPencairan = ?, 
                           jumlahDicairkan = ?, 
                           metodePencairan = ?, 
                           pencairan_tahap_json = ?, 
                           catatanBendahara = ?,
-                          statusUtamaId = 1,
+                          statusUtamaId = 5,
                           posisiId = 1 
                       WHERE kegiatanId = ?";
 
@@ -559,15 +561,43 @@ class BendaharaModel
 
     /**
      * Approve LPJ
+     * VALIDATION: LPJ harus sudah di-submit (submittedAt IS NOT NULL) sebelum bisa di-approve
      */
     public function approveLPJ($lpjId)
     {
-        $query = "UPDATE tbl_lpj SET approvedAt = NOW() WHERE lpjId = ?";
+        // Validasi: Cek apakah LPJ sudah di-submit
+        $checkQuery = "SELECT submittedAt, statusId FROM tbl_lpj WHERE lpjId = ?";
+        $checkStmt = mysqli_prepare($this->db, $checkQuery);
+        mysqli_stmt_bind_param($checkStmt, "i", $lpjId);
+        mysqli_stmt_execute($checkStmt);
+        $result = mysqli_stmt_get_result($checkStmt);
+        $lpj = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($checkStmt);
+        
+        if (!$lpj) {
+            error_log("approveLPJ Error: LPJ ID {$lpjId} tidak ditemukan");
+            return false;
+        }
+        
+        // Validasi: LPJ harus sudah di-submit terlebih dahulu
+        if (empty($lpj['submittedAt'])) {
+            error_log("approveLPJ Error: LPJ ID {$lpjId} belum diajukan oleh pengusul (submittedAt is NULL)");
+            return false;
+        }
+        
+        // Update: Set approvedAt dan statusId = 3 (Disetujui)
+        $query = "UPDATE tbl_lpj 
+                  SET approvedAt = NOW(), 
+                      statusId = 3 
+                  WHERE lpjId = ? 
+                  AND submittedAt IS NOT NULL";
 
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $lpjId);
-
-        return mysqli_stmt_execute($stmt);
+        $success = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        
+        return $success;
     }
 
     // =========================================================

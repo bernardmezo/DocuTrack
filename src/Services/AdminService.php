@@ -31,9 +31,9 @@ class AdminService
         return $this->adminModel->getDetailLPJ($lpjId);
     }
 
-    public function getRABForLPJ(int $kakId)
+    public function getRABForLPJ(int $kakId, int $lpjId = null)
     {
-        return $this->adminModel->getRABForLPJ($kakId);
+        return $this->adminModel->getRABForLPJ($kakId, $lpjId);
     }
 
     // Metode untuk aksi LPJ yang perlu dipindahkan dari AdminPengajuanLpjController
@@ -51,25 +51,23 @@ class AdminService
 
     public function tolakLpj(int $lpjId, string $komentar): bool
     {
-        // Logika penolakan LPJ
-        // Asumsi LpjModel memiliki metode reject
-        $result = $this->lpjModel->updateLpjStatus($lpjId, 'Rejected'); // Asumsi 'Rejected' adalah status baru
+        // Use specific method in LpjModel that handles status and comment
+        $result = $this->lpjModel->tolakLpj($lpjId, $komentar);
         if (!$result) {
             throw new BusinessLogicException("Gagal menolak LPJ.");
         }
-        // TODO: Simpan komentar penolakan ke database (LpjModel perlu metode ini)
         return $result;
     }
 
     public function submitRevisiLpj(int $lpjId, array $komentarRevisi): bool
     {
-        // Logika submit revisi LPJ
-        // Asumsi LpjModel memiliki metode untuk menyimpan revisi
-        $result = $this->lpjModel->updateLpjStatus($lpjId, 'Revised'); // Asumsi 'Revised' adalah status baru
+        // Convert array comments to string because LpjModel expects string for simple LPJ revision
+        $komentarStr = implode("\n", $komentarRevisi);
+
+        $result = $this->lpjModel->submitRevisiLpj($lpjId, $komentarStr);
         if (!$result) {
             throw new BusinessLogicException("Gagal mengirim revisi LPJ.");
         }
-        // TODO: Simpan komentar revisi ke database (LpjModel perlu metode ini)
         return $result;
     }
 
@@ -87,6 +85,31 @@ class AdminService
     public function getDashboardKAK()
     {
         return $this->adminModel->getDashboardKAK();
+    }
+
+    public function getDetailKegiatan($kegiatanId)
+    {
+        return $this->adminModel->getDetailKegiatan($kegiatanId);
+    }
+
+    public function getRABByKAK($kakId)
+    {
+        return $this->adminModel->getRABByKAK($kakId);
+    }
+
+    public function getIndikatorByKAK($kakId)
+    {
+        return $this->adminModel->getIndikatorByKAK($kakId);
+    }
+
+    public function getTahapanByKAK($kakId)
+    {
+        return $this->adminModel->getTahapanByKAK($kakId);
+    }
+
+    public function simpanPengajuan($data)
+    {
+        return $this->adminModel->simpanPengajuan($data);
     }
 
     // ... tambahkan metode lain sesuai kebutuhan dari AdminModel

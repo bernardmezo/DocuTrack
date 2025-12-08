@@ -159,11 +159,11 @@ class WadirModel
     }
 
     /**
-     * Menyetujui usulan dan meneruskan ke Bendahara.
+     * Menyetujui usulan dan meneruskan ke Bendahara untuk pencairan dana.
      */
     public function approveUsulan($kegiatanId, $rekomendasi = '')
     {
-        $nextPosisi = 1;  // ADMIN (Siap Ajukan Pencairan)
+        $nextPosisi = 5;  // BENDAHARA (untuk proses pencairan dana)
         $currentPosisi = 3; // Wadir
         $statusProses = 3; // Disetujui (oleh Wadir)
         $userId = $_SESSION['user_id'] ?? null;
@@ -220,7 +220,7 @@ class WadirModel
      *
      * Tanggal approval diambil dari:
      * 1. tbl_progress_history (jika ada record approval Wadir)
-     * 2. k.updatedAt (fallback jika history tidak tersedia)
+     * 2. k.createdAt (fallback jika history tidak tersedia)
      *
      * @return array Array berisi daftar kegiatan yang sudah diproses Wadir
      */
@@ -234,7 +234,7 @@ class WadirModel
                     k.prodiPenyelenggara as prodi,
                     k.jurusanPenyelenggara as jurusan,
                     k.createdAt as tanggal_pengajuan,
-                    k.updatedAt as tanggal_update,
+                    k.createdAt as tanggal_update,
                     
                     -- Ambil tanggal approval dari history (jika ada)
                     COALESCE(
@@ -244,7 +244,7 @@ class WadirModel
                          AND ph.statusId IN (3, 5) 
                          ORDER BY ph.timestamp DESC 
                          LIMIT 1),
-                        k.updatedAt
+                        k.createdAt
                     ) as tanggal_disetujui,
                     
                     CASE 
