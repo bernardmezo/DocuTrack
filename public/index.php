@@ -1,57 +1,133 @@
 <?php
+/**
+ * DocuTrack Application Entry Point
+ *
+ * This file initializes the application, sets up global error handling,
+ * and dispatches requests to the router.
+ */
+
+// 1. Bootstrap the application
+// This file handles configuration, autoloading, session, and database connection.
 require_once __DIR__ . '/../src/bootstrap.php';
 
-require_once __DIR__ . '/../src/middleware/AuthMiddleware.php';
-require_once __DIR__ . '/../src/middleware/RegisterMiddleware.php';
-require_once __DIR__ . '/../src/middleware/AdminMiddleware.php';
-require_once __DIR__ . '/../src/middleware/VerifikatorMiddleware.php';
-require_once __DIR__ . '/../src/middleware/WadirMiddleware.php';
-require_once __DIR__ . '/../src/middleware/PpkMiddleware.php';
-require_once __DIR__ . '/../src/middleware/BendaharaMiddleware.php';
-require_once __DIR__ . '/../src/middleware/SuperAdminMiddleware.php';
+use App\Core\Router;
+use App\Exceptions\NotFoundException;
+use App\Exceptions\ForbiddenException;
+use App\Exceptions\ValidationException;
+use App\Exceptions\BusinessLogicException;
 
-function get_request_path() {
+// 2. Set up Global Exception Handling
+require_once __DIR__ . '/../src/helpers/error_logger_helper.php';
+
+/**
+ * Handles all uncaught exceptions in the application.
+ * Logs fatal errors and displays user-friendly error pages.
+ *
+ * @param Throwable $exception The exception that was thrown.
+ */
+function globalExceptionHandler(Throwable $exception) {
+    // Clear any previously buffered output
+    if (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    $request_uri = $_SERVER['REQUEST_URI'] ?? '';
+
+    // Determine log level based on exception type
+    $logLevel = 'ERROR';
+    if ($exception instanceof ValidationException) {
+        $logLevel = 'WARNING';
+    } elseif ($exception instanceof ForbiddenException) {
+        $logLevel = 'WARNING';
+    } elseif ($exception instanceof BusinessLogicException) {
+        $logLevel = 'INFO'; // Business logic errors might be expected, not necessarily critical
+    }
+
+    // Log the error for all exception types except for 404s
+    if (!($exception instanceof NotFoundException)) {
+        log_error(
+            $logLevel,
+            $exception->getCode(),
+            $exception->getMessage(),
+            $exception->getFile(),
+            $exception->getLine(),
+            $request_uri
+        );
+    }
+
+    if (getenv('APP_ENV') === 'development') {
+        http_response_code(500);
+        echo "<h1>Exception Occurred</h1>";
+        echo "<p><strong>Type:</strong> " . get_class($exception) . "</p>";
+        echo "<p><strong>Message:</strong> " . htmlspecialchars($exception->getMessage()) . "</p>";
+        echo "<p><strong>File:</strong> " . htmlspecialchars($exception->getFile()) . " on line " . $exception->getLine() . "</p>";
+        echo "<hr><h3>Stack Trace:</h3><pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
+        exit;
+    }
+
+    switch (get_class($exception)) {
+        case ValidationException::class:
+            http_response_code(422);
+            if (isset($_SERVER['HTTP_REFERER'])) {
+                $_SESSION['flash_errors'] = $exception->getErrors();
+                $_SESSION['old_input'] = $_POST;
+                header('Location: ' . $_SERVER['HTTP_REFERER']);
+            } else {
+                include __DIR__ . '/../src/views/pages/errors/500.php';
+            }
+            break;
+
+        case NotFoundException::class:
+            http_response_code(404);
+            include __DIR__ . '/../src/views/pages/errors/404.php';
+            break;
+
+        case ForbiddenException::class:
+            http_response_code(403);
+            include __DIR__ . '/../src/views/pages/errors/403.php';
+            break;
+
+        default:
+            http_response_code(500);
+            include __DIR__ . '/../src/views/pages/errors/500.php';
+            break;
+    }
+    exit;
+}
+
+set_exception_handler('globalExceptionHandler');
+
+/**
+ * Gets the request path from the URL, stripping the base directory and query string.
+ *
+ * @return string The clean request path (e.g., '/admin/dashboard').
+ */
+function get_request_path(): string
+{
     $request_uri = $_SERVER['REQUEST_URI'];
     $script_name = $_SERVER['SCRIPT_NAME'];
 
     $base_path = dirname($script_name);
-    
     if ($base_path === '/' || $base_path === '\\') {
         $base_path = '';
     }
 
     $request_path = $request_uri;
+
     if ($base_path && strpos($request_uri, $base_path) === 0) {
         $request_path = substr($request_uri, strlen($base_path));
     }
-    
+
     $request_path = parse_url($request_path, PHP_URL_PATH);
 
     if (empty($request_path) || $request_path === '/index.php') {
-        $request_path = '/';
+        return '/';
     }
-    
-    $request_path = strtolower($request_path);
 
     return $request_path;
 }
 
-function not_found($message = "Page not found.") {
-    http_response_code(404);
-    echo "<h2>404 Not Found</h2>";
-    echo "<p>" . htmlspecialchars($message) . "</p>";
-    exit;
-}
-
-$path = get_request_path();
-
-$parts = explode('/', trim($path, '/'));
-
-$main_route = $parts[0] ?? '';
-$sub_route  = $parts[1] ?? 'index';
-$param1     = $parts[2] ?? null;
-$param2     = $parts[3] ?? null;
-
+// 3. Get the database connection from the bootstrap helper.
 $db = db();
 
 switch ($main_route) {
@@ -108,10 +184,7 @@ case 'admin':
             require_once '../src/controllers/Admin/DetailKAK.php';
             $controller = new AdminDetailKAKController($db); 
             
-            // NEW: Handle PDF download
-            if (isset($param1) && $param1 === 'pdf' && isset($param2)) {
-                $controller->downloadPDF($param2);
-            } elseif (isset($param1) && $param1 === 'show' && isset($param2)) {
+            if (isset($param1) && $param1 === 'show' && isset($param2)) {
                 $controller->show($param2, ['active_page' => $base_admin_path . '/dashboard']);
             } else {
                 header('Location: /docutrack/public/admin/dashboard');

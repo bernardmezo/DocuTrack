@@ -3,7 +3,10 @@
 $status_lower = strtolower($status ?? 'Dana Diberikan');
 
 if (!function_exists('formatRupiah')) {
-    function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
+    function formatRupiah($angka)
+    {
+        return "Rp " . number_format($angka ?? 0, 0, ',', '.');
+    }
 }
 ?>
 
@@ -16,11 +19,11 @@ if (!function_exists('formatRupiah')) {
             <div>
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Riwayat Verifikasi - Detail</h2>
                 <p class="text-sm text-gray-500 mt-1">Status:
-                    <?php if ($status_lower === 'dana diberikan'): ?>
+                    <?php if ($status_lower === 'dana diberikan') : ?>
                         <span class="font-semibold text-green-600">Dana Diberikan</span>
-                    <?php elseif ($status_lower === 'revisi' || $status_lower === 'ditolak'): ?>
+                    <?php elseif ($status_lower === 'revisi' || $status_lower === 'ditolak') : ?>
                         <span class="font-semibold text-yellow-600"><?= htmlspecialchars($status) ?></span>
-                    <?php else: ?>
+                    <?php else : ?>
                         <span class="font-semibold text-gray-600"><?= htmlspecialchars($status) ?></span>
                     <?php endif; ?>
                 </p>
@@ -111,13 +114,13 @@ if (!function_exists('formatRupiah')) {
         <div class="mb-8">
             <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">2. Indikator Kinerja Utama (IKU)</h3>
             <div class="flex flex-wrap gap-2 p-3 min-h-[60px] bg-gray-100 rounded-lg border border-gray-200">
-                <?php if (!empty($iku_data)): ?>
-                    <?php foreach ($iku_data as $iku): ?>
+                <?php if (!empty($iku_data)) : ?>
+                    <?php foreach ($iku_data as $iku) : ?>
                         <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                             <?= htmlspecialchars($iku) ?>
                         </span>
                     <?php endforeach; ?>
-                <?php else: ?>
+                <?php else : ?>
                     <span class="text-sm text-gray-500 italic">Tidak ada data IKU</span>
                 <?php endif; ?>
             </div>
@@ -136,15 +139,15 @@ if (!function_exists('formatRupiah')) {
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
-                        <?php if (!empty($indikator_data)): ?>
-                            <?php foreach ($indikator_data as $indikator): ?>
+                        <?php if (!empty($indikator_data)) : ?>
+                            <?php foreach ($indikator_data as $indikator) : ?>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= strtoupper(htmlspecialchars($indikator['bulan'] ?? '-')) ?></td>
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($indikator['nama'] ?? '-') ?></td>
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($indikator['target'] ?? 0) ?>%</td>
                             </tr>
                             <?php endforeach; ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <tr>
                                 <td colspan="3" class="px-4 py-6 text-center text-sm text-gray-500 italic">Tidak ada data indikator</td>
                             </tr>
@@ -158,13 +161,15 @@ if (!function_exists('formatRupiah')) {
         <div class="mb-8">
             <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">4. Rincian Anggaran Biaya (RAB)</h3>
             
-            <?php 
+            <?php
             $grand_total_rab = 0;
-            if (!empty($rab_data)):
-                foreach ($rab_data as $kategori => $items): 
-                    if (empty($items)) continue;
+            if (!empty($rab_data)) :
+                foreach ($rab_data as $kategori => $items) :
+                    if (empty($items)) {
+                        continue;
+                    }
                     $subtotal = 0;
-            ?>
+                    ?>
                 <h4 class="text-md font-semibold text-gray-700 mt-4 mb-2"><?= htmlspecialchars($kategori) ?></h4>
                 <div class="overflow-x-auto border border-gray-200 rounded-lg">
                     <table class="w-full min-w-[900px]">
@@ -181,7 +186,7 @@ if (!function_exists('formatRupiah')) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <?php foreach ($items as $item): 
+                            <?php foreach ($items as $item) :
                                 $vol1 = $item['vol1'] ?? 0;
                                 $sat1 = $item['sat1'] ?? '';
                                 $vol2 = $item['vol2'] ?? 1;
@@ -189,7 +194,7 @@ if (!function_exists('formatRupiah')) {
                                 $harga = $item['harga'] ?? 0;
                                 $total_item = $vol1 * $vol2 * $harga;
                                 $subtotal += $total_item;
-                            ?>
+                                ?>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($item['uraian'] ?? '') ?></td>
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($item['rincian'] ?? '') ?></td>
@@ -200,7 +205,8 @@ if (!function_exists('formatRupiah')) {
                                 <td class="px-4 py-3 text-sm text-gray-700 text-right"><?= number_format($harga, 0, ',', '.') ?></td>
                                 <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right"><?= formatRupiah($total_item) ?></td>
                             </tr>
-                            <?php endforeach; $grand_total_rab += $subtotal; ?>
+                            <?php endforeach;
+                            $grand_total_rab += $subtotal; ?>
                             <tr class="bg-gray-50 font-semibold">
                                 <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal</td>
                                 <td class="px-4 py-3 text-sm text-gray-900 text-right"><?= formatRupiah($subtotal) ?></td>
@@ -216,7 +222,7 @@ if (!function_exists('formatRupiah')) {
                         <span class="text-xl font-bold text-blue-600"><?= formatRupiah($grand_total_rab) ?></span>
                     </div>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <p class="text-sm text-gray-500 italic p-4 bg-gray-100 rounded-lg">Tidak ada data RAB</p>
             <?php endif; ?>
         </div>
@@ -228,7 +234,7 @@ if (!function_exists('formatRupiah')) {
             <div class="mb-6">
                 <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Surat Pengantar</label>
                 <div class="relative max-w-sm">
-                    <?php if (!empty($surat_pengantar_url)): ?>
+                    <?php if (!empty($surat_pengantar_url)) : ?>
                     <a href="<?= htmlspecialchars($surat_pengantar_url) ?>" target="_blank"
                        class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200 hover:bg-gray-200 transition-colors">
                         <span class="text-sm text-gray-800 flex items-center gap-2">
@@ -237,7 +243,7 @@ if (!function_exists('formatRupiah')) {
                         </span>
                         <i class="fas fa-external-link-alt text-blue-600"></i>
                     </a>
-                    <?php else: ?>
+                    <?php else : ?>
                     <div class="flex items-center justify-between px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
                         <span class="text-sm text-gray-500 italic">Tidak ada file</span>
                         <i class="fas fa-file-alt text-gray-400"></i>
@@ -272,7 +278,7 @@ if (!function_exists('formatRupiah')) {
         </div>
 
         <!-- Section: Informasi Pencairan -->
-        <?php if ($status_lower === 'dana diberikan' && !empty($tanggal_pencairan)): ?>
+        <?php if ($status_lower === 'dana diberikan' && !empty($tanggal_pencairan)) : ?>
         <div class="mb-8 pt-6 border-t border-gray-200">
             <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">
                 <i class="fas fa-check-circle text-green-500 mr-2"></i>Informasi Pencairan Dana
@@ -296,19 +302,19 @@ if (!function_exists('formatRupiah')) {
                 <div>
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Metode Pencairan</label>
                     <p class="text-sm text-gray-900 p-3 bg-gray-100 rounded-lg border border-gray-200 mt-1">
-                        <?php 
-                        $metode_label = match($metode_pencairan ?? '') {
+                        <?php
+                        $metode_label = match ($metode_pencairan ?? '') {
                             'uang_muka' => 'Uang Muka',
                             'dana_penuh' => 'Dana Penuh',
                             'bertahap' => 'Bertahap',
                             default => ucfirst(str_replace('_', ' ', $metode_pencairan ?? '-'))
                         };
                         echo htmlspecialchars($metode_label);
-                        ?>
+    ?>
                     </p>
                 </div>
                 
-                <?php if (!empty($catatan_bendahara)): ?>
+                <?php if (!empty($catatan_bendahara)) : ?>
                 <div class="md:col-span-2">
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Catatan Bendahara</label>
                     <div class="text-sm text-gray-900 p-3 bg-gray-100 rounded-lg border border-gray-200 mt-1 min-h-[60px] leading-relaxed">

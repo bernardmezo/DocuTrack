@@ -20,23 +20,31 @@ $tanggal_selesai = $kegiatan_data['tanggal_selesai'] ?? '';
 $surat_pengantar_url = $surat_pengantar_url ?? '';
 
 if (!function_exists('formatRupiah')) {
-    function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
+    function formatRupiah($angka)
+    {
+        return "Rp " . number_format($angka ?? 0, 0, ',', '.');
+    }
 }
 
 if (!function_exists('isValidDate')) {
-    function isValidDate($date) {
+    function isValidDate($date)
+    {
         return !empty($date) && $date !== '0000-0000' && strtotime($date) !== false;
     }
 }
 
 if (!function_exists('formatTanggal')) {
-    function formatTanggal($date, $format = 'd M Y') {
-        if (!isValidDate($date)) return '-';
+    function formatTanggal($date, $format = 'd M Y')
+    {
+        if (!isValidDate($date)) {
+            return '-';
+        }
         return date($format, strtotime($date));
     }
 }
 
-function displayValue($value, $placeholder = 'Belum diisi') {
+function displayValue($value, $placeholder = 'Belum diisi')
+{
     return !empty($value) ? htmlspecialchars($value) : '<span class="text-gray-400 italic">' . $placeholder . '</span>';
 }
 ?>
@@ -49,11 +57,11 @@ function displayValue($value, $placeholder = 'Belum diisi') {
             <div>
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Persetujuan Usulan Kegiatan</h2>
                 <p class="text-sm text-gray-500 mt-1">Status:
-                    <?php if ($is_disetujui): ?> 
+                    <?php if ($is_disetujui) : ?> 
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
                             <i class="fas fa-check-circle"></i> Disetujui
                         </span>
-                    <?php else: ?> 
+                    <?php else : ?> 
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
                             <i class="fas fa-hourglass-half"></i> Menunggu Persetujuan Anda
                         </span>
@@ -142,14 +150,14 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">2. Indikator Kinerja Utama (IKU)</h3>
                 <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Indikator yang Dipilih:</label>
                 <div class="mt-2 flex flex-wrap items-center gap-2 p-3 min-h-[60px] bg-gray-100 rounded-lg border border-gray-200">
-                    <?php if (!empty($iku_data) && is_array($iku_data)): ?>
-                        <?php foreach ($iku_data as $iku_item): ?>
+                    <?php if (!empty($iku_data) && is_array($iku_data)) : ?>
+                        <?php foreach ($iku_data as $iku_item) : ?>
                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                                 <i class="fas fa-check-circle text-xs"></i>
                                 <?php echo htmlspecialchars($iku_item); ?>
                             </span>
                         <?php endforeach; ?>
-                    <?php else: ?>
+                    <?php else : ?>
                         <span class="text-sm text-gray-400 italic">Tidak ada IKU yang dipilih</span>
                     <?php endif; ?>
                 </div>
@@ -168,8 +176,8 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <?php if (!empty($indikator_data) && is_array($indikator_data)): ?>
-                                <?php foreach ($indikator_data as $item): ?>
+                            <?php if (!empty($indikator_data) && is_array($indikator_data)) : ?>
+                                <?php foreach ($indikator_data as $item) : ?>
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 text-sm text-gray-700">
                                         <?php echo displayValue($item['bulan'] ?? '', '-'); ?>
@@ -178,20 +186,20 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                                         <?php echo displayValue($item['nama'] ?? '', '-'); ?>
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-700">
-                                        <?php 
+                                        <?php
                                         $target = $item['target'] ?? 0;
-                                        if ($target > 0): 
-                                        ?>
+                                        if ($target > 0) :
+                                            ?>
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                                                 <?php echo htmlspecialchars($target); ?>%
                                             </span>
-                                        <?php else: ?>
+                                        <?php else : ?>
                                             <span class="text-gray-400 italic">-</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
-                            <?php else: ?>
+                            <?php else : ?>
                                 <tr><td colspan="3" class="px-4 py-8 text-sm text-gray-400 italic text-center">Tidak ada data indikator kinerja</td></tr>
                             <?php endif; ?>
                         </tbody>
@@ -202,13 +210,15 @@ function displayValue($value, $placeholder = 'Belum diisi') {
             <!-- 4. RAB -->
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">4. Rincian Anggaran Biaya (RAB)</h3>
-                <?php 
+                <?php
                     $grand_total_rab = 0;
-                    if (!empty($rab_data) && is_array($rab_data)):
-                        foreach ($rab_data as $kategori => $items): 
-                            if (empty($items) || !is_array($items)) continue;
-                            $subtotal = 0;
-                ?>
+                if (!empty($rab_data) && is_array($rab_data)) :
+                    foreach ($rab_data as $kategori => $items) :
+                        if (empty($items) || !is_array($items)) {
+                            continue;
+                        }
+                        $subtotal = 0;
+                        ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-4 mb-2 flex items-center">
                         <i class="fas fa-folder-open text-blue-600 mr-2"></i>
                         <?php echo htmlspecialchars($kategori); ?>
@@ -228,7 +238,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
-                                <?php foreach ($items as $item): 
+                            <?php foreach ($items as $item) :
                                     $vol1 = $item['vol1'] ?? 0;
                                     $sat1 = $item['sat1'] ?? '-';
                                     $vol2 = $item['vol2'] ?? 1;
@@ -263,7 +273,8 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                                         <?php echo $total_item > 0 ? formatRupiah($total_item) : '<span class="text-gray-400">Rp 0</span>'; ?>
                                     </td>
                                 </tr>
-                                <?php endforeach; $grand_total_rab += $subtotal; ?>
+                            <?php endforeach;
+                            $grand_total_rab += $subtotal; ?>
                                 <tr class="bg-blue-50 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?php echo htmlspecialchars($kategori); ?></td>
                                     <td class="px-4 py-3 text-sm text-blue-700 text-right"><?php echo formatRupiah($subtotal); ?></td>
@@ -271,10 +282,10 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             </tbody>
                         </table>
                     </div>
-                <?php 
-                        endforeach; 
-                    else:
-                ?>
+                        <?php
+                    endforeach;
+                else :
+                    ?>
                     <div class="p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center">
                         <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
                         <p class="text-sm text-gray-400 italic">Tidak ada data RAB yang tersedia</p>
@@ -302,7 +313,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 <div class="mb-6">
                     <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Surat Pengantar</label>
                     <div class="relative max-w-2xl">
-                        <?php if (!empty($surat_pengantar)): ?>
+                        <?php if (!empty($surat_pengantar)) : ?>
                             <div class="flex items-center justify-between gap-3 px-4 py-3.5 bg-gray-100 rounded-lg border border-gray-200">
                                 <div class="flex items-center gap-3 min-w-0 flex-1">
                                     <i class="fas fa-file-pdf text-red-500 text-xl flex-shrink-0"></i>
@@ -315,7 +326,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                                     <i class="fas fa-download"></i>
                                 </a>
                             </div>
-                        <?php else: ?>
+                        <?php else : ?>
                             <div class="flex items-center justify-between px-4 py-3.5 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                                 <div class="flex items-center gap-3">
                                     <i class="fas fa-file-pdf text-gray-300 text-xl"></i>
@@ -335,7 +346,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             <div>
                                 <span class="text-xs text-gray-500 block mb-1">Tanggal Mulai</span>
                                 <span class="text-sm text-gray-800 font-semibold">
-                                    <?php 
+                                    <?php
                                     if (isValidDate($tanggal_mulai)) {
                                         echo formatTanggal($tanggal_mulai);
                                     } else {
@@ -350,7 +361,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             <div>
                                 <span class="text-xs text-gray-500 block mb-1">Tanggal Selesai</span>
                                 <span class="text-sm text-gray-800 font-semibold">
-                                    <?php 
+                                    <?php
                                     if (isValidDate($tanggal_selesai)) {
                                         echo formatTanggal($tanggal_selesai);
                                     } else {
@@ -369,7 +380,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
             <div class="mb-8 pt-6 border-t border-gray-200">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">6. Kode Mata Anggaran Kegiatan (MAK)</h3>
                 <div class="relative max-w-md">
-                    <?php if (!empty($kode_mak)): ?>
+                    <?php if (!empty($kode_mak)) : ?>
                         <div class="flex items-center gap-3 px-4 py-3.5 bg-green-50 rounded-lg border-2 border-green-200">
                             <i class="fas fa-key text-green-600 text-lg"></i>
                             <div class="flex-1">
@@ -380,7 +391,7 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                             </div>
                             <i class="fas fa-check-circle text-green-600 text-xl"></i>
                         </div>
-                    <?php else: ?>
+                    <?php else : ?>
                         <div class="flex items-center gap-3 px-4 py-3.5 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                             <i class="fas fa-key text-gray-300 text-lg"></i>
                             <div class="flex-1">
@@ -409,13 +420,13 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                  
                 <div class="flex flex-col sm:flex-row-reverse gap-4 w-full sm:w-auto">
                 
-                <?php if ($is_menunggu): ?>
+                <?php if ($is_menunggu) : ?>
                     <button type="button" id="btn-setujui-Wadir" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg">
                          <i class="fas fa-check-double"></i> Setujui Usulan
                     </button>
                 
-                <?php elseif ($is_disetujui): ?>
+                <?php elseif ($is_disetujui) : ?>
                     <div class="flex items-center gap-3 px-5 py-3 rounded-lg bg-green-50 border-2 border-green-200">
                         <i class="fas fa-check-circle text-green-600 text-xl"></i>
                         <div>

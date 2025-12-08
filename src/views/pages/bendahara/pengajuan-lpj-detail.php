@@ -15,14 +15,18 @@ $rab_items = $rab_items ?? [];
 $back_url = $back_url ?? '/docutrack/public/bendahara/pengajuan-lpj';
 
 if (!function_exists('formatRupiah')) {
-    function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
+    function formatRupiah($angka)
+    {
+        return "Rp " . number_format($angka ?? 0, 0, ',', '.');
+    }
 }
 
 /**
  * Helper render comment box RAB
  */
 if (!function_exists('render_comment_box_rab_lpj')) {
-    function render_comment_box_rab_lpj($field_name, $is_menunggu_status, $is_telah_direvisi_status) {
+    function render_comment_box_rab_lpj($field_name, $is_menunggu_status, $is_telah_direvisi_status)
+    {
         if ($is_menunggu_status || $is_telah_direvisi_status) {
             ?>
             <div id="comment-box-<?= htmlspecialchars($field_name) ?>"
@@ -47,9 +51,10 @@ if (!function_exists('render_comment_box_rab_lpj')) {
  * Jika di file asli tidak ada function ini di scope global, kita buat dummy-nya agar tidak error
  */
 if (!function_exists('showCommentIcon')) {
-    function showCommentIcon($itemId, $komentar, $isRevisi, $isTelahDirevisi) {
+    function showCommentIcon($itemId, $komentar, $isRevisi, $isTelahDirevisi)
+    {
         if (!empty($komentar)) {
-            echo '<span class="ml-2 text-yellow-600 cursor-help" title="'.htmlspecialchars($komentar).'"><i class="fas fa-comment-dots"></i></span>';
+            echo '<span class="ml-2 text-yellow-600 cursor-help" title="' . htmlspecialchars($komentar) . '"><i class="fas fa-comment-dots"></i></span>';
         }
     }
 }
@@ -57,16 +62,16 @@ if (!function_exists('showCommentIcon')) {
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
-    <?php if (isset($_SESSION['flash_message'])): ?>
+    <?php if (isset($_SESSION['flash_message'])) : ?>
     <div class="mb-6 p-4 rounded-lg <?= ($_SESSION['flash_type'] ?? 'success') === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' ?>">
         <div class="flex items-center gap-2">
             <i class="fas fa-<?= ($_SESSION['flash_type'] ?? 'success') === 'success' ? 'check-circle' : 'exclamation-triangle' ?>"></i>
             <span class="font-medium"><?= htmlspecialchars($_SESSION['flash_message']) ?></span>
         </div>
     </div>
-    <?php 
-        unset($_SESSION['flash_message'], $_SESSION['flash_type']); 
-    endif; 
+        <?php
+        unset($_SESSION['flash_message'], $_SESSION['flash_type']);
+    endif;
     ?>
 
     <section class="bg-white p-4 md:p-10 rounded-2xl shadow-lg overflow-hidden mb-8">
@@ -78,19 +83,19 @@ if (!function_exists('showCommentIcon')) {
                 <p class="text-xs text-gray-500 mt-0.5">Pengusul: <?= htmlspecialchars($kegiatan_data['nama_mahasiswa'] ?? 'N/A') ?> (<?= htmlspecialchars($kegiatan_data['nim'] ?? 'N/A') ?>)</p>
             </div>
             <div class="flex flex-col items-end gap-2">
-                <?php if ($is_disetujui): ?>
+                <?php if ($is_disetujui) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-700 border border-green-300">
                         <i class="fas fa-check-double"></i> Telah Disetujui
                     </span>
-                <?php elseif ($is_revisi): ?>
+                <?php elseif ($is_revisi) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
                         <i class="fas fa-clock"></i> Menunggu Revisi dari Admin
                     </span>
-                <?php elseif ($is_telah_direvisi): ?>
+                <?php elseif ($is_telah_direvisi) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-700 border border-blue-300">
                         <i class="fas fa-edit"></i> Telah Direvisi - Perlu Dicek Ulang
                     </span>
-                <?php else: ?>
+                <?php else : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-orange-100 text-orange-700 border border-orange-300">
                         <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi
                     </span>
@@ -98,7 +103,7 @@ if (!function_exists('showCommentIcon')) {
             </div>
         </div>
 
-        <?php if ($is_revisi): ?>
+        <?php if ($is_revisi) : ?>
             <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-info-circle text-yellow-600 text-xl mt-0.5"></i>
@@ -108,7 +113,7 @@ if (!function_exists('showCommentIcon')) {
                     </div>
                 </div>
             </div>
-        <?php elseif ($is_telah_direvisi): ?>
+        <?php elseif ($is_telah_direvisi) : ?>
             <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-check-circle text-blue-600 text-xl mt-0.5"></i>
@@ -118,7 +123,7 @@ if (!function_exists('showCommentIcon')) {
                     </div>
                 </div>
             </div>
-        <?php elseif ($is_disetujui): ?>
+        <?php elseif ($is_disetujui) : ?>
             <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-check-double text-green-600 text-xl mt-0.5"></i>
@@ -137,15 +142,17 @@ if (!function_exists('showCommentIcon')) {
             <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Realisasi Anggaran Biaya (LPJ Items)</h3>
                 
-                <?php 
+                <?php
                     $grand_total_realisasi = 0;
-                    if (!empty($rab_items)):
-                        foreach ($rab_items as $kategori => $items): 
-                            if (empty($items)) continue;
-                            $subtotal_kategori = 0;
-                            // key komentar per-kategori
-                            $rab_comment_key = 'rab_' . strtolower(str_replace(' ', '_', $kategori));
-                ?>
+                if (!empty($rab_items)) :
+                    foreach ($rab_items as $kategori => $items) :
+                        if (empty($items)) {
+                            continue;
+                        }
+                        $subtotal_kategori = 0;
+                        // key komentar per-kategori
+                        $rab_comment_key = 'rab_' . strtolower(str_replace(' ', '_', $kategori));
+                        ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?= htmlspecialchars($kategori) ?></h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
                         <table class="w-full min-w-[1200px]">
@@ -163,7 +170,7 @@ if (!function_exists('showCommentIcon')) {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <?php foreach ($items as $item): 
+                            <?php foreach ($items as $item) :
                                     $item_id = $item['id'] ?? uniqid();
                                     $uraian = $item['uraian'] ?? '-';
                                     $rincian = $item['rincian'] ?? '-';
@@ -171,14 +178,14 @@ if (!function_exists('showCommentIcon')) {
                                     $sat1 = $item['sat1'] ?? '-';
                                     $vol2 = $item['vol2'] ?? 1;
                                     $sat2 = $item['sat2'] ?? '-';
-                                    
+
                                     // PERBAIKAN: Ambil variabel yang benar dari array $item
-                                    $harga_satuan = $item['harga_satuan'] ?? 0; 
+                                    $harga_satuan = $item['harga_satuan'] ?? 0;
                                     $total_sub = $item['subtotal'] ?? 0; // Menggunakan key 'subtotal'
-                                    
+
                                     $bukti_file = $item['bukti_file'] ?? null;
                                     $komentar_existing = $item['komentar'] ?? null;
-                                    
+
                                     $has_existing_comment = !empty($komentar_existing);
                                     $row_class = $has_existing_comment ? 'bg-yellow-50' : '';
 
@@ -208,19 +215,20 @@ if (!function_exists('showCommentIcon')) {
                                     </td>
                                     
                                     <td class="px-3 py-3 text-center">
-                                        <?php if ($bukti_file): ?>
+                                        <?php if ($bukti_file) : ?>
                                             <a href="/docutrack/public/uploads/lpj_bukti/<?= htmlspecialchars($bukti_file) ?>" 
                                                target="_blank"
                                                class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline">
                                                 <i class="fas fa-file-pdf"></i>
                                                 <span>Lihat</span>
                                             </a>
-                                        <?php else: ?>
+                                        <?php else : ?>
                                             <span class="text-xs text-gray-400 italic">-</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
-                                <?php endforeach; $grand_total_realisasi += $subtotal_kategori; ?>
+                            <?php endforeach;
+                            $grand_total_realisasi += $subtotal_kategori; ?>
                                 
                                 <tr class="bg-gray-100 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?= htmlspecialchars($kategori) ?></td>
@@ -231,17 +239,17 @@ if (!function_exists('showCommentIcon')) {
                         </table>
                     </div>
 
-                    <?php
+                        <?php
                         // Comment box per kategori
                         if (!$is_revisi && !$is_disetujui) {
                             render_comment_box_rab_lpj($rab_comment_key, $is_menunggu, $is_telah_direvisi);
                         }
-                    ?>
+                        ?>
 
-                <?php 
-                        endforeach; 
-                    else:
-                ?>
+                        <?php
+                    endforeach;
+                else :
+                    ?>
                     <p class="text-sm text-gray-500 italic p-4 text-center bg-gray-50 rounded-lg">Tidak ada data item LPJ untuk ditampilkan.</p>
                 <?php endif; ?>
                 
@@ -253,7 +261,7 @@ if (!function_exists('showCommentIcon')) {
                 </div>
             </div>
 
-            <?php if (!$is_revisi && !$is_disetujui): ?>
+            <?php if (!$is_revisi && !$is_disetujui) : ?>
             <div class="mb-8 pt-6 border-t border-gray-200">
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Catatan Umum (Opsional)</label>
                 <textarea name="catatan_umum" 
@@ -265,17 +273,17 @@ if (!function_exists('showCommentIcon')) {
 
             <div class="flex flex-col sm:flex-row-reverse justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                 
-                <?php if ($is_disetujui): ?>
+                <?php if ($is_disetujui) : ?>
                     <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
                         <i class="fas fa-check-double"></i> LPJ Telah Disetujui
                     </div>
                     
-                <?php elseif ($is_revisi): ?>
+                <?php elseif ($is_revisi) : ?>
                     <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
                         <i class="fas fa-clock"></i> Menunggu Revisi dari Admin
                     </div>
                     
-                <?php else: ?>
+                <?php else : ?>
                     <div class="flex gap-3 w-full sm:w-auto">
                         <button type="button" 
                                 onclick="konfirmasiRevisi()"

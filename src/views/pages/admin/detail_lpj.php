@@ -25,7 +25,7 @@ $can_upload = ($is_draft || $is_menunggu_upload || $is_siap_submit || $is_revisi
 
 // Tentukan apakah perlu tampilkan info banner
 $show_info_banner = (
-    ($is_menunggu_upload || $is_belum_ada_item || ($is_draft && $total_items > 0)) 
+    ($is_menunggu_upload || $is_belum_ada_item || ($is_draft && $total_items > 0))
     && !$all_bukti_uploaded
 );
 
@@ -43,7 +43,10 @@ $rab_items = $rab_items ?? [];
 $back_url = $back_url ?? '/docutrack/public/admin/pengajuan-lpj';
 
 if (!function_exists('formatRupiah')) {
-    function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
+    function formatRupiah($angka)
+    {
+        return "Rp " . number_format($angka ?? 0, 0, ',', '.');
+    }
 }
 ?>
 
@@ -59,37 +62,37 @@ if (!function_exists('formatRupiah')) {
             
             <!-- Status Badge -->
             <div class="flex flex-col items-end gap-2">
-                <?php if ($is_setuju): ?>
+                <?php if ($is_setuju) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-700">
                         <i class="fas fa-check-circle"></i> Disetujui Bendahara
                     </span>
                     
-                <?php elseif ($is_menunggu): ?>
+                <?php elseif ($is_menunggu) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
                         <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi Bendahara
                     </span>
                     
-                <?php elseif ($is_revisi): ?>
+                <?php elseif ($is_revisi) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-700">
                         <i class="fas fa-exclamation-triangle"></i> Perlu Revisi
                     </span>
                     
-                <?php elseif ($is_siap_submit): ?>
+                <?php elseif ($is_siap_submit) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
                         <i class="fas fa-check-double"></i> Siap Diajukan
                     </span>
                     
-                <?php elseif ($is_menunggu_upload): ?>
+                <?php elseif ($is_menunggu_upload) : ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-orange-100 text-orange-700">
                         <i class="fas fa-upload"></i> Menunggu Upload Bukti
                     </span>
-                    <?php if (!$all_bukti_uploaded): ?>
+                    <?php if (!$all_bukti_uploaded) : ?>
                         <span class="text-xs text-orange-600 font-medium flex items-center gap-1">
                             <i class="fas fa-info-circle"></i> Mohon upload semua bukti terlebih dahulu
                         </span>
                     <?php endif; ?>
                     
-                <?php else: // draft or belum_ada_item ?>
+                <?php else : // draft or belum_ada_item ?>
                     <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
                         <i class="fas fa-file"></i> Draft
                     </span>
@@ -97,7 +100,7 @@ if (!function_exists('formatRupiah')) {
             </div>
         </div>
 
-        <?php if (($is_menunggu_upload || $is_draft) && !$all_bukti_uploaded): ?>
+        <?php if (($is_menunggu_upload || $is_draft) && !$all_bukti_uploaded) : ?>
             <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
                 <div class="flex items-start gap-3">
                     <i class="fas fa-info-circle text-blue-600 text-xl mt-0.5"></i>
@@ -116,13 +119,15 @@ if (!function_exists('formatRupiah')) {
             <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Rencana Anggaran Biaya (RAB)</h3>
                 
-                <?php 
+                <?php
                     $grand_total_plan = 0;
-                    if (!empty($rab_items)):
-                        foreach ($rab_items as $kategori => $items): 
-                            if (empty($items)) continue;
-                            $subtotal_plan = 0;
-                ?>
+                if (!empty($rab_items)) :
+                    foreach ($rab_items as $kategori => $items) :
+                        if (empty($items)) {
+                            continue;
+                        }
+                        $subtotal_plan = 0;
+                        ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?php echo htmlspecialchars($kategori); ?></h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
                         <table class="w-full min-w-[1200px]" data-kategori="<?php echo htmlspecialchars($kategori); ?>">
@@ -138,19 +143,19 @@ if (!function_exists('formatRupiah')) {
                                     <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total Rencana</th>
                                     <th class="px-3 py-3 text-right text-xs font-bold text-blue-600 uppercase" style="width: 150px;">Realisasi (Rp)</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th>
-                                    <?php if ($is_revisi || $is_selesai): ?>
+                                <?php if ($is_revisi || $is_selesai) : ?>
                                         <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 250px;">Komentar Verifikator</th>
-                                    <?php endif; ?>
+                                <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
-                                <?php foreach ($items as $item): 
+                            <?php foreach ($items as $item) :
                                     $item_id = $item['id'] ?? uniqid();
                                     $plan = $item['harga_plan'] ?? 0;
                                     $komentar = $item['komentar'] ?? null;
                                     $has_comment = $is_revisi && !empty($komentar);
                                     $bukti_uploaded = !empty($item['bukti_file']);
-                                    
+
                                     $rincian = $item['rincian'] ?? '-';
                                     $vol1 = $item['vol1'] ?? '-';
                                     $sat1 = $item['sat1'] ?? '-';
@@ -167,7 +172,7 @@ if (!function_exists('formatRupiah')) {
 
                                     <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
                                         <?php echo htmlspecialchars($item['uraian'] ?? ''); ?>
-                                        <?php if ($has_comment): ?>
+                                        <?php if ($has_comment) : ?>
                                             <span class="block text-xs text-yellow-600 mt-1">
                                                 <i class="fas fa-exclamation-circle"></i> Perlu revisi
                                             </span>
@@ -204,7 +209,7 @@ if (!function_exists('formatRupiah')) {
 
                                     <!-- Kolom Realisasi -->
                                     <td class="px-3 py-3" style="width: 150px;">
-                                        <?php if ($is_draft || $is_menunggu_upload || $is_siap_submit): ?>
+                                        <?php if ($is_draft || $is_menunggu_upload || $is_siap_submit) : ?>
                                             <div class="relative">
                                                 <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
                                                 <input type="number" 
@@ -214,7 +219,7 @@ if (!function_exists('formatRupiah')) {
                                                     step="1"
                                                     data-item-id="<?php echo $item_id; ?>">
                                             </div>
-                                        <?php else: ?>
+                                        <?php else : ?>
                                             <div class="text-right text-sm font-bold text-blue-600">
                                                 <?php echo formatRupiah($item['realisasi'] ?? $plan); ?>
                                             </div>
@@ -223,17 +228,17 @@ if (!function_exists('formatRupiah')) {
 
                                     <!-- Kolom Bukti -->
                                     <td class='px-3 py-3 text-center' style="width: 100px;">
-                                        <?php if ($bukti_uploaded && !$has_comment): ?>
+                                        <?php if ($bukti_uploaded && !$has_comment) : ?>
                                             <div class="flex items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
                                                 <span class="text-xs font-medium">Ada</span>
                                             </div>
-                                        <?php else: ?>
+                                        <?php else : ?>
                                             <button type="button" 
                                                     class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors <?php echo $has_comment ? 'ring-2 ring-yellow-400' : ''; ?> <?php echo !$bukti_uploaded ? 'animate-pulse' : ''; ?>" 
                                                     data-lpj-item-id="<?php echo $item_id; ?>"
                                                     data-item-name="<?php echo htmlspecialchars($item['uraian'] ?? 'Item'); ?>"
-                                                    <?php echo ($is_setuju || $is_menunggu) ; ?>> <!-- ? 'disabled' : ''; = penting, disable jika statusnya is_setuju-->
+                                                    <?php echo ($is_setuju || $is_menunggu) ? 'disabled' : ''; ?>>
                                                 <i class='fas fa-upload'></i>
                                             </button>
                                             <div id="bukti-display-<?php echo $item_id; ?>" 
@@ -244,13 +249,14 @@ if (!function_exists('formatRupiah')) {
                                         <?php endif; ?>
                                     </td>
 
-                                    <?php if ($is_revisi || $is_selesai): ?>
+                                    <?php if ($is_revisi || $is_selesai) : ?>
                                         <td class="px-3 py-3 text-xs italic <?php echo $has_comment ? 'text-yellow-800 font-medium' : 'text-gray-500'; ?>" style="width: 250px;">
                                             <?php echo $has_comment ? htmlspecialchars($komentar) : '-'; ?>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
-                                <?php endforeach; $grand_total_plan += $subtotal_plan; ?>
+                            <?php endforeach;
+                            $grand_total_plan += $subtotal_plan; ?>
                                 
                                 <tr class="bg-gray-50 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?php echo htmlspecialchars($kategori); ?></td>
@@ -261,10 +267,10 @@ if (!function_exists('formatRupiah')) {
                             </tbody>
                         </table>
                     </div>
-                <?php 
-                        endforeach; 
-                    else:
-                ?>
+                        <?php
+                    endforeach;
+                else :
+                    ?>
                     <p class="text-sm text-gray-500 italic">Tidak ada data RAB untuk ditampilkan.</p>
                 <?php endif; ?>
                 
@@ -285,21 +291,34 @@ if (!function_exists('formatRupiah')) {
             
             <div class="flex flex-col sm:flex-row-reverse justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                  
-                 <?php if ($is_revisi): ?>
-                    <button type="button" id="submit-lpj-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5">
+                 <?php if ($is_setuju) : ?>
+                    <!-- LPJ sudah disetujui Bendahara - Tidak bisa edit -->
+                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
+                         <i class="fas fa-check-double"></i> LPJ Telah Disetujui
+                    </div>
+                    
+                 <?php elseif ($is_menunggu) : ?>
+                    <!-- LPJ sudah di-submit, menunggu approval Bendahara - Tidak bisa edit -->
+                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
+                         <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi Bendahara
+                    </div>
+                    
+                 <?php elseif ($is_revisi) : ?>
+                    <!-- Status revisi - Bisa submit ulang -->
+                    <button type="button" id="submit-lpj-btn" 
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                            <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
                         <i class="fas fa-paper-plane"></i> Submit Revisi LPJ
                     </button>
-                 <?php elseif ($is_menunggu): ?>
+                    
+                 <?php else : ?>
+                    <!-- Status draft/siap_submit - Bisa submit pertama kali -->
                     <button type="button" id="submit-lpj-btn" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
                             <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
                          <i class="fas fa-check-circle"></i> 
                          <?php echo $all_bukti_uploaded ? 'Ajukan ke Bendahara' : 'Upload Bukti Terlebih Dahulu'; ?>
                     </button>
-                 <?php else: // Status 'Setuju' ?>
-                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
-                         <i class="fas fa-check-double"></i> LPJ Telah Disetujui
-                    </div>
                  <?php endif; ?>
                  
                  <a href="<?php echo htmlspecialchars($back_url); ?>" 

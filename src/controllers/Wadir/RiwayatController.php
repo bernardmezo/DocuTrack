@@ -1,30 +1,26 @@
 <?php
-// File: src/controllers/Wadir/RiwayatController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/wadirModel.php';
+namespace App\Controllers\Wadir;
 
-class WadirRiwayatController extends Controller {
-    
-    public function index($data_dari_router = []) { 
-        
-        $model = new wadirModel($this->db);
+use App\Core\Controller;
+use App\Services\WadirService;
 
-        // Debug: Cek koneksi DB
-        error_log("=== WADIR RIWAYAT DEBUG ===");
-        error_log("DB Connection: " . (isset($this->db) ? 'OK' : 'FAIL'));
-        
-        // Ambil Data Riwayat (Posisi 5 / Ditolak)
-        $list_riwayat = $model->getRiwayat();
+class RiwayatController extends Controller
+{
+    private $model;
 
-        // Debug: Cek hasil query
-        error_log("Total riwayat: " . count($list_riwayat));
-        if (count($list_riwayat) > 0) {
-            error_log("Sample data: " . json_encode($list_riwayat[0]));
-        }
+    public function __construct()
+    {
+        parent::__construct();
+        $this->model = new WadirService($this->db);
+    }
 
-        // Jurusan untuk filter
-        $jurusan_list = array_unique(array_column($list_riwayat, 'prodi')); // Atau jurusan
+    public function index($data_dari_router = [])
+    {
+
+        $list_riwayat = $this->safeModelCall($this->model, 'getRiwayat', [], []);
+
+        $jurusan_list = array_unique(array_column($list_riwayat, 'prodi'));
         $jurusan_list = array_filter($jurusan_list, fn($j) => !empty($j));
         sort($jurusan_list);
 

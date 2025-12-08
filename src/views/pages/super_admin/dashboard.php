@@ -1,5 +1,5 @@
 <?php
-// File: src/views/pages/super_admin/dashboard.php
+// File: src/views/pages/superadmin/dashboard.php
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">

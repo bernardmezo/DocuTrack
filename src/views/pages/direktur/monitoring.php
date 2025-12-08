@@ -1,27 +1,38 @@
 <?php
 // File: src/views/pages/direktur/monitoring.php
 
-if (!isset($list_proposal)) { $list_proposal = []; }
-if (!isset($list_jurusan)) { $list_jurusan = []; }
-if (!isset($pagination)) { $pagination = ['current_page' => 1, 'total_pages' => 1, 'total_items' => 0]; }
-if (!isset($filters)) { $filters = ['status' => 'Semua', 'jurusan' => 'semua', 'search' => '']; }
+if (!isset($list_proposal)) {
+    $list_proposal = [];
+}
+if (!isset($list_jurusan)) {
+    $list_jurusan = [];
+}
+if (!isset($pagination)) {
+    $pagination = ['current_page' => 1, 'total_pages' => 1, 'total_items' => 0];
+}
+if (!isset($filters)) {
+    $filters = ['status' => 'Semua', 'jurusan' => 'semua', 'search' => ''];
+}
 
 /**
  * Helper Function: render_proposal_progress
  */
-function render_proposal_progress($tahap_sekarang, $status) {
+function render_proposal_progress($tahap_sekarang, $status)
+{
     $tahapan_all = ['Pengajuan', 'Verifikasi', 'ACC WD', 'ACC PPK', 'Dana Cair', 'LPJ'];
-    
+
     $status_lower = strtolower($status);
     $is_ditolak = ($status_lower === 'ditolak');
     $is_approved = ($status_lower === 'approved');
     $is_menunggu = ($status_lower === 'menunggu');
 
     $posisi_sekarang = array_search($tahap_sekarang, $tahapan_all);
-    if ($posisi_sekarang === false) $posisi_sekarang = 0; 
-    
+    if ($posisi_sekarang === false) {
+        $posisi_sekarang = 0;
+    }
+
     $total_langkah = count($tahapan_all) - 1;
-    
+
     // --- Logika Garis ---
     $lebar_garis_biru_selesai = 0;
     $lebar_garis_aktif = 0;
@@ -33,7 +44,7 @@ function render_proposal_progress($tahap_sekarang, $status) {
         $lebar_garis_aktif = (1 / $total_langkah) * 100;
         $left_garis_aktif = $lebar_garis_biru_selesai;
     }
-    
+
     if ($is_ditolak) {
         $color_garis_aktif = 'bg-red-500';
     } elseif ($is_approved) {
@@ -49,33 +60,39 @@ function render_proposal_progress($tahap_sekarang, $status) {
     echo '<div class="relative w-full h-10 flex items-center">';
     echo '<div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 z-0 transform -translate-y-1/2"></div>';
     echo "<div class='absolute top-1/2 left-0 h-1 bg-blue-500 z-10 transform -translate-y-1/2 transition-all duration-500 ease-out' style='width: {$lebar_garis_biru_selesai}%;'></div>";
-    
+
     if ($lebar_garis_aktif > 0) {
         echo "<div class='absolute top-1/2 h-1 {$color_garis_aktif} z-20 transform -translate-y-1/2 transition-all duration-500 ease-out' style='left: {$left_garis_aktif}%; width: {$lebar_garis_aktif}%;'></div>";
     }
 
     foreach ($tahapan_all as $index => $nama_tahap) {
         $left_position = $total_langkah > 0 ? ($index / $total_langkah) * 100 : 0;
-        
+
         $is_completed = $index < $posisi_sekarang;
         $is_active = $index === $posisi_sekarang;
 
-        $node_class = 'bg-gray-300'; $text_class = 'text-gray-400';
+        $node_class = 'bg-gray-300';
+        $text_class = 'text-gray-400';
 
         if ($is_completed) {
-            $node_class = 'bg-blue-500'; $text_class = 'text-blue-600';
+            $node_class = 'bg-blue-500';
+            $text_class = 'text-blue-600';
         } elseif ($is_active) {
             if ($is_ditolak) {
-                $node_class = 'bg-red-500 ring-4 ring-red-200 scale-110'; $text_class = 'text-red-600 font-bold';
+                $node_class = 'bg-red-500 ring-4 ring-red-200 scale-110';
+                $text_class = 'text-red-600 font-bold';
             } else {
-                $node_class = 'bg-blue-500 ring-4 ring-blue-200 scale-110'; $text_class = 'text-blue-600 font-bold';
+                $node_class = 'bg-blue-500 ring-4 ring-blue-200 scale-110';
+                $text_class = 'text-blue-600 font-bold';
             }
         }
-        
+
         if ($is_approved) {
-            $node_class = 'bg-blue-500'; $text_class = 'text-blue-600';
+            $node_class = 'bg-blue-500';
+            $text_class = 'text-blue-600';
             if ($nama_tahap === 'LPJ') {
-                 $node_class = 'bg-green-500 ring-4 ring-green-200 scale-110'; $text_class = 'text-green-600 font-bold';
+                 $node_class = 'bg-green-500 ring-4 ring-green-200 scale-110';
+                $text_class = 'text-green-600 font-bold';
             }
         }
 
@@ -84,7 +101,7 @@ function render_proposal_progress($tahap_sekarang, $status) {
         echo "  <span class='absolute -bottom-5 text-xs w-20 text-center {$text_class} hidden md:block'>{$nama_tahap}</span>";
         echo "</div>";
     }
-    
+
     echo '</div>';
 }
 ?>
@@ -140,7 +157,7 @@ function render_proposal_progress($tahap_sekarang, $status) {
                             Semua Jurusan
                         </option>
                         
-                        <?php foreach ($list_jurusan as $jurusan): ?>
+                        <?php foreach ($list_jurusan as $jurusan) : ?>
                             <option value="<?= htmlspecialchars($jurusan) ?>" class="text-gray-900" style="color: #111827; background-color: #ffffff;" <?= $filters['jurusan'] === $jurusan ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($jurusan) ?>
                             </option>
@@ -178,33 +195,33 @@ function render_proposal_progress($tahap_sekarang, $status) {
                         <i class="fas fa-spinner fa-spin text-blue-600 text-3xl"></i>
                     </div>
 
-                    <?php if (empty($list_proposal)): ?>
+                    <?php if (empty($list_proposal)) : ?>
                         <div class="text-center py-10 text-gray-400 italic animate-fade-in">
                             Tidak ada proposal yang cocok dengan filter Anda.
                         </div>
-                    <?php else: ?>
-                        <?php 
+                    <?php else : ?>
+                        <?php
                         $delay = 0;
-                        foreach ($list_proposal as $item): 
+                        foreach ($list_proposal as $item) :
                             $status_lower = strtolower($item['status']);
                             $row_class = 'bg-white';
                             $row_style = '';
-                            
+
                             if ($status_lower === 'approved' || $status_lower === 'ditolak') {
                                 $row_style = 'opacity-70';
                             } elseif ($status_lower === 'in process' || $status_lower === 'menunggu') {
                                 $row_class = 'bg-blue-50/40';
                             }
-                            
-                            $status_class = match($status_lower) {
+
+                            $status_class = match ($status_lower) {
                                 'approved' => 'text-green-700 bg-green-50 border-green-200',
                                 'ditolak' => 'text-red-700 bg-red-50 border-red-200',
                                 'in process' => 'text-blue-700 bg-blue-50 border-blue-200',
                                 default => 'text-gray-700 bg-gray-100 border-gray-200'
                             };
-                            
+
                             $delay += 100;
-                        ?>
+                            ?>
                             <div class="monitoring-row grid grid-cols-3 gap-4 px-4 py-6 items-center transition-colors hover:bg-blue-50/40 animate-reveal group border-b border-gray-50 last:border-b-0 <?= $row_class ?>" 
                                  style="<?= $row_style ?>; animation-delay: <?= $delay ?>ms;">
                                 <div>
@@ -238,9 +255,9 @@ function render_proposal_progress($tahap_sekarang, $status) {
                 dari <span class="font-bold text-gray-800"><?= $pagination['total_items'] ?></span> hasil
             </p>
             
-            <?php if ($pagination['total_pages'] > 1): ?>
+            <?php if ($pagination['total_pages'] > 1) : ?>
                 <nav class="flex items-center gap-1">
-                    <?php 
+                    <?php
                     $btnBase = "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border shadow-sm transform hover:scale-105";
                     $activeBtn = "bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent shadow-md";
                     $inactiveBtn = "bg-white border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600";
@@ -248,22 +265,22 @@ function render_proposal_progress($tahap_sekarang, $status) {
                     ?>
                     
                     <!-- Tombol Sebelumnya -->
-                    <?php if ($pagination['current_page'] > 1): ?>
+                    <?php if ($pagination['current_page'] > 1) : ?>
                         <a href="?page=<?= $pagination['current_page'] - 1 ?>&status=<?= urlencode($filters['status']) ?>&jurusan=<?= urlencode($filters['jurusan']) ?>&search=<?= urlencode($filters['search']) ?>" 
                            class="<?= $btnBase ?> <?= $inactiveBtn ?>">
                             <i class="fas fa-chevron-left"></i>
                         </a>
-                    <?php else: ?>
+                    <?php else : ?>
                         <span class="<?= $btnBase ?> <?= $disabledBtn ?>">
                             <i class="fas fa-chevron-left"></i>
                         </span>
                     <?php endif; ?>
                     
                     <!-- Tombol Halaman -->
-                    <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
-                        <?php if ($i === $pagination['current_page']): ?>
+                    <?php for ($i = 1; $i <= $pagination['total_pages']; $i++) : ?>
+                        <?php if ($i === $pagination['current_page']) : ?>
                             <span class="<?= $btnBase ?> <?= $activeBtn ?>"><?= $i ?></span>
-                        <?php else: ?>
+                        <?php else : ?>
                             <a href="?page=<?= $i ?>&status=<?= urlencode($filters['status']) ?>&jurusan=<?= urlencode($filters['jurusan']) ?>&search=<?= urlencode($filters['search']) ?>" 
                                class="<?= $btnBase ?> <?= $inactiveBtn ?>">
                                 <?= $i ?>
@@ -272,12 +289,12 @@ function render_proposal_progress($tahap_sekarang, $status) {
                     <?php endfor; ?>
                     
                     <!-- Tombol Selanjutnya -->
-                    <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
+                    <?php if ($pagination['current_page'] < $pagination['total_pages']) : ?>
                         <a href="?page=<?= $pagination['current_page'] + 1 ?>&status=<?= urlencode($filters['status']) ?>&jurusan=<?= urlencode($filters['jurusan']) ?>&search=<?= urlencode($filters['search']) ?>" 
                            class="<?= $btnBase ?> <?= $inactiveBtn ?>">
                             <i class="fas fa-chevron-right"></i>
                         </a>
-                    <?php else: ?>
+                    <?php else : ?>
                         <span class="<?= $btnBase ?> <?= $disabledBtn ?>">
                             <i class="fas fa-chevron-right"></i>
                         </span>

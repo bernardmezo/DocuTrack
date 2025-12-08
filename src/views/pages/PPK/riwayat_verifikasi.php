@@ -25,18 +25,18 @@ $list_riwayat = $list_riwayat ?? [];
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                    <?php if (empty($list_riwayat)): ?>
+                    <?php if (empty($list_riwayat)) : ?>
                         <tr>
                             <td colspan="6" class="px-6 py-10 text-center text-gray-500 italic">Belum ada riwayat persetujuan.</td>
                         </tr>
-                    <?php else: ?>
-                        <?php 
+                    <?php else : ?>
+                        <?php
                         $no = 1;
-                        foreach ($list_riwayat as $item): 
+                        foreach ($list_riwayat as $item) :
                             $status = $item['status'];
                             $badgeClass = ($status === 'Disetujui') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
                             $icon = ($status === 'Disetujui') ? 'fa-check-circle' : 'fa-times-circle';
-                        ?>
+                            ?>
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 text-sm text-gray-700"><?php echo $no++; ?>.</td>
                             <td class="px-6 py-4 text-sm font-semibold text-gray-900"><?php echo htmlspecialchars($item['nama']); ?></td>

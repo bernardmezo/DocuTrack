@@ -1,7 +1,15 @@
 <?php
-// File: src/views/layouts/ppk/footer.php
+
+/**
+ * Footer layout for PPK
+ *
+ * @package DocuTrack
+ */
+
 ?>
-        </main> </div> <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        </main>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
@@ -10,9 +18,20 @@
             const profileButton = document.getElementById('profile-menu-button');
             const profileMenu = document.getElementById('profile-menu');
             if (profileButton && profileMenu) {
-                profileButton.addEventListener('click', function(event) { event.stopPropagation(); profileMenu.classList.toggle('hidden'); });
-                window.addEventListener('click', function(event) { if (!profileButton.contains(event.target) && !profileMenu.contains(event.target)) { profileMenu.classList.add('hidden'); } });
-                window.addEventListener('keydown', function(event) { if (event.key === 'Escape' && !profileMenu.classList.contains('hidden')) { profileMenu.classList.add('hidden'); } });
+                profileButton.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    profileMenu.classList.toggle('hidden');
+                });
+                window.addEventListener('click', function(event) {
+                    if (!profileButton.contains(event.target) && !profileMenu.contains(event.target)) {
+                        profileMenu.classList.add('hidden');
+                    }
+                });
+                window.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape' && !profileMenu.classList.contains('hidden')) {
+                        profileMenu.classList.add('hidden');
+                    }
+                });
             }
 
             // --- Logika Toggle Menu Mobile ---
@@ -31,5 +50,8 @@
             }
         });
     </script>
+
+    <!-- Custom Page-specific Scripts -->
+    <script src="/docutrack/public/assets/js/page-scripts/notifikasi.js"></script>
 </body>
 </html>

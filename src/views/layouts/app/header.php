@@ -7,7 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'];
 
-function isActive($current, $target) {
+function isActive($current, $target)
+{
     return (strpos($current, $target) !== false)
         ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
         : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
@@ -51,8 +52,8 @@ switch (strtolower($userRole)) {
         $akun_link = '/docutrack/public/bendahara/akun';
         break;
     case 'super administrator': // Menangani format dari dummy data
-    case 'super_admin':
-        $akun_link = '/docutrack/public/super_admin/akun';
+    case 'superadmin':
+        $akun_link = '/docutrack/public/superadmin/akun';
         break;
     default: // admin
         $akun_link = '/docutrack/public/admin/akun';
@@ -159,11 +160,26 @@ switch (strtolower($userRole)) {
                 </div>
 
                 <div class="flex items-center gap-4 md:gap-6">
-                    <div class="relative text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200">
-                        <i class="fas fa-bell"></i>
-                        <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F]">
-                            10
-                        </span>
+                    <div class="relative" id="notification-container">
+                        <div id="notification-icon-button" class="relative text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F] hidden">
+                                0
+                            </span>
+                        </div>
+                        <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-xl py-2 z-50 hidden border border-gray-100">
+                            <div class="flex justify-between items-center px-4 py-2 border-b">
+                                <h3 class="font-semibold text-gray-800">Notifikasi</h3>
+                                <button id="mark-all-as-read-btn" class="text-sm text-blue-600 hover:underline">Tandai semua dibaca</button>
+                            </div>
+                            <div id="notification-list" class="max-h-80 overflow-y-auto">
+                                <!-- Notification items will be injected here by JavaScript -->
+                                <div class="text-center text-gray-500 py-4">Tidak ada notifikasi baru.</div>
+                            </div>
+                            <div class="px-4 py-2 border-t text-center">
+                                <a href="#" id="view-all-notifications-link" class="text-sm text-blue-600 hover:underline">Lihat semua notifikasi</a>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="relative">

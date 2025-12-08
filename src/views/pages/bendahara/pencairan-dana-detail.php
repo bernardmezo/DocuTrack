@@ -3,22 +3,25 @@
 $status_lower = strtolower($status);
 
 if (!function_exists('formatRupiah')) {
-    function formatRupiah($angka) { return "Rp " . number_format($angka ?? 0, 0, ',', '.'); }
+    function formatRupiah($angka)
+    {
+        return "Rp " . number_format($angka ?? 0, 0, ',', '.');
+    }
 }
 ?>
 
 <main class="main-content font-poppins p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
     
-    <?php if (isset($_SESSION['flash_message'])): ?>
+    <?php if (isset($_SESSION['flash_message'])) : ?>
     <div class="mb-6 p-4 rounded-lg <?= ($_SESSION['flash_type'] ?? 'success') === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-yellow-50 border border-yellow-200 text-yellow-800' ?>">
         <div class="flex items-center gap-2">
             <i class="fas fa-<?= ($_SESSION['flash_type'] ?? 'success') === 'success' ? 'check-circle' : 'exclamation-triangle' ?>"></i>
             <span class="font-medium"><?= htmlspecialchars($_SESSION['flash_message']) ?></span>
         </div>
     </div>
-    <?php 
-        unset($_SESSION['flash_message'], $_SESSION['flash_type']); 
-    endif; 
+        <?php
+        unset($_SESSION['flash_message'], $_SESSION['flash_type']);
+    endif;
     ?>
 
     <section class="bg-white p-4 md:p-10 rounded-2xl shadow-lg overflow-hidden mb-8">
@@ -27,18 +30,18 @@ if (!function_exists('formatRupiah')) {
             <div>
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Detail Usulan Kegiatan</h2>
                 <p class="text-sm text-gray-500 mt-1">Status:
-                    <?php if ($status_lower === 'dana diberikan'): ?>
+                    <?php if ($status_lower === 'dana diberikan') : ?>
                         <span class="font-semibold text-green-600">Dana Diberikan</span>
-                    <?php elseif ($status_lower === 'revisi'): ?>
+                    <?php elseif ($status_lower === 'revisi') : ?>
                         <span class="font-semibold text-yellow-600">Revisi</span>
-                    <?php else: ?>
+                    <?php else : ?>
                         <span class="font-semibold text-gray-600"><?= htmlspecialchars($status) ?></span>
                     <?php endif; ?>
                 </p>
             </div>
         </div>
 
-        <?php if ($status_lower === 'menunggu'): ?>
+        <?php if ($status_lower === 'menunggu') : ?>
         <form method="POST" action="/docutrack/public/bendahara/pencairan-dana/proses" id="formPencairan">
             <input type="hidden" name="kak_id" value="<?= $kegiatan_data['id'] ?? '' ?>">
             <!-- Simpan total anggaran asli untuk validasi -->
@@ -121,7 +124,7 @@ if (!function_exists('formatRupiah')) {
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">2. Indikator Kinerja Utama (IKU)</h3>
                 <div class="flex flex-wrap gap-2 p-3 min-h-[60px] bg-gray-100 rounded-lg border border-gray-200">
-                    <?php foreach ($iku_data as $iku): ?>
+                    <?php foreach ($iku_data as $iku) : ?>
                         <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                             <?= htmlspecialchars($iku) ?>
                         </span>
@@ -141,7 +144,7 @@ if (!function_exists('formatRupiah')) {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 bg-white">
-                            <?php foreach ($indikator_data as $indikator): ?>
+                            <?php foreach ($indikator_data as $indikator) : ?>
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= strtoupper(htmlspecialchars($indikator['bulan'])) ?></td>
                                 <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($indikator['nama']) ?></td>
@@ -156,12 +159,14 @@ if (!function_exists('formatRupiah')) {
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">4. Rincian Anggaran Biaya (RAB)</h3>
                 
-                <?php 
+                <?php
                 $grand_total_rab = 0;
-                foreach ($rab_data as $kategori => $items): 
-                    if (empty($items)) continue;
+                foreach ($rab_data as $kategori => $items) :
+                    if (empty($items)) {
+                        continue;
+                    }
                     $subtotal = 0;
-                ?>
+                    ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-4 mb-2"><?= htmlspecialchars($kategori) ?></h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
                         <table class="w-full min-w-[900px]">
@@ -178,7 +183,7 @@ if (!function_exists('formatRupiah')) {
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">
-                                <?php foreach ($items as $item): 
+                                <?php foreach ($items as $item) :
                                     $vol1 = $item['vol1'] ?? 0;
                                     $sat1 = $item['sat1'] ?? '';
                                     $vol2 = $item['vol2'] ?? 1;
@@ -186,7 +191,7 @@ if (!function_exists('formatRupiah')) {
                                     $harga = $item['harga'] ?? 0;
                                     $total_item = $vol1 * $vol2 * $harga;
                                     $subtotal += $total_item;
-                                ?>
+                                    ?>
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($item['uraian'] ?? '') ?></td>
                                     <td class="px-4 py-3 text-sm text-gray-700"><?= htmlspecialchars($item['rincian'] ?? '') ?></td>
@@ -197,7 +202,8 @@ if (!function_exists('formatRupiah')) {
                                     <td class="px-4 py-3 text-sm text-gray-700 text-right"><?= number_format($harga, 0, ',', '.') ?></td>
                                     <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right"><?= formatRupiah($total_item) ?></td>
                                 </tr>
-                                <?php endforeach; $grand_total_rab += $subtotal; ?>
+                                <?php endforeach;
+                                $grand_total_rab += $subtotal; ?>
                                 <tr class="bg-gray-50 font-semibold">
                                     <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 text-right"><?= formatRupiah($subtotal) ?></td>
@@ -215,7 +221,7 @@ if (!function_exists('formatRupiah')) {
                 </div>
             </div>
 
-            <?php if ($status_lower === 'menunggu' || $status_lower === 'dana diberikan'): ?>
+            <?php if ($status_lower === 'menunggu' || $status_lower === 'dana diberikan') : ?>
             <div class="mb-8 pt-6 border-t border-gray-200">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Proses Pencairan Dana</h3>
                 
@@ -292,7 +298,7 @@ if (!function_exists('formatRupiah')) {
                     <i class="fas fa-arrow-left text-xs"></i> Kembali
                 </a>
                  
-                <?php if ($status_lower === 'menunggu'): ?>
+                <?php if ($status_lower === 'menunggu') : ?>
                 <div class="flex gap-4 w-full sm:w-auto">
                     <button type="button" onclick="submitForm()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition-all">
                         <i class="fas fa-check-circle text-xs"></i> Proses Pencairan
@@ -301,7 +307,7 @@ if (!function_exists('formatRupiah')) {
                 <?php endif; ?>
             </div>
 
-        <?php if ($status_lower === 'menunggu'): ?>
+        <?php if ($status_lower === 'menunggu') : ?>
         </form>
         <?php endif; ?>
 

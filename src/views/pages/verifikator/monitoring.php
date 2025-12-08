@@ -1,8 +1,12 @@
 <!-- <?php
 // File: src/views/pages/verifikator/monitoring.php
 
-if (!isset($list_proposal)) { $list_proposal = []; }
-if (!isset($tahapan_all)) { $tahapan_all = ['Pengajuan', 'Verifikasi', 'ACC WD', 'ACC PPK', 'Dana Cair', 'LPJ']; }
+if (!isset($list_proposal)) {
+    $list_proposal = [];
+}
+if (!isset($tahapan_all)) {
+    $tahapan_all = ['Pengajuan', 'Verifikasi', 'ACC WD', 'ACC PPK', 'Dana Cair', 'LPJ'];
+}
 $total_langkah = count($tahapan_all) - 1;
 ?>
 
@@ -30,28 +34,29 @@ $total_langkah = count($tahapan_all) - 1;
                 </thead>
                 <tbody id="monitoring-table-body" class="divide-y divide-gray-100">
                     <?php
-                        if (!empty($list_proposal)):
-                            foreach ($list_proposal as $item):
-                                
-                                // --- Logika untuk Stepper ---
-                                $posisi_sekarang = array_search($item['tahap_sekarang'], $tahapan_all);
-                                if ($posisi_sekarang === false) $posisi_sekarang = 0;
-                                
-                                $status_lower = strtolower($item['status']);
-                                $is_ditolak = $status_lower === 'ditolak';
-                                $lebar_progress = $posisi_sekarang > 0 ? ($posisi_sekarang / $total_langkah) * 100 : 0;
-                                
-                                // Tentukan warna garis progress
-                                $progress_color_class = $is_ditolak ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-cyan-400';
+                    if (!empty($list_proposal)) :
+                        foreach ($list_proposal as $item) :
+                            // --- Logika untuk Stepper ---
+                            $posisi_sekarang = array_search($item['tahap_sekarang'], $tahapan_all);
+                            if ($posisi_sekarang === false) {
+                                $posisi_sekarang = 0;
+                            }
 
-                                // --- Logika untuk Badge Status ---
-                                $status_class = match ($status_lower) {
-                                    'approved' => 'text-green-700 bg-green-100',
-                                    'ditolak' => 'text-red-700 bg-red-100',
-                                    'in process' => 'text-blue-700 bg-blue-100',
-                                    default => 'text-gray-700 bg-gray-100', // Menunggu
-                                };
-                    ?>
+                            $status_lower = strtolower($item['status']);
+                            $is_ditolak = $status_lower === 'ditolak';
+                            $lebar_progress = $posisi_sekarang > 0 ? ($posisi_sekarang / $total_langkah) * 100 : 0;
+
+                            // Tentukan warna garis progress
+                            $progress_color_class = $is_ditolak ? 'bg-red-500' : 'bg-gradient-to-r from-blue-500 to-cyan-400';
+
+                            // --- Logika untuk Badge Status ---
+                            $status_class = match ($status_lower) {
+                                'approved' => 'text-green-700 bg-green-100',
+                                'ditolak' => 'text-red-700 bg-red-100',
+                                'in process' => 'text-blue-700 bg-blue-100',
+                                default => 'text-gray-700 bg-gray-100', // Menunggu
+                            };
+                            ?>
                                 <tr class='monitoring-row hover:bg-gray-50 transition-colors' data-nama="<?php echo htmlspecialchars($item['nama']); ?>">
                                     <td class='px-6 py-5 align-top'>
                                         <div class="text-sm font-semibold text-gray-900"><?php echo htmlspecialchars($item['nama'] ?? 'N/A'); ?></div>
@@ -64,29 +69,29 @@ $total_langkah = count($tahapan_all) - 1;
                                             <div class="absolute top-1/2 -translate-y-1/2 left-0 h-1 <?php echo $progress_color_class; ?> rounded-full z-0 transition-all duration-500 ease-out" 
                                                  style="width: <?php echo $lebar_progress; ?>%;"></div> 
                                             
-                                            <?php foreach ($tahapan_all as $index => $nama_tahap): 
+                                        <?php foreach ($tahapan_all as $index => $nama_tahap) :
                                                 // Tentukan style dot
                                                 $is_completed = $index < $posisi_sekarang;
                                                 $is_active = $index == $posisi_sekarang;
-                                                
+
                                                 $dot_style = 'bg-gray-300 border-gray-400'; // Belum
-                                                
-                                                if ($is_completed) {
-                                                    $dot_style = 'bg-blue-500 border-blue-600'; // Selesai
-                                                } elseif ($is_active) {
-                                                    if ($is_ditolak) {
-                                                        $dot_style = 'bg-red-500 border-red-600 ring-4 ring-red-200 scale-110'; // Gagal
-                                                    } else {
-                                                        $dot_style = 'bg-blue-500 border-blue-600 ring-4 ring-blue-200 scale-110'; // Aktif
-                                                    }
+
+                                            if ($is_completed) {
+                                                $dot_style = 'bg-blue-500 border-blue-600'; // Selesai
+                                            } elseif ($is_active) {
+                                                if ($is_ditolak) {
+                                                    $dot_style = 'bg-red-500 border-red-600 ring-4 ring-red-200 scale-110'; // Gagal
+                                                } else {
+                                                    $dot_style = 'bg-blue-500 border-blue-600 ring-4 ring-blue-200 scale-110'; // Aktif
                                                 }
-                                                
+                                            }
+
                                                 $left_position = $total_langkah > 0 ? ($index / $total_langkah) * 100 : 0;
                                             ?>
                                             <div class="relative z-10" style="position: absolute; left: <?php echo $left_position; ?>%; transform: translateX(-50%);" title="<?php echo htmlspecialchars($nama_tahap); ?>">
                                                 <div class="w-4 h-4 rounded-full border-2 <?php echo $dot_style; ?> transition-all duration-300"></div>
                                             </div>
-                                            <?php endforeach; ?>
+                                        <?php endforeach; ?>
                                         </div>
                                     </td>
                                     
@@ -96,10 +101,10 @@ $total_langkah = count($tahapan_all) - 1;
                                         </span>
                                     </td>
                                 </tr>
-                    <?php
-                            endforeach;
-                        else:
-                    ?>
+                            <?php
+                        endforeach;
+                    else :
+                        ?>
                         <tr id="empty-row-monitoring">
                             <td colspan="3" class="text-center py-10 text-gray-500 italic">Tidak ada proposal untuk dimonitor.</td>
                         </tr>
