@@ -4,15 +4,18 @@ namespace App\Controllers\PPK;
 
 use App\Core\Controller;
 use App\Services\PpkService;
+use App\Services\LogStatusService; // Added
 
 class DashboardController extends Controller
 {
     private $service;
+    private LogStatusService $logStatusService; // Added
 
     public function __construct($db)
     {
         parent::__construct($db);
         $this->service = new PpkService($this->db);
+        $this->logStatusService = new LogStatusService($this->db); // Added
     }
 
     public function index($data_dari_router = [])
@@ -42,10 +45,17 @@ class DashboardController extends Controller
         $jurusan_list = array_filter($jurusan_list, fn($j) => $j !== '-' && !empty($j));
         sort($jurusan_list);
 
+        // --- Ambil Notifikasi ---
+        $userId = $_SESSION['user_id'] ?? 0; // Asumsi userId ada di session
+        $notificationsData = $this->logStatusService->getNotificationsForUser($userId);
+        // --- End Notifikasi ---
+
         $data = array_merge($data_dari_router, [
             'title' => 'Dashboard PPK', 'stats' => $stats, 'list_usulan' => $list_usulan_paginated,
             'current_page' => $current_page, 'total_pages' => $total_pages,
-            'jurusan_list' => $jurusan_list, 'selected_jurusan' => $selected_jurusan
+            'jurusan_list' => $jurusan_list, 'selected_jurusan' => $selected_jurusan,
+            'notifications' => $notificationsData['items'], // Added
+            'unread_notifications_count' => $notificationsData['unread_count'] // Added
         ]);
         $this->view('pages/ppk/dashboard', $data, 'ppk');
     }

@@ -528,7 +528,8 @@ class BendaharaModel
                     k.pemilikKegiatan,
                     k.nimPelaksana,
                     k.jumlahDicairkan,
-                    k.tanggalPencairan
+                    k.tanggalPencairan,
+                    k.userId
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
                   WHERE l.lpjId = ?";
@@ -715,10 +716,55 @@ class BendaharaModel
     // =========================================================
 
     /**
-     * Ambil riwayat verifikasi/proses Bendahara
+     * Ambil riwayat verifikasi LPJ
+     * Menampilkan LPJ yang sudah diverifikasi (disetujui, ditolak, atau revisi)
+     */
+    public function getRiwayatVerifikasiLPJ()
+    {
+        $query = "SELECT 
+                    l.lpjId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.prodiPenyelenggara as prodi,
+                    l.submittedAt as tanggal_pengajuan,
+                    l.approvedAt as tgl_verifikasi,
+                    l.grandTotalRealisasi as total_realisasi,
+                    
+                    CASE 
+                        WHEN l.statusId = 4 THEN 'Ditolak'
+                        WHEN l.statusId = 3 THEN 'Disetujui'
+                        WHEN l.statusId = 2 THEN 'Revisi'
+                        ELSE 'Menunggu'
+                    END as status,
+                    'lpj' as tipe
+                    
+                  FROM tbl_lpj l
+                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                  WHERE l.approvedAt IS NOT NULL OR l.statusId IN (2, 3, 4)
+                  ORDER BY COALESCE(l.approvedAt, l.submittedAt) DESC";
+
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $row['jurusan'] = $row['jurusan'] ?? '-';
+                $row['prodi'] = $row['prodi'] ?? '-';
+                $row['tgl_verifikasi'] = $row['tgl_verifikasi'] ?? $row['tanggal_pengajuan'];
+                $data[] = $row;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Ambil riwayat pencairan dana
      * Menampilkan kegiatan yang sudah dicairkan atau ditolak
      */
-    public function getRiwayatVerifikasi()
+    public function getRiwayatPencairanDana()
     {
         $query = "SELECT 
                     k.kegiatanId as id,
@@ -729,13 +775,14 @@ class BendaharaModel
                     k.prodiPenyelenggara as prodi,
                     k.createdAt as tanggal_pengajuan,
                     k.tanggalPencairan as tgl_verifikasi,
+                    k.jumlahDicairkan as total_dicairkan,
                     
-                    -- Status berdasarkan kondisi
                     CASE 
-                        WHEN k.tanggalPencairan IS NOT NULL THEN 'Dana Diberikan'
-                        WHEN k.statusUtamaId = 4 THEN 'Revisi'
-                        ELSE 'Proses'
-                    END as status
+                        WHEN k.tanggalPencairan IS NOT NULL THEN 'Dana Dicairkan'
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        ELSE 'Menunggu'
+                    END as status,
+                    'pencairan' as tipe
                     
                   FROM tbl_kegiatan k
                   WHERE k.tanggalPencairan IS NOT NULL 
@@ -755,6 +802,28 @@ class BendaharaModel
         }
 
         return $data;
+    }
+
+    /**
+     * Ambil gabungan riwayat verifikasi (LPJ + Pencairan Dana)
+     * Untuk halaman riwayat verifikasi yang menampilkan semua
+     */
+    public function getRiwayatVerifikasi()
+    {
+        // Gabungkan riwayat LPJ dan pencairan dana
+        $lpjHistory = $this->getRiwayatVerifikasiLPJ();
+        $pencairanHistory = $this->getRiwayatPencairanDana();
+        
+        // Gabungkan dan urutkan berdasarkan tanggal verifikasi
+        $combined = array_merge($lpjHistory, $pencairanHistory);
+        
+        usort($combined, function($a, $b) {
+            $dateA = strtotime($a['tgl_verifikasi'] ?? '1970-01-01');
+            $dateB = strtotime($b['tgl_verifikasi'] ?? '1970-01-01');
+            return $dateB - $dateA; // Descending
+        });
+        
+        return $combined;
     }
 
     // =========================================================

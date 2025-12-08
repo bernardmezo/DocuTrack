@@ -32,9 +32,24 @@ class BendaharaService
         return $this->model->getAntrianLPJ();
     }
 
+    public function getAllLPJHistory()
+    {
+        return $this->model->getAllLPJHistory();
+    }
+
     public function getRiwayatVerifikasi()
     {
         return $this->model->getRiwayatVerifikasi();
+    }
+
+    public function getRiwayatVerifikasiLPJ()
+    {
+        return $this->model->getRiwayatVerifikasiLPJ();
+    }
+
+    public function getRiwayatPencairanDana()
+    {
+        return $this->model->getRiwayatPencairanDana();
     }
 
     public function getListJurusan()
@@ -42,17 +57,29 @@ class BendaharaService
         return $this->model->getListJurusan();
     }
 
-    // You can add other methods from BendaharaModel that are used by the service here.
-    // For now, only adding the ones identified in the error log.
-    // If other methods from BendaharaModel are intended to be called directly
-    // through the service (e.g., from a controller), they should also be explicitly
-    // defined here.
+    public function getDetailLPJ($lpjId)
+    {
+        return $this->model->getDetailLPJ($lpjId);
+    }
 
-    // Example of how to add more methods, if needed:
-    // public function getDetailPencairan($kegiatanId) {
-    //     return $this->model->getDetailPencairan($kegiatanId);
-    // }
-    // public function cairkanDana($kegiatanId, $dataPencairan) {
-    //     return $this->model->cairkanDana($kegiatanId, $dataPencairan);
-    // }
+    public function getLPJItems($lpjId)
+    {
+        return $this->model->getLPJItems($lpjId);
+    }
+
+    public function approveLPJ($lpjId)
+    {
+        return $this->model->approveLPJ($lpjId);
+    }
+
+    // Pencairan Dana methods
+    public function getDetailPencairan($kegiatanId)
+    {
+        return $this->model->getDetailPencairan($kegiatanId);
+    }
+
+    public function cairkanDana($kegiatanId, $dataPencairan)
+    {
+        return $this->model->cairkanDana($kegiatanId, $dataPencairan);
+    }
 }

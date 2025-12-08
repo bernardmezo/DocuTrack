@@ -6,16 +6,19 @@ namespace App\Controllers\Bendahara;
 
 use App\Core\Controller;
 use App\Services\BendaharaService;
+use App\Services\LogStatusService; // Added
 use Exception;
 
 class PengajuanLpjController extends Controller
 {
     private $model;
+    private LogStatusService $logStatusService; // Added
 
     public function __construct()
     {
         parent::__construct();
         $this->model = new BendaharaService($this->db);
+        $this->logStatusService = new LogStatusService($this->db); // Added
     }
 
     /**
@@ -176,7 +179,15 @@ class PengajuanLpjController extends Controller
                     $_SESSION['flash_message'] = 'LPJ berhasil disetujui!';
                     $_SESSION['flash_type'] = 'success';
 
-                    error_log("LPJ {$lpj_id} approved successfully");
+                    // --- Notifikasi ke Pengusul ---
+                    $lpjData = $this->model->getDetailLPJ($lpj_id);
+                    if ($lpjData && isset($lpjData['userId'])) {
+                        $pengusulId = $lpjData['userId'];
+                        $namaKegiatan = $lpjData['namaKegiatan'] ?? 'Kegiatan';
+                        $pesan = "LPJ untuk kegiatan '{$namaKegiatan}' telah disetujui oleh Bendahara.";
+                        $this->logStatusService->createNotification($pengusulId, 'APPROVAL', $pesan, $lpj_id, null, $lpjData['kegiatanId']);
+                    }
+                    // --- End Notifikasi ---
                 } else {
                     throw new Exception('Gagal menyetujui LPJ. Pastikan LPJ sudah diajukan oleh pengusul terlebih dahulu.');
                 }
@@ -211,6 +222,16 @@ class PengajuanLpjController extends Controller
                 $_SESSION['flash_type'] = 'success';
 
                 error_log("Revisi request sent for LPJ {$lpj_id}");
+
+                // --- Notifikasi ke Pengusul ---
+                $lpjData = $this->model->getDetailLPJ($lpj_id);
+                if ($lpjData && isset($lpjData['userId'])) {
+                    $pengusulId = $lpjData['userId'];
+                    $namaKegiatan = $lpjData['namaKegiatan'] ?? 'Kegiatan';
+                    $pesan = "LPJ untuk kegiatan '{$namaKegiatan}' memerlukan revisi. \nCatatan: " . ($catatan_umum ?: "Lihat detail LPJ untuk komentar item.");
+                    $this->logStatusService->createNotification($pengusulId, 'REVISION', $pesan, $lpj_id, null, $lpjData['kegiatanId']);
+                }
+                // --- End Notifikasi ---
             } else {
                 throw new Exception('Action tidak valid');
             }

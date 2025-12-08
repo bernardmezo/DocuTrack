@@ -5,17 +5,20 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Services\LpjService;
 use App\Services\KegiatanService;
+use App\Services\LogStatusService; // Added
 
 class DashboardController extends Controller
 {
     private $lpjService;
     private $kegiatanService;
+    private LogStatusService $logStatusService; // Added
 
     public function __construct($db)
     {
         parent::__construct($db);
         $this->lpjService = new LpjService($this->db);
         $this->kegiatanService = new KegiatanService($this->db);
+        $this->logStatusService = new LogStatusService($this->db); // Added
     }
 
     public function index($data_dari_router = [])
@@ -37,6 +40,11 @@ class DashboardController extends Controller
             'ACC Bendahara' => 'fa-file-invoice-dollar', 'Selesai' => 'fa-flag-checkered'
         ];
 
+        // --- Ambil Notifikasi ---
+        $userId = $_SESSION['user_id'] ?? 0; // Asumsi userId ada di session
+        $notificationsData = $this->logStatusService->getNotificationsForUser($userId);
+        // --- End Notifikasi ---
+
         $data = array_merge($data_dari_router, [
             'title' => 'Admin Dashboard',
             'stats' => $stats,
@@ -47,7 +55,9 @@ class DashboardController extends Controller
             'tahap_sekarang_lpj' => $tahap_sekarang_lpj,
             'icons_lpj' => $icons_lpj,
             'list_kak' => $list_kak,
-            'list_lpj' => $list_lpj
+            'list_lpj' => $list_lpj,
+            'notifications' => $notificationsData['items'], // Added
+            'unread_notifications_count' => $notificationsData['unread_count'] // Added
         ]);
 
         $this->view('pages/admin/dashboard', $data, 'app');
