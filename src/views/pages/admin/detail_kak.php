@@ -691,9 +691,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================
     // PRINT PDF BUTTON
     // ============================================
+    // Update script di detail_kak.php
     document.getElementById('print-pdf-btn')?.addEventListener('click', (e) => {
-        e.preventDefault(); 
-        window.print(); 
+        e.preventDefault();
+        
+        // Get kegiatan ID from data attribute or hidden input
+        const kegiatanId = <?php echo json_encode($kegiatan_data['kegiatanId'] ?? $id ?? 0); ?>;
+        
+        if (!kegiatanId) {
+            alert('ID Kegiatan tidak ditemukan');
+            return;
+        }
+        
+        // Show loading (optional)
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Generating PDF...',
+                text: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+        }
+        
+        // Redirect ke endpoint PDF
+        window.location.href = `/docutrack/public/admin/detail-kak/pdf/${kegiatanId}`;
+        
+        // Close loading after delay
+        setTimeout(() => {
+            if (typeof Swal !== 'undefined') Swal.close();
+        }, 2000);
     });
 
     // ============================================

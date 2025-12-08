@@ -13,80 +13,67 @@ ini_set('display_errors', 1);
 require_once __DIR__ . '/../../core/Controller.php';
 require_once __DIR__ . '/../../model/adminModel.php';
 
+// Load Composer Autoload untuk mPDF
+require_once __DIR__ . '/../../../vendor/autoload.php';
+
+use Mpdf\Mpdf;
+use Mpdf\Config\ConfigVariables;
+use Mpdf\Config\FontVariables;
+
 class AdminDetailKAKController extends Controller {
     
     /**
-     * Menampilkan halaman detail KAK
+     * Menampilkan detail KAK (existing method)
      */
     public function show($id, $data_dari_router = []) {
-        if (!isset($_SESSION['user_id'])) {
-            header('Location: /docutrack/public/login');
-            exit;
-        }
-        
         $ref = $_GET['ref'] ?? 'kegiatan'; 
         $base_url = "/docutrack/public/admin";
         $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-kegiatan';
-        
+
         $model = new adminModel($this->db);
+        
         $dataDB = $model->getDetailKegiatan($id);
         
         if (!$dataDB) {
-            $_SESSION['error_message'] = "Kegiatan dengan ID $id tidak ditemukan.";
-            header("Location: $back_url");
-            exit;
+            echo "Kegiatan dengan ID $id tidak ditemukan.";
+            return;
         }
-        
+
         $kakId = $dataDB['kakId'];
-        
+
         $indikator  = $model->getIndikatorByKAK($kakId);
         $tahapan    = $model->getTahapanByKAK($kakId);
         $rab        = $model->getRABByKAK($kakId);
         $komentar   = $model->getKomentarTerbaru($id);
         $komentarPenolakan = $model->getKomentarPenolakan($id);
-        
+
         $tahapan_string = "";
-        if (!empty($tahapan) && is_array($tahapan)) {
-            foreach ($tahapan as $index => $tahap) {
-                $tahapan_string .= ($index + 1) . ". " . $tahap . "\n";
-            }
+        foreach ($tahapan as $index => $tahap) {
+            $tahapan_string .= ($index + 1) . ". " . $tahap . "\n";
         }
-        
-        $iku_array = [];
-        if (!empty($dataDB['iku'])) {
-            $iku_array = array_map('trim', explode(',', $dataDB['iku']));
-        }
-        
+
+        $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
+
         $kegiatan_data = [
-            'id' => $dataDB['kegiatanId'],
             'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',
             'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',
             'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',
             'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
             'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
             'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '-',
-            'prodi' => $dataDB['prodiPenyelenggara'] ?? '-',
             'nama_kegiatan' => $dataDB['namaKegiatan'] ?? 'Tidak ada judul',
             'gambaran_umum' => $dataDB['gambaranUmum'] ?? '-',
             'penerima_manfaat' => $dataDB['penerimaMaanfaat'] ?? '-',
             'metode_pelaksanaan' => $dataDB['metodePelaksanaan'] ?? '-',
             'tahapan_kegiatan' => $tahapan_string,
-            'surat_pengantar' => $dataDB['file_surat_pengantar'] ?? null,
+            'file_surat_pengantar' => $dataDB['file_surat_pengantar'] ?? null,
             'tanggal_mulai' => $dataDB['tanggal_mulai'] ?? null,
             'tanggal_selesai' => $dataDB['tanggal_selesai'] ?? null
         ];
-        
-        $surat_pengantar_url = null;
-        if (!empty($dataDB['file_surat_pengantar'])) {
-            $filename = basename($dataDB['file_surat_pengantar']);
-            $surat_pengantar_url = '/docutrack/public/uploads/surat/' . $filename;
-        }
-        
-        $status_display = ucfirst($dataDB['status_text'] ?? 'Menunggu');
-        
+
         $data = array_merge($data_dari_router, [
             'title' => 'Detail Kegiatan - ' . htmlspecialchars($dataDB['namaKegiatan']),
-            'status' => $status_display,
+            'status' => ucfirst($dataDB['status_text'] ?? 'Menunggu'),
             'user_role' => $_SESSION['user_role'] ?? 'admin',
             'kegiatan_data' => $kegiatan_data,
             'iku_data' => $iku_array,
@@ -95,11 +82,139 @@ class AdminDetailKAKController extends Controller {
             'kode_mak' => $dataDB['buktiMAK'] ?? '-',
             'komentar_revisi' => $komentar,
             'komentar_penolakan' => $komentarPenolakan,
-            'surat_pengantar_url' => $surat_pengantar_url,
-            'back_url' => $back_url
+            'surat_pengantar_url' => !empty($dataDB['file_surat_pengantar']) 
+                ? '/docutrack/public/uploads/surat/' . basename($dataDB['file_surat_pengantar']) 
+                : null,
+            'back_url' => $back_url,
+            'id' => $id,  // PENTING: Pass ID utama
+            'kegiatan_id' => $id, // Alias untuk konsistensi
+            'kegiatanId' => $dataDB['kegiatanId'] // Dari database
         ]);
-        
+
         $this->view('pages/admin/detail_kak', $data, 'app');
+    }
+
+    /**
+     * Generate dan download PDF KAK
+     * 
+     * @param int $id - ID Kegiatan
+     */
+    public function downloadPDF($id) {
+        error_log("=== downloadPDF START ===");
+        error_log("Kegiatan ID: " . $id);
+        
+        try {
+            $model = new adminModel($this->db);
+            
+            // Ambil data kegiatan
+            $dataDB = $model->getDetailKegiatan($id);
+            
+            if (!$dataDB) {
+                throw new Exception("Kegiatan dengan ID {$id} tidak ditemukan");
+            }
+
+            $kakId = $dataDB['kakId'];
+
+            // Ambil semua data yang dibutuhkan
+            $indikator = $model->getIndikatorByKAK($kakId);
+            $tahapan = $model->getTahapanByKAK($kakId);
+            $rab = $model->getRABByKAK($kakId);
+
+            $tahapan_string = "";
+            foreach ($tahapan as $index => $tahap) {
+                $tahapan_string .= ($index + 1) . ". " . $tahap . "\n";
+            }
+
+            $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
+
+            // Prepare data untuk template
+            $kegiatan_data = [
+                'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',
+                'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',
+                'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',
+                'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
+                'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
+                'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '-',
+                'prodi' => $dataDB['prodiPenyelenggara'] ?? '-',
+                'nama_kegiatan' => $dataDB['namaKegiatan'] ?? 'Tidak ada judul',
+                'gambaran_umum' => $dataDB['gambaranUmum'] ?? '-',
+                'penerima_manfaat' => $dataDB['penerimaMaanfaat'] ?? '-',
+                'metode_pelaksanaan' => $dataDB['metodePelaksanaan'] ?? '-',
+                'tahapan_kegiatan' => $tahapan_string,
+                'tanggal_mulai' => $dataDB['tanggal_mulai'] ?? '',
+                'tanggal_selesai' => $dataDB['tanggal_selesai'] ?? ''
+            ];
+
+            // Render template ke HTML dengan absolute path
+            $templatePath = __DIR__ . '/../../views/pdf/kak_template.php';
+            
+            // Debug: Cek apakah file ada
+            if (!file_exists($templatePath)) {
+                error_log("ERROR: Template file not found at: " . $templatePath);
+                throw new Exception("Template PDF tidak ditemukan. Path: " . $templatePath);
+            }
+            
+            error_log("Template path: " . $templatePath);
+            
+            ob_start();
+            include $templatePath;
+            $html = ob_get_clean();
+            
+            error_log("HTML template rendered successfully");
+
+            // Konfigurasi mPDF
+            $defaultConfig = (new ConfigVariables())->getDefaults();
+            $fontDirs = $defaultConfig['fontDir'];
+
+            $defaultFontConfig = (new FontVariables())->getDefaults();
+            $fontData = $defaultFontConfig['fontdata'];
+
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'margin_left' => 15,
+                'margin_right' => 15,
+                'margin_top' => 15,
+                'margin_bottom' => 20,
+                'margin_header' => 10,
+                'margin_footer' => 10,
+                'orientation' => 'P', // Portrait
+                'fontDir' => $fontDirs,
+                'fontdata' => $fontData,
+                'default_font' => 'Arial'
+            ]);
+
+            // Set metadata PDF
+            $mpdf->SetTitle('KAK - ' . $dataDB['namaKegiatan']);
+            $mpdf->SetAuthor('DocuTrack System');
+            $mpdf->SetCreator('Polibatam');
+            
+            // Write HTML ke PDF
+            $mpdf->WriteHTML($html);
+            
+            error_log("PDF generated successfully");
+
+            // Generate filename
+            $safe_filename = preg_replace('/[^A-Za-z0-9\-]/', '_', $dataDB['namaKegiatan']);
+            $filename = 'KAK_' . $safe_filename . '_' . date('Ymd') . '.pdf';
+            
+            error_log("Filename: " . $filename);
+
+            // Output PDF (download)
+            $mpdf->Output($filename, 'D'); // 'D' = Download, 'I' = Inline view
+            
+            error_log("=== downloadPDF END (SUCCESS) ===");
+            exit;
+            
+        } catch (Exception $e) {
+            error_log("ERROR downloadPDF: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            // Redirect dengan error message
+            $_SESSION['flash_error'] = 'Gagal generate PDF: ' . $e->getMessage();
+            header('Location: /docutrack/public/admin/detail-kak/show/' . $id);
+            exit;
+        }
     }
     
     /**

@@ -108,7 +108,10 @@ case 'admin':
             require_once '../src/controllers/Admin/DetailKAK.php';
             $controller = new AdminDetailKAKController($db); 
             
-            if (isset($param1) && $param1 === 'show' && isset($param2)) {
+            // NEW: Handle PDF download
+            if (isset($param1) && $param1 === 'pdf' && isset($param2)) {
+                $controller->downloadPDF($param2);
+            } elseif (isset($param1) && $param1 === 'show' && isset($param2)) {
                 $controller->show($param2, ['active_page' => $base_admin_path . '/dashboard']);
             } else {
                 header('Location: /docutrack/public/admin/dashboard');
