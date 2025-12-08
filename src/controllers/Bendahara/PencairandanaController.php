@@ -108,7 +108,7 @@ class PencairandanaController extends Controller
                 'nip_penanggung_jawab' => $kegiatan['nim_pj'] ?? '-',
                 'nama_kegiatan' => $kegiatan['namaKegiatan'] ?? '-',
                 'gambaran_umum' => $kegiatan['gambaranUmum'] ?? '-',
-                'penerima_manfaat' => $kegiatan['penerimaMaanfaat'] ?? '-',
+                'penerima_manfaat' => $kegiatan['penerimaManfaat'] ?? '-',
                 'metode_pelaksanaan' => $kegiatan['metodePelaksanaan'] ?? '-',
                 'tahapan_kegiatan' => $tahapan_string ?: '-',
                 'tanggal_mulai' => $kegiatan['tanggalMulai'] ?? '',

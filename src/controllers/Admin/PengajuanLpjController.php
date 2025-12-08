@@ -55,7 +55,8 @@ class PengajuanLpjController extends Controller
 
         $rab_items_merged = [];
         if (!empty($lpj_detail['kakId'])) {
-            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId']], []);
+            // Pass lpjId untuk mendapatkan data bukti yang sudah diupload
+            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId'], $id], []);
         }
 
         $data = array_merge($data_dari_router, [
@@ -64,7 +65,8 @@ class PengajuanLpjController extends Controller
             'kegiatan_data' => $kegiatan_data,
             'rab_items' => $rab_items_merged,
             'komentar_revisi' => [],
-            'back_url' => $back_url
+            'back_url' => $back_url,
+            'lpj_id' => $id  // Tambahkan lpjId untuk referensi
         ]);
 
         $this->view('pages/admin/detail_lpj', $data, 'app');

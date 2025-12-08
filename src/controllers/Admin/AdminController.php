@@ -31,14 +31,21 @@ class AdminController extends Controller
         $errorRedirectUrl = '/docutrack/public/admin/pengajuan-kegiatan/show/' . ($kegiatanIdFromPost ? (int)$kegiatanIdFromPost : '') . '?mode=rincian';
 
         try {
+            // Log incoming data for debugging
+            error_log("AdminController::submitRincian - POST data: " . print_r($_POST, true));
+            error_log("AdminController::submitRincian - FILES data: " . print_r($_FILES, true));
+            
             $this->kegiatanService->processRincianKegiatan($_POST, $_FILES['surat_pengantar'] ?? null);
 
             $this->redirectWithMessage('/docutrack/public/admin/pengajuan-kegiatan', 'success', 'Rincian kegiatan berhasil disimpan dan dikirim ke PPK.');
         } catch (ValidationException $e) {
+            error_log("AdminController::submitRincian - ValidationException: " . $e->getMessage());
             $_SESSION['flash_errors'] = $e->getErrors();
             $_SESSION['old_input'] = $_POST;
             $this->redirectWithMessage($errorRedirectUrl, 'error', 'Validasi gagal: ' . $e->getMessage());
         } catch (Exception $e) {
+            error_log("AdminController::submitRincian - Exception: " . $e->getMessage());
+            error_log("AdminController::submitRincian - Stack trace: " . $e->getTraceAsString());
             $this->redirectWithMessage($errorRedirectUrl, 'error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }

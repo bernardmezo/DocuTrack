@@ -79,7 +79,7 @@ class TelaahController extends Controller
             'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
             'gambaran_umum' => $dataDB['gambaranUmum'],
-            'penerima_manfaat' => $dataDB['penerimaMaanfaat'],
+            'penerima_manfaat' => $dataDB['penerimaManfaat'],
             'metode_pelaksanaan' => $dataDB['metodePelaksanaan'],
             'tahapan_kegiatan' => $tahapan_string,
             'surat_pengantar' => $dataDB['suratPengantar'] ?? '',

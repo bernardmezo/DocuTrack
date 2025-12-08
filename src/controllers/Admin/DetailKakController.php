@@ -59,7 +59,7 @@ class DetailKakController extends Controller
             'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '-',
             'nama_kegiatan' => $dataDB['namaKegiatan'] ?? 'Tidak ada judul',
             'gambaran_umum' => $dataDB['gambaranUmum'] ?? '-',
-            'penerima_manfaat' => $dataDB['penerimaMaanfaat'] ?? '-',
+            'penerima_manfaat' => $dataDB['penerimaManfaat'] ?? '-',
             'metode_pelaksanaan' => $dataDB['metodePelaksanaan'] ?? '-',
             'tahapan_kegiatan' => $tahapan_string,
             'file_surat_pengantar' => $dataDB['file_surat_pengantar'] ?? null,

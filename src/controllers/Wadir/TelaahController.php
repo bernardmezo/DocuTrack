@@ -25,9 +25,20 @@ class TelaahController extends Controller
         $base_url = "/docutrack/public/wadir";
         $back_url = $base_url . '/' . $ref;
 
+        // Debug logging
+        error_log("WadirController::show - Requested ID: {$id}");
+        error_log("WadirController::show - Model class: " . get_class($this->model));
+        error_log("WadirController::show - Method exists: " . (method_exists($this->model, 'getDetailKegiatan') ? 'YES' : 'NO'));
+        
         $dataDB = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
+        
+        error_log("WadirController::show - Data returned: " . ($dataDB ? 'YES' : 'NO/NULL'));
+        if ($dataDB) {
+            error_log("WadirController::show - Kegiatan: " . ($dataDB['namaKegiatan'] ?? 'N/A'));
+        }
 
         if (!$dataDB) {
+            error_log("WadirController::show - RETURNING: Data tidak ditemukan");
             echo "Data tidak ditemukan.";
             return;
         }
@@ -63,7 +74,7 @@ class TelaahController extends Controller
             'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
             'gambaran_umum' => $dataDB['gambaranUmum'],
-            'penerima_manfaat' => $dataDB['penerimaMaanfaat'],
+            'penerima_manfaat' => $dataDB['penerimaManfaat'],
             'metode_pelaksanaan' => $dataDB['metodePelaksanaan'],
             'tahapan_kegiatan' => $tahapan_string,
             'surat_pengantar' => $dataDB['suratPengantar'] ?? '',

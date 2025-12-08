@@ -171,13 +171,14 @@ class PengajuanLpjController extends Controller
         try {
             if ($action === 'setuju') {
                 // ✅ APPROVE LPJ
+                // Validasi dilakukan di model: LPJ harus sudah di-submit terlebih dahulu
                 if ($this->safeModelCall($this->model, 'approveLPJ', [$lpj_id], false)) {
                     $_SESSION['flash_message'] = 'LPJ berhasil disetujui!';
                     $_SESSION['flash_type'] = 'success';
 
                     error_log("LPJ {$lpj_id} approved successfully");
                 } else {
-                    throw new Exception('Gagal menyetujui LPJ');
+                    throw new Exception('Gagal menyetujui LPJ. Pastikan LPJ sudah diajukan oleh pengusul terlebih dahulu.');
                 }
             } elseif ($action === 'revisi') {
                 $komentar = $_POST['komentar'] ?? [];

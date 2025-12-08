@@ -113,6 +113,12 @@ return [
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
         'methods'    => ['POST'],
     ],
+    '/admin/pengajuan-kegiatan/submitrincian' => [
+        'controller' => 'Admin\AdminController',
+        'method'     => 'submitRincian',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+        'methods'    => ['POST'],
+    ],
     '/admin/pengajuan-kegiatan' => [
         'controller' => 'Admin\PengajuanKegiatanController',
         'method'     => 'index',
@@ -309,6 +315,11 @@ return [
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
     ],
+    '/ppk/telaah/show/{id}' => [
+        'controller' => 'PPK\TelaahController',
+        'method'     => 'show',
+        'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
+    ],
     '/ppk/telaah/show/{id}/{ref?}' => [
         'controller' => 'PPK\TelaahController',
         'method'     => 'show',
@@ -355,6 +366,11 @@ return [
         'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],
     ],
     '/bendahara/pencairan-dana/show/{id}/{ref?}' => [
+        'controller' => 'Bendahara\PencairandanaController',
+        'method'     => 'show',
+        'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],
+    ],
+    '/bendahara/pencairan-dana/show/{id}' => [
         'controller' => 'Bendahara\PencairandanaController',
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],
