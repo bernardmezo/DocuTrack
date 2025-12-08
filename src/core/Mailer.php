@@ -75,10 +75,10 @@ class Mailer
     {
         extract($data);
         ob_start();
-        
+
         // Define absolute path to views
         $fullPath = __DIR__ . '/../../src/views/emails/' . $viewPath . '.php';
-        
+
         if (file_exists($fullPath)) {
             include $fullPath;
         } else {
@@ -86,7 +86,7 @@ class Mailer
             echo "<h1>{$data['judul']}</h1><p>{$data['pesan']}</p>";
             error_log("Email view not found: " . $fullPath);
         }
-        
+
         return ob_get_clean();
     }
 }

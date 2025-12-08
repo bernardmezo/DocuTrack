@@ -11,6 +11,9 @@ ini_set('log_errors', '1');
 ini_set('error_log', DOCUTRACK_ROOT . '/logs/php_error.log');
 error_reporting(E_ALL);
 
+// Debug Mode Configuration
+define('DEBUG_MODE', getenv('APP_ENV') === 'development');
+
 if (getenv('APP_ENV') === 'production') {
     set_error_handler(function ($severity, $message, $file, $line) {
         throw new ErrorException($message, 0, $severity, $file, $line);
@@ -123,6 +126,10 @@ if (file_exists(DOCUTRACK_ROOT . '/src/helpers/security_helper.php')) {
 
 if (file_exists(DOCUTRACK_ROOT . '/src/helpers/logger_helper.php')) {
     require_once DOCUTRACK_ROOT . '/src/helpers/logger_helper.php';
+}
+
+if (file_exists(DOCUTRACK_ROOT . '/src/helpers/debug_logger_helper.php')) {
+    require_once DOCUTRACK_ROOT . '/src/helpers/debug_logger_helper.php';
 }
 
 return [
