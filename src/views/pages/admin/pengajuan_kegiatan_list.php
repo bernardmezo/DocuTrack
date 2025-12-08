@@ -99,17 +99,26 @@ sort($jurusan_list);
                             <?php else : ?>
                                 <span class="px-3 py-1.5 rounded-full text-purple-700 bg-purple-100 border border-purple-200 inline-flex items-center gap-1.5">
                                     <i class="fas fa-info-circle"></i>
-                                    <?php echo htmlspecialchars($item['status']); ?>
+                                    <?php echo htmlspecialchars($item['status'] ?? 'N/A'); ?>
                                 </span>
                             <?php endif; ?>
                         </td>
 
                         <td class="px-4 py-3 md:px-6 md:py-5 whitespace-nowrap text-sm font-medium">
                             <div class="flex gap-2 items-center">
-                                <a href="/docutrack/public/admin/pengajuan-kegiatan/show/<?php echo $item['id'] ?? 0; ?>?mode=rincian"
-                                   class="bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm">
-                                    <i class="fas fa-pen mr-1"></i> Lengkapi
-                                </a>
+                                <?php 
+                                $itemId = $item['kegiatanId'] ?? $item['id'] ?? 0; 
+                                if ($itemId > 0) : 
+                                ?>
+                                    <a href="/docutrack/public/admin/pengajuan-kegiatan/show/<?php echo $itemId; ?>?mode=rincian"
+                                       class="bg-blue-600 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                                        <i class="fas fa-pen mr-1"></i> Lengkapi
+                                    </a>
+                                <?php else : ?>
+                                    <span class="bg-gray-400 text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium cursor-not-allowed">
+                                        <i class="fas fa-ban mr-1"></i> Data Tidak Lengkap
+                                    </span>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>

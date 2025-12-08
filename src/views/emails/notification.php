@@ -34,7 +34,7 @@
                 </span>
             </div>
 
-            <?php if (!empty($detail_kegiatan)): ?>
+            <?php if (!empty($detail_kegiatan)) : ?>
             <h3>Detail Kegiatan:</h3>
             <table>
                 <tr>
@@ -49,7 +49,7 @@
                     <th>Tanggal Pengajuan</th>
                     <td><?= htmlspecialchars(date('d F Y', strtotime($detail_kegiatan['createdAt']))) ?></td>
                 </tr>
-                <?php if (!empty($catatan_tambahan)): ?>
+                <?php if (!empty($catatan_tambahan)) : ?>
                 <tr>
                     <th>Catatan/Alasan</th>
                     <td style="color: #d9534f; font-weight: bold;"><?= nl2br(htmlspecialchars($catatan_tambahan)) ?></td>

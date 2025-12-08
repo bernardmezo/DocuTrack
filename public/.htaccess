@@ -26,4 +26,4 @@ RewriteRule ^ - [L]
 # This enables MVC routing through the front controller
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
+RewriteRule ^(.*)$ index.php [L]

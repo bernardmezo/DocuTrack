@@ -238,7 +238,7 @@ if (!function_exists('formatRupiah')) {
                                                     class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors <?php echo $has_comment ? 'ring-2 ring-yellow-400' : ''; ?> <?php echo !$bukti_uploaded ? 'animate-pulse' : ''; ?>" 
                                                     data-lpj-item-id="<?php echo $item_id; ?>"
                                                     data-item-name="<?php echo htmlspecialchars($item['uraian'] ?? 'Item'); ?>"
-                                                    <?php echo ($is_setuju || $is_menunggu) ; ?>> <!-- ? 'disabled' : ''; = penting, disable jika statusnya is_setuju-->
+                                                    <?php echo ($is_setuju || $is_menunggu) ? 'disabled' : ''; ?>>
                                                 <i class='fas fa-upload'></i>
                                             </button>
                                             <div id="bukti-display-<?php echo $item_id; ?>" 
@@ -291,21 +291,34 @@ if (!function_exists('formatRupiah')) {
             
             <div class="flex flex-col sm:flex-row-reverse justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
                  
-                 <?php if ($is_revisi) : ?>
-                    <button type="button" id="submit-lpj-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5">
+                 <?php if ($is_setuju) : ?>
+                    <!-- LPJ sudah disetujui Bendahara - Tidak bisa edit -->
+                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
+                         <i class="fas fa-check-double"></i> LPJ Telah Disetujui
+                    </div>
+                    
+                 <?php elseif ($is_menunggu) : ?>
+                    <!-- LPJ sudah di-submit, menunggu approval Bendahara - Tidak bisa edit -->
+                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
+                         <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi Bendahara
+                    </div>
+                    
+                 <?php elseif ($is_revisi) : ?>
+                    <!-- Status revisi - Bisa submit ulang -->
+                    <button type="button" id="submit-lpj-btn" 
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                            <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
                         <i class="fas fa-paper-plane"></i> Submit Revisi LPJ
                     </button>
-                 <?php elseif ($is_menunggu) : ?>
+                    
+                 <?php else : ?>
+                    <!-- Status draft/siap_submit - Bisa submit pertama kali -->
                     <button type="button" id="submit-lpj-btn" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
                             <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
                          <i class="fas fa-check-circle"></i> 
                          <?php echo $all_bukti_uploaded ? 'Ajukan ke Bendahara' : 'Upload Bukti Terlebih Dahulu'; ?>
                     </button>
-                 <?php else : // Status 'Setuju' ?>
-                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
-                         <i class="fas fa-check-double"></i> LPJ Telah Disetujui
-                    </div>
                  <?php endif; ?>
                  
                  <a href="<?php echo htmlspecialchars($back_url); ?>" 

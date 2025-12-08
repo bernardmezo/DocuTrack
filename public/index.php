@@ -102,33 +102,33 @@ set_exception_handler('globalExceptionHandler');
  *
  * @return string The clean request path (e.g., '/admin/dashboard').
  */
-function get_request_path(): string 
+function get_request_path(): string
 {
     $request_uri = $_SERVER['REQUEST_URI'];
     $script_name = $_SERVER['SCRIPT_NAME'];
-    
+
     $base_path = dirname($script_name);
     if ($base_path === '/' || $base_path === '\\') {
         $base_path = '';
     }
-    
+
     $request_path = $request_uri;
-    
+
     if ($base_path && strpos($request_uri, $base_path) === 0) {
         $request_path = substr($request_uri, strlen($base_path));
     }
-    
+
     $request_path = parse_url($request_path, PHP_URL_PATH);
-    
+
     if (empty($request_path) || $request_path === '/index.php') {
         return '/';
     }
-    
+
     return $request_path;
 }
 
 // 3. Get the database connection from the bootstrap helper.
-$db = db(); 
+$db = db();
 
 // 4. Instantiate and dispatch the router.
 // Any exception thrown from here will be caught by our globalExceptionHandler.
