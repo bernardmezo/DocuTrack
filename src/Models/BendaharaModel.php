@@ -518,6 +518,50 @@ class BendaharaModel
     }
 
     /**
+     * Ambil semua riwayat LPJ (termasuk yang sudah disetujui)
+     * Untuk dashboard - menampilkan semua LPJ dengan berbagai status
+     */
+    public function getAllLPJHistory()
+    {
+        $query = "SELECT 
+                    l.lpjId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as nama_mahasiswa,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    l.grandTotalRealisasi as total_realisasi,
+                    l.submittedAt as tanggal_pengajuan,
+                    l.approvedAt as tanggal_verifikasi,
+                    l.tenggatLpj as tenggat_lpj,
+                    l.statusId,
+                    
+                    CASE 
+                        WHEN l.statusId = 4 THEN 'Ditolak'
+                        WHEN l.statusId = 3 THEN 'Disetujui'
+                        WHEN l.statusId = 2 THEN 'Revisi'
+                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                        ELSE 'Draft'
+                    END as status
+                    
+                  FROM tbl_lpj l
+                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                  WHERE l.submittedAt IS NOT NULL
+                  ORDER BY COALESCE(l.approvedAt, l.submittedAt) DESC";
+
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Ambil detail LPJ
      */
     public function getDetailLPJ($lpjId)

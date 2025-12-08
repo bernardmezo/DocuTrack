@@ -8,7 +8,6 @@ use App\Models\Rab\RabItemModel; // Changed from RabModel
 use App\Models\KategoriRabModel; // Added
 use App\Exceptions\ValidationException;
 use App\Exceptions\BusinessLogicException;
-use App\Core\ViewCache;
 use DateTimeImmutable;
 use Exception;
 
@@ -680,14 +679,13 @@ class KegiatanService
      */
     private function invalidateDashboardCache()
     {
-        $cache = new ViewCache();
+        // TODO: Implement ViewCache class
+        // $cache = new ViewCache();
+        // $cache->invalidatePattern("dashboard_stats_*");
+        // $cache->invalidatePattern("recent_activity_*");
+        // $cache->invalidatePattern("notification_panel_*");
 
-        // Invalidate all dashboard-related caches
-        $cache->invalidatePattern("dashboard_stats_*");
-        $cache->invalidatePattern("recent_activity_*");
-        $cache->invalidatePattern("notification_panel_*");
-
-        error_log("KegiatanService: Dashboard cache invalidated after data change");
+        error_log("KegiatanService: Dashboard cache invalidation skipped (ViewCache not implemented)");
     }
 
     /**

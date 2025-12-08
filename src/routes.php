@@ -129,6 +129,11 @@ return [
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
     ],
+    '/admin/pengajuan-kegiatan/pdf/{id}' => [
+        'controller' => 'Admin\PengajuanKegiatanController',
+        'method'     => 'downloadPDF',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+    ],
     '/admin/pengajuan-lpj' => [
         'controller' => 'Admin\PengajuanLpjController',
         'method'     => 'index',
