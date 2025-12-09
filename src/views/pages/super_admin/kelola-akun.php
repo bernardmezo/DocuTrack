@@ -654,16 +654,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Confirm Delete
     document.getElementById('delete-confirm').addEventListener('click', () => {
-        const index = dataUsers.findIndex(u => u.id === deleteUserId);
-        if (index !== -1) {
-            const deletedUser = dataUsers.splice(index, 1)[0];
-            showToast(`User "${deletedUser.nama}" berhasil dihapus!`, 'success');
-            
-            closeModal(modalDelete);
-            window.usersTable.allData = dataUsers;
-            window.usersTable.applyFilters();
-            updateStatistics(dataUsers);
-        }
+        // Create a temporary form to submit the delete request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/docutrack/public/superadmin/kelola-akun/delete/${deleteUserId}`;
+        
+        // Add CSRF token if available (optional but recommended)
+        // const csrfInput = document.createElement('input');
+        // csrfInput.type = 'hidden';
+        // csrfInput.name = 'csrf_token';
+        // csrfInput.value = '...'; 
+        // form.appendChild(csrfInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        
+        // Optional: Close modal immediately (though page will reload)
+        closeModal(modalDelete);
     });
     
     class UsersTableManager {

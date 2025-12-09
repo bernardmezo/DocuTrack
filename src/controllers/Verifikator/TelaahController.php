@@ -33,14 +33,78 @@ class TelaahController extends Controller
         );
     }
 
+    /**
+     * Helper private untuk mengecek otorisasi akses berdasarkan Jurusan.
+     * Mencegah IDOR (Insecure Direct Object Reference).
+     * 
+     * @param int|string $kegiatanId
+     * @return array|null Mengembalikan data kegiatan jika valid, atau exit/redirect jika tidak valid.
+     */
+    private function authorizeAccess($kegiatanId)
+    {
+        if (empty($kegiatanId)) {
+            $_SESSION['flash_error'] = 'ID Kegiatan tidak valid.';
+            header('Location: /docutrack/public/verifikator/dashboard');
+            exit;
+        }
+
+        $dataDB = $this->service->getDetailKegiatan($kegiatanId);
+
+        if (!$dataDB) {
+            $_SESSION['flash_error'] = 'Data kegiatan tidak ditemukan.';
+            header('Location: /docutrack/public/verifikator/dashboard');
+            exit;
+        }
+
+        $userJurusan = $_SESSION['user_jurusan'] ?? null;
+        $docJurusan = $dataDB['jurusanPenyelenggara'] ?? null;
+
+        // Cek strict: User harus punya jurusan dan harus sama dengan dokumen.
+        // Jika Verifikator bersifat 'Global' (jurusan NULL), logika ini harus disesuaikan
+        // sesuai kebijakan. Berdasarkan instruksi "Compare... If not match...", 
+        // kita terapkan strict comparison.
+        // Namun, untuk mengakomodasi data seed (Verifikator Global), kita bisa beri pengecualian
+        // jika user_jurusan NULL (Super Verifikator).
+        // TAPI: Instruksi user spesifik: "Compare... against user_jurusan_id. If don't match -> error."
+        // Maka kita ikuti strict check (Non-NULL comparison).
+        
+        // Revisi logika agar aman tapi tidak memblokir user seed jika tujuannya testing:
+        // Idealnya: if ($userJurusan !== $docJurusan)
+        // Kita gunakan logika: Jika User punya Jurusan, dia hanya boleh akses Jurusan itu.
+        // Jika User TIDAK punya Jurusan (NULL), kita anggap dia Global (atau Unauthorized, tergantung policy).
+        // Mengingat instruksi fix IDOR, biasanya user Verifikator harusnya terikat jurusan.
+        // Mari kita asumsikan strict check sesuai prompt.
+        
+        // NOTE: Menggunakan $userJurusan == $docJurusan (loose) atau === (strict).
+        // Karena data database mungkin string, aman.
+        
+        // UPDATE: Sesuai prompt "Compare ... If they don't match, redirect".
+        if ($userJurusan !== $docJurusan) {
+             // Exception untuk "Global Verifikator" jika diinginkan, tapi prompt minta strict match.
+             // Kita akan strict.
+             $_SESSION['flash_error'] = 'Akses ditolak. Dokumen ini bukan wewenang Jurusan Anda.';
+             header('Location: /docutrack/public/verifikator/dashboard');
+             exit;
+        }
+
+        return $dataDB;
+    }
+
     public function index($data_dari_router = [])
     {
         $all_usulan = $this->safeModelCall($this->service, 'getDashboardKAK', [], []);
 
         $list_usulan = [];
         $jurusan_set = [];
+        $userJurusan = $_SESSION['user_jurusan'] ?? null;
 
         foreach ($all_usulan as $usulan) {
+            // Filter tambahan di index agar list hanya menampilkan milik jurusan user
+            // (Meskipun authorizeAccess melindungi detail, list juga sebaiknya difilter)
+            if ($userJurusan && isset($usulan['jurusan']) && $usulan['jurusan'] !== $userJurusan) {
+                continue; 
+            }
+
             $status_lower = strtolower($usulan['status']);
             if ($status_lower === 'menunggu' || $status_lower === 'telah direvisi') {
                 $list_usulan[] = $usulan;
@@ -75,6 +139,9 @@ class TelaahController extends Controller
 
     public function show($id, $data_dari_router = [])
     {
+        // STEP 1: Authorize Access
+        $dataDB = $this->authorizeAccess($id);
+
         $ref = $_GET['ref'] ?? '';
         $base_url = '/docutrack/public/verifikator';
 
@@ -90,12 +157,7 @@ class TelaahController extends Controller
                 break;
         }
 
-        $dataDB = $this->safeModelCall($this->service, 'getDetailKegiatan', [$id], null);
-
-        if (!$dataDB) {
-            echo 'Data tidak ditemukan.';
-            return;
-        }
+        // $dataDB sudah diambil via authorizeAccess, tidak perlu fetch ulang
 
         $kakId = $dataDB['kakId'];
         $indikator = $this->safeModelCall($this->service, 'getIndikatorByKAK', [$kakId], []);
@@ -151,13 +213,18 @@ class TelaahController extends Controller
 
     public function approve($routeId = null)
     {
-        $kegiatanId = $routeId;
+        $kegiatanId = $routeId ?? ($_POST['kegiatan_id'] ?? null);
+        
+        // STEP 1: Authorize Access
+        // Kita panggil authorizeAccess untuk memastikan user berhak atas ID ini.
+        // Return value (data kegiatan) tidak dipakai di sini, hanya cek akses.
+        $this->authorizeAccess($kegiatanId);
+
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method');
             }
 
-            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
             $kodeMak = trim($_POST['kode_mak'] ?? '');
             $umpanBalik = trim($_POST['umpan_balik'] ?? '');
 
@@ -178,7 +245,7 @@ class TelaahController extends Controller
             throw new Exception('Gagal menyetujui usulan. Silakan coba lagi.');
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
-            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+            $fallbackId = $kegiatanId;
             header('Location: /docutrack/public/verifikator/telaah/show/' . $fallbackId . '?ref=dashboard');
             exit;
         }
@@ -186,15 +253,16 @@ class TelaahController extends Controller
 
     public function reject($routeId = null)
     {
-        $kegiatanId = $routeId;
+        $kegiatanId = $routeId ?? ($_POST['kegiatan_id'] ?? null);
+        $kegiatanId = (int) $kegiatanId;
+
+        // STEP 1: Authorize Access
+        $this->authorizeAccess($kegiatanId);
 
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
             }
-
-            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
-            $kegiatanId = (int) $kegiatanId;
 
             if (!$kegiatanId || $kegiatanId <= 0) {
                 throw new Exception('ID kegiatan tidak valid');
@@ -217,7 +285,7 @@ class TelaahController extends Controller
             throw new Exception('Gagal menolak usulan. Silakan coba lagi.');
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
-            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+            $fallbackId = $kegiatanId;
 
             if (!empty($fallbackId)) {
                 header('Location: /docutrack/public/verifikator/telaah/show/' . $fallbackId . '?ref=dashboard');
@@ -230,15 +298,16 @@ class TelaahController extends Controller
 
     public function revise($routeId = null)
     {
-        $kegiatanId = $routeId;
+        $kegiatanId = $routeId ?? ($_POST['kegiatan_id'] ?? null);
+        $kegiatanId = (int) $kegiatanId;
+
+        // STEP 1: Authorize Access
+        $this->authorizeAccess($kegiatanId);
 
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Invalid request method: ' . $_SERVER['REQUEST_METHOD']);
             }
-
-            $kegiatanId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? null);
-            $kegiatanId = (int) $kegiatanId;
 
             if (!$kegiatanId || $kegiatanId <= 0) {
                 throw new Exception('ID kegiatan tidak valid');
@@ -273,7 +342,7 @@ class TelaahController extends Controller
             throw new Exception('Gagal mengirim revisi. Silakan coba lagi.');
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
-            $fallbackId = $kegiatanId ?? ($_POST['kegiatan_id'] ?? '');
+            $fallbackId = $kegiatanId;
 
             if (!empty($fallbackId)) {
                 header('Location: /docutrack/public/verifikator/telaah/show/' . $fallbackId . '?ref=dashboard');

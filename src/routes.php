@@ -113,12 +113,6 @@ return [
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/admin/pengajuan-kegiatan/submitrincian' => [
-        'controller' => 'Admin\AdminController',
-        'method'     => 'submitRincian',
-        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
-        'methods'    => ['POST'],
-    ],
     '/admin/pengajuan-kegiatan' => [
         'controller' => 'Admin\PengajuanKegiatanController',
         'method'     => 'index',
@@ -206,16 +200,19 @@ return [
         'controller' => 'Verifikator\TelaahController',
         'method'     => 'approve',
         'middleware' => ['AuthMiddleware', 'VerifikatorMiddleware'],
+        'methods'    => ['POST'],
     ],
     '/verifikator/telaah/reject/{id}' => [
         'controller' => 'Verifikator\TelaahController',
         'method'     => 'reject',
         'middleware' => ['AuthMiddleware', 'VerifikatorMiddleware'],
+        'methods'    => ['POST'],
     ],
     '/verifikator/telaah/revise/{id}' => [
         'controller' => 'Verifikator\TelaahController',
         'method'     => 'revise',
         'middleware' => ['AuthMiddleware', 'VerifikatorMiddleware'],
+        'methods'    => ['POST'],
     ],
     '/verifikator/riwayat-verifikasi' => [
         'controller' => 'Verifikator\RiwayatController',
@@ -253,17 +250,6 @@ return [
     '/wadir/telaah/approve/{id}' => [
         'controller' => 'Wadir\TelaahController',
         'method'     => 'approve',
-        'middleware' => ['AuthMiddleware', 'WadirMiddleware'],
-    ],
-    '/wadir/telaah/reject/{id}' => [
-        'controller' => 'Wadir\TelaahController',
-        'method'     => 'reject',
-        'middleware' => ['AuthMiddleware', 'WadirMiddleware'],
-        'methods'    => ['POST'],
-    ],
-    '/wadir/telaah/revise/{id}' => [
-        'controller' => 'Wadir\TelaahController',
-        'method'     => 'revise',
         'middleware' => ['AuthMiddleware', 'WadirMiddleware'],
         'methods'    => ['POST'],
     ],
@@ -333,17 +319,6 @@ return [
     '/ppk/telaah/approve/{id}' => [
         'controller' => 'PPK\TelaahController',
         'method'     => 'approve',
-        'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
-    ],
-    '/ppk/telaah/reject/{id}' => [
-        'controller' => 'PPK\TelaahController',
-        'method'     => 'reject',
-        'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
-        'methods'    => ['POST'],
-    ],
-    '/ppk/telaah/revise/{id}' => [
-        'controller' => 'PPK\TelaahController',
-        'method'     => 'revise',
         'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
         'methods'    => ['POST'],
     ],

@@ -150,10 +150,12 @@ $current = $active_page ?? '';
                                  <i class="fas fa-user-circle text-gray-400"></i>
                              </a>
                              <hr class="my-1 border-gray-200">
-                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
-                                 <span>Logout</span>
-                                 <i class="fas fa-sign-out-alt text-red-400"></i>
-                             </a>
+                                <form action="/docutrack/public/logout" method="POST" class="block w-full">
+                                    <button type="submit" class="w-full flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                        <span>Logout</span>
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                </form>
                         </div>
                     </div>
                      <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-gray-200 hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" aria-controls="mobile-menu" aria-expanded="false">

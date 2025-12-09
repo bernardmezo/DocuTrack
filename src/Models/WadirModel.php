@@ -165,7 +165,7 @@ class WadirModel
     {
         $nextPosisi = 5;  // BENDAHARA (untuk proses pencairan dana)
         $currentPosisi = 3; // Wadir
-        $statusProses = 3; // Disetujui (oleh Wadir)
+        $statusProses = 1; // Disetujui (oleh Wadir) dan diteruskan ke Bendahara sebagai status menunggu
         $userId = $_SESSION['user_id'] ?? null;
 
         mysqli_begin_transaction($this->db);

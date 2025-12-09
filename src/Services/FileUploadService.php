@@ -73,6 +73,90 @@ class FileUploadService
     }
 
     /**
+     * Generic document upload handler.
+     * @param array $file The file array from $_FILES.
+     * @param string $category The target folder (e.g., 'kak', 'rab').
+     * @param string $description Optional description/prefix for filename.
+     * @return array File info including path, filename, etc.
+     * @throws UploadException
+     */
+    public function uploadDocument(array $file, string $category, string $description = ''): array
+    {
+        // Default to 'document' type (PDF, DOC) and 5MB limit
+        $publicPath = $this->handleUpload($file, $category, 'document', 5 * 1024 * 1024, $description);
+        
+        // Return detailed info as expected by UploadController
+        return [
+            'filename' => basename($publicPath),
+            'original_name' => $file['name'],
+            'relative_path' => str_replace('/docutrack/public/uploads/', '', $publicPath), // Store relative path in DB
+            'size' => $file['size'],
+            'size_formatted' => $this->formatFileSize($file['size']),
+            'mime_type' => $file['type']
+        ];
+    }
+
+    /**
+     * Format file size.
+     */
+    private function formatFileSize($bytes)
+    {
+        if ($bytes === 0) return '0 B';
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $exp = floor(log($bytes) / log(1024));
+        return sprintf('%.2f %s', $bytes / pow(1024, $exp), $units[$exp]);
+    }
+
+    /**
+     * Get the base upload path.
+     * @return string
+     */
+    public function getUploadBasePath(): string
+    {
+        return $this->uploadBasePath;
+    }
+
+    /**
+     * Get file information.
+     * @param string $filePath Absolute path to file.
+     * @return array
+     */
+    public function getFileInfo(string $filePath): array
+    {
+        if (!file_exists($filePath)) {
+            throw new UploadException('File not found: ' . $filePath);
+        }
+
+        return [
+            'size' => filesize($filePath),
+            'mime_type' => mime_content_type($filePath),
+            'extension' => pathinfo($filePath, PATHINFO_EXTENSION)
+        ];
+    }
+
+    /**
+     * Delete a file.
+     * @param string $relativePath Relative path stored in DB (e.g. 'kak/file.pdf').
+     * @return bool
+     */
+    public function delete(string $relativePath): bool
+    {
+        // Handle both relative path from DB or full path
+        if (strpos($relativePath, $this->uploadBasePath) === 0) {
+            $fullPath = $relativePath;
+        } else {
+            // Remove leading slashes or /docutrack/public/uploads/ prefix if present
+            $cleanPath = str_replace('/docutrack/public/uploads/', '', $relativePath);
+            $fullPath = $this->uploadBasePath . '/' . ltrim($cleanPath, '/');
+        }
+
+        if (file_exists($fullPath)) {
+            return unlink($fullPath);
+        }
+        return false;
+    }
+
+    /**
      * Core upload handling logic.
      */
     private function handleUpload(array $file, string $category, string $fileType, int $maxSize, string $fileNamePrefix = ''): string

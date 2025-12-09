@@ -200,10 +200,12 @@ switch (strtolower($userRole)) {
                                  <i class="fas fa-user-circle text-gray-400"></i>
                              </a>
                              <hr class="my-1 border-gray-200">
-                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
-                                 <span>Logout</span>
-                                 <i class="fas fa-sign-out-alt text-red-400"></i>
-                             </a>
+                             <form action="/docutrack/public/logout" method="POST" class="block w-full">
+                                 <button type="submit" class="w-full flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                     <span>Logout</span>
+                                     <i class="fas fa-sign-out-alt text-red-400"></i>
+                                 </button>
+                             </form>
                         </div>
                     </div>
 
@@ -245,9 +247,11 @@ switch (strtolower($userRole)) {
                     <a href="<?php echo $akun_link; ?>" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-gray-200 hover:bg-white/10 hover:text-white">
                         <i class="fas fa-user-circle text-sm w-5 text-center"></i> Akun Saya
                     </a>
-                    <a href="/docutrack/public/logout" class="flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-red-200 hover:bg-red-500/20 hover:text-white">
-                        <i class="fas fa-sign-out-alt text-sm w-5 text-center"></i> Logout
-                    </a>
+                    <form action="/docutrack/public/logout" method="POST" class="block w-full">
+                        <button type="submit" class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-base font-medium text-red-200 hover:bg-red-500/20 hover:text-white text-left">
+                            <i class="fas fa-sign-out-alt text-sm w-5 text-center"></i> Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

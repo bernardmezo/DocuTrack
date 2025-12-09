@@ -199,7 +199,7 @@ class PpkModel
     {
         $nextPosisi = 3;  // WADIR (setelah PPK, harus ke Wadir dulu sebelum Bendahara)
         $currentPosisi = 4; // PPK
-        $statusProses = 3; // Disetujui (oleh PPK)
+        $statusProses = 1; // Disetujui (oleh PPK) dan lanjut ke Wadir sebagai status menunggu
         $userId = $_SESSION['user_id'] ?? null;
 
         mysqli_begin_transaction($this->db);
@@ -297,6 +297,56 @@ class PpkModel
     {
         $offset = ($page - 1) * $perPage;
 
+        // Base Where Clause & Params Construction
+        $whereClause = " WHERE 1=1";
+        $types = "";
+        $params = [];
+
+        // Filter pencarian
+        if (!empty($search)) {
+            $whereClause .= " AND (k.namaKegiatan LIKE ? OR k.pemilikKegiatan LIKE ?)";
+            $searchTerm = "%{$search}%";
+            $types .= "ss";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
+        }
+
+        // Filter status
+        if ($statusFilter !== 'semua') {
+            if ($statusFilter === 'ditolak') {
+                $whereClause .= " AND k.statusUtamaId = 4";
+            } elseif ($statusFilter === 'approved') {
+                $whereClause .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
+            } elseif ($statusFilter === 'menunggu') {
+                // FIXED: Menunggu = posisi di PPK (4) DAN statusUtama = 1 (menunggu approval)
+                $whereClause .= " AND k.posisiId = 4 AND k.statusUtamaId = 1";
+            } elseif ($statusFilter === 'in process') {
+                $whereClause .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
+            }
+        }
+
+        // Filter jurusan
+        if ($jurusanFilter !== 'semua') {
+            $whereClause .= " AND k.jurusanPenyelenggara = ?";
+            $types .= "s";
+            $params[] = $jurusanFilter;
+        }
+
+        // 1. Execute Count Query
+        $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k" . $whereClause;
+        $stmtCount = mysqli_prepare($this->db, $countQuery);
+
+        if ($types !== "") {
+            mysqli_stmt_bind_param($stmtCount, $types, ...$params);
+        }
+
+        mysqli_stmt_execute($stmtCount);
+        $totalResult = mysqli_stmt_get_result($stmtCount);
+        $totalItems = ($totalResult) ? mysqli_fetch_assoc($totalResult)['total'] : 0;
+        mysqli_stmt_close($stmtCount);
+
+
+        // 2. Execute Data Query
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -322,71 +372,30 @@ class PpkModel
                         WHEN k.posisiId = 4 AND k.statusUtamaId = 1 THEN 'Menunggu'
                         ELSE 'In Process'
                     END as status
-                  FROM tbl_kegiatan k
-                  WHERE 1=1 ";
+                  FROM tbl_kegiatan k" . $whereClause;
 
-        // Filter pencarian (escaped untuk mencegah SQL injection)
-        if (!empty($search)) {
-            $search = mysqli_real_escape_string($this->db, $search);
-            $query .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
-        }
+        // Add ORDER BY and LIMIT
+        $query .= " ORDER BY k.createdAt DESC LIMIT ? OFFSET ?";
+        
+        // Add limit/offset to params
+        $typesWithLimit = $types . "ii";
+        $paramsWithLimit = $params;
+        $paramsWithLimit[] = $perPage;
+        $paramsWithLimit[] = $offset;
 
-        // Filter status dengan logic yang diperbaiki
-        if ($statusFilter !== 'semua') {
-            if ($statusFilter === 'ditolak') {
-                $query .= " AND k.statusUtamaId = 4";
-            } elseif ($statusFilter === 'approved') {
-                $query .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
-            } elseif ($statusFilter === 'menunggu') {
-                // FIXED: Menunggu = posisi di PPK (4) DAN statusUtama = 1 (menunggu approval)
-                $query .= " AND k.posisiId = 4 AND k.statusUtamaId = 1";
-            } elseif ($statusFilter === 'in process') {
-                $query .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
-            }
-        }
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, $typesWithLimit, ...$paramsWithLimit);
+        
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
 
-        // Filter jurusan
-        if ($jurusanFilter !== 'semua') {
-            $jurusanFilter = mysqli_real_escape_string($this->db, $jurusanFilter);
-            $query .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
-        }
-
-        // Build count query dengan filter yang sama
-        $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-
-        if (!empty($search)) {
-            $countQuery .= " AND (k.namaKegiatan LIKE '%$search%' OR k.pemilikKegiatan LIKE '%$search%')";
-        }
-
-        if ($statusFilter !== 'semua') {
-            if ($statusFilter === 'ditolak') {
-                $countQuery .= " AND k.statusUtamaId = 4";
-            } elseif ($statusFilter === 'approved') {
-                $countQuery .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
-            } elseif ($statusFilter === 'menunggu') {
-                // FIXED: Konsisten dengan main query
-                $countQuery .= " AND k.posisiId = 4 AND k.statusUtamaId = 1";
-            } elseif ($statusFilter === 'in process') {
-                $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
-            }
-        }
-
-        if ($jurusanFilter !== 'semua') {
-            $countQuery .= " AND k.jurusanPenyelenggara = '$jurusanFilter'";
-        }
-
-        $query .= " ORDER BY k.createdAt DESC LIMIT $perPage OFFSET $offset";
-
-        $totalResult = mysqli_query($this->db, $countQuery);
-        $totalItems = ($totalResult) ? mysqli_fetch_assoc($totalResult)['total'] : 0;
-
-        $result = mysqli_query($this->db, $query);
         $data = [];
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
                 $data[] = $row;
             }
         }
+        mysqli_stmt_close($stmt);
 
         return [
             'data' => $data,

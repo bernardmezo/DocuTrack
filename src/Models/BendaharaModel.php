@@ -920,7 +920,7 @@ class BendaharaModel
 
         if (!empty($data['password'])) {
             $fields[] = "password = ?";
-            $values[] = $data['password']; // TODO: hash password in production
+            $values[] = password_hash($data['password'], PASSWORD_DEFAULT);
             $types .= "s";
         }
 

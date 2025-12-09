@@ -110,7 +110,7 @@ class UploadController extends Controller
             $description = $_POST['description'] ?? 'kak';
 
             // Upload file
-            $fileInfo = $this->uploadService->upload($_FILES['dokumen'], 'kak', $description);
+            $fileInfo = $this->fileUploadService->uploadDocument($_FILES['dokumen'], 'kak', $description);
 
             // Save metadata to database
             $documentId = $this->dokumenModel->insert([
@@ -209,6 +209,8 @@ class UploadController extends Controller
 
             // Upload file
 
+            $fileInfo = $this->fileUploadService->uploadDocument($_FILES['dokumen'], 'rab', $description);
+
             $documentId = $this->dokumenModel->insert([
                 'reference_type' => 'rab',
                 'reference_id' => $rabId,
@@ -302,7 +304,7 @@ class UploadController extends Controller
 
             // Upload file
 
-            $fileInfo = $this->uploadService->upload($_FILES['dokumen'], 'lpj', $description);
+            $fileInfo = $this->fileUploadService->uploadDocument($_FILES['dokumen'], 'lpj', $description);
 
             $documentId = $this->dokumenModel->insert([
                 'reference_type' => 'lpj',
@@ -393,16 +395,17 @@ class UploadController extends Controller
             // --- END Access Control Check ---
 
             // Get file path
-            $filePath = $this->uploadService->getUploadBasePath() . DIRECTORY_SEPARATOR . $document['file_path'];
+            $filePath = $this->fileUploadService->getUploadBasePath() . DIRECTORY_SEPARATOR . $document['file_path'];
 
             // Check if file exists
             if (!file_exists($filePath)) {
                 http_response_code(404);
-                die('File tidak ada di filesystem');
+                echo 'File tidak ada di filesystem';
+                exit;
             }
 
             // Get file info
-            $fileInfo = $this->uploadService->getFileInfo($filePath);
+            $fileInfo = $this->fileUploadService->getFileInfo($filePath);
 
             // Set headers for download
             header('Content-Type: ' . $fileInfo['mime_type']);
@@ -463,7 +466,7 @@ class UploadController extends Controller
 
             // Delete file from filesystem
             $filePath = $document['file_path'];
-            $this->uploadService->delete($filePath);
+            $this->fileUploadService->delete($filePath);
 
             // Delete record from database
             $this->dokumenModel->delete($id);

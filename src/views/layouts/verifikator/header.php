@@ -168,10 +168,12 @@ switch (strtolower($userRole)) {
                                  <i class="fas fa-user-circle text-gray-400"></i>
                              </a>
                              <hr class="my-1 border-gray-200">
-                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
-                                 <span>Logout</span>
-                                 <i class="fas fa-sign-out-alt text-red-400"></i>
-                             </a>
+                                <form action="/docutrack/public/logout" method="POST" class="block w-full">
+                                    <button type="submit" class="w-full flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                        <span>Logout</span>
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                </form>
                         </div>
                     </div>
             </div>

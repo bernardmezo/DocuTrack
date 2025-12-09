@@ -16,7 +16,7 @@ $id = $kegiatan_id ?? 1;
             </p>
         </div>
         
-        <form id="rincian-kegiatan-form" action="/docutrack/public/admin/pengajuan-kegiatan/submitrincian" method="POST" enctype="multipart/form-data">
+        <form id="rincian-kegiatan-form" action="/docutrack/public/admin/pengajuan-kegiatan/submitRincian" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="kegiatan_id" value="<?php echo htmlspecialchars($id); ?>">
 
             <div class="px-8 py-8 space-y-8">
