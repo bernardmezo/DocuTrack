@@ -15,6 +15,9 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     
     <style>
         * {
@@ -123,72 +126,316 @@
             background: linear-gradient(to bottom, #3b82f6 0%, #22c55e 100%);
         }
 
-        /* .scroll-container {
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
+        .process-section {
+            position: relative;
+            min-height: 400vh;
+            background: linear-gradient(180deg, #f9fafb 0%, #ffffff 50%, #f9fafb 100%);
         }
-        
-        .scroll-container::-webkit-scrollbar {
-            display: none;
+
+        .sticky-container {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
         }
-        
+
+        .process-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-title h2 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #014565, #22D3EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-title p {
+            font-size: 1.25rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Cards Container */
+        .cards-container {
+            position: relative;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            justify-content: center;
+            perspective: 2000px;
+            min-height: 500px;
+        }
+
         .process-card {
-            scroll-snap-align: start;
+            position: absolute;
+            width: 420px;
+            background: white;
+            border-radius: 32px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             opacity: 0;
-            transform: translateX(100px);
-            transition: all 0.6s ease-out;
+            transform: translateX(100px) scale(0.8);
         }
-        
-        .process-card.from-left {
-            transform: translateX(-100px);
-        }
-        
+
         .process-card.active {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
+            z-index: 10;
         }
-        
-        .timeline-line {
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.8s ease-out;
+
+        .process-card.prev {
+            opacity: 0.3;
+            transform: translateX(-150px) scale(0.85) rotateY(15deg);
+            z-index: 5;
         }
-        
-        .timeline-line.active {
-            transform: scaleX(1);
+
+        .process-card.next {
+            opacity: 0.3;
+            transform: translateX(150px) scale(0.85) rotateY(-15deg);
+            z-index: 5;
         }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+
+        /* Card Header */
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
-        
-        .float-icon {
-            animation: float 3s ease-in-out infinite;
+
+        .step-number {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            position: relative;
+            overflow: hidden;
         }
-    
-        @media (min-width: 768px) {
-            .custom-scrollbar::-webkit-scrollbar {
-                height: 8px;
-                display: block;
+
+        .step-number::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #22D3EE, #274B8F);
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        .step-number span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-info h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #22D3EE, #14b8a6);
+            color: white;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        /* Card Body */
+        .card-body {
+            margin-bottom: 2rem;
+        }
+
+        .card-body p {
+            font-size: 1.125rem;
+            color: #475569;
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f0fdfa, #ecfeff);
+            border-radius: 16px;
+            border-left: 4px solid #14b8a6;
+        }
+
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #14b8a6;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 6px rgba(20, 184, 166, 0.1);
+        }
+
+        .action-item span {
+            flex: 1;
+            font-size: 0.95rem;
+            color: #0f766e;
+            font-weight: 500;
+        }
+
+        /* Progress Indicator */
+        .progress-indicator {
+            position: absolute;
+            bottom: 3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.75rem;
+            z-index: 20;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .progress-dot.active {
+            width: 40px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #22D3EE, #14b8a6);
+        }
+
+        /* Navigation Arrows */
+        .nav-arrows {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .nav-arrow {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            pointer-events: all;
+            border: 2px solid transparent;
+        }
+
+        .nav-arrow:hover {
+            background: linear-gradient(135deg, #22D3EE, #14b8a6);
+            color: white;
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        .nav-arrow i {
+            font-size: 1.5rem;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .scroll-indicator span {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .scroll-indicator i {
+            font-size: 1.5rem;
+            color: #22D3EE;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(10px); }
+        }
+
+        @media (max-width: 768px) {
+            .section-title h2 {
+                font-size: 2.5rem;
             }
-            
-            .custom-scrollbar::-webkit-scrollbar-track {
-                background: #e5e7eb;
-                border-radius: 10px;
+
+            .process-card {
+                width: 90%;
+                padding: 2rem;
             }
-            
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: linear-gradient(to right, #22D3EE, #274B8F);
-                border-radius: 10px;
+
+            .nav-arrows {
+                padding: 0 1rem;
             }
-            
-            .custom-scrollbar {
-                scrollbar-width: thin;
-                scrollbar-color: #22D3EE #e5e7eb;
+
+            .step-number {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
             }
-        } */
+
+            .step-info h3 {
+                font-size: 1.25rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50">

@@ -192,7 +192,7 @@
             </div>
 
             <div class="absolute left-0 right-0 top-[100px] z-0 pointer-events-none overflow-hidden">
-                    <svg style="height: 750px; width: 100%;" viewBox="0 0 1440 601" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg style="height: 800px; width: 100%;" viewBox="0 0 1440 601" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <g opacity="0.4">
                     <path d="M1440.5 43.5098C1072.45 130.01 1111.2 323.596 1042.24 409.51C956.047 516.902 444.572 663.545 641.854 436.478C839.135 209.411 821.62 -123.474 655.221 86.9019C488.822 297.277 374.049 615.046 232.08 516.786C90.1106 418.527 120.994 571.585 -2.99883 559.302" stroke="#18ADD8" stroke-width="40"/>
                     <path d="M1440.5 86.9019C1104.67 182.902 1163.56 323.437 1094.6 409.51C1008.41 517.101 451.881 699.737 649.162 472.249C846.444 244.762 828.928 -88.7394 662.529 122.026C496.131 332.791 381.357 651.148 239.388 552.706C97.4192 454.265 128.302 607.606 4.30969 595.301" stroke="#18ADD8" stroke-width="10"/>
@@ -293,199 +293,338 @@
         </div>
     </section>
 
-    
     <!-- Process Section -->
-    <section id="proses" class="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-    
-    <div class="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-        
-        
-
-             
-    </div>
-
-    <div class="relative z-10 container mx-auto px-4">
-        <img src="/docutrack/public/assets/images/proses-bisnis/section-proses.svg" 
-             alt="Team" 
-             class="w-full h-auto mx-auto mb-0 drop-shadow-md">
-    </div>
-
-    <!-- Process Section 
-    <section id="proses" class="py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        
-        Background Wave Pattern
-        <div class="absolute inset-0 z-0 pointer-events-none opacity-20">
-            <svg class="w-full h-full" viewBox="0 0 1440 601" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1440.5 43.5098C1072.45 130.01 1111.2 323.596 1042.24 409.51C956.047 516.902 444.572 663.545 641.854 436.478C839.135 209.411 821.62 -123.474 655.221 86.9019C488.822 297.277 374.049 615.046 232.08 516.786C90.1106 418.527 120.994 571.585 -2.99883 559.302" stroke="#18ADD8" stroke-width="40"/>
-            </svg>
-        </div>
-        
-        <div class="relative z-10 container mx-auto px-4">
-            
-            Section Header
-            <div class="text-center mb-12">
-                <h2 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                    Alur Proses Pengajuan
-                </h2>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-                    Proses pengajuan TOR yang mudah dan transparan dari awal hingga akhir
-                </p>
-                <p class="text-sm text-gray-500">
-                    <i class="fas fa-hand-pointer mr-2"></i>
-                    Scroll ke samping untuk melihat proses selanjutnya
-                </p>
+     <section class="process-section">
+        <div class="sticky-container">
+            <div class="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+                <svg style="height: 800px; width: 100%;" viewBox="0 0 1440 601" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g opacity="0.36">
+                <path d="M-3 43.5098C365.05 130.01 326.303 323.596 395.259 409.51C481.454 516.902 992.929 663.545 795.647 436.478C598.366 209.411 615.881 -123.474 782.28 86.9019C948.679 297.277 1063.45 615.046 1205.42 516.786C1347.39 418.527 1316.51 571.585 1440.5 559.302" stroke="#18ADD8" stroke-width="40"/>
+                <path d="M-3 86.9019C332.826 182.902 273.94 323.437 342.896 409.51C429.092 517.101 985.62 699.737 788.339 472.249C591.057 244.762 608.573 -88.7394 774.971 122.026C941.37 332.791 1056.14 651.148 1198.11 552.706C1340.08 454.265 1309.2 607.606 1433.19 595.301" stroke="#18ADD8" stroke-width="10"/>
+                </g>
+                </svg>
             </div>
-            
-            Horizontal Timeline Container
-            <div class="relative max-w-7xl mx-auto">
-                
-                Horizontal Timeline Line
-                <div class="absolute top-32 left-0 right-0 h-1 bg-gray-200 hidden md:block z-0">
-                    <div class="timeline-line h-full bg-gradient-to-r from-[#22D3EE] to-[#274B8F]"></div>
+
+            <div class="process-wrapper">
+                <div class="section-title">
+                    <h2>Alur Proses Pengajuan</h2>
+                    <p>Ikuti langkah-langkah sistematis untuk pengajuan TOR hingga LPJ</p>
                 </div>
-                
-                Scrollable Container
-                <div class="scroll-container custom-scrollbar overflow-x-auto pb-8">
-                    <div class="flex gap-8 md:gap-12 px-4" style="min-width: max-content;">
-                        
-                        Step 1 - Pengaju/Pemohon
-                        <div class="process-card from-left flex-shrink-0 w-80">
-                            <div class="relative">
-                                Timeline Dot
-                                <div class="absolute left-1/2 transform -translate-x-1/2 -top-8 w-8 h-8 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full border-4 border-white shadow-lg z-10 hidden md:block"></div>
-                                
-                                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 mt-4">
-                                    <div class="text-center mb-4">
-                                        <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full flex items-center justify-center float-icon">
-                                            <i class="fas fa-user-edit text-3xl text-white"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">Pengaju/Pemohon</h3>
-                                    <p class="text-gray-600 text-sm mb-3 text-center">(Pengelola Program/Kegiatan)</p>
-                                    <div class="w-40 h-40 mx-auto mb-4">
-                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/man-working-on-laptop-5521002-4617430.png" alt="Pengaju" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="text-gray-500 text-sm text-center">
-                                        Mengajukan proposal kegiatan melalui sistem dengan melengkapi dokumen yang diperlukan
-                                    </p>
+
+                <div class="cards-container" id="cardsContainer">
+                    <!-- Step 1 -->
+                    <div class="process-card active" data-step="0">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>01</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Pengajuan</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-user"></i>
+                                    Pengusul/Pengaju
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Membuat pengajuan kegiatan melalui sistem digital dengan mengisi formulir dan melengkapi dokumen pendukung.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-file-alt"></i></div>
+                                    <span>Isi formulir pengajuan TOR</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-upload"></i></div>
+                                    <span>Upload dokumen pendukung</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-paper-plane"></i></div>
+                                    <span>Submit pengajuan</span>
                                 </div>
                             </div>
                         </div>
-                        
-                        Step 2 - Verifikator
-                        <div class="process-card flex-shrink-0 w-80">
-                            <div class="relative">
-                                <div class="absolute left-1/2 transform -translate-x-1/2 -top-8 w-8 h-8 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full border-4 border-white shadow-lg z-10 hidden md:block"></div>
-                                
-                                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 mt-4">
-                                    <div class="text-center mb-4">
-                                        <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full flex items-center justify-center float-icon" style="animation-delay: 0.2s;">
-                                            <i class="fas fa-clipboard-check text-3xl text-white"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">Verifikator</h3>
-                                    <p class="text-gray-600 text-sm mb-3 text-center">(Admin/Sekretariat Direktorat)</p>
-                                    <div class="w-40 h-40 mx-auto mb-4">
-                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/woman-checking-document-5521012-4617440.png" alt="Verifikator" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="text-gray-500 text-sm text-center">
-                                        Memverifikasi kelengkapan dokumen dan kesesuaian proposal dengan ketentuan yang berlaku
-                                    </p>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="process-card" data-step="1">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>02</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Verifikasi</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-user-shield"></i>
+                                    Verifikator
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Verifikator memeriksa kelengkapan dan keabsahan dokumen pengajuan yang telah disubmit.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-check-circle"></i></div>
+                                    <span>Periksa kelengkapan dokumen</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-search"></i></div>
+                                    <span>Validasi data pengajuan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-stamp"></i></div>
+                                    <span>Berikan status verifikasi</span>
                                 </div>
                             </div>
                         </div>
-                        
-                        Step 3 - Kepala Direktorat
-                        <div class="process-card flex-shrink-0 w-80">
-                            <div class="relative">
-                                <div class="absolute left-1/2 transform -translate-x-1/2 -top-8 w-8 h-8 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full border-4 border-white shadow-lg z-10 hidden md:block"></div>
-                                
-                                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 mt-4">
-                                    <div class="text-center mb-4">
-                                        <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full flex items-center justify-center float-icon" style="animation-delay: 0.4s;">
-                                            <i class="fas fa-user-tie text-3xl text-white"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">Kepala Direktorat</h3>
-                                    <p class="text-gray-600 text-sm mb-3 text-center">(Eselon II)</p>
-                                    <div class="w-40 h-40 mx-auto mb-4">
-                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/business-meeting-5521019-4617447.png" alt="Kepala Direktorat" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="text-gray-500 text-sm text-center">
-                                        Melakukan review dan memberikan persetujuan awal terhadap proposal kegiatan
-                                    </p>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="process-card" data-step="2">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>03</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Komitmen</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-user-tie"></i>
+                                    PPK
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Penjabat Pembuat Komitmen membuat komitmen anggaran untuk kegiatan yang telah diverifikasi.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                                    <span>Review anggaran kegiatan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-handshake"></i></div>
+                                    <span>Buat surat komitmen</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-signature"></i></div>
+                                    <span>Tanda tangan komitmen</span>
                                 </div>
                             </div>
                         </div>
-                        
-                        Step 4 - Staff Direktur
-                        <div class="process-card flex-shrink-0 w-80">
-                            <div class="relative">
-                                <div class="absolute left-1/2 transform -translate-x-1/2 -top-8 w-8 h-8 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full border-4 border-white shadow-lg z-10 hidden md:block"></div>
-                                
-                                <div class="bg-white rounded-2xl p-6 shadow-xl border border-gray-100 mt-4">
-                                    <div class="text-center mb-4">
-                                        <div class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full flex items-center justify-center float-icon" style="animation-delay: 0.6s;">
-                                            <i class="fas fa-users text-3xl text-white"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">Staff Direktur</h3>
-                                    <p class="text-gray-600 text-sm mb-3 text-center">(Sekretariat Direktur)</p>
-                                    <div class="w-40 h-40 mx-auto mb-4">
-                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/team-discussion-5521024-4617452.png" alt="Staff Direktur" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="text-gray-500 text-sm text-center">
-                                        Melakukan kajian mendalam dan memberikan rekomendasi kepada Direktur
-                                    </p>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="process-card" data-step="3">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>04</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Persetujuan</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-crown"></i>
+                                    Wakil Direktur
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Wakil Direktur memberikan persetujuan final terhadap komitmen kegiatan yang telah dibuat.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-clipboard-check"></i></div>
+                                    <span>Evaluasi proposal kegiatan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-balance-scale"></i></div>
+                                    <span>Pertimbangan kebijakan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-check-double"></i></div>
+                                    <span>Berikan persetujuan</span>
                                 </div>
                             </div>
                         </div>
-                        
-                        Step 5 - Direktur (Final)
-                        <div class="process-card flex-shrink-0 w-80">
-                            <div class="relative">
-                                <div class="absolute left-1/2 transform -translate-x-1/2 -top-8 w-8 h-8 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full border-4 border-white shadow-lg z-10 hidden md:block"></div>
-                                
-                                <div class="bg-gradient-to-br from-[#22D3EE] to-[#274B8F] text-white rounded-2xl p-6 shadow-xl mt-4">
-                                    <div class="text-center mb-4">
-                                        <div class="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center float-icon" style="animation-delay: 0.8s;">
-                                            <i class="fas fa-stamp text-3xl text-white"></i>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-xl font-bold mb-2 text-center">Direktur</h3>
-                                    <p class="text-white/90 text-sm mb-3 text-center">(Persetujuan Akhir)</p>
-                                    <div class="w-40 h-40 mx-auto mb-4">
-                                        <img src="https://cdni.iconscout.com/illustration/premium/thumb/approved-document-5521030-4617458.png" alt="Direktur" class="w-full h-full object-contain">
-                                    </div>
-                                    <p class="text-white/80 text-sm text-center">
-                                        Memberikan persetujuan final dan pengesahan terhadap proposal kegiatan
-                                    </p>
-                                    <div class="mt-4 text-center">
-                                        <div class="inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-2">
-                                            <i class="fas fa-check-circle"></i>
-                                            <span class="text-sm font-semibold">Selesai</span>
-                                        </div>
-                                    </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="process-card" data-step="4">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>05</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Penyiapan Dana</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-coins"></i>
+                                    Bendahara
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Bendahara menyiapkan dan mengalokasikan dana sesuai dengan anggaran yang telah disetujui.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-calculator"></i></div>
+                                    <span>Hitung total anggaran</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-money-check"></i></div>
+                                    <span>Alokasi dana kegiatan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-bell"></i></div>
+                                    <span>Notifikasi pencairan dana</span>
                                 </div>
                             </div>
                         </div>
-                        
+                    </div>
+
+                    <!-- Step 6 -->
+                    <div class="process-card" data-step="5">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>06</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Pelaksanaan</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-user"></i>
+                                    Pengusul/Pengaju
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Pengusul menerima dana dan melaksanakan kegiatan sesuai dengan proposal yang disetujui.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-wallet"></i></div>
+                                    <span>Terima dana kegiatan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-tasks"></i></div>
+                                    <span>Laksanakan kegiatan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-camera"></i></div>
+                                    <span>Dokumentasi kegiatan</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 7 -->
+                    <div class="process-card" data-step="6">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>07</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Pembuatan LPJ</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-user"></i>
+                                    Pengusul/Pengaju
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Pengusul membuat Laporan Pertanggungjawaban (LPJ) setelah kegiatan selesai dilaksanakan.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-file-contract"></i></div>
+                                    <span>Susun laporan kegiatan</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-receipt"></i></div>
+                                    <span>Lampirkan bukti pengeluaran</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                                    <span>Upload LPJ ke sistem</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 8 -->
+                    <div class="process-card" data-step="7">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>08</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Verifikasi LPJ</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-coins"></i>
+                                    Bendahara
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Bendahara memeriksa dan memverifikasi kelengkapan serta keabsahan LPJ yang diajukan.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-file-invoice"></i></div>
+                                    <span>Periksa kelengkapan LPJ</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-calculator"></i></div>
+                                    <span>Verifikasi penggunaan dana</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-thumbs-up"></i></div>
+                                    <span>Approve atau revisi LPJ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 9 -->
+                    <div class="process-card" data-step="8">
+                        <div class="card-header">
+                            <div class="step-number">
+                                <span>09</span>
+                            </div>
+                            <div class="step-info">
+                                <h3>Penyerahan</h3>
+                                <span class="role-badge">
+                                    <i class="fas fa-user"></i>
+                                    Pengusul/Pengaju
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p>Pengusul memberikan hard copy dokumen LPJ sebagai arsip fisik dan menyelesaikan proses.</p>
+                            <div class="action-items">
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-print"></i></div>
+                                    <span>Cetak dokumen LPJ</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-folder"></i></div>
+                                    <span>Lengkapi berkas fisik</span>
+                                </div>
+                                <div class="action-item">
+                                    <div class="action-icon"><i class="fas fa-hand-holding"></i></div>
+                                    <span>Serahkan hard copy</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                 Navigation Arrows (Optional)
-                <div class="flex justify-center gap-4 mt-8">
-                    <button onclick="scrollLeft()" class="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-chevron-left text-gray-600"></i>
-                    </button>
-                    <button onclick="scrollRight()" class="w-12 h-12 bg-gradient-to-br from-[#22D3EE] to-[#274B8F] rounded-full shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity">
-                        <i class="fas fa-chevron-right text-white"></i>
-                    </button>
+
+                <div class="nav-arrows">
+                    <div class="nav-arrow" id="prevBtn">
+                        <i class="fas fa-chevron-left"></i>
+                    </div>
+                    <div class="nav-arrow" id="nextBtn">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+
+                <div class="progress-indicator" id="progressIndicator"></div>
+
+                <div class="scroll-indicator">
+                    <span>Scroll untuk navigasi</span>
+                    <i class="fas fa-chevron-down"></i>
                 </div>
             </div>
-            
         </div>
-        
-    </section> -->
-
-</section>
+    </section>

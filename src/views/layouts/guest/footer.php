@@ -218,143 +218,223 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// const scrollContainer = document.querySelector('.scroll-container');
-//         let autoPlayTriggered = false;
-//         let autoScrollInterval = null;
+gsap.registerPlugin(ScrollTrigger);
+
+        const cards = document.querySelectorAll('.process-card');
+        const progressIndicator = document.getElementById('progressIndicator');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const scrollIndicator = document.querySelector('.scroll-indicator');
         
-//         // Auto-play animation ketika section masuk viewport
-//         const sectionObserver = new IntersectionObserver((entries) => {
-//             entries.forEach(entry => {
-//                 if (entry.isIntersecting && !autoPlayTriggered) {
-//                     autoPlayTriggered = true;
-//                     startAutoPlay();
-//                 }
-//             });
-//         }, {
-//             threshold: 0.3
-//         });
-        
-//         // Observe section proses
-//         const processSection = document.querySelector('#proses');
-//         if (processSection) {
-//             sectionObserver.observe(processSection);
-//         }
-        
-//         // Fungsi auto-play yang smooth
-//         function startAutoPlay() {
-//             const cards = document.querySelectorAll('.process-card');
-//             const timelineLine = document.querySelector('.timeline-line');
-            
-//             // Animate timeline line first
-//             setTimeout(() => {
-//                 if (timelineLine) {
-//                     timelineLine.classList.add('active');
-//                 }
-//             }, 300);
-            
-//             // Animate cards satu per satu dengan delay
-//             cards.forEach((card, index) => {
-//                 setTimeout(() => {
-//                     card.classList.add('active');
-//                 }, 500 + (index * 400));
-//             });
-            
-//             // Auto scroll setelah semua card muncul
-//             setTimeout(() => {
-//                 startAutoScroll();
-//             }, 500 + (cards.length * 400) + 1000);
-//         }
-        
-//         // Auto scroll horizontal yang smooth
-//         function startAutoScroll() {
-//             let scrollPosition = 0;
-//             const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
-//             const scrollStep = 350;
-            
-//             autoScrollInterval = setInterval(() => {
-//                 scrollPosition += scrollStep;
+        let currentStep = 0;
+        const totalSteps = cards.length;
+
+        // Create progress dots
+        for (let i = 0; i < totalSteps; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'progress-dot';
+            if (i === 0) dot.classList.add('active');
+            dot.addEventListener('click', () => goToStep(i));
+            progressIndicator.appendChild(dot);
+        }
+
+        const progressDots = document.querySelectorAll('.progress-dot');
+
+        function updateCards(step) {
+            cards.forEach((card, index) => {
+                card.classList.remove('active', 'prev', 'next');
                 
-//                 if (scrollPosition >= maxScroll) {
-//                     // Reset ke awal dengan smooth scroll
-//                     setTimeout(() => {
-//                         scrollContainer.scrollTo({
-//                             left: 0,
-//                             behavior: 'smooth'
-//                         });
-//                         scrollPosition = 0;
-//                     }, 2000);
-//                 } else {
-//                     scrollContainer.scrollTo({
-//                         left: scrollPosition,
-//                         behavior: 'smooth'
-//                     });
-//                 }
-//             }, 2500);
-//         }
-        
-//         // Stop auto-scroll saat user interaksi
-//         scrollContainer.addEventListener('touchstart', stopAutoScroll);
-//         scrollContainer.addEventListener('mousedown', stopAutoScroll);
-//         scrollContainer.addEventListener('wheel', stopAutoScroll);
-        
-//         function stopAutoScroll() {
-//             if (autoScrollInterval) {
-//                 clearInterval(autoScrollInterval);
-//                 autoScrollInterval = null;
-//             }
-//         }
-        
-//         // Scroll Animation on manual scroll
-//         scrollContainer.addEventListener('scroll', () => {
-//             const cards = document.querySelectorAll('.process-card');
-//             const containerRect = scrollContainer.getBoundingClientRect();
-            
-//             cards.forEach(card => {
-//                 const cardRect = card.getBoundingClientRect();
-//                 const cardCenter = cardRect.left + cardRect.width / 2;
-//                 const containerCenter = containerRect.left + containerRect.width / 2;
-                
-//                 // Activate card when it's near center of viewport
-//                 if (Math.abs(cardCenter - containerCenter) < containerRect.width / 2) {
-//                     card.classList.add('active');
-//                 }
-//             });
-//         });
-        
-//         // Navigation functions
-//         function scrollLeft() {
-//             stopAutoScroll();
-//             scrollContainer.scrollBy({
-//                 left: -350,
-//                 behavior: 'smooth'
-//             });
-//         }
-        
-//         function scrollRight() {
-//             stopAutoScroll();
-//             scrollContainer.scrollBy({
-//                 left: 350,
-//                 behavior: 'smooth'
-//             });
-//         }
-        
-//         // Intersection Observer for cards
-//         const observerOptions = {
-//             root: scrollContainer,
-//             threshold: 0.5
-//         };
-        
-//         const cardObserver = new IntersectionObserver((entries) => {
-//             entries.forEach(entry => {
-//                 if (entry.isIntersecting) {
-//                     entry.target.classList.add('active');
-//                 }
-//             });
-//         }, observerOptions);
-        
-//         document.querySelectorAll('.process-card').forEach(card => {
-//             cardObserver.observe(card);
-//         });
+                if (index === step) {
+                    card.classList.add('active');
+                } else if (index === step - 1) {
+                    card.classList.add('prev');
+                } else if (index === step + 1) {
+                    card.classList.add('next');
+                }
+            });
+
+            progressDots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === step);
+            });
+
+            // Hide scroll indicator after first interaction
+            if (step > 0) {
+                scrollIndicator.style.opacity = '0';
+            } else {
+                scrollIndicator.style.opacity = '1';
+            }
+        }
+
+        function goToStep(step) {
+            if (step >= 0 && step < totalSteps) {
+                currentStep = step;
+                updateCards(currentStep);
+            }
+        }
+
+        // Navigation buttons
+        prevBtn.addEventListener('click', () => {
+            if (currentStep > 0) {
+                goToStep(currentStep - 1);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentStep < totalSteps - 1) {
+                goToStep(currentStep + 1);
+            }
+        });
+
+        // Scroll-based navigation
+        let ticking = false;
+        let lastScrollY = window.scrollY;
+
+        ScrollTrigger.create({
+            trigger: '.process-section',
+            start: 'top top',
+            end: 'bottom bottom',
+            onUpdate: (self) => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        const progress = self.progress;
+                        const newStep = Math.min(
+                            Math.floor(progress * totalSteps),
+                            totalSteps - 1
+                        );
+                        
+                        if (newStep !== currentStep) {
+                            goToStep(newStep);
+                        }
+                        
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (currentStep > 0) goToStep(currentStep - 1);
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (currentStep < totalSteps - 1) goToStep(currentStep + 1);
+            }
+        });
+
+        // Touch swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        const cardsContainer = document.getElementById('cardsContainer');
+
+        cardsContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        cardsContainer.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, { passive: true });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0 && currentStep < totalSteps - 1) {
+                    // Swipe left - next
+                    goToStep(currentStep + 1);
+                } else if (diff < 0 && currentStep > 0) {
+                    // Swipe right - prev
+                    goToStep(currentStep - 1);
+                }
+            }
+        }
+
+        // Mouse wheel navigation (optional enhancement)
+        let wheelTimeout;
+        cardsContainer.addEventListener('wheel', (e) => {
+            clearTimeout(wheelTimeout);
+            wheelTimeout = setTimeout(() => {
+                if (e.deltaY > 0 && currentStep < totalSteps - 1) {
+                    goToStep(currentStep + 1);
+                } else if (e.deltaY < 0 && currentStep > 0) {
+                    goToStep(currentStep - 1);
+                }
+            }, 50);
+        }, { passive: true });
+
+        // Initial animation on load
+        window.addEventListener('load', () => {
+            gsap.from('.section-title', {
+                opacity: 0,
+                y: -50,
+                duration: 1,
+                ease: 'power3.out'
+            });
+
+            gsap.from('.process-card.active', {
+                opacity: 0,
+                scale: 0.8,
+                duration: 0.8,
+                delay: 0.3,
+                ease: 'back.out(1.7)'
+            });
+
+            gsap.from('.nav-arrow', {
+                opacity: 0,
+                scale: 0,
+                duration: 0.5,
+                delay: 0.5,
+                stagger: 0.2,
+                ease: 'back.out(1.7)'
+            });
+
+            gsap.from('.progress-dot', {
+                opacity: 0,
+                scale: 0,
+                duration: 0.3,
+                delay: 0.7,
+                stagger: 0.05,
+                ease: 'back.out(1.7)'
+            });
+        });
+
+        // Parallax effect for orbs
+        document.addEventListener('mousemove', (e) => {
+            const orbs = document.querySelectorAll('.orb');
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+
+            orbs.forEach((orb, index) => {
+                const speed = (index + 1) * 20;
+                const x = (mouseX - 0.5) * speed;
+                const y = (mouseY - 0.5) * speed;
+
+                gsap.to(orb, {
+                    x: x,
+                    y: y,
+                    duration: 1,
+                    ease: 'power2.out'
+                });
+            });
+        });
+
+        // Auto-hide scroll indicator after first scroll
+        let hasScrolled = false;
+        window.addEventListener('scroll', () => {
+            if (!hasScrolled) {
+                hasScrolled = true;
+                gsap.to(scrollIndicator, {
+                    opacity: 0,
+                    duration: 0.5,
+                    ease: 'power2.out'
+                });
+            }
+        }, { once: true });
 </script>
 
 </body>
