@@ -1,10 +1,11 @@
 <?php
+
 // File: src/views/pages/bendahara/riwayat-verifikasi.php
 
 // Dummy data untuk testing
 if (!isset($list_riwayat)) {
     $list_riwayat = [
-        
+
     ];
 }
 

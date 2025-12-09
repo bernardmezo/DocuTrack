@@ -1,24 +1,31 @@
 <?php
+
 // File: src/controllers/Bendahara/PengajuanlpjController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/bendaharaModel.php'; // ✅ LOAD MODEL
+namespace App\Controllers\Bendahara;
 
-class BendaharaPengajuanlpjController extends Controller {
-    
+use App\Core\Controller;
+use App\Services\BendaharaService;
+use Exception;
+
+class PengajuanLpjController extends Controller
+{
     private $model;
 
-    public function __construct() {
-        $this->model = new bendaharaModel($this->db);
+    public function __construct()
+    {
+        parent::__construct();
+        $this->model = new BendaharaService($this->db);
     }
 
     /**
      * Halaman List LPJ - HANYA MENUNGGU
      */
-    public function index($data_dari_router = []) {
+    public function index($data_dari_router = [])
+    {
         // ✅ AMBIL DATA DARI DATABASE dengan type safety
         $list_lpj = $this->safeModelCall($this->model, 'getAntrianLPJ', [], []);
-        
+
         // Get flash messages from session
         $success_msg = $_SESSION['flash_message'] ?? null;
         $error_msg = $_SESSION['flash_error'] ?? null;
@@ -37,22 +44,24 @@ class BendaharaPengajuanlpjController extends Controller {
     /**
      * Method untuk mendapatkan data LPJ (untuk Dashboard)
      */
-    public function getLPJData() {
+    public function getLPJData()
+    {
         // ✅ AMBIL DATA DARI DATABASE
-        return $this->model->getAntrianLPJ();
+        return $this->safeModelCall($this->model, 'getAntrianLPJ', [], []);
     }
 
     /**
      * Halaman Detail LPJ untuk Verifikasi
      */
-    public function show($id, $data_dari_router = []) {
+    public function show($id, $data_dari_router = [])
+    {
         error_log("=== BendaharaPengajuanlpjController::show START ===");
         error_log("LPJ ID: " . $id);
-        
+
         // Ambil referrer dari query string
         $ref = $_GET['ref'] ?? 'lpj';
         $base_url = "/docutrack/public/bendahara";
-        
+
         if ($ref === 'dashboard') {
             $back_url = $base_url . '/dashboard';
         } else {
@@ -60,8 +69,8 @@ class BendaharaPengajuanlpjController extends Controller {
         }
 
         // ✅ Ambil data LPJ dari database
-        $lpj = $this->model->getDetailLPJ($id);
-        
+        $lpj = $this->safeModelCall($this->model, 'getDetailLPJ', [$id], null);
+
         if (!$lpj) {
             error_log("ERROR: LPJ not found for ID: " . $id);
             $_SESSION['flash_error'] = 'Data LPJ tidak ditemukan.';
@@ -72,15 +81,15 @@ class BendaharaPengajuanlpjController extends Controller {
         error_log("LPJ Data: " . print_r($lpj, true));
 
         // ✅ Ambil item-item LPJ
-        $lpj_items = $this->model->getLPJItems($id);
-        
+        $lpj_items = $this->safeModelCall($this->model, 'getLPJItems', [$id], []);
+
         error_log("Total LPJ Items: " . count($lpj_items));
 
         // ✅ Group items by jenisBelanja (kategori)
         $rab_items = [];
         foreach ($lpj_items as $item) {
             $kategori = $item['jenisBelanja'] ?? 'Lainnya';
-            
+
             $rab_items[$kategori][] = [
                 'id' => $item['lpjItemId'],
                 'uraian' => $item['uraian'] ?? '-',
@@ -106,7 +115,7 @@ class BendaharaPengajuanlpjController extends Controller {
         } elseif (!empty($lpj['submittedAt'])) {
             $status = 'Menunggu';
         }
-        
+
         error_log("Status: " . $status);
 
         $data = array_merge($data_dari_router, [
@@ -137,10 +146,11 @@ class BendaharaPengajuanlpjController extends Controller {
     /**
      * Proses Verifikasi LPJ (Setuju atau Revisi)
      */
-    public function proses() {
+    public function proses()
+    {
         error_log("=== BendaharaPengajuanlpjController::proses START ===");
         error_log("POST data: " . print_r($_POST, true));
-        
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /docutrack/public/bendahara/pengajuan-lpj');
             exit;
@@ -148,7 +158,7 @@ class BendaharaPengajuanlpjController extends Controller {
 
         $lpj_id = isset($_POST['lpj_id']) ? intval($_POST['lpj_id']) : 0;
         $action = $_POST['action'] ?? null;
-        
+
         if (!$lpj_id || !$action) {
             $_SESSION['flash_message'] = 'Data tidak lengkap!';
             $_SESSION['flash_type'] = 'error';
@@ -161,22 +171,22 @@ class BendaharaPengajuanlpjController extends Controller {
         try {
             if ($action === 'setuju') {
                 // ✅ APPROVE LPJ
-                if ($this->model->approveLPJ($lpj_id)) {
+                // Validasi dilakukan di model: LPJ harus sudah di-submit terlebih dahulu
+                if ($this->safeModelCall($this->model, 'approveLPJ', [$lpj_id], false)) {
                     $_SESSION['flash_message'] = 'LPJ berhasil disetujui!';
                     $_SESSION['flash_type'] = 'success';
-                    
+
                     error_log("LPJ {$lpj_id} approved successfully");
                 } else {
-                    throw new Exception('Gagal menyetujui LPJ');
+                    throw new Exception('Gagal menyetujui LPJ. Pastikan LPJ sudah diajukan oleh pengusul terlebih dahulu.');
                 }
-                
             } elseif ($action === 'revisi') {
                 $komentar = $_POST['komentar'] ?? [];
                 $catatan_umum = trim($_POST['catatan_umum'] ?? '');
-                
+
                 error_log("Komentar data: " . print_r($komentar, true));
                 error_log("Catatan umum: " . $catatan_umum);
-                
+
                 // Validasi: Minimal ada 1 komentar
                 $hasComment = false;
                 foreach ($komentar as $kategori => $comment) {
@@ -185,27 +195,25 @@ class BendaharaPengajuanlpjController extends Controller {
                         break;
                     }
                 }
-                
+
                 if (!$hasComment && empty($catatan_umum)) {
                     $_SESSION['flash_message'] = 'Mohon isi minimal 1 komentar untuk meminta revisi!';
                     $_SESSION['flash_type'] = 'error';
                     header('Location: /docutrack/public/bendahara/pengajuan-lpj/show/' . $lpj_id);
                     exit;
                 }
-                
+
                 // TODO: Implementasi simpan komentar revisi
                 // Untuk sementara, tandai LPJ sebagai perlu revisi
                 // $this->model->reviseLPJ($lpj_id, $komentar, $catatan_umum);
-                
+
                 $_SESSION['flash_message'] = 'Permintaan revisi berhasil dikirim ke Admin!';
                 $_SESSION['flash_type'] = 'success';
-                
+
                 error_log("Revisi request sent for LPJ {$lpj_id}");
-                
             } else {
                 throw new Exception('Action tidak valid');
             }
-
         } catch (Exception $e) {
             error_log("ERROR in proses(): " . $e->getMessage());
             $_SESSION['flash_message'] = 'Terjadi kesalahan: ' . $e->getMessage();

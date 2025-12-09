@@ -308,7 +308,7 @@ CREATE TABLE `tbl_kak` (
   `kakId` INT NOT NULL AUTO_INCREMENT,
   `kegiatanId` INT NOT NULL,
   `iku` VARCHAR(200) DEFAULT NULL,
-  `penerimaMaanfaat` TEXT DEFAULT NULL COMMENT 'Upgraded from VARCHAR(300)',
+  `penerimaManfaat` TEXT DEFAULT NULL COMMENT 'Upgraded from VARCHAR(300)',
   `gambaranUmum` TEXT DEFAULT NULL COMMENT 'Upgraded from VARCHAR(300)',
   `metodePelaksanaan` TEXT DEFAULT NULL COMMENT 'Upgraded from VARCHAR(300)',
   `tglPembuatan` DATE DEFAULT NULL,

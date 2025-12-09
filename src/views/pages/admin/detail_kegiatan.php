@@ -1,7 +1,7 @@
 <?php
 // File: src/views/pages/admin/rincian_kegiatan.php
 
-$id = $kegiatan_id?? 1;
+$id = $kegiatan_id ?? 1;
 ?>
 
 <main class="main-content font-poppins p-6 md:p-6 -mt-18 max-w-4xl mx-auto w-full relative z-10">

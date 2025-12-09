@@ -1,37 +1,66 @@
 <?php
-// File: src/controllers/PPK/TelaahController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/ppkModel.php';
-require_once '../src/helpers/logger_helper.php';
+namespace App\Controllers\PPK;
 
-class PPKTelaahController extends Controller {
+use App\Core\Controller;
+use App\Models\kegiatan\KegiatanModel;
+use App\Models\PpkModel;
+use App\Services\LogStatusService;
+use App\Services\PpkService;
+use App\Services\ValidationService;
+use Exception;
 
-    public function show($id, $data_dari_router = []) {
+class TelaahController extends Controller
+{
+    private PpkService $service;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $dbConnection = $this->db;
+        $ppkModel = new PpkModel($dbConnection);
+        $logStatusService = new LogStatusService($dbConnection);
+        $validationService = new ValidationService();
+        $kegiatanModel = new KegiatanModel($dbConnection);
+
+        $this->service = new PpkService(
+            $ppkModel,
+            $logStatusService,
+            $validationService,
+            $kegiatanModel
+        );
+    }
+
+    public function show($id, $data_dari_router = [])
+    {
         $ref = $_GET['ref'] ?? 'dashboard';
         $base_url = "/docutrack/public/ppk";
         $back_url = $base_url . '/' . $ref;
 
-        $model = new ppkModel($this->db);
-        $dataDB = $model->getDetailKegiatan($id);
-        
-        if (!$dataDB) { echo "Data tidak ditemukan."; return; }
+        $dataDB = $this->safeModelCall($this->service, 'getDetailKegiatan', [$id], null);
+
+        if (!$dataDB) {
+            echo "Data tidak ditemukan.";
+            return;
+        }
 
         $kakId = $dataDB['kakId'];
-        $indikator = $model->getIndikatorByKAK($kakId);
-        $tahapan   = $model->getTahapanByKAK($kakId);
-        $rab       = $model->getRABByKAK($kakId);
+        $indikator = $this->safeModelCall($this->service, 'getIndikatorByKAK', [$kakId], []);
+        $tahapan   = $this->safeModelCall($this->service, 'getTahapanByKAK', [$kakId], []);
+        $rab       = $this->safeModelCall($this->service, 'getRABByKAK', [$kakId], []);
 
         $tahapan_string = "";
-        foreach ($tahapan as $idx => $t) { $tahapan_string .= ($idx + 1) . ". " . $t . "\n"; }
+        foreach ($tahapan as $idx => $t) {
+            $tahapan_string .= ($idx + 1) . ". " . $t . "\n";
+        }
         $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
         $surat_url = !empty($dataDB['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $dataDB['suratPengantar'] : '';
 
-        $status_asli = ($dataDB['status_text'] ?? 'Menunggu'); // status asli dari DB = Disetujui (karna sudah disetujui oleh verifikator)
+        $status_asli = ($dataDB['status_text'] ?? 'Menunggu');
         $posisi_saat_ini = $dataDB['posisiId'];
         $role_ppk = 4;
 
-        // untuk menampilkan status telaah di PPK, agar bisa di approve / setujui usulan
         $temp_status = 'Menunggu';
 
         if ($posisi_saat_ini != $role_ppk && $status_asli != 'Ditolak') {
@@ -50,7 +79,7 @@ class PPKTelaahController extends Controller {
             'prodi' => $dataDB['prodiPenyelenggara'] ?? '',
             'nama_kegiatan' => $dataDB['namaKegiatan'],
             'gambaran_umum' => $dataDB['gambaranUmum'],
-            'penerima_manfaat' => $dataDB['penerimaMaanfaat'],
+            'penerima_manfaat' => $dataDB['penerimaManfaat'],
             'metode_pelaksanaan' => $dataDB['metodePelaksanaan'],
             'tahapan_kegiatan' => $tahapan_string,
             'surat_pengantar' => $dataDB['suratPengantar'] ?? '',
@@ -60,9 +89,7 @@ class PPKTelaahController extends Controller {
 
         $data = array_merge($data_dari_router, [
             'title' => 'Telaah Usulan (PPK) - ' . htmlspecialchars($dataDB['namaKegiatan']),
-            
             'status' => $status_tampilan,
-            
             'id' => $id,
             'kegiatan_data' => $kegiatan_data,
             'iku_data' => $iku_array,
@@ -76,23 +103,27 @@ class PPKTelaahController extends Controller {
         $this->view('pages/ppk/telaah_detail', $data, 'ppk');
     }
 
-    public function approve($id) {
+    public function approve($id)
+    {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $model = new ppkModel($this->db);
-            $userId = $_SESSION['user_id'] ?? 0;
-            
-            $kegiatan = $model->getDetailKegiatan($id);
-            $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
-            
-            if($model->approveUsulan($id)) {
-                logApproval($userId, $id, 'PPK', true, 
-                    'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
-                    $oldStatusId, 3);
-                
-                header('Location: /docutrack/public/ppk/dashboard?msg=approved');
+            try {
+                $rekomendasi = trim($_POST['rekomendasi'] ?? '');
+
+                if ($this->service->approveUsulan((int)$id, $rekomendasi)) {
+                    $_SESSION['flash_message'] = 'Usulan berhasil disetujui dan diteruskan ke Bendahara.';
+                    header('Location: /docutrack/public/ppk/dashboard?msg=approved');
+                    exit;
+                } else {
+                    throw new Exception('Gagal memproses persetujuan.');
+                }
+            } catch (Exception $e) {
+                $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                header('Location: /docutrack/public/ppk/telaah/show/' . $id);
                 exit;
             }
         }
-        header('Location: /docutrack/public/ppk/telaah/show/'.$id);
+        // Jika bukan POST, redirect kembali
+        header('Location: /docutrack/public/ppk/telaah/show/' . $id);
+        exit;
     }
 }

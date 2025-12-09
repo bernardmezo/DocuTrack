@@ -50,8 +50,10 @@
             
             <div class="relative px-2 pt-2 pb-10"> 
                 <?php
-                    $posisi_sekarang_kak = array_search($tahap_sekarang_kak, $tahapan_kak); 
-                    if ($posisi_sekarang_kak === false) $posisi_sekarang_kak = 0;
+                    $posisi_sekarang_kak = array_search($tahap_sekarang_kak, $tahapan_kak);
+                if ($posisi_sekarang_kak === false) {
+                    $posisi_sekarang_kak = 0;
+                }
                     $total_langkah_kak = count($tahapan_kak) - 1;
                     $lebar_progress_kak = $total_langkah_kak > 0 ? ($posisi_sekarang_kak / $total_langkah_kak) * 100 : 0;
                 ?>
@@ -65,10 +67,10 @@
 
                 <!-- Progress Steps -->
                 <div class="relative z-10 flex justify-between w-full">
-                    <?php foreach ($tahapan_kak as $index => $nama_tahap): 
+                    <?php foreach ($tahapan_kak as $index => $nama_tahap) :
                         $is_completed = $index < $posisi_sekarang_kak;
                         $is_active = $index == $posisi_sekarang_kak;
-                        
+
                         if ($is_active) {
                             $circle_class = 'bg-blue-500 border-blue-500 text-white shadow-lg ring-4 ring-blue-100 scale-110';
                             $text_class = 'text-blue-700 font-bold';
@@ -79,7 +81,7 @@
                             $circle_class = 'bg-white border-2 border-gray-300 text-gray-400';
                             $text_class = 'text-gray-400';
                         }
-                    ?>
+                        ?>
                     <div class="flex flex-col items-center group transition-transform hover:-translate-y-1">
                         <div class="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 <?php echo $circle_class; ?>"> 
                             <i class="fas <?php echo $icons_kak[$nama_tahap] ?? 'fa-circle'; ?> text-sm"></i> 
@@ -106,7 +108,9 @@
             <div class="relative px-2 pb-8"> 
                 <?php
                     $posisi_sekarang_lpj = array_search($tahap_sekarang_lpj, $tahapan_lpj);
-                    if ($posisi_sekarang_lpj === false) $posisi_sekarang_lpj = 0;
+                if ($posisi_sekarang_lpj === false) {
+                    $posisi_sekarang_lpj = 0;
+                }
                     $total_langkah_lpj = count($tahapan_lpj) - 1;
                     $lebar_progress_lpj = $total_langkah_lpj > 0 ? ($posisi_sekarang_lpj / $total_langkah_lpj) * 100 : 0;
                 ?>
@@ -120,10 +124,10 @@
  
                 <!-- Progress Steps -->
                 <div class="relative z-10 flex justify-between w-full">
-                    <?php foreach ($tahapan_lpj as $index => $nama_tahap): 
+                    <?php foreach ($tahapan_lpj as $index => $nama_tahap) :
                         $is_completed = $index < $posisi_sekarang_lpj;
                         $is_active = $index == $posisi_sekarang_lpj;
-                        
+
                         if ($is_active) {
                             $circle_class = 'bg-green-500 border-green-500 text-white shadow-lg ring-4 ring-green-100 scale-110';
                             $text_class = 'text-green-700 font-bold';
@@ -134,7 +138,7 @@
                             $circle_class = 'bg-white border-2 border-gray-300 text-gray-400';
                             $text_class = 'text-gray-400';
                         }
-                    ?>
+                        ?>
                     <div class="flex flex-col items-center group transition-transform hover:-translate-y-1">
                         <div class="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 <?php echo $circle_class; ?>"> 
                             <i class="fas <?php echo $icons_lpj[$nama_tahap] ?? 'fa-circle'; ?> text-sm"></i> 

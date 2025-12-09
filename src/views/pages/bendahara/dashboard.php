@@ -1,9 +1,13 @@
 <?php
 // File: src/views/pages/bendahara/dashboard.php
 // Ensure data is available
-if (!isset($list_kak)) { $list_kak = []; }
-if (!isset($list_lpj)) { $list_lpj = []; }
-if (!isset($stats)) { 
+if (!isset($list_kak)) {
+    $list_kak = [];
+}
+if (!isset($list_lpj)) {
+    $list_lpj = [];
+}
+if (!isset($stats)) {
     $stats = [
         'total' => 0,
         'danaDiberikan' => 0,
@@ -15,7 +19,7 @@ if (!isset($stats)) {
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
-    <?php if(isset($success_message) && $success_message): ?>
+    <?php if (isset($success_message) && $success_message) : ?>
     <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
         <div class="flex items-center">
             <i class="fas fa-check-circle text-green-500 mr-3"></i>
@@ -24,7 +28,7 @@ if (!isset($stats)) {
     </div>
     <?php endif; ?>
 
-    <?php if(isset($error_message) && $error_message): ?>
+    <?php if (isset($error_message) && $error_message) : ?>
     <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
         <div class="flex items-center">
             <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>

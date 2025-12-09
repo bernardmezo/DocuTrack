@@ -66,7 +66,7 @@ $jurusan_list = $jurusan_list ?? [];
                             style="color: #374151 !important;"
                             class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
                         <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
-                        <?php foreach ($jurusan_list as $jurusan): ?>
+                        <?php foreach ($jurusan_list as $jurusan) : ?>
                             <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" style="color: #374151 !important; font-weight: 600;"><?php echo htmlspecialchars($jurusan); ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -99,19 +99,19 @@ $jurusan_list = $jurusan_list ?? [];
                     </tr>
                 </thead>
                 <tbody id="ppk-table-body" class="divide-y divide-gray-100">
-                    <?php if (empty($list_usulan)): ?>
+                    <?php if (empty($list_usulan)) : ?>
                         <tr id="empty-row">
                             <td colspan="5" class="px-6 py-10 text-center text-gray-500 italic">
                                 Tidak ada usulan untuk ditinjau.
                             </td>
                         </tr>
-                    <?php else: ?>
-                        <?php 
+                    <?php else : ?>
+                        <?php
                         $items_per_page = 5; // Sesuaikan dengan JS
                         $start_number = ($current_page - 1) * $items_per_page + 1;
                         $nomor = $start_number;
                         ?>
-                        <?php foreach ($list_usulan as $item): 
+                        <?php foreach ($list_usulan as $item) :
                             $status_text = htmlspecialchars($item['status'] ?? 'N/A');
                             $status_lower = strtolower($status_text);
 
@@ -123,18 +123,18 @@ $jurusan_list = $jurusan_list ?? [];
                                 'disetujui verifikator' => 'fas fa-check-circle',
                                 default => 'fas fa-hourglass-half',
                             };
-                            
+
                             $row_class = ($status_lower === 'menunggu') ? 'bg-gray-50 font-medium' : 'bg-white';
-                            
+
                             // Format tanggal
                             $tanggal = $item['tanggal_pengajuan'] ?? '-';
-                            if ($tanggal !== '-') {
-                                $date = new DateTime($tanggal);
-                                $tanggal_formatted = $date->format('d M Y');
-                            } else {
-                                $tanggal_formatted = '-';
-                            }
-                        ?>
+    if ($tanggal !== '-') {
+        $date = new DateTime($tanggal);
+        $tanggal_formatted = $date->format('d M Y');
+    } else {
+        $tanggal_formatted = '-';
+    }
+    ?>
                             <tr class='ppk-row <?php echo $row_class; ?> hover:bg-gray-100 transition-colors' 
                                 data-nama="<?php echo htmlspecialchars(strtolower($item['nama'])); ?>"
                                 data-status="<?php echo htmlspecialchars($status_lower); ?>"

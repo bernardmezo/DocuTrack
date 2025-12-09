@@ -1,17 +1,17 @@
 <?php
-// src/controllers/HomeController.php
 
-require_once '../src/core/Controller.php';
+namespace App\Controllers;
 
-class HomeController extends Controller {
-    
-    public function index() {
+use App\Core\Controller;
+
+class HomeController extends Controller
+{
+    public function index()
+    {
         $data = [
-            'title' => 'Docutrack PNJ - Selamat Datang' 
-            // Anda bisa tambahkan data lain jika perlu
+            'title' => 'Docutrack PNJ - Selamat Datang'
         ];
-        
-        // Panggil view 'pages/landing' dan gunakan layout 'guest'
-        $this->view('pages/landing', $data, 'guest'); 
+
+        $this->view('pages/landing', $data, 'guest');
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Core;
+namespace App\Core;
 
 use mysqli;
 use mysqli_sql_exception;
@@ -43,14 +43,13 @@ class Database
             );
 
             $this->connection->set_charset('utf8mb4');
-
         } catch (mysqli_sql_exception $e) {
             error_log('Database connection failed: ' . $e->getMessage());
-            
+
             if (getenv('APP_ENV') === 'production') {
                 throw new Exception('Database connection failed.');
             }
-            
+
             throw $e;
         }
     }
@@ -64,7 +63,9 @@ class Database
         return $this->connection;
     }
 
-    private function __clone() {}
+    private function __clone()
+    {
+    }
 
     public function __wakeup()
     {

@@ -1,11 +1,18 @@
 <?php
-// File: src/views/pages/super_admin/buat_iku.php
+// File: src/views/pages/superadmin/buat-iku.php
 
-if (!isset($list_iku)) { $list_iku = []; }
-if (!isset($pagination)) { $pagination = ['current_page' => 1, 'total_pages' => 1, 'total_items' => 0, 'showing_from' => 0, 'showing_to' => 0]; }
-if (!isset($filters)) { $filters = ['search' => '']; }
+if (!isset($list_iku)) {
+    $list_iku = [];
+}
+if (!isset($pagination)) {
+    $pagination = ['current_page' => 1, 'total_pages' => 1, 'total_items' => 0, 'showing_from' => 0, 'showing_to' => 0];
+}
+if (!isset($filters)) {
+    $filters = ['search' => ''];
+}
 
-function build_url_iku($params = []) {
+function build_url_iku($params = [])
+{
     $current_params = $_GET;
     $merged = array_merge($current_params, $params);
     return '?' . http_build_query($merged);
@@ -68,7 +75,7 @@ function build_url_iku($params = []) {
                     </tr>
                 </thead>
                 <tbody id="tbody-iku" class="divide-y divide-gray-100 bg-white/50">
-                    <?php if (empty($list_iku)): ?>
+                    <?php if (empty($list_iku)) : ?>
                         <tr>
                             <td colspan="2" class="px-6 py-12 text-center">
                                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/40 text-gray-400 mb-4 shadow-sm border border-white/50">
@@ -77,12 +84,12 @@ function build_url_iku($params = []) {
                                 <p class="text-gray-500 font-medium">Data IKU tidak ditemukan.</p>
                             </td>
                         </tr>
-                    <?php else: ?>
-                        <?php 
+                    <?php else : ?>
+                        <?php
                         $delay = 0;
-                        foreach ($list_iku as $item): 
-                            $delay += 50; 
-                        ?>
+                        foreach ($list_iku as $item) :
+                            $delay += 50;
+                            ?>
                             <tr class="iku-row hover:bg-blue-50/40 transition-colors duration-150 group border-b border-gray-50 last:border-b-0" 
                                 style="animation-delay: <?= $delay ?>ms;"
                                 data-iku-id="<?= $item['id'] ?>">
@@ -96,7 +103,7 @@ function build_url_iku($params = []) {
                                             <p class="font-semibold text-gray-800 text-sm group-hover:text-blue-600 transition-colors leading-snug">
                                                 <?= htmlspecialchars($item['nama']) ?>
                                             </p>
-                                            <?php if (!empty($item['deskripsi'])): ?>
+                                            <?php if (!empty($item['deskripsi'])) : ?>
                                                 <span class="text-xs text-gray-500 mt-1 line-clamp-1"><?= htmlspecialchars($item['deskripsi']) ?></span>
                                             <?php endif; ?>
                                         </div>
@@ -126,19 +133,19 @@ function build_url_iku($params = []) {
                 Menampilkan <span id="showing-iku" class="font-bold text-blue-700"><?= $pagination['showing_from'] ?>-<?= $pagination['showing_to'] ?></span> dari <span id="total-iku" class="font-bold text-gray-800"><?= $pagination['total_items'] ?></span> data
             </div>
             
-            <?php if ($pagination['total_pages'] > 1): ?>
+            <?php if ($pagination['total_pages'] > 1) : ?>
                 <div class="flex items-center gap-1.5">
                     <a href="<?= build_url_iku(['page' => $pagination['current_page'] - 1]) ?>" 
                        class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border shadow-sm transform hover:scale-105 <?= $pagination['current_page'] <= 1 ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed opacity-60' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600' ?>">
                         <i class="fas fa-chevron-left"></i>
                     </a>
 
-                    <?php for ($i = 1; $i <= $pagination['total_pages']; $i++): ?>
-                        <?php if ($i === $pagination['current_page']): ?>
+                    <?php for ($i = 1; $i <= $pagination['total_pages']; $i++) : ?>
+                        <?php if ($i === $pagination['current_page']) : ?>
                             <span class="px-3 py-1.5 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white border-transparent shadow-md">
                                 <?= $i ?>
                             </span>
-                        <?php else: ?>
+                        <?php else : ?>
                             <a href="<?= build_url_iku(['page' => $i]) ?>" 
                                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border shadow-sm transform hover:scale-105 bg-white border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600">
                                 <?= $i ?>

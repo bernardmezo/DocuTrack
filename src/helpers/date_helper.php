@@ -4,7 +4,7 @@
  * Date Helper Functions
  * ====================
  * Helper untuk manipulasi dan formatting tanggal dalam Bahasa Indonesia.
- * 
+ *
  * @package DocuTrack
  * @category Helper
  * @author DocuTrack Team
@@ -21,7 +21,7 @@ if (!function_exists('getMonthName')) {
      *
      * @param int|string $monthNumber Nomor bulan (1-12)
      * @return string Nama bulan dalam Bahasa Indonesia (contoh: "Januari", "Februari")
-     * 
+     *
      * @example
      * ```php
      * echo getMonthName(1);  // Output: "Januari"
@@ -46,10 +46,10 @@ if (!function_exists('getMonthName')) {
             11 => 'November',
             12 => 'Desember'
         ];
-        
+
         // Cast ke integer untuk keamanan
         $monthInt = (int) $monthNumber;
-        
+
         // Return nama bulan jika valid, atau nilai asli jika tidak
         return $months[$monthInt] ?? (string) $monthNumber;
     }
@@ -61,7 +61,7 @@ if (!function_exists('getMonthShortName')) {
      *
      * @param int|string $monthNumber Nomor bulan (1-12)
      * @return string Nama bulan singkat (contoh: "Jan", "Feb")
-     * 
+     *
      * @example
      * ```php
      * echo getMonthShortName(1);  // Output: "Jan"
@@ -84,7 +84,7 @@ if (!function_exists('getMonthShortName')) {
             11 => 'Nov',
             12 => 'Des'
         ];
-        
+
         $monthInt = (int) $monthNumber;
         return $shortMonths[$monthInt] ?? (string) $monthNumber;
     }
@@ -97,7 +97,7 @@ if (!function_exists('formatTanggalIndonesia')) {
      * @param string $date String tanggal yang dapat diparsing (format Y-m-d, dll)
      * @param bool $includeDay Sertakan nama hari jika true
      * @return string Tanggal terformat (contoh: "15 Januari 2025" atau "Senin, 15 Januari 2025")
-     * 
+     *
      * @example
      * ```php
      * echo formatTanggalIndonesia('2025-01-15');        // Output: "15 Januari 2025"
@@ -109,18 +109,18 @@ if (!function_exists('formatTanggalIndonesia')) {
         if (empty($date)) {
             return '-';
         }
-        
+
         $timestamp = strtotime($date);
         if ($timestamp === false) {
             return $date; // Return original if parsing fails
         }
-        
+
         $day = date('j', $timestamp);
         $month = getMonthName((int) date('n', $timestamp));
         $year = date('Y', $timestamp);
-        
+
         $formatted = "{$day} {$month} {$year}";
-        
+
         if ($includeDay) {
             $dayNames = [
                 'Sunday'    => 'Minggu',
@@ -131,11 +131,11 @@ if (!function_exists('formatTanggalIndonesia')) {
                 'Friday'    => 'Jumat',
                 'Saturday'  => 'Sabtu'
             ];
-            
+
             $dayName = $dayNames[date('l', $timestamp)] ?? '';
             $formatted = "{$dayName}, {$formatted}";
         }
-        
+
         return $formatted;
     }
 }

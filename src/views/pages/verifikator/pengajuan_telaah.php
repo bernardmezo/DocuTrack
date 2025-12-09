@@ -2,7 +2,9 @@
 // File: src/views/pages/verifikator/pengajuan_telaah.php
 
 // Pastikan variabel terdefinisi (Data dikirim dari Controller)
-if (!isset($list_usulan)) { $list_usulan = []; }
+if (!isset($list_usulan)) {
+    $list_usulan = [];
+}
 $jurusan_list = $jurusan_list ?? [];
 ?>
 
@@ -29,11 +31,11 @@ $jurusan_list = $jurusan_list ?? [];
                         style="color: #374151 !important;"
                         class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
                     <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
-                    <?php 
+                    <?php
                     // Sort agar rapi
                     sort($jurusan_list);
-                    foreach ($jurusan_list as $jurusan): 
-                    ?>
+                    foreach ($jurusan_list as $jurusan) :
+                        ?>
                         <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" 
                                 style="color: #374151 !important; font-weight: 600;">
                             <?php echo htmlspecialchars($jurusan); ?>
