@@ -18,7 +18,7 @@ use DateTime;
 class BendaharaModel
 {
     /**
-     * @var mysqli Database connection instance
+     * @var \mysqli Database connection instance
      */
     private $db;
 

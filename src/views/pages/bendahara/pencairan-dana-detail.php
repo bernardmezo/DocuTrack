@@ -41,12 +41,12 @@ if (!function_exists('formatRupiah')) {
             </div>
         </div>
 
-        <?php if ($status_lower === 'menunggu') : ?>
-        <form method="POST" action="/docutrack/public/bendahara/pencairan-dana/proses" id="formPencairan">
-            <input type="hidden" name="kak_id" value="<?= $kegiatan_data['id'] ?? '' ?>">
-            <!-- Simpan total anggaran asli untuk validasi -->
-            <input type="hidden" name="total_anggaran" id="total_anggaran" value="<?= $anggaran_disetujui ?? 0 ?>">
-        <?php endif; ?>
+    <?php if ($status_lower === 'menunggu') : ?>
+    <form method="POST" action="/docutrack/public/bendahara/pencairan-dana/proses" id="formPencairan">
+        <input type="hidden" name="kak_id" value="<?= $kegiatan_data['id'] ?? '' ?>">
+        <!-- Simpan total anggaran asli untuk validasi -->
+        <input type="hidden" name="total_anggaran" id="total_anggaran" value="<?= $anggaran_disetujui ?? 0 ?>">
+    <?php endif; ?>
 
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">1. Kerangka Acuan Kegiatan (KAK)</h3>
@@ -307,9 +307,9 @@ if (!function_exists('formatRupiah')) {
                 <?php endif; ?>
             </div>
 
-        <?php if ($status_lower === 'menunggu') : ?>
-        </form>
-        <?php endif; ?>
+    <?php if ($status_lower === 'menunggu') : ?>
+    </form>
+    <?php endif; ?>
 
     </section>
 </main>
@@ -381,49 +381,118 @@ function formatRupiah(input) {
     input.value = value;
 }
 
-function submitForm() {
-    const form = document.getElementById('formPencairan');
-    const metode = document.querySelector('input[name="metode_pencairan"]:checked').value;
-    
-    if (metode === 'penuh') {
-        const jumlah = document.getElementById('jumlah_dicairkan').value.replace(/\./g, '');
-        if (!jumlah || parseInt(jumlah) <= 0) {
-            Swal.fire('Error', 'Nominal pencairan tidak valid', 'error');
-            return;
-        }
-        // Set value clean without dots
-        document.getElementById('jumlah_dicairkan').value = jumlah;
-    } else {
-        let total = 0;
-        for(let i=1; i<=stageCount; i++) {
-            total += parseFloat(document.querySelector(`input[name="persentase_tahap_${i}"]`).value) || 0;
-        }
-        if (Math.abs(total - 100) > 0.1) {
-            Swal.fire('Error', `Total persentase harus 100% (Saat ini: ${total}%)`, 'error');
-            return;
-        }
-    }
+// PERBAIKAN FUNGSI submitForm()
+// Tambahkan di bagian <script> pada pencairan-dana-detail.php
 
-    Swal.fire({
-        title: 'Konfirmasi Pencairan',
-        text: "Apakah data yang dimasukkan sudah benar? Tindakan ini tidak dapat dibatalkan.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#d1d5db',
-        confirmButtonText: 'Ya, Cairkan Dana',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const hiddenAction = document.createElement('input');
-            hiddenAction.type = 'hidden';
-            hiddenAction.name = 'action';
-            hiddenAction.value = 'cairkan';
-            form.appendChild(hiddenAction);
-            
-            form.submit();
+function submitForm() {
+    try {
+        const form = document.getElementById('formPencairan');
+        if (!form) {
+            Swal.fire('Error', 'Form tidak ditemukan di halaman', 'error');
+            console.error('Form #formPencairan not found');
+            return;
         }
-    });
+
+        const metodeEl = document.querySelector('input[name="metode_pencairan"]:checked');
+        if (!metodeEl) {
+            Swal.fire('Error', 'Pilih metode pencairan terlebih dahulu', 'error');
+            return;
+        }
+        const metode = metodeEl.value;
+        
+        // ===== PERBAIKAN UTAMA: BERSIHKAN SEMUA FORMAT RUPIAH =====
+        if (metode === 'penuh') {
+            const jumlahInput = document.getElementById('jumlah_dicairkan');
+            if (!jumlahInput) {
+                Swal.fire('Error', 'Input nominal tidak ditemukan', 'error');
+                return;
+            }
+            
+            // Hapus semua karakter non-digit
+            const jumlah = jumlahInput.value.replace(/\D/g, '');
+            
+            if (!jumlah || parseInt(jumlah) <= 0) {
+                Swal.fire('Error', 'Nominal pencairan tidak valid', 'error');
+                return;
+            }
+            
+            console.log('Jumlah setelah cleaning:', jumlah); // Debug
+            jumlahInput.value = jumlah; // Set clean value
+            
+        } else if (metode === 'bertahap') {
+            let total = 0;
+            const totalAnggaranInput = document.getElementById('total_anggaran');
+            
+            // Validasi persentase
+            for(let i = 1; i <= stageCount; i++) {
+                const input = document.querySelector(`input[name="persentase_tahap_${i}"]`);
+                if (input) {
+                    total += parseFloat(input.value) || 0;
+                }
+            }
+            
+            if (Math.abs(total - 100) > 0.1) {
+                Swal.fire('Error', `Total persentase harus 100% (Saat ini: ${total}%)`, 'error');
+                return;
+            }
+            
+            // BERSIHKAN total_anggaran dari format rupiah
+            if (totalAnggaranInput && totalAnggaranInput.value) {
+                const cleanValue = totalAnggaranInput.value.toString().replace(/\D/g, '');
+                totalAnggaranInput.value = cleanValue;
+                console.log('Total anggaran cleaned:', cleanValue); // Debug
+            }
+        }
+
+        // Konfirmasi dengan SweetAlert
+        Swal.fire({
+            title: 'Konfirmasi Pencairan',
+            text: "Apakah data yang dimasukkan sudah benar? Tindakan ini tidak dapat dibatalkan.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#d1d5db',
+            confirmButtonText: 'Ya, Cairkan Dana',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Hapus action input lama jika ada
+                const existingAction = form.querySelector('input[name="action"]');
+                if (existingAction) {
+                    existingAction.remove();
+                }
+                
+                // Tambahkan hidden input action
+                const hiddenAction = document.createElement('input');
+                hiddenAction.type = 'hidden';
+                hiddenAction.name = 'action';
+                hiddenAction.value = 'cairkan';
+                form.appendChild(hiddenAction);
+                
+                // Validasi kak_id
+                const kakIdEl = form.querySelector('input[name="kak_id"]');
+                if (!kakIdEl || !kakIdEl.value) {
+                    Swal.fire('Error', 'KAK ID tidak ditemukan. Silakan muat ulang halaman.', 'error');
+                    return;
+                }
+                
+                console.log('=== FORM DATA BEFORE SUBMIT ===');
+                console.log('kak_id:', kakIdEl.value);
+                console.log('action:', 'cairkan');
+                console.log('metode:', metode);
+                console.log('jumlah_dicairkan:', document.getElementById('jumlah_dicairkan')?.value);
+                console.log('total_anggaran:', document.getElementById('total_anggaran')?.value);
+                console.log('================================');
+                
+                // Submit form
+                form.submit();
+            }
+        });
+        
+    } catch (error) {
+        console.error('submitForm error:', error);
+        Swal.fire('Error', 'Terjadi kesalahan: ' + error.message, 'error');
+    }
 }
 </script>
 

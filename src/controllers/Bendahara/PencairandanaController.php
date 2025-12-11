@@ -150,6 +150,13 @@ class PencairandanaController extends Controller
         $action = $_POST['action'] ?? null;
         $userId = (int) ($_SESSION['user_id'] ?? 0);
 
+        // ===== TAMBAHAN: LOG REQUEST DATA =====
+        error_log("=== PROSES PENCAIRAN REQUEST ===");
+        error_log("KAK ID: " . $kak_id);
+        error_log("Action: " . $action);
+        error_log("POST Data: " . print_r($_POST, true));
+        error_log("================================");
+
         if (!$kak_id || !$action) {
             $_SESSION['flash_error'] = 'Data tidak lengkap!';
             header('Location: /docutrack/public/bendahara/pencairan-dana');
@@ -164,23 +171,36 @@ class PencairandanaController extends Controller
                 $dataPencairan = [
                     'metode' => $metode_pencairan,
                     'catatan' => $catatan,
-                    'tanggal' => date('Y-m-d') // Default today, can be overridden
+                    'tanggal' => date('Y-m-d')
                 ];
 
-                // 1. Logika Pencairan Penuh
                 if ($metode_pencairan === 'penuh') {
-                    $jumlah = (float) ($_POST['jumlah_dicairkan'] ?? 0);
+                    // ===== PERBAIKAN: Pastikan cleaning format =====
+                    $jumlah_raw = $_POST['jumlah_dicairkan'] ?? 0;
+                    
+                    // Hapus semua karakter non-digit
+                    $jumlah = (float) preg_replace('/\D/', '', $jumlah_raw);
+                    
+                    error_log("Jumlah raw: " . $jumlah_raw);
+                    error_log("Jumlah cleaned: " . $jumlah);
+                    
                     if ($jumlah <= 0) {
                         throw new Exception('Jumlah pencairan harus lebih dari 0');
                     }
-
+                    
                     $dataPencairan['jumlah'] = $jumlah;
-                    $dataPencairan['tanggal'] = date('Y-m-d'); // Pencairan penuh selalu hari ini
+                    $dataPencairan['tanggal'] = date('Y-m-d');
 
-                // 2. Logika Pencairan Bertahap
                 } elseif ($metode_pencairan === 'bertahap') {
-                    $total_anggaran = (float) ($_POST['total_anggaran'] ?? 0);
+                    // ===== PERBAIKAN: Clean total_anggaran =====
+                    $total_anggaran_raw = $_POST['total_anggaran'] ?? 0;
+                    $total_anggaran = (float) preg_replace('/\D/', '', $total_anggaran_raw);
+                    
                     $jumlah_tahap = (int) ($_POST['jumlah_tahap'] ?? 0);
+
+                    error_log("Total anggaran raw: " . $total_anggaran_raw);
+                    error_log("Total anggaran cleaned: " . $total_anggaran);
+                    error_log("Jumlah tahap: " . $jumlah_tahap);
 
                     if ($jumlah_tahap < 2 || $jumlah_tahap > 5) {
                         throw new Exception('Jumlah tahap harus antara 2-5');
@@ -216,26 +236,38 @@ class PencairandanaController extends Controller
 
                     $dataPencairan['jumlah'] = $total_anggaran;
                     $dataPencairan['tahapan'] = $tahapan;
-                    // Tanggal pencairan utama diambil dari tahap pertama
                     $dataPencairan['tanggal'] = $tahapan[0]['tanggal'];
                 }
 
-                // Execute Service
-                if ($this->pencairanService->cairkanDana($kak_id, $dataPencairan)) {
-                    if (function_exists('logPencairan')) {
-                        logPencairan($userId, $kak_id, $dataPencairan['jumlah'], $metode_pencairan, $catatan);
-                    }
-                    $_SESSION['flash_message'] = 'Dana berhasil dicairkan.';
-                    $_SESSION['flash_type'] = 'success';
-                } else {
-                    throw new Exception('Gagal memproses pencairan dana.');
+                // ===== LOG SEBELUM PANGGIL SERVICE =====
+                error_log("Data Pencairan yang akan dikirim:");
+                error_log(print_r($dataPencairan, true));
+
+                // Execute Service - will throw exception on failure
+                $result = $this->pencairanService->cairkanDana($kak_id, $dataPencairan);
+                
+                error_log("Result dari cairkanDana: " . ($result ? 'TRUE' : 'FALSE'));
+                
+                // Log Audit
+                if (function_exists('logPencairan')) {
+                    logPencairan($userId, $kak_id, $dataPencairan['jumlah'], $metode_pencairan, $catatan);
                 }
+                
+                $_SESSION['flash_message'] = 'Dana berhasil dicairkan.';
+                $_SESSION['flash_type'] = 'success';
+                
             } elseif ($action === 'tolak') {
-                // TODO: Implement rejection logic in model/service
                 $_SESSION['flash_message'] = 'Fitur tolak belum diaktifkan di controller baru.';
             }
+            
         } catch (Exception $e) {
-            error_log("Pencairan Error: " . $e->getMessage());
+            error_log("=== PENCAIRAN ERROR ===");
+            error_log("Message: " . $e->getMessage());
+            error_log("File: " . $e->getFile());
+            error_log("Line: " . $e->getLine());
+            error_log("Trace: " . $e->getTraceAsString());
+            error_log("=======================");
+            
             $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
         }
 

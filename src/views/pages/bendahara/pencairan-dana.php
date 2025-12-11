@@ -5,6 +5,27 @@
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
+    <!-- Flash Messages -->
+    <?php if (isset($_SESSION['flash_message'])) : ?>
+    <div class="mb-6 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-check-circle"></i>
+            <span class="font-medium"><?= htmlspecialchars($_SESSION['flash_message']) ?></span>
+        </div>
+    </div>
+    <?php unset($_SESSION['flash_message']);
+    endif; ?>
+    
+    <?php if (isset($_SESSION['flash_error'])) : ?>
+    <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+        <div class="flex items-center gap-2">
+            <i class="fas fa-exclamation-circle"></i>
+            <span class="font-medium"><?= htmlspecialchars($_SESSION['flash_error']) ?></span>
+        </div>
+    </div>
+    <?php unset($_SESSION['flash_error']);
+    endif; ?>
+
     <!-- Enhanced Table KAK with Filters & Pagination -->
     <section class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 flex flex-col">
         <div class="p-6 border-b border-gray-200 flex-shrink-0">
