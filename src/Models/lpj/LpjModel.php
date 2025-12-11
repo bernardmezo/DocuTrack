@@ -449,37 +449,37 @@ class LpjModel
      */
     public function getDashboardLPJ(): array
     {
-        $query = "SELECT
-                    lpj.lpjId,
-                    lpj.kegiatanId,
-                    keg.namaKegiatan,
-                    lpj.grandTotalRealisasi,
-                    lpj.submittedAt,
-                    lpj.approvedAt,
-                    lpj.tenggatLpj,
-                    lpj.statusId,
-                    su.namaStatusUsulan AS namaStatusLpj
-                FROM
-                    tbl_lpj AS lpj
-                JOIN
-                    tbl_kegiatan AS keg ON lpj.kegiatanId = keg.kegiatanId
-                JOIN
-                    tbl_status_utama AS su ON lpj.statusId = su.statusId
-                ORDER BY
-                    lpj.submittedAt DESC";
+        // $query = "SELECT
+        //             lpj.lpjId,
+        //             lpj.kegiatanId,
+        //             keg.namaKegiatan,
+        //             lpj.grandTotalRealisasi,
+        //             lpj.submittedAt,
+        //             lpj.approvedAt,
+        //             lpj.tenggatLpj,
+        //             lpj.statusId,
+        //             su.namaStatusUsulan AS namaStatusLpj
+        //         FROM
+        //             tbl_lpj AS lpj
+        //         JOIN
+        //             tbl_kegiatan AS keg ON lpj.kegiatanId = keg.kegiatanId
+        //         JOIN
+        //             tbl_status_utama AS su ON lpj.statusId = su.statusId
+        //         ORDER BY
+        //             lpj.submittedAt DESC";
 
-        $result = mysqli_query($this->db, $query);
-        if ($result === false) {
-            error_log('LpjModel::getDashboardLPJ - Query failed: ' . mysqli_error($this->db));
-            return [];
-        }
+        // $result = mysqli_query($this->db, $query);
+        // if ($result === false) {
+        //     error_log('LpjModel::getDashboardLPJ - Query failed: ' . mysqli_error($this->db));
+        //     return [];
+        // }
 
         $lpjData = [];
-        while ($row = mysqli_fetch_assoc($result)) {
-            $lpjData[] = $row;
-        }
+        // while ($row = mysqli_fetch_assoc($result)) {
+        //     $lpjData[] = $row;
+        // }
 
-        mysqli_free_result($result);
+        // mysqli_free_result($result);
         return $lpjData;
     }
 }

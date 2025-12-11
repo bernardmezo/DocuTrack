@@ -314,8 +314,17 @@
 
 </main>
 
+<!-- DEBUG: Tampilkan data untuk debugging -->
 <script>
-    window.dataKAK = <?= json_encode($list_kak, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
-    window.dataLPJ = <?= json_encode($list_lpj, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
+    console.log('=== DEBUG DATA ===');
+    console.log('List KAK:', <?= json_encode($list_kak ?? [], JSON_PRETTY_PRINT) ?>);
+    console.log('List LPJ:', <?= json_encode($list_lpj ?? [], JSON_PRETTY_PRINT) ?>);
+    console.log('==================');
+</script>
+
+<script>
+    // PENTING: Set data ke window object SEBELUM load dashboard.js
+    window.dataKAK = <?= json_encode($list_kak ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
+    window.dataLPJ = <?= json_encode($list_lpj ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE) ?>;
 </script>
 <script src="/docutrack/public/assets/js/admin/dashboard.js"></script>
