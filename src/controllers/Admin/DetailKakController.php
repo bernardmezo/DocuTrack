@@ -20,8 +20,11 @@ class DetailKakController extends Controller
         $this->model = new AdminModel($this->db);
     }
 
-    public function show($id, $ref = 'kegiatan', $data_dari_router = [])
+    public function show($id, $data_dari_router = [])
     {
+        // Get ref from query parameter (e.g., ?ref=dashboard)
+        $ref = $_GET['ref'] ?? 'kegiatan';
+        
         $base_url = "/docutrack/public/admin";
         $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-kegiatan';
 

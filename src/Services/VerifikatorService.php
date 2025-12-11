@@ -55,9 +55,9 @@ class VerifikatorService
         return $this->verifikatorModel->getListJurusan();
     }
 
-    public function getRiwayat()
+    public function getRiwayat($userJurusan = null)
     {
-        return $this->verifikatorModel->getRiwayat();
+        return $this->verifikatorModel->getRiwayat($userJurusan);
     }
 
     public function getDetailKegiatan($kegiatanId)

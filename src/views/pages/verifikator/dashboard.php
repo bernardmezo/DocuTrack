@@ -9,73 +9,6 @@ $jurusan_list = $jurusan_list ?? [];
 
 <main class="main-content font-poppins p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
-    <!-- Notification Bell Icon (Placeholder - Integrate with your existing UI) -->
-    <div class="relative mb-6">
-        <button id="notification-bell" class="relative p-2 rounded-full bg-white shadow-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <i class="fas fa-bell"></i>
-            <?php if (!empty($unread_notifications_count) && $unread_notifications_count > 0): ?>
-                <span class="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-white bg-red-500 text-xs text-white flex items-center justify-center"><?= $unread_notifications_count ?></span>
-            <?php endif; ?>
-        </button>
-
-        <!-- Notifications Dropdown (Hidden by default, show with JS) -->
-        <div id="notification-dropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 hidden max-h-80 overflow-y-auto">
-            <div class="p-4 border-b border-gray-200">
-                <h4 class="text-lg font-semibold text-gray-800">Notifikasi Anda</h4>
-            </div>
-            <?php if (!empty($notifications)): ?>
-                <?php foreach ($notifications as $notification):
-                    $tipeLog = strtoupper($notification['tipe_log'] ?? 'INFORMASI');
-                    $badgeClass = '';
-                    switch ($tipeLog) {
-                        case 'APPROVAL':
-                        case 'PENCAIRAN':
-                            $badgeClass = 'bg-green-100 text-green-800';
-                            break;
-                        case 'REJECTION':
-                            $badgeClass = 'bg-red-100 text-red-800';
-                            break;
-                        case 'REVISION':
-                            $badgeClass = 'bg-yellow-100 text-yellow-800';
-                            break;
-                        default:
-                            $badgeClass = 'bg-blue-100 text-blue-800';
-                            break;
-                    }
-                ?>
-                    <a href="<?= htmlspecialchars($notification['link'] ?? '#') ?>" class="block px-4 py-3 border-b border-gray-100 hover:bg-gray-50 <?= (isset($notification['status']) && $notification['status'] === 'BELUM_DIBACA') ? 'bg-blue-50' : '' ?>">
-                        <div class="flex items-center justify-between mb-1">
-                            <p class="text-sm font-medium text-gray-900"><?= htmlspecialchars($notification['judul'] ?? 'Notifikasi') ?></p>
-                            <span class="px-2 py-0.5 rounded-full text-xs font-semibold <?= $badgeClass ?>"><?= htmlspecialchars($tipeLog) ?></span>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-1"><?= htmlspecialchars($notification['pesan'] ?? '') ?></p>
-                        <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($notification['created_at'] ?? '') ?></p>
-                    </a>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <div class="px-4 py-3 text-sm text-gray-500">Tidak ada notifikasi baru.</div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <!-- JavaScript for Notification Dropdown Toggle -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const bell = document.getElementById('notification-bell');
-            const dropdown = document.getElementById('notification-dropdown');
-
-            bell.addEventListener('click', function (event) {
-                event.stopPropagation(); // Prevent document click from closing it immediately
-                dropdown.classList.toggle('hidden');
-            });
-
-            document.addEventListener('click', function (event) {
-                if (!dropdown.classList.contains('hidden') && !bell.contains(event.target) && !dropdown.contains(event.target)) {
-                    dropdown.classList.add('hidden');
-                }
-            });
-        </script>
-
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 
         <div class="relative group p-6 rounded-xl shadow-md overflow-hidden text-white bg-gradient-to-br from-blue-400 to-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 transition-all duration-300 ease-out">
@@ -176,14 +109,31 @@ $jurusan_list = $jurusan_list ?? [];
 
 <script>
     // Mengirim data usulan dari PHP ke Variable Global JS
-    window.dataUsulan = <?php echo json_encode($list_usulan ?? []); ?>;
+    <?php 
+    $jsonData = json_encode($list_usulan ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+    if ($jsonData === false) {
+        error_log("ERROR: Failed to encode list_usulan to JSON: " . json_last_error_msg());
+        $jsonData = '[]';
+    }
+    ?>
+    window.dataUsulan = <?php echo $jsonData; ?>;
+    console.log('Data usulan loaded:', window.dataUsulan ? window.dataUsulan.length : 0, 'items');
 </script>
 
 <script>
+// Version: 2024-12-10-11:15 - Force cache refresh
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard script loaded - v2024-12-10-11:15');
+    
+    if (typeof window.dataUsulan === 'undefined') {
+        console.error('CRITICAL: window.dataUsulan is undefined!');
+        window.dataUsulan = [];
+    }
     
     const dataUsulan = window.dataUsulan || [];
     const ITEMS_PER_PAGE = 5;
+    
+    console.log('Initializing table with', dataUsulan.length, 'items');
     
     class VerifikatorTableManager {
         constructor(data) {
@@ -244,6 +194,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
+            console.log('Rendering', pageData.length, 'items. First item:', pageData[0]);
+            
             this.tbody.innerHTML = pageData.map((item, i) => {
                 const no = start + i + 1;
                 
@@ -295,7 +247,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </span>
                     </td>
                     <td class="px-6 py-5 whitespace-nowrap text-sm font-medium">
-                        <a href="/docutrack/public/verifikator/telaah/show/${item.id}?ref=dashboard" class="bg-blue-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+                        <a href="/docutrack/public/verifikator/telaah/show/${item.id || 'NO-ID'}?ref=dashboard" 
+                           class="bg-blue-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
+                           onclick="console.log('Item ID:', '${item.id}', 'Full href:', this.href); return true;">
                             <i class="fas fa-eye"></i> Lihat
                         </a>
                     </td>
@@ -343,5 +297,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     window.verifikatorTable = new VerifikatorTableManager(dataUsulan);
-});
+}); // Penutup addEventListener
 </script>

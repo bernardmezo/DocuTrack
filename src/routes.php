@@ -69,7 +69,7 @@ return [
         'methods'    => ['POST'],
     ],
     // Example of a dynamic route
-    '/admin/detail-kak/show/{id}/{ref?}' => [
+    '/admin/detail-kak/show/{id}' => [
         'controller' => 'Admin\DetailKakController',
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
@@ -311,11 +311,6 @@ return [
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
     ],
-    '/ppk/telaah/show/{id}/{ref?}' => [
-        'controller' => 'PPK\TelaahController',
-        'method'     => 'show',
-        'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
-    ],
     '/ppk/telaah/approve/{id}' => [
         'controller' => 'PPK\TelaahController',
         'method'     => 'approve',
@@ -345,11 +340,6 @@ return [
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],
     ],
-    '/bendahara/pencairan-dana/show/{id}/{ref?}' => [
-        'controller' => 'Bendahara\PencairandanaController',
-        'method'     => 'show',
-        'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],
-    ],
     '/bendahara/pencairan-dana/show/{id}' => [
         'controller' => 'Bendahara\PencairandanaController',
         'method'     => 'show',
@@ -366,7 +356,7 @@ return [
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],
     ],
-    '/bendahara/pengajuan-lpj/show/{id}/{ref?}' => [
+    '/bendahara/pengajuan-lpj/show/{id}' => [
         'controller' => 'Bendahara\PengajuanLpjController',
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'BendaharaMiddleware'],

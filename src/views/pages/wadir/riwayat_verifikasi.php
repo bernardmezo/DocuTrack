@@ -11,39 +11,43 @@ if (!isset($jurusan_list)) {
 
 <main class="main-content font-poppins p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
-    <section id="riwayat-list" class="bg-white rounded-xl shadow-lg overflow-hidden mb-8 flex flex-col">
+    <section id="riwayat-list" class="stage-content bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-8 flex flex-col">
         
-        <div class="flex flex-col p-6 border-b border-gray-200 flex-shrink-0 gap-4">
-            <div>
-                <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Persetujuan</h2>
-                <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda setujui.</p>
+        <div class="mb-6 pb-5 border-b border-gray-200">
+            <h2 class="text-xl md:text-2xl font-bold text-gray-800">Riwayat Persetujuan Wadir</h2>
+            <p class="text-sm text-gray-500 mt-1">Daftar semua usulan yang telah Anda setujui.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-3 mb-6">
+            <div class="relative flex-1">
+                <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 z-10"></i>
+                <input type="text" id="search-riwayat-input" placeholder="Cari Nama Kegiatan..."
+                       class="w-full pl-11 pr-4 py-2.5 text-sm text-gray-900 font-medium bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm hover:border-gray-400"
+                       aria-label="Cari Kegiatan">
             </div>
             
-            <div class="flex flex-col lg:flex-row gap-3">
-                <div class="relative flex-1">
-                    <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 z-10"></i>
-                    <input type="text" id="search-riwayat-input" placeholder="Cari Nama Kegiatan..."
-                           class="w-full pl-11 pr-4 py-2.5 text-sm text-gray-900 font-medium bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm hover:border-gray-400"
-                           aria-label="Cari Kegiatan">
-                </div>
-                
-                <div class="relative w-full lg:w-80">
-                    <i class="fas fa-graduation-cap absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 pointer-events-none z-10"></i>
-                    <select id="filter-jurusan" 
-                            style="color: #374151 !important;"
-                            class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
-                        <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
-                        <?php foreach ($jurusan_list as $jurusan) : ?>
-                            <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" style="color: #374151 !important; font-weight: 600;"><?php echo htmlspecialchars($jurusan); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                    <i class="fas fa-chevron-down absolute top-1/2 right-4 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
-                </div>
+            <div class="relative w-full lg:w-80">
+                <i class="fas fa-graduation-cap absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 pointer-events-none z-10"></i>
+                <select id="filter-jurusan" 
+                        style="color: #374151 !important;"
+                        class="w-full pl-11 pr-10 py-2.5 text-sm font-semibold bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
+                    <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
+                    <?php
+                    sort($jurusan_list);
+                    foreach ($jurusan_list as $jurusan) :
+                        ?>
+                        <option value="<?php echo htmlspecialchars(strtolower($jurusan)); ?>" 
+                                style="color: #374151 !important; font-weight: 600;">
+                            <?php echo htmlspecialchars($jurusan); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <i class="fas fa-chevron-down absolute top-1/2 right-4 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
             </div>
         </div>
         
         <div class="overflow-x-auto border border-gray-100 rounded-lg">
-            <table class="w-full min-w-[800px]">
+            <table class="w-full min-w-[900px]">
                 <thead class="bg-gray-50 sticky top-0 z-10">
                     <tr>
                         <th class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">No</th>
@@ -54,11 +58,11 @@ if (!isset($jurusan_list)) {
                     </tr>
                 </thead>
                 <tbody id="riwayat-table-body" class="divide-y divide-gray-100">
-                    </tbody>
+                </tbody>
             </table>
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-4">
+        <div class="flex flex-col sm:flex-row justify-between items-center px-6 py-4 border-t border-gray-200 gap-4 mt-4">
             <div id="pagination-info" class="text-sm text-gray-600"></div>
             <div id="pagination-riwayat" class="flex gap-1"></div>
         </div>
@@ -124,8 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const no = start + index + 1;
                 const tgl = formatDate(item.tanggal_pengajuan);
                 
-                // TAMPILAN KOLOM: PRODI (ANAK)
-                const displayProdi = item.prodi || item.jurusan;
+                const displayProdi = item.prodi ? item.prodi : (item.jurusan || '-');
 
                 return `
                 <tr class="bg-white hover:bg-gray-50 transition-colors">
@@ -137,15 +140,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${escapeHtml(item.pengusul || '')}
                                 <span class="text-gray-500">(${escapeHtml(item.nim || '-')})</span>
                             </span>
-                            <span class="text-gray-500 text-xs mt-0.5">
-                                <i class="fas fa-graduation-cap mr-1"></i>${escapeHtml(displayProdi || '-')}
+                            <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                <i class="fas fa-graduation-cap mr-1"></i>${escapeHtml(displayProdi)}
                             </span>
                         </div>
                     </td>
                     <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
                         <div class="flex items-center gap-2">
-                            <i class="fas fa-calendar-check text-green-500 text-xs"></i>
-                            ${item.tgl}
+                            <i class="fas fa-calendar-check text-blue-500 text-xs"></i>
+                            ${tgl}
                         </div>
                     </td>
                     <td class="px-6 py-5 whitespace-nowrap text-xs font-semibold">

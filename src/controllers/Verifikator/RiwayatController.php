@@ -17,8 +17,8 @@ class RiwayatController extends Controller
 
     public function index($data_dari_router = [])
     {
-
-        $list_riwayat = $this->safeModelCall($this->model, 'getRiwayat', [], []);
+        $userJurusan = $_SESSION['user_jurusan'] ?? null;
+        $list_riwayat = $this->safeModelCall($this->model, 'getRiwayat', [$userJurusan], []);
 
         $jurusan_list = array_unique(array_column($list_riwayat, 'jurusan'));
         $jurusan_list = array_filter($jurusan_list, fn($j) => !empty($j));

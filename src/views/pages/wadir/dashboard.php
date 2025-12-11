@@ -185,7 +185,7 @@ $jurusan_list = $jurusan_list ?? [];
 
 <script>
     // Mengirim data usulan dari PHP ke Variable Global JS
-    window.dataUsulan = <?php echo json_encode($list_usulan ?? []); ?>;
+    window.dataUsulan = <?php echo json_encode($list_usulan ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
 </script>
 
 <script>

@@ -59,6 +59,12 @@ class TelaahController extends Controller
         $userJurusan = $_SESSION['user_jurusan'] ?? null;
         $docJurusan = $dataDB['jurusanPenyelenggara'] ?? null;
 
+        // DEBUG: Log jurusan comparison
+        error_log("VERIFIKATOR ACCESS CHECK:");
+        error_log("  User Jurusan: '" . var_export($userJurusan, true) . "'");
+        error_log("  Doc Jurusan: '" . var_export($docJurusan, true) . "'");
+        error_log("  Match: " . ($userJurusan === $docJurusan ? 'YES' : 'NO'));
+
         // Cek strict: User harus punya jurusan dan harus sama dengan dokumen.
         // Jika Verifikator bersifat 'Global' (jurusan NULL), logika ini harus disesuaikan
         // sesuai kebijakan. Berdasarkan instruksi "Compare... If not match...", 
@@ -79,13 +85,15 @@ class TelaahController extends Controller
         // Karena data database mungkin string, aman.
         
         // UPDATE: Sesuai prompt "Compare ... If they don't match, redirect".
-        if ($userJurusan !== $docJurusan) {
-             // Exception untuk "Global Verifikator" jika diinginkan, tapi prompt minta strict match.
-             // Kita akan strict.
+        // EXCEPTION: Jika user_jurusan NULL, anggap sebagai Global Verifikator (bisa akses semua)
+        if ($userJurusan !== null && $userJurusan !== $docJurusan) {
              $_SESSION['flash_error'] = 'Akses ditolak. Dokumen ini bukan wewenang Jurusan Anda.';
+             error_log("VERIFIKATOR ACCESS DENIED: User jurusan '$userJurusan' != Doc jurusan '$docJurusan'");
              header('Location: /docutrack/public/verifikator/dashboard');
              exit;
         }
+        
+        error_log("VERIFIKATOR ACCESS GRANTED for kegiatan ID: $kegiatanId");
 
         return $dataDB;
     }

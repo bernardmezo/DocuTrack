@@ -15,7 +15,7 @@ class Router
         $this->db = $db;
         $allRoutes = require __DIR__ . '/../routes.php';
         
-        // 1. Optimize: Pre-sort routes into Static (O(1)) and Dynamic (Regex)
+        // Optimize: Pre-sort routes into Static (O(1)) and Dynamic (Regex)
         foreach ($allRoutes as $pattern => $config) {
             if (strpos($pattern, '{') === false) {
                 $this->staticRoutes[$pattern] = $config;
@@ -24,29 +24,17 @@ class Router
             }
         }
         
-        router_debug("Loaded " . count($allRoutes) . " routes (Static: " . count($this->staticRoutes) . ", Dynamic: " . count($this->dynamicRoutes) . ")");
+        error_log("Router: Loaded " . count($allRoutes) . " routes (Static: " . count($this->staticRoutes) . ", Dynamic: " . count($this->dynamicRoutes) . ")");
     }
 
     public function dispatch($requestPath, $requestMethod)
     {
-        // 1. URL SANITIZATION:
-        // get_request_path() already provides a clean path, but we'll ensure robustness.
-        // It should already have used parse_url(PHP_URL_PATH) and urldecoded the path.
-        $cleanPath = $requestPath; 
-        
-        // Ensure leading slash and remove trailing slash (if not root)
-        if ($cleanPath !== '/' && substr($cleanPath, -1) === '/') {
-            $cleanPath = rtrim($cleanPath, '/');
-        }
-        if (substr($cleanPath, 0, 1) !== '/') {
-            $cleanPath = '/' . $cleanPath;
-        }
-
-        router_debug("Dispatching sanitized request for Path: '{$cleanPath}', Method: '{$requestMethod}'");
+        // ROBUST URL SANITIZATION & BASE PATH STRIPPING
+        // We do this inside the Router to ensure it works regardless of the caller's cleanup logic.
+        $cleanPath = $this->normalizePath($requestPath);
 
         // Attempt to match static routes first for efficiency (O(1) lookup)
         if (isset($this->staticRoutes[$cleanPath])) {
-            router_debug("Static route hit for: '{$cleanPath}'");
             $this->executeRoute($this->staticRoutes[$cleanPath], [], $requestMethod, $cleanPath);
             return;
         }
@@ -56,7 +44,6 @@ class Router
             $params = $this->matchRoute($routePattern, $cleanPath);
 
             if ($params !== false) {
-                router_debug("Dynamic route matched: '{$routePattern}'");
                 $this->executeRoute($routeConfig, $params, $requestMethod, $routePattern);
                 return;
             }
@@ -65,6 +52,49 @@ class Router
         // If no route matches after checking both static and dynamic routes
         error_log("ERROR Router: No route matched for path '{$cleanPath}' (Original: '{$requestPath}') and method '{$requestMethod}'.");
         throw new NotFoundException('Page not found.');
+    }
+
+    /**
+     * Normalizes the request path:
+     * 1. Strips Query Strings.
+     * 2. Detects and strips sub-folder Base Path (Windows/Linux compatible).
+     * 3. Ensures leading slash and no trailing slash.
+     */
+    protected function normalizePath($path)
+    {
+        // 1. Strip Query String
+        $path = parse_url($path, PHP_URL_PATH);
+
+        // 2. Auto-detect and strip Base Path (e.g. /docutrack/public)
+        // This handles cases where the app is in a sub-folder and the caller passed the full URI.
+        if (isset($_SERVER['SCRIPT_NAME'])) {
+            $scriptName = $_SERVER['SCRIPT_NAME'];
+            $basePath = dirname($scriptName);
+            
+            // Normalize backslashes to forward slashes (Windows fix)
+            $basePath = str_replace('\\', '/', $basePath);
+            $path = str_replace('\\', '/', $path);
+
+            // Ensure Base Path is not root '/' or empty dot '.'
+            if ($basePath !== '/' && $basePath !== '.') {
+                $basePath = rtrim($basePath, '/');
+
+                // If path starts with base path, strip it (Case-insensitive check for safety)
+                if (stripos($path, $basePath) === 0) {
+                    $path = substr($path, strlen($basePath));
+                }
+            }
+        }
+
+        // 3. Ensure consistent format (Starts with /, no trailing / unless it is root)
+        if ($path !== '/' && substr($path, -1) === '/') {
+            $path = rtrim($path, '/');
+        }
+        if (empty($path) || substr($path, 0, 1) !== '/') {
+            $path = '/' . $path;
+        }
+
+        return $path;
     }
 
     protected function executeRoute($routeConfig, $params, $requestMethod, $matchedPattern)
@@ -108,28 +138,28 @@ class Router
 
     protected function matchRoute($routePattern, $requestPath)
     {
-        // 1. Extract param names
+        // Extract param names
         if (!preg_match_all('/\{([a-zA-Z0-9_]+)\??\}/', $routePattern, $paramMatches)) {
             return false;
         }
         $paramNames = $paramMatches[1];
 
-        // 2. Build Regex
+        // Build Regex
         $regex = preg_quote($routePattern, '#');
 
         // Robust handling for Optional Parameters: /{param?}
         // Matches literal slash followed by the parameter pattern.
         // Replaces with (?:/([^/]*))? -> Optional non-capturing group containing slash and capture group.
-        $regex = preg_replace('#/\\\{([a-zA-Z0-9_]+)\\\\\?\\\\}\\}#', '(?:/([^/]*))?', $regex);
+        $regex = preg_replace('#/\\\{([a-zA-Z0-9_]+)\\\\?\\\\}#', '(?:/([^/]*))?', $regex);
 
         // Robust handling for Required Parameters: {param}
         // Matches {param}.
         // Replaces with ([^/]+) -> Required capture group (anything but slash).
-        $regex = preg_replace('#\\\{([a-zA-Z0-9_]+)\\\\}#', '([^/]+)', $regex);
+        $regex = preg_replace('#\\\{([a-zA-Z0-9_]+)\\}#', '([^/]+)', $regex);
 
         $regex = '#^' . $regex . '$#';
 
-        // 3. Match
+        // Match
         if (preg_match($regex, $requestPath, $matches)) {
             array_shift($matches); // Remove full match
 

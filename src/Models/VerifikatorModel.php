@@ -214,9 +214,14 @@ class VerifikatorModel
 
     /**
      * Mengambil data riwayat verifikasi.
+     * Menggunakan pendekatan "Last Decision Snapshot":
+     * Status yang ditampilkan adalah status TERAKHIR yang diberikan oleh Verifikator.
+     * Tidak peduli posisi dokumen sekarang ada di mana (PPK/Wadir), yang penting keputusan verifikator.
      */
-    public function getRiwayat()
+    public function getRiwayat($userJurusan = null)
     {
+        // Subquery untuk mendapatkan ID history TERAKHIR yang dilakukan oleh Verifikator (Role 2) per kegiatan
+        // Logika: Group by kegiatanId, ambil MAX(progressHistoryId) dimana usernya adalah verifikator
         $query = "SELECT
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
@@ -226,25 +231,57 @@ class VerifikatorModel
                     k.jurusanPenyelenggara as jurusan,
                     k.createdAt as tanggal_pengajuan,
                     CASE
-                        WHEN k.posisiId IN (3, 4, 5) AND k.statusUtamaId != 4 THEN 'Disetujui'
-                        WHEN k.statusUtamaId = 2 THEN 'Revisi'
-                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                        ELSE 'Diproses'
+                        WHEN latest_verif.statusId = 3 THEN 'Disetujui'
+                        WHEN latest_verif.statusId = 2 THEN 'Revisi'
+                        WHEN latest_verif.statusId = 4 THEN 'Ditolak'
+                        ELSE 'Diproses' -- Fallback, seharusnya tidak muncul jika data konsisten
                     END as status
                   FROM tbl_kegiatan k
-                  WHERE
-                    k.posisiId IN (3, 4, 5)
-                  ORDER BY k.createdAt DESC";
+                  INNER JOIN (
+                      SELECT ph.kegiatanId, ph.statusId
+                      FROM tbl_progress_history ph
+                      JOIN tbl_user u ON ph.changedByUserId = u.userId
+                      WHERE u.roleId = 2 -- Filter hanya aksi User Role Verifikator
+                      AND ph.progressHistoryId IN (
+                          SELECT MAX(ph_inner.progressHistoryId)
+                          FROM tbl_progress_history ph_inner
+                          JOIN tbl_user u_inner ON ph_inner.changedByUserId = u_inner.userId
+                          WHERE u_inner.roleId = 2
+                          GROUP BY ph_inner.kegiatanId
+                      )
+                  ) latest_verif ON k.kegiatanId = latest_verif.kegiatanId
+                  WHERE 1=1";
 
-        $result = mysqli_query($this->db, $query);
-        $data = [];
+        $types = "";
+        $params = [];
 
-        if ($result) {
-            while ($row = mysqli_fetch_assoc($result)) {
-                $data[] = $row;
-            }
+        if (!empty($userJurusan)) {
+            $query .= " AND k.jurusanPenyelenggara = ?";
+            $types .= "s";
+            $params[] = $userJurusan;
         }
 
+        $query .= " ORDER BY k.createdAt DESC";
+
+        $stmt = $this->db->prepare($query);
+        if ($stmt === false) {
+             error_log("Prepare failed in getRiwayat: " . $this->db->error);
+             return [];
+        }
+
+        if (!empty($params)) {
+            $stmt->bind_param($types, ...$params);
+        }
+
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+
+        $stmt->close();
         return $data;
     }
 
