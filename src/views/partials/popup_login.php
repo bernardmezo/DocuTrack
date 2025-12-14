@@ -60,7 +60,7 @@
                 </div>
             <?php endif; ?>
             
-            <form action="/docutrack/public/login" method="POST">
+            <form action="<?= baseUrl('login') ?>" method="POST">
                 
                 <!-- Email Input -->
                 <div class="input-group mb-6">

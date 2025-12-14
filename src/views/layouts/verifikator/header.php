@@ -8,17 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // Ambil URL saat ini (tanpa domain)
 $current = $_SERVER['REQUEST_URI'] ?? '';
 
-/**
- * Fungsi untuk menentukan menu aktif berdasarkan prefix URL
- * Contoh:
- *  - /verifikator/dashboard dan /verifikator/dashboard/telaah-detail tetap dianggap halaman dashboard
- */
-function isActive($current_url, $target_prefix)
-{
-    return (strpos($current_url, $target_prefix) === 0)
-        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
-        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
-}
+
 
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
@@ -99,21 +89,21 @@ switch (strtolower($userRole)) {
 
                             <li>
                                 <a href="/docutrack/public/verifikator/dashboard"
-                                   class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/docutrack/public/verifikator/dashboard') ?>">
+                                   class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/verifikator/dashboard') ?>">
                                     <i class="fas fa-th-large text-sm"></i> Dashboard
                                 </a>
                             </li>
 
                             <li>
                                 <a href="/docutrack/public/verifikator/pengajuan-telaah"
-                                   class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/docutrack/public/verifikator/pengajuan-telaah') ?>">
+                                   class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/verifikator/pengajuan-telaah') ?>">
                                     <i class="fas fa-file-import text-sm"></i> Pengajuan Telaah
                                 </a>
                             </li>
 
                             <li>
                                 <a href="/docutrack/public/verifikator/riwayat-verifikasi"
-                                   class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/docutrack/public/verifikator/riwayat-verifikasi') ?>">
+                                   class="flex items-center gap-2 px-4 py-2 rounded-full transition-colors <?= isActive($current, '/verifikator/riwayat-verifikasi') ?>">
                                     <i class="fas fa-history text-sm"></i> Riwayat Verifikasi
                                 </a>
                             </li>

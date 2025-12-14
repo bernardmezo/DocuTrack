@@ -7,12 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'];
 
-function isActive($current, $target)
-{
-    return (strpos($current, $target) !== false)
-        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
-        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
-}
+
 
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)

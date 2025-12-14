@@ -32,7 +32,7 @@ class PengajuanLpjController extends Controller
             'list_lpj' => $list_lpj ?? []
         ]);
 
-        $this->view('pages/admin/pengajuan_lpj_list', $data, 'app');
+        $this->view('pages/admin/pengajuan_lpj_list', $data, 'admin');
     }
 
     public function show($id, $data_dari_router = [])
@@ -69,7 +69,7 @@ class PengajuanLpjController extends Controller
             'lpj_id' => $id  // Tambahkan lpjId untuk referensi
         ]);
 
-        $this->view('pages/admin/detail_lpj', $data, 'app');
+        $this->view('pages/admin/detail_lpj', $data, 'admin');
     }
 
     public function uploadBukti()

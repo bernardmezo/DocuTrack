@@ -36,10 +36,18 @@ abstract class BaseAkunController extends Controller
 
     public function index($options = [])
     {
-        $userId = $_SESSION['user_id'];
+        $userId = $_SESSION['user_id'] ?? null;
+        
+        if ($userId === null) {
+            error_log("BaseAkunController: user_id missing from session. Redirecting to login.");
+            session_destroy(); // Ensure clean state
+            $this->redirect('/docutrack/public/');
+        }
+
         $dbUser = $this->authService->getUserProfile($userId);
 
         if (!$dbUser) {
+            error_log("BaseAkunController: User profile not found for ID {$userId}. Redirecting to login.");
             session_destroy();
             $this->redirect('/docutrack/public/');
         }

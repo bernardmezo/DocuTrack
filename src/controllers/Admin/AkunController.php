@@ -18,6 +18,6 @@ class AkunController extends BaseAkunController
 
     protected function getAkunLayout(): string
     {
-        return 'app';
+        return 'admin';
     }
 }

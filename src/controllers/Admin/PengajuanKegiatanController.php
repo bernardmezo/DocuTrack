@@ -34,7 +34,7 @@ class PengajuanKegiatanController extends Controller
             'workflow' => $this->workflowService
         ]);
 
-        $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'app');
+        $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'admin');
     }
 
     public function show($id, $data_dari_router = [])
@@ -79,9 +79,9 @@ class PengajuanKegiatanController extends Controller
         ];
 
         if (($_GET['mode'] ?? '') === 'rincian') {
-            $this->view('pages/admin/detail_kegiatan', $data, 'app');
+            $this->view('pages/admin/detail_kegiatan', $data, 'admin');
         } else {
-            $this->view('pages/admin/detail_kak', $data, 'app');
+            $this->view('pages/admin/detail_kak', $data, 'admin');
         }
     }
 

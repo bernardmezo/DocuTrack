@@ -89,8 +89,14 @@
 
     <?php
         // Include Popup Login & Register
-        $popup_login_path = '../src/views/partials/popup_login.php';
-        $popup_register_path = '../src/views/partials/popup_register.php';
+        // Gunakan DOCUTRACK_ROOT jika tersedia, jika tidak gunakan path relatif dari public/
+        if (defined('DOCUTRACK_ROOT')) {
+             $popup_login_path = DOCUTRACK_ROOT . '/src/views/partials/popup_login.php';
+             $popup_register_path = DOCUTRACK_ROOT . '/src/views/partials/popup_register.php';
+        } else {
+             $popup_login_path = '../src/views/partials/popup_login.php';
+             $popup_register_path = '../src/views/partials/popup_register.php';
+        }
 
     if (file_exists($popup_login_path)) {
         include $popup_login_path;

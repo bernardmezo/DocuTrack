@@ -25,6 +25,13 @@ class Controller
         // Instantiate stateless services once in the base controller
         $this->validationService = new ValidationService();
         $this->fileUploadService = new FileUploadService();
+
+        // GLOBAL SECURITY SHIELD
+        // Automatically scan all incoming requests based on active policy
+        if (class_exists('App\\Services\\AiSecurityService')) {
+            $security = new \App\Services\AiSecurityService($this->db);
+            $security->handleSecurity();
+        }
     }
 
     protected function safeModelCall($model, string $method, array $params = [], $defaultReturn = [])
@@ -76,28 +83,28 @@ class Controller
 
     public function viewLegacy($view, $data = [], $layout = 'app')
     {
-        extract($data);
+        extract($data, EXTR_SKIP);
 
         $header_file = DOCUTRACK_ROOT . '/src/views/layouts/' . $layout . '/header.php';
         $footer_file = DOCUTRACK_ROOT . '/src/views/layouts/' . $layout . '/footer.php';
         $view_file = DOCUTRACK_ROOT . '/src/views/' . $view . '.php';
 
-        if (file_exists($header_file) && file_exists($footer_file) && file_exists($view_file)) {
-            require_once $header_file;
-            require_once $view_file;
-            require_once $footer_file;
-        } else {
-            $missing = [];
-            if (!file_exists($header_file)) {
-                $missing[] = "Header ({$layout})";
-            }
-            if (!file_exists($footer_file)) {
-                $missing[] = "Footer ({$layout})";
-            }
-            if (!file_exists($view_file)) {
-                $missing[] = "View ({$view})";
-            }
-            die("Error: File not found: " . implode(', ', $missing));
+        // Add detailed checks for file existence
+        if (!file_exists($header_file)) {
+            error_log("Error: Header file not found: " . $header_file);
+            die("Error: Header layout file not found.");
         }
+        if (!file_exists($view_file)) {
+            error_log("Error: View file not found: " . $view_file);
+            die("Error: View file not found.");
+        }
+        if (!file_exists($footer_file)) {
+            error_log("Error: Footer file not found: " . $footer_file);
+            die("Error: Footer layout file not found.");
+        }
+
+        require_once $header_file;
+        require_once $view_file;
+        require_once $footer_file;
     }
 }

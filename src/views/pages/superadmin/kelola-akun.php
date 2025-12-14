@@ -2,24 +2,14 @@
 
 // File: src/views/pages/superadmin/kelola-akun.php
 
-// Data Simulasi: Role Baru & Jurusan PNJ
-if (!isset($list_users)) {
-    $list_users = [
-        ['id' => 1, 'nama' => 'Dr. Ahmad Pengusul', 'email' => 'ahmad.p@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Informatika dan Komputer', 'status' => 'Aktif', 'last_login' => '2024-01-15 08:30:00'],
-        ['id' => 2, 'nama' => 'Siti Verifikator, M.Ak', 'email' => 'siti.v@pnj.ac.id', 'role' => 'Verifikator', 'jurusan' => 'Akuntansi', 'status' => 'Aktif', 'last_login' => '2024-01-15 09:15:00'],
-        ['id' => 3, 'nama' => 'Budi PPK, S.T', 'email' => 'budi.ppk@pnj.ac.id', 'role' => 'PPK', 'jurusan' => 'Teknik Sipil', 'status' => 'Aktif', 'last_login' => '2024-01-14 14:20:00'],
-        ['id' => 4, 'nama' => 'Rina Bendahara', 'email' => 'rina.b@pnj.ac.id', 'role' => 'Bendahara', 'jurusan' => 'Administrasi Niaga', 'status' => 'Aktif', 'last_login' => '2024-01-15 10:00:00'],
-        ['id' => 5, 'nama' => 'Prof. Wadir Dua', 'email' => 'wadir2@pnj.ac.id', 'role' => 'Wadir', 'jurusan' => 'Manajemen Pusat', 'status' => 'Aktif', 'last_login' => '2024-01-10 11:00:00'],
-        ['id' => 6, 'nama' => 'Dian Grafika', 'email' => 'dian.g@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Grafika dan Penerbitan', 'status' => 'Tidak Aktif', 'last_login' => '2023-12-20 15:00:00'],
-        ['id' => 7, 'nama' => 'Joko Mesin', 'email' => 'joko.m@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Mesin', 'status' => 'Aktif', 'last_login' => '2024-01-15 13:30:00'],
-        ['id' => 8, 'nama' => 'Sarah Elektro', 'email' => 'sarah.e@pnj.ac.id', 'role' => 'Pengusul', 'jurusan' => 'Teknik Elektro', 'status' => 'Aktif', 'last_login' => '2024-01-12 09:00:00'],
-    ];
-}
+// Ensure data variables are set
+if (!isset($list_users)) $list_users = [];
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
     <section class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <!-- Total Users -->
         <div class="relative group p-6 rounded-xl shadow-md overflow-hidden text-white bg-gradient-to-br from-blue-400 to-blue-500 hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] hover:-translate-y-1 transition-all duration-300 ease-out">
             <div class="absolute inset-0 z-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.5)_4px,rgba(255,255,255,0.5)_5px)] [background-size:10px_10px]"></div>
             <div class="relative z-10 flex justify-between items-center">
@@ -35,6 +25,7 @@ if (!isset($list_users)) {
                 <i class="fas fa-database mr-1"></i> Terdaftar
             </div>
         </div>
+        <!-- Active Users -->
         <div class="relative group p-6 rounded-xl shadow-md overflow-hidden text-white bg-gradient-to-br from-green-400 to-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:-translate-y-1 transition-all duration-300 ease-out">
             <div class="absolute inset-0 z-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.5)_4px,rgba(255,255,255,0.5)_5px)] [background-size:10px_10px]"></div>
             <div class="relative z-10 flex justify-between items-center">
@@ -50,6 +41,7 @@ if (!isset($list_users)) {
                 <span id="persenAktif" class="mr-1 font-bold">0%</span> dari total
             </div>
         </div>
+        <!-- Inactive Users -->
         <div class="relative group p-6 rounded-xl shadow-md overflow-hidden text-white bg-gradient-to-br from-red-400 to-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.5)] hover:-translate-y-1 transition-all duration-300 ease-out">
             <div class="absolute inset-0 z-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(255,255,255,0.5)_4px,rgba(255,255,255,0.5)_5px)] [background-size:10px_10px]"></div>
             <div class="relative z-10 flex justify-between items-center">
@@ -99,14 +91,9 @@ if (!isset($list_users)) {
                             class="pl-10 pr-8 py-2.5 rounded-xl text-sm bg-white border border-gray-200 text-gray-900 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all shadow-sm cursor-pointer appearance-none min-w-[220px]"
                             style="color: #111827; background-color: #ffffff;">
                         <option value="" class="text-gray-500 font-medium">Semua Jurusan</option>
-                        <option value="Teknik Informatika dan Komputer" class="text-gray-900">Teknik Informatika & Komputer</option>
-                        <option value="Teknik Sipil" class="text-gray-900">Teknik Sipil</option>
-                        <option value="Teknik Mesin" class="text-gray-900">Teknik Mesin</option>
-                        <option value="Teknik Elektro" class="text-gray-900">Teknik Elektro</option>
-                        <option value="Teknik Grafika dan Penerbitan" class="text-gray-900">Teknik Grafika & Penerbitan</option>
-                        <option value="Akuntansi" class="text-gray-900">Akuntansi</option>
-                        <option value="Administrasi Niaga" class="text-gray-900">Administrasi Niaga</option>
-                        <option value="Manajemen Pusat" class="text-gray-900">Manajemen Pusat</option>
+                        <?php foreach($list_jurusan ?? [] as $jurusan): ?>
+                            <option value="<?= htmlspecialchars($jurusan) ?>"><?= htmlspecialchars($jurusan) ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <i class="fas fa-university absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
                     <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none z-10"></i>
@@ -117,11 +104,9 @@ if (!isset($list_users)) {
                             class="pl-10 pr-8 py-2.5 rounded-xl text-sm bg-white border border-gray-200 text-gray-900 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all shadow-sm cursor-pointer appearance-none min-w-[160px]"
                             style="color: #111827; background-color: #ffffff;">
                         <option value="" class="text-gray-500 font-medium">Semua Role</option>
-                        <option value="Pengusul" class="text-gray-900">Pengusul</option>
-                        <option value="Verifikator" class="text-gray-900">Verifikator</option>
-                        <option value="PPK" class="text-gray-900">PPK</option>
-                        <option value="Bendahara" class="text-gray-900">Bendahara</option>
-                        <option value="Wadir" class="text-gray-900">Wadir</option>
+                        <?php foreach($list_roles ?? [] as $role): ?>
+                            <option value="<?= htmlspecialchars($role['namaRole']) ?>"><?= htmlspecialchars($role['namaRole']) ?></option>
+                        <?php endforeach; ?>
                     </select>
                     <i class="fas fa-id-badge absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 z-10"></i>
                     <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none z-10"></i>
@@ -160,8 +145,8 @@ if (!isset($list_users)) {
 
 </main>
 
-<div id="toast-container" class="fixed top-6 right-6 z-[60] flex flex-col gap-3 w-auto max-w-md">
-</div>
+<!-- Modal & Toast Containers (Standardized) -->
+<div id="toast-container" class="fixed top-6 right-6 z-[60] flex flex-col gap-3 w-auto max-w-md"></div>
 
 <div id="modal-user" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm overflow-y-auto">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 my-8 transform transition-all">
@@ -172,21 +157,20 @@ if (!isset($list_users)) {
             </button>
         </div>
         
-        <form id="form-user" class="p-6 space-y-4">
-            <input type="hidden" id="user-id">
-            <input type="hidden" id="is-edit-mode" value="false">
+        <form id="form-user" method="POST" action="/docutrack/public/superadmin/kelola-akun/store" class="p-6 space-y-4">
+            <input type="hidden" id="user-id" name="id">
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Lengkap *</label>
-                    <input type="text" id="user-nama" required
+                    <input type="text" id="user-nama" name="nama" required
                            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400"
                            placeholder="Dr. Nama Lengkap">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Email *</label>
-                    <input type="email" id="user-email" required
+                    <input type="email" id="user-email" name="email" required
                            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 placeholder-gray-400"
                            placeholder="email@pnj.ac.id">
                 </div>
@@ -195,92 +179,36 @@ if (!isset($list_users)) {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Role *</label>
-                    <select id="user-role" required
+                    <select id="user-role" name="roleId" required
                             class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 cursor-pointer">
                         <option value="" disabled selected hidden class="text-gray-400">Pilih Role</option>
-                        <option value="Pengusul">Pengusul</option>
-                        <option value="Verifikator">Verifikator</option>
-                        <option value="PPK">PPK</option>
-                        <option value="Bendahara">Bendahara</option>
-                        <option value="Wadir">Wadir</option>
+                        <?php foreach($list_roles ?? [] as $role): ?>
+                            <option value="<?= $role['roleId'] ?>"><?= htmlspecialchars($role['namaRole']) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Jurusan *</label>
-                    <select id="user-jurusan" required
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Jurusan</label>
+                    <select id="user-jurusan" name="namaJurusan"
                             class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 cursor-pointer">
-                        <option value="" disabled selected hidden class="text-gray-400">Pilih Jurusan</option>
-                        <option value="Teknik Informatika dan Komputer">Teknik Informatika & Komputer</option>
-                        <option value="Teknik Sipil">Teknik Sipil</option>
-                        <option value="Teknik Mesin">Teknik Mesin</option>
-                        <option value="Teknik Elektro">Teknik Elektro</option>
-                        <option value="Teknik Grafika dan Penerbitan">Teknik Grafika & Penerbitan</option>
-                        <option value="Akuntansi">Akuntansi</option>
-                        <option value="Administrasi Niaga">Administrasi Niaga</option>
-                        <option value="Manajemen Pusat">Manajemen Pusat</option>
+                        <option value="" selected class="text-gray-400">Pilih Jurusan (Opsional)</option>
+                         <?php foreach($list_jurusan ?? [] as $jurusan): ?>
+                            <option value="<?= htmlspecialchars($jurusan) ?>"><?= htmlspecialchars($jurusan) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
 
-            <div id="add-mode-fields" class="space-y-4 pt-2 border-t border-gray-100">
+            <!-- Fields for Add Mode -->
+            <div id="password-section" class="space-y-4 pt-2 border-t border-gray-100">
                 <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Keamanan Akun</h4>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password *</label>
-                        <input type="password" id="add-password" 
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password <span id="pass-req">*</span></label>
+                        <input type="password" id="user-password" name="password"
                                class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
                                placeholder="******">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Konfirmasi Password *</label>
-                        <input type="password" id="add-confirm-password" 
-                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
-                               placeholder="******">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Kode Keamanan (Captcha) *</label>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <div class="flex items-center gap-2">
-                            <div id="captcha-preview" class="select-none bg-gray-100 border border-gray-300 rounded-lg px-6 py-2.5 text-xl font-mono font-bold tracking-widest text-gray-700 text-center w-32 relative overflow-hidden">
-                                <div class="absolute inset-0 w-full h-full opacity-20 bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,#000_2px,#000_3px)]"></div>
-                                <span class="relative z-10" id="captcha-text">ABCD</span>
-                            </div>
-                            <button type="button" id="refresh-captcha" class="p-2.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Refresh Captcha">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                        </div>
-                        <input type="text" id="captcha-input" 
-                               class="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900 uppercase"
-                               placeholder="Masukkan kode di atas">
-                    </div>
-                </div>
-            </div>
-
-            <div id="edit-mode-fields" class="space-y-4 pt-2 border-t border-gray-100 hidden">
-                <h4 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Ubah Password (Opsional)</h4>
-                
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Password Lama (Admin) *</label>
-                    <input type="password" id="edit-old-password" 
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
-                           placeholder="Masukkan password Anda untuk verifikasi">
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Password Baru</label>
-                        <input type="password" id="edit-new-password" 
-                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
-                               placeholder="Kosongkan jika tidak diubah">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Konfirmasi Password</label>
-                        <input type="password" id="edit-confirm-password" 
-                               class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400 transition-all text-gray-900"
-                               placeholder="Ulangi password baru">
                     </div>
                 </div>
             </div>
@@ -332,10 +260,12 @@ if (!isset($list_users)) {
                         class="flex-1 px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all">
                     Batal
                 </button>
-                <button id="delete-confirm"
-                        class="flex-1 px-5 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-600 hover:to-red-700 transition-all shadow-md">
-                    <i class="fas fa-trash-alt mr-2"></i>Hapus
-                </button>
+                <form id="form-delete" method="POST" action="">
+                    <button type="submit"
+                            class="w-full px-5 py-2.5 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-600 hover:to-red-700 transition-all shadow-md">
+                        <i class="fas fa-trash-alt mr-2"></i>Hapus
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -356,31 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalDelete = document.getElementById('modal-delete');
     const formUser = document.getElementById('form-user');
     const modalTitle = document.getElementById('modal-title');
-
-    // Fields Groups
-    const addModeFields = document.getElementById('add-mode-fields');
-    const editModeFields = document.getElementById('edit-mode-fields');
     const statusField = document.getElementById('status-field');
 
-    // Captcha Elements
-    const captchaTextEl = document.getElementById('captcha-text');
-    const captchaInputEl = document.getElementById('captcha-input');
-    const refreshCaptchaBtn = document.getElementById('refresh-captcha');
-    let currentCaptcha = '';
-
-    // Generate Random Captcha
-    function generateCaptcha() {
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        let result = "";
-        for (let i = 0; i < 5; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        currentCaptcha = result;
-        captchaTextEl.textContent = result.split('').join(' '); // Add spacing for look
-    }
-
-    refreshCaptchaBtn.addEventListener('click', generateCaptcha);
-    
     function updateStatistics(data) {
         const total = data.length;
         const aktif = data.filter(u => u.status === 'Aktif').length;
@@ -427,149 +334,71 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.classList.remove('flex');
     }
     
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        
-        const icons = {
-            success: 'fa-check-circle',
-            error: 'fa-exclamation-circle',
-            info: 'fa-info-circle'
-        };
-        
-        const colors = {
-            success: 'from-green-500 to-green-600',
-            error: 'from-red-500 to-red-600',
-            info: 'from-blue-500 to-blue-600'
-        };
-        
-        const bgRings = {
-            success: 'bg-green-500/10',
-            error: 'bg-red-500/10',
-            info: 'bg-blue-500/10'
-        };
-        
-        const borderColor = {
-            success: 'border-green-500',
-            error: 'border-red-500',
-            info: 'border-blue-500'
-        };
-        
-        toast.className = `flex items-center gap-4 px-6 py-4 bg-white rounded-2xl shadow-2xl border-l-4 ${borderColor[type]} w-full transition-all duration-500 ease-out backdrop-blur-sm`;
-        toast.style.transform = 'translateX(120%)';
-        toast.style.opacity = '0';
-        
-        toast.innerHTML = `
-            <div class="flex-shrink-0 relative">
-                <div class="absolute inset-0 ${bgRings[type]} rounded-full blur-xl"></div>
-                <div class="relative w-12 h-12 rounded-full bg-gradient-to-br ${colors[type]} flex items-center justify-center shadow-lg">
-                    <i class="fas ${icons[type]} text-white text-xl"></i>
-                </div>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="font-semibold text-gray-800 text-sm leading-relaxed">${message}</p>
-            </div>
-            <button onclick="removeToast(this.parentElement)" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all">
-                <i class="fas fa-times text-sm"></i>
-            </button>
-        `;
-        
-        container.appendChild(toast);
-        
-        // Trigger slide-in animation
-        setTimeout(() => {
-            toast.style.transform = 'translateX(0)';
-            toast.style.opacity = '1';
-        }, 50);
-        
-        // Auto remove after 4 seconds
-        setTimeout(() => {
-            removeToast(toast);
-        }, 4000);
-    }
-    
-    function removeToast(toast) {
-        if (!toast || !toast.parentElement) return;
-        toast.style.transform = 'translateX(120%)';
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            if (toast.parentElement) toast.remove();
-        }, 500);
-    }
-    
-    // Make removeToast available globally
-    window.removeToast = removeToast;
-    
     // Tambah User
     document.getElementById('btn-tambah-user').addEventListener('click', () => {
         modalTitle.textContent = 'Tambah User Baru';
         formUser.reset();
+        formUser.action = '/docutrack/public/superadmin/kelola-akun/store';
         
-        // Reset Dropdowns to placeholder
-        document.getElementById('user-role').value = "";
-        document.getElementById('user-jurusan').value = "";
-
         document.getElementById('user-id').value = '';
-        document.getElementById('is-edit-mode').value = 'false';
         
         // UI Toggles
         statusField.classList.add('hidden');
-        addModeFields.classList.remove('hidden');
-        editModeFields.classList.add('hidden');
+        document.getElementById('pass-req').classList.remove('hidden');
+        document.getElementById('user-password').setAttribute('required', '');
         
-        // Require Add Mode Fields
-        document.getElementById('add-password').setAttribute('required', '');
-        document.getElementById('add-confirm-password').setAttribute('required', '');
-        document.getElementById('captcha-input').setAttribute('required', '');
-        
-        // Remove Require Edit Mode Fields
-        document.getElementById('edit-old-password').removeAttribute('required');
-
-        generateCaptcha();
         openModal(modalUser);
     });
     
     // Edit User
     window.editUser = (id) => {
-        const user = dataUsers.find(u => u.id === id);
+        const user = dataUsers.find(u => u.id == id);
         if (!user) return;
         
         modalTitle.textContent = 'Edit User';
         formUser.reset();
+        formUser.action = `/docutrack/public/superadmin/kelola-akun/update/${id}`;
         
         document.getElementById('user-id').value = user.id;
-        document.getElementById('is-edit-mode').value = 'true';
         document.getElementById('user-nama').value = user.nama;
         document.getElementById('user-email').value = user.email;
-        document.getElementById('user-role').value = user.role;
+        
+        // Find role ID from name
+        // This is a bit tricky if we only have role name in dataUsers but roleId in select
+        // In real app, dataUsers should contain roleId. Assuming it does or we match by text.
+        // If dataUsers comes from getAllUsers(), it has 'role' (name).
+        // We need to map role name back to value if possible, or update getAllUsers to return roleId too.
+        // For now, let's try to find option by text.
+        const roleSelect = document.getElementById('user-role');
+        for (let i = 0; i < roleSelect.options.length; i++) {
+            if (roleSelect.options[i].text === user.role) {
+                roleSelect.selectedIndex = i;
+                break;
+            }
+        }
+
         document.getElementById('user-jurusan').value = user.jurusan;
         
-        document.querySelector(`input[name="status"][value="${user.status}"]`).checked = true;
+        if (user.status) {
+            const statusRadio = document.querySelector(`input[name="status"][value="${user.status}"]`);
+            if (statusRadio) statusRadio.checked = true;
+        }
         
         // UI Toggles
         statusField.classList.remove('hidden');
-        addModeFields.classList.add('hidden');
-        editModeFields.classList.remove('hidden');
-
-        // Remove Require Add Mode Fields
-        document.getElementById('add-password').removeAttribute('required');
-        document.getElementById('add-confirm-password').removeAttribute('required');
-        document.getElementById('captcha-input').removeAttribute('required');
-
-        // Require Old Password for Security
-        document.getElementById('edit-old-password').setAttribute('required', '');
+        document.getElementById('pass-req').classList.add('hidden');
+        document.getElementById('user-password').removeAttribute('required');
         
         openModal(modalUser);
     };
     
     // Delete User
-    let deleteUserId = null;
     window.deleteUser = (id) => {
-        const user = dataUsers.find(u => u.id === id);
+        const user = dataUsers.find(u => u.id == id);
         if (!user) return;
         
-        deleteUserId = id;
         document.getElementById('delete-user-name').textContent = user.nama;
+        document.getElementById('form-delete').action = `/docutrack/public/superadmin/kelola-akun/delete/${id}`;
         openModal(modalDelete);
     };
     
@@ -577,101 +406,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('modal-close').addEventListener('click', () => closeModal(modalUser));
     document.getElementById('modal-cancel').addEventListener('click', () => closeModal(modalUser));
     document.getElementById('delete-cancel').addEventListener('click', () => closeModal(modalDelete));
-    
-    // Submit Form User
-    formUser.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const userId = document.getElementById('user-id').value;
-        const isEditMode = document.getElementById('is-edit-mode').value === 'true';
-        
-        // --- VALIDATION LOGIC ---
-        if (!isEditMode) {
-            // Validate Add Mode
-            const pass = document.getElementById('add-password').value;
-            const confirm = document.getElementById('add-confirm-password').value;
-            const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
-
-            if (pass !== confirm) {
-                showToast('Password dan Konfirmasi Password tidak cocok!', 'error');
-                return;
-            }
-
-            if (captchaInput.replace(/\s/g, '') !== currentCaptcha) {
-                showToast('Kode Captcha salah!', 'error');
-                generateCaptcha();
-                document.getElementById('captcha-input').value = '';
-                return;
-            }
-        } else {
-            // Validate Edit Mode
-            const oldPass = document.getElementById('edit-old-password').value;
-            const newPass = document.getElementById('edit-new-password').value;
-            const confirmNew = document.getElementById('edit-confirm-password').value;
-
-            if (oldPass === "") {
-                 showToast('Masukkan password admin untuk konfirmasi!', 'error');
-                 return;
-            }
-            
-            if (newPass !== "" && newPass !== confirmNew) {
-                showToast('Password baru tidak cocok!', 'error');
-                return;
-            }
-        }
-
-        const userData = {
-            nama: document.getElementById('user-nama').value,
-            email: document.getElementById('user-email').value,
-            role: document.getElementById('user-role').value,
-            jurusan: document.getElementById('user-jurusan').value,
-            status: isEditMode ? document.querySelector('input[name="status"]:checked').value : 'Aktif'
-        };
-        
-        if (userId) {
-            // Update existing user
-            const index = dataUsers.findIndex(u => u.id == userId);
-            if (index !== -1) {
-                dataUsers[index] = { ...dataUsers[index], ...userData };
-                showToast('User berhasil diperbarui!', 'success');
-            }
-        } else {
-            // Add new user
-            const newUser = {
-                id: dataUsers.length > 0 ? Math.max(...dataUsers.map(u => u.id)) + 1 : 1,
-                ...userData,
-                last_login: new Date().toISOString().slice(0, 19).replace('T', ' ')
-            };
-            dataUsers.push(newUser);
-            showToast('User baru berhasil ditambahkan!', 'success');
-        }
-        
-        closeModal(modalUser);
-        window.usersTable.allData = dataUsers;
-        window.usersTable.applyFilters();
-        updateStatistics(dataUsers);
-    });
-    
-    // Confirm Delete
-    document.getElementById('delete-confirm').addEventListener('click', () => {
-        // Create a temporary form to submit the delete request
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/docutrack/public/superadmin/kelola-akun/delete/${deleteUserId}`;
-        
-        // Add CSRF token if available (optional but recommended)
-        // const csrfInput = document.createElement('input');
-        // csrfInput.type = 'hidden';
-        // csrfInput.name = 'csrf_token';
-        // csrfInput.value = '...'; 
-        // form.appendChild(csrfInput);
-
-        document.body.appendChild(form);
-        form.submit();
-        
-        // Optional: Close modal immediately (though page will reload)
-        closeModal(modalDelete);
-    });
     
     class UsersTableManager {
         constructor(data) {

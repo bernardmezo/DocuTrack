@@ -15,6 +15,7 @@ use App\Exceptions\NotFoundException;
 use App\Exceptions\ForbiddenException;
 use App\Exceptions\ValidationException;
 use App\Exceptions\BusinessLogicException;
+use App\Exceptions\MethodNotAllowedException;
 
 // 2. Set up Global Exception Handling
 require_once __DIR__ . '/../src/helpers/error_logger_helper.php';
@@ -87,6 +88,12 @@ function globalExceptionHandler(Throwable $exception) {
             include __DIR__ . '/../src/views/pages/errors/403.php';
             break;
 
+        case MethodNotAllowedException::class:
+            http_response_code(405);
+            echo "<h1>405 Method Not Allowed</h1>";
+            echo "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
+            break;
+
         default:
             http_response_code(500);
             include __DIR__ . '/../src/views/pages/errors/500.php';
@@ -114,7 +121,7 @@ function get_request_path(): string
 
     $request_path = $request_uri;
 
-    if ($base_path && strpos($request_uri, $base_path) === 0) {
+    if ($base_path && stripos($request_uri, $base_path) === 0) {
         $request_path = substr($request_uri, strlen($base_path));
     }
 

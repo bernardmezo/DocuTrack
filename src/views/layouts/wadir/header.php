@@ -10,16 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $user_role = $_SESSION['user_role'] ?? 'wadir';
 $user_name = $_SESSION['user_name'] ?? 'Wadir User';
 
-/**
- * 3. FUNGSI isActive (SESUAI PERMINTAAN ANDA)
- * Fungsi ini sekarang MENGEMBALIKAN KELAS STYLING SECARA LANGSUNG.
- */
-function isActive($current_page, $target_path)
-{
-    return ($current_page === $target_path)
-        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50' // Aktif
-        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium'; // Non-Aktif
-}
+
 
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)

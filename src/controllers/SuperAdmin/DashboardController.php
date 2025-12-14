@@ -1,49 +1,140 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers\SuperAdmin;
 
 use App\Core\Controller;
-use App\Services\SuperAdminService;
-use App\Services\LogStatusService; // Added
-
-// Use Service instead of Model
+use App\Models\SuperAdminModel;
+use App\Services\LogStatusService;
+use App\Services\AiLogService;
+use Throwable;
 
 class DashboardController extends Controller
 {
-    private $service; // Changed from $model to $service for clarity
-    private LogStatusService $logStatusService; // Added
+    private $model;
+    private $logStatusService;
+    private $aiLogService;
 
-    public function __construct($db)
+    /**
+     * Constructor with Manual Dependency Instantiation.
+     * 
+     * @param mixed $db Database connection (optional)
+     */
+    public function __construct($db = null)
     {
+        // 1. Initialize Parent (Controller) to set $this->db
         parent::__construct($db);
-        $this->service = new SuperAdminService($this->db); // Instantiate Service
-        $this->logStatusService = new LogStatusService($this->db); // Added
+        
+        // 2. Manual Instantiation of Model
+        // We pass $this->db which is set by parent::__construct
+        $this->model = new SuperAdminModel($this->db);
+        
+        // 3. Manual Instantiation of Services
+        // LogStatusService requires DB connection
+        $this->logStatusService = new LogStatusService($this->db);
+        
+        // AiLogService now requires DB for caching
+        $this->aiLogService = new AiLogService($this->db);
     }
 
     public function index($data_dari_router = [])
     {
+        // Initialize Default Data
+        $stats = ['total' => 0, 'disetujui' => 0, 'ditolak' => 0, 'menunggu' => 0, 'revisi' => 0];
+        $notifications = [];
+        $unread_count = 0;
+        $monitoring_kegiatan = [];
+        $monitoring_lpj = [];
+        $system_health = [];
+        // AI Summary is now loaded via AJAX
+        $ai_summary = ""; 
 
-        // Call methods via the service layer
-        $stats = $this->service->getDashboardStats();
-        $list_prodi = $this->service->getListProdi();
-        $list_kak = $this->service->getListKegiatan(20);
-        $list_lpj = $this->service->getListLPJ(10);
+        // 1. Fetch Core Dashboard Stats
+        try {
+            $stats = $this->model->getDashboardStats();
+        } catch (Throwable $e) {
+            error_log("[Dashboard] Stats Error: " . $e->getMessage());
+        }
 
-        // --- Ambil Notifikasi ---
-        $userId = $_SESSION['user_id'] ?? 0; // Asumsi userId ada di session
-        $notificationsData = $this->logStatusService->getNotificationsForUser($userId);
-        // --- End Notifikasi ---
+        // 2. Command Center: System Health Check
+        try {
+            $system_health = [
+                'php_version' => phpversion(),
+                'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+                'memory_usage' => round(memory_get_usage() / 1024 / 1024, 2) . ' MB',
+                'db_connection' => $this->db && mysqli_ping($this->db),
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+        } catch (Throwable $e) {
+            $system_health = ['db_connection' => false, 'error' => $e->getMessage()];
+        }
 
+        // 3. Command Center: Real-time Monitoring Data (Limit 5)
+        try {
+            $monitoring_kegiatan = $this->model->getGlobalMonitoringKegiatan(5);
+            $monitoring_lpj = $this->model->getGlobalMonitoringLPJ(5);
+        } catch (Throwable $e) {
+            error_log("[Dashboard] Monitoring Data Error: " . $e->getMessage());
+        }
+
+        // 4. Fetch Notifications
+        try {
+            $userId = $_SESSION['user_id'] ?? 0;
+            if ($userId) {
+                $notifData = $this->logStatusService->getNotificationsForUser($userId);
+                $notifications = $notifData['items'] ?? [];
+                $unread_count = $notifData['unread_count'] ?? 0;
+            }
+        } catch (Throwable $e) {
+            error_log("[Dashboard] Notification Error: " . $e->getMessage());
+        }
+
+        // 5. Prepare View Data
         $data = array_merge($data_dari_router, [
-            'title' => 'Super Admin Dashboard',
+            'title' => 'Command Center',
+            'user' => $_SESSION['user_data'] ?? [],
             'stats' => $stats,
-            'list_prodi' => $list_prodi,
-            'list_kak' => $list_kak,
-            'list_lpj' => $list_lpj,
-            'notifications' => $notificationsData['items'], // Added
-            'unread_notifications_count' => $notificationsData['unread_count'] // Added
+            'notifications' => $notifications,
+            'unread_notifications_count' => $unread_count,
+            'system_health' => $system_health,
+            'ai_summary' => $ai_summary, // Empty initially
+            'monitoring_kegiatan' => $monitoring_kegiatan,
+            'monitoring_lpj' => $monitoring_lpj
         ]);
 
+        // 6. Render View
         $this->view('pages/superadmin/dashboard', $data, 'superadmin');
+    }
+
+    /**
+     * AJAX Endpoint: Lazy Load AI Analysis
+     * Returns JSON
+     */
+    public function getAiAnalysis()
+    {
+        // Security: Ensure only SuperAdmin can access
+        // (Middleware usually handles this, but good to check if this is a public API route)
+        // In this architecture, routing middleware covers it.
+
+        header('Content-Type: application/json');
+
+        try {
+            // Use 1 hour cache (3600 seconds)
+            // Analyze last 30 lines (increased slightly from 20 as we are now async)
+            $result = $this->aiLogService->getSmartSummary(30, 3600);
+            
+            echo json_encode([
+                'status' => 'success',
+                'data' => $result['summary'],
+                'model' => $result['model']
+            ]);
+        } catch (Throwable $e) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Analysis failed: ' . $e->getMessage()
+            ]);
+        }
+        exit;
     }
 }

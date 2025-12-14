@@ -7,12 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'];
 
-function isActive($current, $target)
-{
-    return (strpos($current, $target) !== false)
-        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
-        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
-}
+
 
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
@@ -137,8 +132,8 @@ switch (strtolower($userRole)) {
                     <div class="relative" id="notification-container">
                         <div id="notification-icon-button" class="relative text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200">
                             <i class="fas fa-bell"></i>
-                            <span id="notification-count" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F] hidden">
-                                0
+                            <span id="notification-count" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F] <?php echo (isset($unread_notifications_count) && $unread_notifications_count > 0) ? '' : 'hidden'; ?>">
+                                <?php echo isset($unread_notifications_count) ? $unread_notifications_count : 0; ?>
                             </span>
                         </div>
                         <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-xl py-2 z-50 hidden border border-gray-100">
@@ -147,8 +142,34 @@ switch (strtolower($userRole)) {
                                 <button id="mark-all-as-read-btn" class="text-sm text-blue-600 hover:underline">Tandai semua dibaca</button>
                             </div>
                             <div id="notification-list" class="max-h-80 overflow-y-auto">
-                                <!-- Notification items will be injected here by JavaScript -->
-                                <div class="text-center text-gray-500 py-4">Tidak ada notifikasi baru.</div>
+                                <?php if (!empty($notifications) && is_array($notifications)): ?>
+                                    <ul class="divide-y divide-gray-100">
+                                        <?php foreach ($notifications as $notif): ?>
+                                            <li class="px-4 py-3 hover:bg-gray-50 transition-colors relative <?php echo ($notif['status'] === 'unread') ? 'bg-blue-50/30' : ''; ?>">
+                                                <div class="flex gap-3">
+                                                    <div class="flex-shrink-0 mt-1">
+                                                        <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                                            <i class="fas fa-info text-xs"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <p class="text-sm font-medium text-gray-900 mb-0.5">
+                                                            <?php echo htmlspecialchars($notif['message']); ?>
+                                                        </p>
+                                                        <p class="text-xs text-gray-500">
+                                                            <?php echo date('d M Y H:i', strtotime($notif['created_at'])); ?>
+                                                        </p>
+                                                    </div>
+                                                    <?php if($notif['status'] === 'unread'): ?>
+                                                        <div class="w-2 h-2 rounded-full bg-blue-600 mt-2"></div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                <?php else: ?>
+                                    <div class="text-center text-gray-500 py-4">Tidak ada notifikasi baru.</div>
+                                <?php endif; ?>
                             </div>
                             <div class="px-4 py-2 border-t text-center">
                                 <a href="#" id="view-all-notifications-link" class="text-sm text-blue-600 hover:underline">Lihat semua notifikasi</a>
@@ -207,4 +228,4 @@ switch (strtolower($userRole)) {
         </div> <!-- Akhir top-section -->
 
     <!-- Konten utama halaman dimulai di sini (akan ditutup oleh footer.php) -->
-    <main class="main-content ..."></main>
+

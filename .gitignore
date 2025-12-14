@@ -50,7 +50,7 @@ php_error.log
 
 # Database Exports (Ignore local dumps, keep schemas/migrations)
 /database/*.sql
-!/database/schema_with_seed.sql
+!/database/merged_schema.sql
 !/database/migrations/*.sql
 
 # Tests
@@ -63,3 +63,5 @@ cleanup_project.ps1
 struktur_folder.txt
 test_*.php
 debug_*.php
+public/check_login.php
+

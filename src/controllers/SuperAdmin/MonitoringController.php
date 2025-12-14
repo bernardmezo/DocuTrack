@@ -1,76 +1,66 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers\SuperAdmin;
 
 use App\Core\Controller;
 use App\Models\SuperAdminModel;
-
-// Load Model
+use App\Services\LogStatusService;
+use Throwable;
 
 class MonitoringController extends Controller
 {
     private $model;
+    private $logStatusService;
 
-    public function __construct()
+    public function __construct($db = null)
     {
-        parent::__construct(); // Initialize $this->db from parent Controller
-        $this->model = new SuperAdminModel($this->db); // Instantiate Model
+        parent::__construct($db);
+        $this->model = new SuperAdminModel($this->db);
+        $this->logStatusService = new LogStatusService($this->db);
     }
 
-    /**
-     * Method INDEX - Server-side Processing dengan data real dari Database
-     */
     public function index($data_dari_router = [])
     {
-        // Ambil parameter filter dari URL
-        $page = (int)($_GET['page'] ?? 1);
-        $status_filter = strtolower($_GET['status'] ?? 'semua');
-        $jurusan_filter = $_GET['jurusan'] ?? 'semua';
-        $search_text = strtolower($_GET['search'] ?? '');
-        $per_page = 5;
+        // 1. Initialize Default Data
+        $list_kegiatan = [];
+        $list_lpj = [];
+        $notifications = [];
+        $unread_count = 0;
+        $limit = 100; // Increase limit for monitoring page
 
-        // ✅ AMBIL DATA DARI DATABASE
-        $filters = [
-            'status' => $status_filter,
-            'jurusan' => $jurusan_filter,
-            'search' => $search_text
-        ];
+        // 2. Fetch Global Data (God Mode)
+        try {
+            $list_kegiatan = $this->model->getGlobalMonitoringKegiatan($limit);
+            $list_lpj = $this->model->getGlobalMonitoringLPJ($limit);
+        } catch (Throwable $e) {
+            error_log("[MonitoringController] Model Error: " . $e->getMessage());
+        }
 
-        $all_proposals = $this->model->getProposalMonitoring($filters);
-        $list_jurusan = $this->model->getListJurusan();
+        // 3. Fetch Notifications (Service Layer)
+        try {
+            $userId = $_SESSION['user_id'] ?? 0;
+            if ($userId) {
+                $notifData = $this->logStatusService->getNotificationsForUser($userId);
+                $notifications = $notifData['items'] ?? [];
+                $unread_count = $notifData['unread_count'] ?? 0;
+            }
+        } catch (Throwable $e) {
+            error_log("[MonitoringController] Notification Error: " . $e->getMessage());
+        }
 
-        // --- Pagination ---
-        $total_items = count($all_proposals);
-        $total_pages = ceil($total_items / $per_page);
-        $page = max(1, min($page, $total_pages ?: 1));
-
-        $offset = ($page - 1) * $per_page;
-        $paginated_items = array_slice($all_proposals, $offset, $per_page);
-
-        // --- Pagination Info ---
-        $showing_from = $total_items > 0 ? $offset + 1 : 0;
-        $showing_to = $total_items > 0 ? $offset + count($paginated_items) : 0;
-
-        // --- Kirim data ke View ---
+        // 4. Prepare View Data
         $data = array_merge($data_dari_router, [
-            'title' => 'Monitoring Proposal',
-            'list_proposal' => $paginated_items,
-            'list_jurusan' => $list_jurusan,
-            'pagination' => [
-                'current_page' => $page,
-                'total_pages' => $total_pages,
-                'total_items' => $total_items,
-                'per_page' => $per_page,
-                'showing_from' => $showing_from,
-                'showing_to' => $showing_to
-            ],
-            'filters' => [
-                'status' => $_GET['status'] ?? 'Semua',
-                'jurusan' => $_GET['jurusan'] ?? 'semua',
-                'search' => $_GET['search'] ?? ''
-            ]
+            'title' => 'Monitoring Global',
+            'user' => $_SESSION['user_data'] ?? [],
+            'list_kegiatan' => $list_kegiatan,
+            'list_lpj' => $list_lpj,
+            'notifications' => $notifications,
+            'unread_notifications_count' => $unread_count
         ]);
 
+        // 5. Render View
         $this->view('pages/superadmin/monitoring', $data, 'superadmin');
     }
 }

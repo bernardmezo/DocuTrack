@@ -60,6 +60,6 @@ class DashboardController extends Controller
             'unread_notifications_count' => $notificationsData['unread_count'] // Added
         ]);
 
-        $this->view('pages/admin/dashboard', $data, 'app');
+        $this->view('pages/admin/dashboard', $data, 'admin');
     }
 }

@@ -170,7 +170,7 @@
                     <div class="bg-gradient-to-br from-[#22D3EE] to-[#274B8F] text-white rounded-[2.5rem] p-12 relative z-10 overflow-hidden">
                         
                         <div class="absolute inset-y-0 left-0 z-0 flex items-center pointer-events-none">
-                            <img src="/docutrack/public/assets/images/icon/kiri-asset.svg" alt="" class="h-full w-auto object-cover opacity-30 -ml-10"> 
+                            <img src="/docutrack/public/assets/images/icon/kiri-login.svg" alt="" class="h-full w-auto object-cover opacity-30 -ml-10"> 
                             </div>
 
                         <div class="absolute bottom-0 right-0 z-0 pointer-events-none">

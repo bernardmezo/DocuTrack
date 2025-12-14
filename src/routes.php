@@ -395,6 +395,12 @@ return [
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
     ],
+    '/superadmin/get-ai-analysis' => [
+        'controller' => 'SuperAdmin\DashboardController',
+        'method'     => 'getAiAnalysis',
+        'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
+        'methods'    => ['GET'],
+    ],
     '/superadmin/akun' => [
         'controller' => 'SuperAdmin\AkunController',
         'method'     => 'index',
@@ -482,7 +488,7 @@ return [
     '/direktur/dashboard' => [
         'controller' => 'Direktur\DashboardController',
         'method'     => 'index',
-        'middleware' => ['AuthMiddleware', 'DirekturMiddleware'], // Assuming DirekturMiddleware exists or will be created
+        'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
     ],
     '/direktur/akun' => [
         'controller' => 'Direktur\AkunController',
@@ -499,5 +505,24 @@ return [
         'controller' => 'Direktur\MonitoringController',
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
+    ],
+
+    // --- AI MODULE ROUTES (Delete to Disable) ---
+    '/superadmin/ai-monitoring' => [
+        'controller' => 'SuperAdmin\AiMonitoringController',
+        'method'     => 'index',
+        'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
+    ],
+    '/superadmin/ai-monitoring/scan' => [
+        'controller' => 'SuperAdmin\AiMonitoringController',
+        'method'     => 'triggerScan',
+        'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
+        'methods'    => ['POST'],
+    ],
+    '/superadmin/ai-monitoring/toggle' => [
+        'controller' => 'SuperAdmin\AiMonitoringController',
+        'method'     => 'toggleMode',
+        'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
+        'methods'    => ['POST'],
     ],
 ];

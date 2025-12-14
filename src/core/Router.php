@@ -3,6 +3,7 @@
 namespace App\Core;
 
 use App\Exceptions\NotFoundException;
+use App\Exceptions\MethodNotAllowedException;
 
 class Router
 {
@@ -23,35 +24,56 @@ class Router
                 $this->dynamicRoutes[$pattern] = $config;
             }
         }
-        
-        error_log("Router: Loaded " . count($allRoutes) . " routes (Static: " . count($this->staticRoutes) . ", Dynamic: " . count($this->dynamicRoutes) . ")");
     }
 
     public function dispatch($requestPath, $requestMethod)
     {
-        // ROBUST URL SANITIZATION & BASE PATH STRIPPING
-        // We do this inside the Router to ensure it works regardless of the caller's cleanup logic.
         $cleanPath = $this->normalizePath($requestPath);
+        $pathMatched = false;
 
-        // Attempt to match static routes first for efficiency (O(1) lookup)
+        // 1. Check Static Routes (O(1))
         if (isset($this->staticRoutes[$cleanPath])) {
-            $this->executeRoute($this->staticRoutes[$cleanPath], [], $requestMethod, $cleanPath);
-            return;
+            $pathMatched = true;
+            $routeConfig = $this->staticRoutes[$cleanPath];
+            
+            if ($this->checkMethod($routeConfig, $requestMethod)) {
+                $this->executeRoute($routeConfig, [], $cleanPath);
+                return;
+            } else {
+                 throw new MethodNotAllowedException("Method $requestMethod not allowed for $cleanPath");
+            }
         }
 
-        // If no static route matches, iterate through dynamic routes
+        // 2. Check Dynamic Routes (Regex)
         foreach ($this->dynamicRoutes as $routePattern => $routeConfig) {
             $params = $this->matchRoute($routePattern, $cleanPath);
 
             if ($params !== false) {
-                $this->executeRoute($routeConfig, $params, $requestMethod, $routePattern);
-                return;
+                $pathMatched = true;
+                if ($this->checkMethod($routeConfig, $requestMethod)) {
+                    $this->executeRoute($routeConfig, $params, $routePattern);
+                    return;
+                } else {
+                     // If we match a dynamic route but method fails, we assume this is the intended resource
+                     // and throw 405.
+                     throw new MethodNotAllowedException("Method $requestMethod not allowed for $cleanPath");
+                }
             }
         }
 
-        // If no route matches after checking both static and dynamic routes
-        error_log("ERROR Router: No route matched for path '{$cleanPath}' (Original: '{$requestPath}') and method '{$requestMethod}'.");
+        // If no route matches at all
+        error_log("Router: 404 Not Found for $cleanPath");
         throw new NotFoundException('Page not found.');
+    }
+
+    protected function checkMethod($routeConfig, $requestMethod)
+    {
+        // If 'methods' is defined, enforce it. If not, allow all (or default to GET/POST implied).
+        // Usually, if not defined, we allow any.
+        if (isset($routeConfig['methods']) && !in_array($requestMethod, $routeConfig['methods'])) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -97,23 +119,31 @@ class Router
         return $path;
     }
 
-    protected function executeRoute($routeConfig, $params, $requestMethod, $matchedPattern)
+    protected function executeRoute($routeConfig, $params, $matchedPattern)
     {
-        // Strict Method Check
-        if (isset($routeConfig['methods']) && !in_array($requestMethod, $routeConfig['methods'])) {
-            error_log("ERROR Router: Method '{$requestMethod}' not allowed for route '{$matchedPattern}'. Expected: " . json_encode($routeConfig['methods']));
-            // Returning here results in 404 behavior if no other route matches, which is acceptable for simple routers.
-            // Ideally, this should throw a MethodNotAllowedException (405).
-            return; 
-        }
-
+        // Middleware Execution
         if (isset($routeConfig['middleware'])) {
             foreach ($routeConfig['middleware'] as $middlewareClass) {
-                $middlewareFQN = "App\\Middleware\\{$middlewareClass}";
-                if (method_exists($middlewareFQN, 'check')) {
+                // Support short names (e.g., 'AuthMiddleware') or FQCN
+                $middlewareFQN = strpos($middlewareClass, '\\') === false 
+                    ? "App\\Middleware\\{$middlewareClass}" 
+                    : $middlewareClass;
+
+                if (!class_exists($middlewareFQN)) {
+                     error_log("WARNING Router: Middleware class '{$middlewareFQN}' not found.");
+                     continue;
+                }
+
+                // 1. Try Instantiated 'handle()' (Modern Pattern)
+                if (method_exists($middlewareFQN, 'handle')) {
+                    $instance = new $middlewareFQN();
+                    $instance->handle();
+                } 
+                // 2. Try Static 'check()' (Legacy Pattern)
+                elseif (method_exists($middlewareFQN, 'check')) {
                     $middlewareFQN::check();
                 } else {
-                    error_log("WARNING Router: Middleware method 'check' not found for '{$middlewareClass}'.");
+                    error_log("WARNING Router: No 'handle' or 'check' method found in middleware '{$middlewareClass}'.");
                 }
             }
         }

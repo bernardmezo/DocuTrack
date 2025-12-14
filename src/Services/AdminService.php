@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\AdminModel;
+use App\Models\Admin\AdminModel;
 use App\Models\Lpj\LpjModel; // Tambahkan LpjModel jika diperlukan untuk operasi LPJ
 use App\Exceptions\BusinessLogicException;
 use Exception;

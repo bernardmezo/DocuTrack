@@ -8,12 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $user_role = $_SESSION['user_role'] ?? 'ppk';
 $user_name = $_SESSION['user_name'] ?? 'PPK User';
 
-function isActivePPK($current_page, $target_path)
-{
-    return ($current_page === $target_path)
-        ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
-        : 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
-}
+
 
 $userData = $_SESSION['user_data'] ?? [];
 $userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';
@@ -71,10 +66,10 @@ $current = $active_page ?? '';
                      <div class="flex items-center justify-center flex-1">
                          <nav class="hidden md:block">
                              <ul class="flex gap-4">
-                                 <li><a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm"></i> Dashboard</a></li>
-                                <li><a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm"></i> Pengajuan Kegiatan</a></li>
-                                <li><a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm"></i> Monitoring</a></li>
-                                <li><a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActivePPK($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm"></i> Riwayat Verifikasi</a></li>
+                                 <li><a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm"></i> Dashboard</a></li>
+                                <li><a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm"></i> Pengajuan Kegiatan</a></li>
+                                <li><a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm"></i> Monitoring</a></li>
+                                <li><a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-4 py-2 rounded-full <?php echo isActive($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm"></i> Riwayat Verifikasi</a></li>
                              </ul>
                          </nav>
                      </div>
@@ -137,10 +132,10 @@ $current = $active_page ?? '';
 
             <div id="mobile-menu" class="md:hidden hidden max-w-7xl mx-auto pt-4 pb-2">
                 <div class="px-2 space-y-1">
-                    <a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
-                    <a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
-                    <a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm w-5 text-center"></i> Monitoring</a>
-                    <a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActivePPK($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm w-5 text-center"></i> Riwayat Verifikasi</a>
+                    <a href="/docutrack/public/ppk/dashboard" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/dashboard'); ?>"><i class="fas fa-th-large text-sm w-5 text-center"></i> Dashboard</a>
+                    <a href="/docutrack/public/ppk/pengajuan-kegiatan" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/pengajuan-kegiatan'); ?>"><i class="fas fa-file-invoice text-sm w-5 text-center"></i> Pengajuan Kegiatan</a>
+                    <a href="/docutrack/public/ppk/monitoring" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/monitoring'); ?>"><i class="fas fa-binoculars text-sm w-5 text-center"></i> Monitoring</a>
+                    <a href="/docutrack/public/ppk/riwayat-verifikasi" class="flex items-center gap-2 px-3 py-2 rounded-md text-base <?php echo isActive($current, '/ppk/riwayat-verifikasi'); ?>"><i class="fas fa-history text-sm w-5 text-center"></i> Riwayat Verifikasi</a>
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Bendahara;
 
 use Exception;
 use DateTime;

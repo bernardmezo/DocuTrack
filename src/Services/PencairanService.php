@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\BendaharaModel;
+use App\Models\Bendahara\BendaharaModel;
 use App\Services\LogStatusService;
 use Exception;
 use DateTime;

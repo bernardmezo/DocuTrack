@@ -3,7 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Core\Controller;
-use App\Models\AdminModel;
+use App\Models\Admin\AdminModel;
 
 // Corrected to use namespaced AdminModel
 
@@ -92,6 +92,6 @@ class DetailKakController extends Controller
             'back_url' => $back_url
         ]);
 
-        $this->view('pages/admin/detail_kak', $data, 'app');
+        $this->view('pages/admin/detail_kak', $data, 'admin');
     }
 }

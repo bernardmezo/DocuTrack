@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use mysqli;
 use Exception;
 
 /**
@@ -9,7 +12,7 @@ use Exception;
  *
  * @category Model
  * @package  DocuTrack
- * @version  2.0.0 - Refactored to remove constructor trap
+ * @version  2.3.0 - Refactored for Strict Dependency Injection
  */
 
 class SuperAdminModel
@@ -17,35 +20,23 @@ class SuperAdminModel
     /**
      * @var mysqli Database connection instance
      */
-    private $db;
+    private mysqli $db;
 
     /**
-     * Constructor - Dependency Injection untuk database connection
-     *
-     * @param mysqli|null $db Database connection (optional for backward compatibility)
+     * Constructor - Strict Dependency Injection
+     * 
+     * @param mysqli $db Database connection instance (Required)
      */
-    public function __construct($db = null)
+    public function __construct(mysqli $db)
     {
-        if ($db !== null) {
-            $this->db = $db;
-        } else {
-            // Fallback to global db() helper function from bootstrap.php
-            if (function_exists('db')) {
-                $this->db = db();
-            } else {
-                throw new \Exception("Database connection not provided to SuperAdminModel. Ensure bootstrap.php is loaded.");
-            }
-        }
+        $this->db = $db;
     }
 
     // =========================================================
     // 1. STATISTIK DASHBOARD
     // =========================================================
 
-    /**
-     * Hitung statistik untuk dashboard Super Admin
-     */
-    public function getDashboardStats()
+    public function getDashboardStats(): array
     {
         $query = "SELECT 
                     COUNT(*) as total,
@@ -71,10 +62,7 @@ class SuperAdminModel
         return ['total' => 0, 'disetujui' => 0, 'ditolak' => 0, 'menunggu' => 0, 'revisi' => 0];
     }
 
-    /**
-     * Ambil daftar jurusan dari database
-     */
-    public function getListJurusan()
+    public function getListJurusan(): array
     {
         $query = "SELECT namaJurusan FROM tbl_jurusan ORDER BY namaJurusan ASC";
 
@@ -90,10 +78,7 @@ class SuperAdminModel
         return $list;
     }
 
-    /**
-     * Ambil daftar prodi dari database
-     */
-    public function getListProdi()
+    public function getListProdi(): array
     {
         $query = "SELECT DISTINCT prodiPenyelenggara as prodi 
                   FROM tbl_kegiatan 
@@ -113,33 +98,47 @@ class SuperAdminModel
     }
 
     // =========================================================
-    // 2. LIST KEGIATAN (KAK) untuk Dashboard
+    // 2. MONITORING KEGIATAN (GLOBAL - GOD MODE)
     // =========================================================
 
     /**
-     * Ambil list kegiatan untuk Dashboard Super Admin
+     * Get ALL activities for Super Admin monitoring (God Mode)
+     * 
+     * @param int $limit
+     * @return array
      */
-    public function getListKegiatan($limit = 20)
+    public function getGlobalMonitoringKegiatan(int $limit = 50): array
     {
         $query = "SELECT 
                     k.kegiatanId as id,
                     k.namaKegiatan as nama,
-                    k.pemilikKegiatan as nama_mahasiswa,
+                    k.pemilikKegiatan as pengusul,
                     k.nimPelaksana as nim,
                     k.jurusanPenyelenggara as jurusan,
                     k.prodiPenyelenggara as prodi,
                     k.createdAt as created_at,
-                    DATE(k.createdAt) as tanggal,
-                    k.pemilikKegiatan as pengusul,
+                    k.statusUtamaId,
+                    k.posisiId,
                     
+                    -- Status Text Logic
                     CASE 
-                        WHEN k.statusUtamaId = 1 THEN 'menunggu'
-                        WHEN k.statusUtamaId = 2 THEN 'revisi'
-                        WHEN k.statusUtamaId = 3 THEN 'disetujui'
-                        WHEN k.statusUtamaId = 4 THEN 'ditolak'
-                        ELSE 'menunggu'
-                    END as status
+                        WHEN k.statusUtamaId = 3 THEN 'Disetujui'
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.statusUtamaId = 2 THEN 'Revisi'
+                        ELSE 'Menunggu'
+                    END as status,
                     
+                    -- Detailed Position/Step Logic
+                    CASE 
+                        WHEN k.tanggalPencairan IS NOT NULL THEN 'LPJ'
+                        WHEN k.posisiId = 5 THEN 'Dana Cair'
+                        WHEN k.posisiId = 4 THEN 'ACC PPK'
+                        WHEN k.posisiId = 3 THEN 'ACC WD'
+                        WHEN k.posisiId = 2 THEN 'Verifikasi'
+                        WHEN k.posisiId = 1 THEN 'Pengajuan'
+                        ELSE 'Draft'
+                    END as posisi_sekarang
+
                   FROM tbl_kegiatan k
                   ORDER BY k.createdAt DESC
                   LIMIT ?";
@@ -152,7 +151,6 @@ class SuperAdminModel
         $data = [];
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                $row['jurusan'] = $row['jurusan'] ?? '-';
                 $data[] = $row;
             }
         }
@@ -161,33 +159,36 @@ class SuperAdminModel
     }
 
     // =========================================================
-    // 3. LIST LPJ untuk Dashboard
+    // 3. MONITORING LPJ (GLOBAL - GOD MODE)
     // =========================================================
 
     /**
-     * Ambil list LPJ untuk Dashboard
+     * Get ALL LPJs for Super Admin monitoring (God Mode)
+     * 
+     * @param int $limit
+     * @return array
      */
-    public function getListLPJ($limit = 10)
+    public function getGlobalMonitoringLPJ(int $limit = 50): array
     {
         $query = "SELECT 
                     l.lpjId as id,
-                    k.namaKegiatan as nama,
-                    k.pemilikKegiatan as nama_mahasiswa,
-                    k.nimPelaksana as nim,
-                    k.prodiPenyelenggara as prodi,
-                    k.jurusanPenyelenggara as jurusan,
-                    l.submittedAt as tanggal_pengajuan,
+                    l.submittedAt as tanggal_upload,
+                    l.approvedAt,
                     l.grandTotalRealisasi as total_realisasi,
+                    k.namaKegiatan as nama_kegiatan,
+                    k.pemilikKegiatan as pengusul,
+                    k.jurusanPenyelenggara as jurusan,
                     
                     CASE 
                         WHEN l.approvedAt IS NOT NULL THEN 'Disetujui'
-                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                        WHEN l.komentarRevisi IS NOT NULL THEN 'Revisi'
+                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu Verifikasi'
                         ELSE 'Draft'
-                    END as status
-                    
+                    END as status_lpj
+
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
-                  ORDER BY l.createdAt DESC
+                  ORDER BY l.submittedAt DESC
                   LIMIT ?";
 
         $stmt = mysqli_prepare($this->db, $query);
@@ -206,116 +207,29 @@ class SuperAdminModel
     }
 
     // =========================================================
-    // 4. MONITORING - List Proposal dengan Filter
+    // 4. KELOLA AKUN - List Users
     // =========================================================
 
-    /**
-     * Ambil semua proposal untuk monitoring dengan filter
-     */
-    public function getProposalMonitoring($filters = [])
+    public function getAllUsers(): array
     {
-        $whereClause = "WHERE 1=1";
-        $params = [];
-        $types = "";
+        // Safe check for columns existence
+        $checkCols = mysqli_query($this->db, "SHOW COLUMNS FROM tbl_user LIKE 'status'");
+        $hasStatus = mysqli_num_rows($checkCols) > 0;
+        
+        $checkColsCreated = mysqli_query($this->db, "SHOW COLUMNS FROM tbl_user LIKE 'created_at'");
+        $hasCreatedAt = mysqli_num_rows($checkColsCreated) > 0;
 
-        // Filter status
-        if (!empty($filters['status']) && $filters['status'] !== 'semua') {
-            $statusMap = [
-                'approved' => 3,
-                'ditolak' => 4,
-                'in process' => 1,
-                'menunggu' => 1
-            ];
-            $statusId = $statusMap[strtolower($filters['status'])] ?? null;
-            if ($statusId) {
-                $whereClause .= " AND k.statusUtamaId = ?";
-                $params[] = $statusId;
-                $types .= "i";
-            }
-        }
+        $statusField = $hasStatus ? "u.status" : "'Aktif' as status";
+        $dateField = $hasCreatedAt ? "u.created_at" : "NOW()";
 
-        // Filter jurusan
-        if (!empty($filters['jurusan']) && $filters['jurusan'] !== 'semua') {
-            $whereClause .= " AND k.jurusanPenyelenggara = ?";
-            $params[] = $filters['jurusan'];
-            $types .= "s";
-        }
-
-        // Filter search
-        if (!empty($filters['search'])) {
-            $whereClause .= " AND (k.namaKegiatan LIKE ? OR k.pemilikKegiatan LIKE ?)";
-            $searchTerm = "%" . $filters['search'] . "%";
-            $params[] = $searchTerm;
-            $params[] = $searchTerm;
-            $types .= "ss";
-        }
-
-        $query = "SELECT 
-                    k.kegiatanId as id,
-                    k.namaKegiatan as nama,
-                    CONCAT(k.pemilikKegiatan, ' (', k.nimPelaksana, ')') as pengusul,
-                    k.jurusanPenyelenggara as jurusan,
-                    k.posisiId,
-                    k.statusUtamaId,
-                    
-                    -- Status text
-                    CASE 
-                        WHEN k.statusUtamaId = 3 THEN 'Approved'
-                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                        WHEN k.statusUtamaId = 2 THEN 'Revisi'
-                        ELSE 'In Process'
-                    END as status,
-                    
-                    -- Tahap sekarang berdasarkan posisiId
-                    CASE 
-                        WHEN k.tanggalPencairan IS NOT NULL THEN 'LPJ'
-                        WHEN k.posisiId = 5 THEN 'Dana Cair'
-                        WHEN k.posisiId = 4 THEN 'ACC PPK'
-                        WHEN k.posisiId = 3 THEN 'ACC WD'
-                        WHEN k.posisiId = 2 THEN 'Verifikasi'
-                        ELSE 'Pengajuan'
-                    END as tahap_sekarang
-                    
-                  FROM tbl_kegiatan k
-                  $whereClause
-                  ORDER BY k.createdAt DESC";
-
-        if (!empty($params)) {
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, $types, ...$params);
-            mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
-        } else {
-            $result = mysqli_query($this->db, $query);
-        }
-
-        $data = [];
-        if ($result) {
-            while ($row = mysqli_fetch_assoc($result)) {
-                $data[] = $row;
-            }
-        }
-
-        return $data;
-    }
-
-    // =========================================================
-    // 5. KELOLA AKUN - List Users
-    // =========================================================
-
-    /**
-     * Ambil semua user untuk kelola akun
-     */
-    public function getAllUsers()
-    {
         $query = "SELECT 
                     u.userId as id,
                     u.nama,
                     u.email,
                     r.namaRole as role,
                     u.namaJurusan as jurusan,
-                    'Aktif' as status,
-                    u.createdAt as last_login
+                    $statusField,
+                    $dateField as last_login
                   FROM tbl_user u
                   LEFT JOIN tbl_role r ON u.roleId = r.roleId
                   ORDER BY u.userId ASC";
@@ -333,10 +247,7 @@ class SuperAdminModel
         return $data;
     }
 
-    /**
-     * Ambil user berdasarkan ID
-     */
-    public function getUserById($userId)
+    public function getUserById(int $userId): ?array
     {
         $query = "SELECT u.*, r.namaRole 
                   FROM tbl_user u
@@ -347,35 +258,42 @@ class SuperAdminModel
         mysqli_stmt_bind_param($stmt, "i", $userId);
         mysqli_stmt_execute($stmt);
 
-        return mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+
+        return $data ?: null;
     }
 
-    /**
-     * Create new user
-     */
-    public function createUser($data)
+    public function createUser(array $data): bool
     {
-        $query = "INSERT INTO tbl_user (nama, email, password, roleId, namaJurusan) 
-                  VALUES (?, ?, ?, ?, ?)";
-
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param(
-            $stmt,
-            "sssis",
+        $fields = "nama, email, password, roleId, namaJurusan";
+        $placeholders = "?, ?, ?, ?, ?";
+        $types = "sssis";
+        $values = [
             $data['nama'],
             $data['email'],
             $data['password'],
-            $data['roleId'],
-            $data['namaJurusan']
-        );
+            (int)$data['roleId'],
+            $data['namaJurusan'] ?? ''
+        ];
+
+        $checkCols = mysqli_query($this->db, "SHOW COLUMNS FROM tbl_user LIKE 'status'");
+        if (mysqli_num_rows($checkCols) > 0 && isset($data['status'])) {
+            $fields .= ", status";
+            $placeholders .= ", ?";
+            $types .= "s";
+            $values[] = $data['status'];
+        }
+
+        $query = "INSERT INTO tbl_user ($fields) VALUES ($placeholders)";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, $types, ...$values);
 
         return mysqli_stmt_execute($stmt);
     }
 
-    /**
-     * Update user
-     */
-    public function updateUser($userId, $data)
+    public function updateUser(int $userId, array $data): bool
     {
         $fields = [];
         $values = [];
@@ -401,13 +319,20 @@ class SuperAdminModel
 
         if (isset($data['roleId'])) {
             $fields[] = "roleId = ?";
-            $values[] = $data['roleId'];
+            $values[] = (int)$data['roleId'];
             $types .= "i";
         }
 
         if (isset($data['namaJurusan'])) {
             $fields[] = "namaJurusan = ?";
             $values[] = $data['namaJurusan'];
+            $types .= "s";
+        }
+
+        $checkCols = mysqli_query($this->db, "SHOW COLUMNS FROM tbl_user LIKE 'status'");
+        if (mysqli_num_rows($checkCols) > 0 && isset($data['status'])) {
+            $fields[] = "status = ?";
+            $values[] = $data['status'];
             $types .= "s";
         }
 
@@ -426,10 +351,7 @@ class SuperAdminModel
         return mysqli_stmt_execute($stmt);
     }
 
-    /**
-     * Delete user
-     */
-    public function deleteUser($userId)
+    public function deleteUser(int $userId): bool
     {
         $query = "DELETE FROM tbl_user WHERE userId = ?";
 
@@ -439,10 +361,7 @@ class SuperAdminModel
         return mysqli_stmt_execute($stmt);
     }
 
-    /**
-     * Ambil semua role
-     */
-    public function getAllRoles()
+    public function getAllRoles(): array
     {
         $query = "SELECT roleId, namaRole FROM tbl_role ORDER BY roleId ASC";
 
@@ -462,61 +381,49 @@ class SuperAdminModel
     // 6. IKU (Indikator Kinerja Utama)
     // =========================================================
 
-    /**
-     * Ambil semua IKU dari tabel tbl_iku
-     * Note: Jika tabel belum ada, return data default
-     */
-    public function getAllIKU()
+    public function getAllIKU(): array
     {
         // Check if table exists
         $checkTable = mysqli_query($this->db, "SHOW TABLES LIKE 'tbl_iku'");
 
         if (mysqli_num_rows($checkTable) == 0) {
-            // Return default IKU data if table doesn't exist
-            return [
-                ['id' => 1, 'nama' => 'Mendapat Pekerjaan', 'deskripsi' => 'Lulusan berhasil mendapat pekerjaan'],
-                ['id' => 2, 'nama' => 'Melanjutkan Studi', 'deskripsi' => 'Lulusan melanjutkan studi ke jenjang lebih tinggi'],
-                ['id' => 3, 'nama' => 'Menjadi Wiraswasta', 'deskripsi' => 'Lulusan membuka usaha sendiri'],
-                ['id' => 4, 'nama' => 'Menjalankan kegiatan pembelajaran di luar program studi', 'deskripsi' => 'Mahasiswa mengambil SKS di luar prodi'],
-                ['id' => 5, 'nama' => 'Dosen berkegiatan di luar kampus', 'deskripsi' => 'Dosen praktisi atau magang industri'],
-                ['id' => 6, 'nama' => 'Praktisi mengajar di dalam kampus', 'deskripsi' => 'Kelas kolaborasi dengan praktisi'],
-                ['id' => 7, 'nama' => 'Hasil kerja dosen digunakan oleh masyarakat', 'deskripsi' => 'Pengabdian masyarakat atau paten'],
-                ['id' => 8, 'nama' => 'Program studi bekerjasama dengan mitra kelas dunia', 'deskripsi' => 'Kerjasama internasional'],
-            ];
+            return [];
         }
 
-        // NOTE: tbl_iku doesn't exist in current schema
-        // Return mock data for now until IKU management is implemented
+        $query = "SELECT id, indikator_kinerja as nama, deskripsi FROM tbl_iku ORDER BY created_at DESC";
+        $result = mysqli_query($this->db, $query);
+        $data = [];
+
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $data[] = $row;
+            }
+        }
+
         return $data;
     }
 
-    /**
-     * Create IKU - DISABLED: tbl_iku doesn't exist in schema
-     */
-    public function createIKU($nama, $deskripsi)
+    public function createIKU(string $nama, string $deskripsi): bool
     {
-        // NOTE: tbl_iku table not implemented yet
-        error_log('superAdminModel::createIKU - Table tbl_iku does not exist in current schema');
-        return false;
+        $query = "INSERT INTO tbl_iku (indikator_kinerja, deskripsi) VALUES (?, ?)";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "ss", $nama, $deskripsi);
+        return mysqli_stmt_execute($stmt);
     }
 
-    /**
-     * Update IKU - DISABLED: tbl_iku doesn't exist in schema
-     */
-    public function updateIKU($id, $nama, $deskripsi)
+    public function updateIKU(int $id, string $nama, string $deskripsi): bool
     {
-        // NOTE: tbl_iku table not implemented yet
-        error_log('superAdminModel::updateIKU - Table tbl_iku does not exist in current schema');
-        return false;
+        $query = "UPDATE tbl_iku SET indikator_kinerja = ?, deskripsi = ? WHERE id = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "ssi", $nama, $deskripsi, $id);
+        return mysqli_stmt_execute($stmt);
     }
 
-    /**
-     * Delete IKU - DISABLED: tbl_iku doesn't exist in schema
-     */
-    public function deleteIKU($id)
+    public function deleteIKU(int $id): bool
     {
-        // NOTE: tbl_iku table not implemented yet
-        error_log('superAdminModel::deleteIKU - Table tbl_iku does not exist in current schema');
-        return false;
+        $query = "DELETE FROM tbl_iku WHERE id = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $id);
+        return mysqli_stmt_execute($stmt);
     }
 }

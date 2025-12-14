@@ -7,12 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'];
 
-function isActive($current, $target)
-{
-    return (strpos($current, $target) !== false)
-        ? 'nav-link-base nav-link-active'
-        : 'nav-link-base nav-link-inactive';
-}
+
 
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
@@ -107,13 +102,13 @@ switch (strtolower($userRole)) {
                             <ul class="flex gap-4">
                                 <li>
                                     <a href="/docutrack/public/direktur/dashboard" 
-                                    class="<?= isActive($current, '/direktur/dashboard'); ?>">
+                                    class="<?= isActive($current, '/direktur/dashboard', 'nav-link-base nav-link-active', 'nav-link-base nav-link-inactive'); ?>">
                                         <i class="fas fa-th-large text-sm"></i> Dashboard
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/direktur/monitoring" 
-                                    class="<?= isActive($current, '/direktur/monitoring'); ?>">
+                                    class="<?= isActive($current, '/direktur/monitoring', 'nav-link-base nav-link-active', 'nav-link-base nav-link-inactive'); ?>">
                                         <i class="fas fa-desktop text-sm"></i> Monitoring
                                     </a>
                                 </li>

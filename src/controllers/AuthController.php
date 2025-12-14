@@ -53,9 +53,12 @@ class AuthController extends Controller
             $password = $data['login_password'];
             $role_input = $data['login_role'] ?? '';
 
+            error_log("[AuthDebug] Login attempt for: " . $email);
+
             $result = $this->authService->login($email, $password);
 
             if (!$result['success']) {
+                error_log("[AuthDebug] Login failed for {$email}: " . $result['message']);
                 if (function_exists('logLogin')) {
                     logLogin(0, $email, false, $result['message']);
                 }
@@ -64,9 +67,13 @@ class AuthController extends Controller
             }
 
             $user = $result['user'];
+            error_log("[AuthDebug] User found: ID={$user['userId']}, Role={$user['namaRole']}");
 
             $normalized_role = strtolower(str_replace([' ', '_'], '-', $user['namaRole']));
+            error_log("[AuthDebug] Normalized Role: {$normalized_role}");
+
             if (!empty($role_input) && $role_input !== $normalized_role) {
+                error_log("[AuthDebug] Role mismatch. Input: {$role_input}, Actual: {$normalized_role}");
                 throw new ValidationException("Akun ini tidak terdaftar sebagai " . ucfirst($role_input), ['login_role' => ["Peran yang dipilih tidak sesuai."]]);
             }
 
@@ -94,6 +101,7 @@ class AuthController extends Controller
                 logLogin($user['userId'], $email, true);
             }
 
+            error_log("[AuthDebug] Login successful. Redirecting to role dashboard.");
             $this->redirectBasedOnRole($normalized_role, $user);
         } catch (ValidationException $e) {
             // The global exception handler will now catch this and redirect.

@@ -1,9 +1,15 @@
-    </main>
 </div>
 
 <!-- Vendor JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Generic Helper Scripts -->
+<script src="/docutrack/public/assets/js/helpers.js"></script>
+
+<!-- Custom Page-specific Scripts -->
+<script src="/docutrack/public/assets/js/page-scripts/notifikasi.js"></script>
+<script src="/docutrack/public/assets/js/superadmin/dashboard.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -43,12 +49,6 @@
     }
     });
 </script>
-
-
-
-
-<!-- Custom Page-specific Scripts -->
-<script src="/docutrack/public/assets/js/page-scripts/notifikasi.js"></script>
 
 </body>
 </html>

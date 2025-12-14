@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Admin;
 
 use Exception;
 
@@ -763,10 +763,6 @@ class AdminModel
         mysqli_stmt_close($stmt);
         return $result;
     }
-
-    // =========================================================
-    // REFACTORED METHODS - MVC Compliance (Added Dec 2025)
-    // =========================================================
 
     /**
      * Lock kegiatan untuk update dengan FOR UPDATE clause

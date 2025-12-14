@@ -132,6 +132,10 @@ if (file_exists(DOCUTRACK_ROOT . '/src/helpers/debug_logger_helper.php')) {
     require_once DOCUTRACK_ROOT . '/src/helpers/debug_logger_helper.php';
 }
 
+if (file_exists(DOCUTRACK_ROOT . '/src/helpers/url_helper.php')) {
+    require_once DOCUTRACK_ROOT . '/src/helpers/url_helper.php';
+}
+
 return [
     'database' => $database,
     'connection' => $conn,

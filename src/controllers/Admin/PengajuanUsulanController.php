@@ -39,7 +39,7 @@ class PengajuanUsulanController extends Controller
             'error_message' => $error_msg
         ]);
 
-        $this->view('pages/admin/pengajuan_usulan', $data, 'app');
+        $this->view('pages/admin/pengajuan_usulan', $data, 'admin');
     }
 
     /**
@@ -71,7 +71,7 @@ class PengajuanUsulanController extends Controller
             'back_url' => '/docutrack/public/admin/pengajuan-usulan'
         ]);
 
-        $this->view('pages/admin/pengajuan_usulan_detail', $data, 'app');
+        $this->view('pages/admin/pengajuan_usulan_detail', $data, 'admin');
     }
 
     /**
@@ -96,7 +96,7 @@ class PengajuanUsulanController extends Controller
             'back_url' => '/docutrack/public/admin/pengajuan-usulan'
         ]);
 
-        $this->view('pages/admin/pengajuan_usulan_edit', $data, 'app');
+        $this->view('pages/admin/pengajuan_usulan_edit', $data, 'admin');
     }
 
     /**

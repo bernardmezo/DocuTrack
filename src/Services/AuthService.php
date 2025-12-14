@@ -37,7 +37,12 @@ class AuthService
 
     public function getUserProfile($userId)
     {
-        return $this->userModel->getUserById($userId);
+        try {
+            return $this->userModel->getUserById($userId);
+        } catch (Exception $e) {
+            error_log("AuthService Error fetching user profile for ID {$userId}: " . $e->getMessage());
+            return null;
+        }
     }
 
     public function updateUserProfile(int $userId, array $data): bool

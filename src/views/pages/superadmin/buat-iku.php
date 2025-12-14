@@ -42,7 +42,7 @@ function build_url_iku($params = [])
             </div>
             
             <!-- Filters -->
-            <div class="flex flex-col sm:flex-row gap-4">
+            <form method="GET" action="" class="flex flex-col sm:flex-row gap-4">
                 <div class="relative flex-1">
                     <input type="text" id="search-iku" name="search" 
                            value="<?= htmlspecialchars($filters['search']) ?>" 
@@ -52,13 +52,14 @@ function build_url_iku($params = [])
                            autocomplete="off">
                     <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
+                <button type="submit" class="hidden"></button> <!-- Implicit submit -->
                 
-                <button onclick="toggleHiddenList()" id="btnToggleHidden" class="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm flex items-center gap-2 justify-center min-w-[180px]">
+                <button type="button" onclick="toggleHiddenList()" id="btnToggleHidden" class="px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-100 hover:border-gray-300 transition-all shadow-sm flex items-center gap-2 justify-center min-w-[180px]">
                     <i class="fas fa-eye-slash"></i>
                     <span>Lihat Tersembunyi</span>
                     <span id="hiddenCount" class="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-xs font-bold">0</span>
                 </button>
-            </div>
+            </form>
         </div>
 
         <!-- Table -->
@@ -114,6 +115,9 @@ function build_url_iku($params = [])
                                     <div class="flex items-center justify-center gap-2">
                                         <button onclick="openModalEdit(<?= $item['id'] ?>, '<?= addslashes(htmlspecialchars($item['nama'])) ?>', '<?= addslashes(htmlspecialchars($item['deskripsi'] ?? '')) ?>')" class="px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-all shadow-sm flex items-center gap-1.5" title="Edit">
                                             <i class="fas fa-pen"></i> Edit
+                                        </button>
+                                        <button onclick="deleteIku(<?= $item['id'] ?>)" class="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 transition-all shadow-sm flex items-center gap-1.5" title="Hapus">
+                                            <i class="fas fa-trash-alt"></i>
                                         </button>
                                         <button onclick="toggleIkuRow(<?= $item['id'] ?>)" class="btn-toggle-visibility p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Sembunyikan" data-iku-id="<?= $item['id'] ?>">
                                             <i class="fas fa-eye"></i>
@@ -185,7 +189,7 @@ function build_url_iku($params = [])
             </div>
         </div>
         
-        <form id="formTambah" onsubmit="submitTambah(event)" class="p-6">
+        <form id="formTambah" method="POST" action="/docutrack/public/superadmin/buat-iku/store" class="p-6">
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Indikator</label>
@@ -233,7 +237,7 @@ function build_url_iku($params = [])
             </div>
         </div>
         
-        <form id="formEdit" onsubmit="submitEdit(event)" class="p-6">
+        <form id="formEdit" method="POST" action="" class="p-6">
             <input type="hidden" name="id" id="editId">
             <div class="space-y-4">
                 <div>
@@ -319,6 +323,13 @@ function build_url_iku($params = [])
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     updateStatistics();
+    
+    // Auto-search submit on enter
+    document.getElementById('search-iku').addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') {
+            this.form.submit();
+        }
+    });
 });
 
 // Toast Notification Function (sama seperti kelola-akun)
@@ -452,22 +463,6 @@ function closeModalTambah() {
     modal.classList.remove('flex');
 }
 
-function submitTambah(event) {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const nama = formData.get('nama');
-    const deskripsi = formData.get('deskripsi');
-    
-    // Simulasi proses simpan
-    // Di implementasi real, gunakan AJAX/Fetch ke backend
-    setTimeout(() => {
-        closeModalTambah();
-        showToast('Berhasil menambahkan IKU: ' + nama, 'success');
-        // Reload halaman atau update list secara dinamis
-        // location.reload();
-    }, 500);
-}
-
 // Fungsi Modal Edit
 function openModalEdit(id, nama, deskripsi) {
     const modal = document.getElementById('modalEdit');
@@ -477,6 +472,8 @@ function openModalEdit(id, nama, deskripsi) {
     document.getElementById('editId').value = id;
     document.getElementById('editNama').value = nama;
     document.getElementById('editDeskripsi').value = deskripsi;
+    
+    document.getElementById('formEdit').action = '/docutrack/public/superadmin/buat-iku/update/' + id;
 }
 
 function closeModalEdit() {
@@ -485,20 +482,14 @@ function closeModalEdit() {
     modal.classList.remove('flex');
 }
 
-function submitEdit(event) {
-    event.preventDefault();
-    const formData = new FormData(event.target);
-    const id = formData.get('id');
-    const nama = formData.get('nama');
-    
-    // Simulasi proses update
-    // Di implementasi real, gunakan AJAX/Fetch ke backend
-    setTimeout(() => {
-        closeModalEdit();
-        showToast('Berhasil mengupdate IKU ID ' + id + ': ' + nama, 'success');
-        // Reload halaman atau update list secara dinamis
-        // location.reload();
-    }, 500);
+function deleteIku(id) {
+    if(confirm('Apakah Anda yakin ingin menghapus IKU ini?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/docutrack/public/superadmin/buat-iku/delete/' + id;
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 
 // Fungsi Toggle Show/Hide Row
