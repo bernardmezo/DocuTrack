@@ -271,7 +271,29 @@ if (!function_exists('formatRupiah')) {
                     endforeach;
                 else :
                     ?>
-                    <p class="text-sm text-gray-500 italic">Tidak ada data RAB untuk ditampilkan.</p>
+                    <div class="p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
+                        <div>
+                            <h4 class="text-lg font-semibold text-yellow-800 mb-2">Data RAB Tidak Ditemukan untuk lpj dengan id <?php echo htmlspecialchars($lpj_id); ?></h4>
+                            <p class="text-sm text-yellow-700 mb-3">
+                                Tidak ada data Rencana Anggaran Biaya (RAB) untuk kegiatan dengan KAK <?php echo htmlspecialchars($kak_id); ?> ini. 
+                                Kemungkinan penyebab:
+                            </p>
+                            <p class="font-semibold text-yellow-700">Penyebab Umum: isi dari rabnya <?php echo htmlspecialchars(json_encode($rab_items)); ?>
+                                
+                            </p>
+                            <ul class="text-sm text-yellow-700 list-disc list-inside space-y-1">
+                                <li>KAK (Kerangka Acuan Kegiatan) belum dibuat</li>
+                                <li>RAB belum diinput pada saat pengajuan KAK</li>
+                                <li>Data kegiatan belum lengkap</li>
+                            </ul>
+                            <p class="text-sm text-yellow-700 mt-3">
+                                Silakan hubungi admin atau pastikan KAK sudah dibuat dengan lengkap sebelum melakukan upload LPJ.
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 <?php endif; ?>
                 
                 <div class="flex justify-end mt-6 gap-4">

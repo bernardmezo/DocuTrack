@@ -10,6 +10,7 @@ use App\Exceptions\ValidationException;
 use App\Exceptions\BusinessLogicException;
 use DateTimeImmutable;
 use Exception;
+use mysqli;
 
 /**
  * KegiatanService - Business logic untuk Kegiatan
@@ -550,7 +551,7 @@ class KegiatanService
                     $queryKAK = "INSERT INTO tbl_kak
                         (kegiatanId, iku, gambaranUmum, penerimaManfaat, metodePelaksanaan, tglPembuatan)
                         VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = mysqli_prepare($this->db, $query);
+        $stmt = mysqli_prepare($this->db, $queryKAK);
         mysqli_stmt_bind_param(
             $stmt,
             "isssss",
@@ -656,6 +657,8 @@ class KegiatanService
                 $harga      = floatval($item['harga'] ?? 0);
                 $totalHarga = ($vol1 * $vol2) * $harga;
 
+                $totalHargaRp = $this->formatRupiahInput($totalHarga);
+
                 $this->rabItemModel->insertRabItem(
                     $kakId,
                     $kategoriId,
@@ -666,11 +669,20 @@ class KegiatanService
                     $vol1,
                     $vol2,
                     $harga,
-                    $totalHarga
+                    $totalHargaRp
                 );
             }
         }
     }
+
+    /**
+     * Format input rupiah dengan titik pemisah ribuan
+     */
+    private function formatRupiahInput($value) {
+        $value = preg_replace('/\D/', '', $value);
+        return number_format($value, 0, ',', '.');
+    }
+
 
     /**
      * Invalidate dashboard cache

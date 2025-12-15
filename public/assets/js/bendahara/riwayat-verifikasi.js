@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (daftarProdi) {
             return daftarProdi.some(p => namaProdi.toLowerCase().includes(p.toLowerCase()));
         }
-        return false;
+        return false;z
     }
     
     // Configuration

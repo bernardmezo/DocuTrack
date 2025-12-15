@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Exception;
+use mysqli;
 
 /**
  * AdminModel - Admin Management Model
@@ -173,35 +174,34 @@ class AdminModel
     public function getDashboardLPJ()
     {
         $query = "SELECT 
-                    l.lpjId as id,
-                    k.namaKegiatan as nama,
-                    k.pemilikKegiatan as nama_mahasiswa,
-                    k.nimPelaksana as nim,
-                    k.prodiPenyelenggara as prodi,
-                    k.jurusanPenyelenggara as jurusan,
-                    l.submittedAt as tanggal_pengajuan,
-                    l.approvedAt,
-                    l.tenggatLpj,
-                    CASE 
-                        WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
-                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
-                        WHEN EXISTS (
-                            SELECT 1 FROM tbl_lpj_item li 
-                            WHERE li.lpjId = l.lpjId 
-                            AND (li.fileBukti IS NULL OR li.fileBukti = '')
-                        ) THEN 'Menunggu_Upload'
-                        ELSE 'Siap_Submit'
-                    END as status
-                  FROM tbl_lpj l
-                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
-                  ORDER BY 
-                    CASE 
-                        WHEN l.approvedAt IS NULL AND l.submittedAt IS NOT NULL THEN 1
-                        WHEN l.approvedAt IS NULL AND l.submittedAt IS NULL THEN 2
-                        ELSE 3
-                    END,
-                    l.submittedAt DESC";
-
+                l.lpjId as id,
+                k.namaKegiatan as nama,
+                k.pemilikKegiatan as nama_mahasiswa,
+                k.nimPelaksana as nim,
+                k.prodiPenyelenggara as prodi,
+                k.jurusanPenyelenggara as jurusan,
+                l.submittedAt as tanggal_pengajuan,
+                l.approvedAt,
+                l.tenggatLpj,
+                CASE 
+                    -- Priority 1: Sudah disetujui
+                    WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
+                    
+                    -- Priority 2: Sudah submit, menunggu approval
+                    WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                    
+                    -- Priority 3: Belum submit = masih menunggu upload
+                    ELSE 'Menunggu_Upload'
+                END as status
+              FROM tbl_lpj l
+              JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+              ORDER BY 
+                CASE 
+                    WHEN l.approvedAt IS NULL AND l.submittedAt IS NOT NULL THEN 1
+                    WHEN l.approvedAt IS NULL AND l.submittedAt IS NULL THEN 2
+                    ELSE 3
+                END,
+                l.submittedAt DESC";
         $result = mysqli_query($this->db, $query);
         $data = [];
 
@@ -217,47 +217,55 @@ class AdminModel
      * Mengambil detail LPJ.
      */
     public function getDetailLPJ($lpjId)
-    {
-        $query = "SELECT 
-                    l.*,
-                    k.namaKegiatan as nama_kegiatan,
-                    k.pemilikKegiatan as pengusul,
-                    k.nimPelaksana as nim,
-                    k.prodiPenyelenggara as prodi,
-                    k.jurusanPenyelenggara as jurusan,
-                    k.kegiatanId,
-                    kak.kakId,
-                    CASE 
-                        -- Priority 1: Cek apakah sudah approved (harus setelah submitted)
-                        WHEN l.approvedAt IS NOT NULL AND l.submittedAt IS NOT NULL THEN 'Setuju'
-                        -- Priority 2: Cek apakah sudah submitted (menunggu approval)
-                        WHEN l.submittedAt IS NOT NULL AND l.approvedAt IS NULL THEN 'Menunggu'
-                        -- Priority 3: Jika ada item dengan bukti kosong (belum upload semua)
-                        WHEN EXISTS (
-                            SELECT 1 FROM tbl_lpj_item li 
-                            WHERE li.lpjId = l.lpjId 
-                            AND (li.fileBukti IS NULL OR li.fileBukti = '')
-                        ) THEN 'Menunggu_Upload'
-                        -- Priority 4: Semua bukti sudah ada, siap submit
-                        WHEN EXISTS (
-                            SELECT 1 FROM tbl_lpj_item li 
-                            WHERE li.lpjId = l.lpjId
-                        ) THEN 'Siap_Submit'
-                        -- Priority 5: Belum ada item sama sekali (LPJ baru dibuat)
-                        ELSE 'Belum_Ada_Item'
-                    END as status
-                  FROM tbl_lpj l
-                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
-                  LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
-                  WHERE l.lpjId = ?";
+{
+    $query = "SELECT 
+                l.*,
+                k.namaKegiatan as nama_kegiatan,
+                k.pemilikKegiatan as pengusul,
+                k.nimPelaksana as nim,
+                k.prodiPenyelenggara as prodi,
+                k.jurusanPenyelenggara as jurusan,
+                k.kegiatanId,
+                kak.kakId as kakId,
+                CASE 
+                    WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
+                    WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                    ELSE 'Menunggu_Upload'
+                END as status
+            FROM tbl_lpj l
+            JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+            INNER JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId  -- ✅ Ubah LEFT JOIN ke INNER JOIN
+            WHERE l.lpjId = ?";
 
-        $stmt = mysqli_prepare($this->db, $query);
-        mysqli_stmt_bind_param($stmt, "i", $lpjId);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        return mysqli_fetch_assoc($result);
+    $stmt = mysqli_prepare($this->db, $query);
+    
+    if (!$stmt) {
+        error_log("❌ getDetailLPJ: Prepare failed - " . mysqli_error($this->db));
+        return null;
     }
+
+    mysqli_stmt_bind_param($stmt, "i", $lpjId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    $data = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+    
+    // ✅ Validasi data
+    if (!$data) {
+        error_log("❌ getDetailLPJ: Data tidak ditemukan untuk lpjId = $lpjId");
+        return null;
+    }
+    
+    if (empty($data['kakId'])) {
+        error_log("❌ CRITICAL: KAK tidak ditemukan untuk kegiatanId = {$data['kegiatanId']}");
+        return null; // ✅ Return null jika kakId kosong
+    }
+    
+    error_log("✅ getDetailLPJ: lpjId=$lpjId, kegiatanId={$data['kegiatanId']}, kakId={$data['kakId']}");
+    
+    return $data;
+}
 
     /**
      * Mengambil item RAB untuk LPJ dengan data bukti yang sudah diupload.
@@ -267,34 +275,52 @@ class AdminModel
      * @param int|null $lpjId ID LPJ (optional, untuk join dengan lpj_item)
      */
     public function getRABForLPJ($kakId, $lpjId = null)
-    {
-        if ($lpjId) {
-            // JOIN dengan tbl_lpj_item untuk mendapatkan bukti yang sudah diupload
-            $query = "SELECT 
-                        r.rabItemId as id,
-                        r.uraian,
-                        r.rincian,
-                        r.vol1,
-                        r.sat1,
-                        r.vol2,
-                        r.sat2,
-                        r.harga as harga_satuan,
-                        r.totalHarga as harga_plan,
-                        li.fileBukti as bukti_file,
-                        li.komentar as komentar,
-                        li.lpjItemId as lpj_item_id,
-                        cat.namaKategori
-                    FROM tbl_rab r
-                    JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
-                    LEFT JOIN tbl_lpj_item li ON r.rabItemId = li.lpjItemId AND li.lpjId = ?
-                    WHERE r.kakId = ?
-                    ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+{
+    // ✅ Log debugging
+    error_log("=== getRABForLPJ Called ===");
+    error_log("kakId: " . $kakId);
+    error_log("lpjId: " . ($lpjId ?? 'NULL'));
 
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "ii", $lpjId, $kakId);
-        } else {
-            // Query original tanpa JOIN lpj_item
-            $query = "SELECT 
+    // ✅ Validasi input
+    if (!$kakId || $kakId <= 0) {
+        error_log("❌ Invalid kakId: " . $kakId);
+        return [];
+    }
+
+    if ($lpjId && $lpjId > 0) {
+        // JOIN dengan tbl_lpj_item untuk mendapatkan bukti yang sudah diupload
+        $query = "SELECT 
+                    r.rabItemId as id,
+                    r.uraian,
+                    r.rincian,
+                    r.vol1,
+                    r.sat1,
+                    r.vol2,
+                    r.sat2,
+                    r.harga as harga_satuan,
+                    r.totalHarga as harga_plan,
+                    li.fileBukti as bukti_file,
+                    li.komentar as komentar,
+                    li.lpjItemId as lpj_item_id,
+                    cat.namaKategori
+                FROM tbl_rab r
+                JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                LEFT JOIN tbl_lpj_item li ON r.rabItemId = li.rabItemId AND li.lpjId = ?
+                WHERE r.kakId = ?
+                ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        
+        if (!$stmt) {
+            error_log("❌ Prepare failed (with lpjId): " . mysqli_error($this->db));
+            return [];
+        }
+
+        mysqli_stmt_bind_param($stmt, "ii", $lpjId, $kakId);
+        
+    } else {
+        // Query original tanpa JOIN lpj_item
+        $query = "SELECT 
                         r.rabItemId as id,
                         r.uraian,
                         r.rincian,
@@ -315,17 +341,34 @@ class AdminModel
 
             $stmt = mysqli_prepare($this->db, $query);
             mysqli_stmt_bind_param($stmt, "i", $kakId);
-        }
-
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        $data = [];
-        while ($row = mysqli_fetch_assoc($result)) {
-            $data[$row['namaKategori']][] = $row;
-        }
-        return $data;
     }
+
+    // ✅ Execute query
+    if (!mysqli_stmt_execute($stmt)) {
+        error_log("❌ Execute failed: " . mysqli_stmt_error($stmt));
+        mysqli_stmt_close($stmt);
+        return [];
+    }
+
+    $result = mysqli_stmt_get_result($stmt);
+    $data = [];
+    $rowCount = 0;
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $kategori = $row['namaKategori'];
+        $data[$kategori][] = $row;
+        $rowCount++;
+    }
+
+    mysqli_stmt_close($stmt);
+
+    // ✅ Log hasil
+    error_log("✅ RAB Query Success");
+    error_log("Total Rows: " . $rowCount);
+    error_log("Categories: " . implode(', ', array_keys($data)));
+
+    return $data;
+}
 
     /**
      * Mengambil detail lengkap kegiatan beserta data KAK, Penanggung Jawab, dan file pendukung.
@@ -624,6 +667,9 @@ class AdminModel
             if (!empty($budgetData) && is_array($budgetData)) {
                 $queryKategori = "INSERT INTO tbl_kategori_rab (namaKategori) VALUES (?)";
                 $queryItemRAB  = "INSERT INTO tbl_rab (kakId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                
+                // Inisialisasi grand total RAB
+                $grandTotalRAB = 0;
 
                 foreach ($budgetData as $namaKategori => $items) {
                     if (empty($items)) {
@@ -665,15 +711,30 @@ class AdminModel
 
                         $volume = $vol1 * $vol2;
                         $harga   = floatval($item['harga'] ?? 0);
-                        $total   = $volume * $harga;
+                        $totalItem   = $volume * $harga;
+                        
+                        // Akumulasi ke grand total
+                        $grandTotalRAB += $totalItem;
 
-                        mysqli_stmt_bind_param($stmtItem, "iissssdddd", $kakId, $kategoriId, $uraian, $rincian, $sat1, $sat2, $vol1, $vol2, $harga, $total);
+                        mysqli_stmt_bind_param($stmtItem, "iissssdddd", $kakId, $kategoriId, $uraian, $rincian, $sat1, $sat2, $vol1, $vol2, $harga, $totalItem);
                         if (!mysqli_stmt_execute($stmtItem)) {
                             throw new Exception("Gagal insert item RAB: " . mysqli_error($this->db));
                         }
                     }
                     mysqli_stmt_close($stmtItem);
                 }
+
+                // Update jumlahDicairkan dengan grand total RAB
+                // Set nilai awal jumlahDicairkan = total RAB untuk keperluan tracking anggaran
+                $updateJumlahDicairkan = "UPDATE tbl_kegiatan SET jumlahDicairkan = ? WHERE kegiatanId = ?";
+                $stmtUpdateDicairkan = mysqli_prepare($this->db, $updateJumlahDicairkan);
+                mysqli_stmt_bind_param($stmtUpdateDicairkan, "di", $grandTotalRAB, $kegiatanId);
+                if (!mysqli_stmt_execute($stmtUpdateDicairkan)) {
+                    throw new Exception("Gagal update jumlah dicairkan: " . mysqli_error($this->db));
+                }
+                mysqli_stmt_close($stmtUpdateDicairkan);
+                
+                error_log("Grand Total RAB disimpan ke jumlahDicairkan: " . $grandTotalRAB);
             }
 
             mysqli_commit($this->db);
@@ -755,7 +816,7 @@ class AdminModel
                 $data['tgl_selesai'],
                 $posisiIdPPK,
                 $statusMenunggu,
-                id
+                $id
             );
         }
 

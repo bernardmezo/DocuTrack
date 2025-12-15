@@ -116,6 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const badges = {
                 'disetujui': 'text-green-700 bg-green-100 border border-green-200',
                 'dana diberikan': 'text-green-700 bg-green-300 border border-green-200',
+                'dana belum diberikan semua': 'text-purple-700 bg-purple-100 border border-purple-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
                 'menunggu': 'text-blue-700 bg-blue-100 border border-blue-200',
@@ -125,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const icons = {
                 'disetujui': 'fa-check-circle',
                 'dana diberikan': 'fa-money-check-alt',
+                'dana belum diberikan semua': 'fa-hourglass-end',
                 'ditolak': 'fa-times-circle',
                 'revisi': 'fa-pencil-alt',
                 'menunggu': 'fa-hourglass-half',

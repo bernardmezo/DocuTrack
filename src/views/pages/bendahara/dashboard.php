@@ -86,6 +86,7 @@ if (!isset($stats)) {
                                 class="pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[180px]">
                             <option value="" selected style="color: #374151 !important;">Semua Status</option>
                             <option value="dana diberikan" style="color: #374151 !important;">Dana Diberikan</option>
+                            <option value="dana belum diberikan semua" style="color: #374151 !important;">Dana Belum Diberikan Semua</option>
                             <option value="ditolak" style="color: #374151 !important;">Ditolak</option>
                             <option value="menunggu" style="color: #374151 !important;">Menunggu</option>
                         </select>
