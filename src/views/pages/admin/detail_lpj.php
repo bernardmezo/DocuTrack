@@ -112,12 +112,146 @@ if (!function_exists('formatRupiah')) {
             </div>
         <?php endif; ?>
 
+        <!-- DATA LENGKAP RAB NYA -->
+        <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
+            <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Rencana Anggaran Biaya (RAB)</h3>
+            
+            <?php
+                $grand_total_plan = 0;
+            if (!empty($rab_items)) :
+                foreach ($rab_items as $kategori => $items) :
+                    if (empty($items)) {
+                        continue;
+                    }
+                    $subtotal_plan = 0;
+                    ?>
+                <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?php echo htmlspecialchars($kategori); ?></h4>
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table class="w-full min-w-[1200px]" data-kategori="<?php echo htmlspecialchars($kategori); ?>">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 200px;">Uraian</th>
+                                <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 180px;">Rincian</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 80px;">Vol 1</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 1</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 80px;">Vol 2</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 2</th>
+                                <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga Satuan (Rp)</th>
+                                <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total Rencana</th>
+                                <!-- <th class="px-3 py-3 text-right text-xs font-bold text-blue-600 uppercase" style="width: 150px;">Realisasi (Rp)</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th> -->
+                            <?php if ($is_revisi || $is_selesai) : ?>
+                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 250px;">Komentar Verifikator</th>
+                            <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                        <?php foreach ($items as $item) :
+                                $item_id = $item['id'] ?? uniqid();
+                                $plan = $item['harga_plan'] ?? 0;
+                                $komentar = $item['komentar'] ?? null;
+                                $has_comment = $is_revisi && !empty($komentar);
+                                $bukti_uploaded = !empty($item['bukti_file']);
+
+                                $rincian = $item['rincian'] ?? '-';
+                                $vol1 = $item['vol1'] ?? '-';
+                                $sat1 = $item['sat1'] ?? '-';
+                                $vol2 = $item['vol2'] ?? '-';
+                                $sat2 = $item['sat2'] ?? '-';
+                                $harga_satuan = $item['harga_satuan'] ?? 0;
+
+                                $subtotal_plan += $plan;
+                            ?>
+                            <tr class="<?php echo $has_comment ? 'bg-yellow-50' : ''; ?>" 
+                                data-lpj-item-id="<?php echo $item_id; ?>"
+                                data-uraian="<?php echo htmlspecialchars($item['uraian'] ?? ''); ?>"
+                                data-uploaded-file="<?php echo htmlspecialchars($item['bukti_file'] ?? ''); ?>">
+
+                                <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
+                                    <?php echo htmlspecialchars($item['uraian'] ?? ''); ?>
+                                    <!-- <?php if ($has_comment) : ?>
+                                        <span class="block text-xs text-yellow-600 mt-1">
+                                            <i class="fas fa-exclamation-circle"></i> Perlu revisi
+                                        </span>
+                                    <?php endif; ?> -->
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600" style="width: 180px;">
+                                    <?php echo htmlspecialchars($rincian); ?>
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;">
+                                    <?php echo htmlspecialchars($vol1); ?>
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;">
+                                    <?php echo htmlspecialchars($sat1); ?>
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;">
+                                    <?php echo htmlspecialchars($vol2); ?>
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;">
+                                    <?php echo htmlspecialchars($sat2); ?>
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600 text-right" style="width: 130px;">
+                                    <?php echo number_format($harga_satuan, 0, ',', '.'); ?>
+                                </td>
+                                
+                                <td class="px-3 py-3 text-sm text-gray-600 text-right font-medium" style="width: 150px;">
+                                    <?php echo formatRupiah($plan); ?>
+                                </td>
+                            </tr>
+                        <?php endforeach;
+                        $grand_total_plan += $subtotal_plan; ?>
+                            
+                            <tr class="bg-gray-50 font-semibold">
+                                <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?php echo htmlspecialchars($kategori); ?></td>
+                                <td class="px-4 py-3 text-sm text-gray-600 text-right"><?php echo formatRupiah($subtotal_plan); ?></td>
+                                <!-- <td class="px-4 py-3 text-sm text-blue-700 text-right subtotal-realisasi" data-subtotal-realisasi="<?php echo $subtotal_plan; ?>"><?php echo formatRupiah($subtotal_plan); ?></td> -->
+                                <td colspan="<?php echo ($is_revisi || $is_selesai) ? '2' : '1'; ?>"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                    <?php
+                endforeach;
+            else :
+                ?>
+                <div class="p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
+                    <div>
+                        <h4 class="text-lg font-semibold text-yellow-800 mb-2">Data RAB Tidak Ditemukan untuk lpj dengan id <?php echo htmlspecialchars($lpj_id); ?></h4>
+                        <p class="text-sm text-yellow-700 mb-3">
+                            Tidak ada data Rencana Anggaran Biaya (RAB) untuk kegiatan dengan KAK <?php echo htmlspecialchars($kak_id); ?> ini. 
+                            Kemungkinan penyebab:
+                        </p>
+                        <p class="font-semibold text-yellow-700">Penyebab Umum: isi dari rabnya <?php echo htmlspecialchars(json_encode($rab_items)); ?>
+                            
+                        </p>
+                        <ul class="text-sm text-yellow-700 list-disc list-inside space-y-1">
+                            <li>KAK (Kerangka Acuan Kegiatan) belum dibuat</li>
+                            <li>RAB belum diinput pada saat pengajuan KAK</li>
+                            <li>Data kegiatan belum lengkap</li>
+                        </ul>
+                        <p class="text-sm text-yellow-700 mt-3">
+                            Silakan hubungi admin atau pastikan KAK sudah dibuat dengan lengkap sebelum melakukan upload LPJ.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+        <!-- REALISAIS DATA LPJ -->
         <form id="form-lpj-submit" action="#" method="POST" enctype="multipart/form-data">
             <!-- HIDDEN INPUT UNTUK JS -->
             <input type="hidden" id="kegiatan_id" value="<?php echo $kegiatan_data['kegiatanId'] ?? $kegiatan_data['id'] ?? 0; ?>">
 
             <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
-                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Rencana Anggaran Biaya (RAB)</h3>
+                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Relasisasi Rencana Anggaran Biaya (RAB)</h3>
                 
                 <?php
                     $grand_total_plan = 0;

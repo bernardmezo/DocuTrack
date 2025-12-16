@@ -274,21 +274,7 @@ class AdminModel
      * @param int $kakId ID KAK
      * @param int|null $lpjId ID LPJ (optional, untuk join dengan lpj_item)
      */
-    public function getRABForLPJ($kakId, $lpjId = null)
-{
-    // ✅ Log debugging
-    error_log("=== getRABForLPJ Called ===");
-    error_log("kakId: " . $kakId);
-    error_log("lpjId: " . ($lpjId ?? 'NULL'));
-
-    // ✅ Validasi input
-    if (!$kakId || $kakId <= 0) {
-        error_log("❌ Invalid kakId: " . $kakId);
-        return [];
-    }
-
-    if ($lpjId && $lpjId > 0) {
-        // JOIN dengan tbl_lpj_item untuk mendapatkan bukti yang sudah diupload
+    public function getRABForLPJ($kakId) {
         $query = "SELECT 
                     r.rabItemId as id,
                     r.uraian,
@@ -299,76 +285,23 @@ class AdminModel
                     r.sat2,
                     r.harga as harga_satuan,
                     r.totalHarga as harga_plan,
-                    li.fileBukti as bukti_file,
-                    li.komentar as komentar,
-                    li.lpjItemId as lpj_item_id,
                     cat.namaKategori
                 FROM tbl_rab r
                 JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
-                LEFT JOIN tbl_lpj_item li ON r.rabItemId = li.rabItemId AND li.lpjId = ?
                 WHERE r.kakId = ?
                 ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
 
         $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $kakId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
         
-        if (!$stmt) {
-            error_log("❌ Prepare failed (with lpjId): " . mysqli_error($this->db));
-            return [];
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[$row['namaKategori']][] = $row;
         }
-
-        mysqli_stmt_bind_param($stmt, "ii", $lpjId, $kakId);
-        
-    } else {
-        // Query original tanpa JOIN lpj_item
-        $query = "SELECT 
-                        r.rabItemId as id,
-                        r.uraian,
-                        r.rincian,
-                        r.vol1,
-                        r.sat1,
-                        r.vol2,
-                        r.sat2,
-                        r.harga as harga_satuan,
-                        r.totalHarga as harga_plan,
-                        NULL as bukti_file,
-                        NULL as komentar,
-                        NULL as lpj_item_id,
-                        cat.namaKategori
-                    FROM tbl_rab r
-                    JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
-                    WHERE r.kakId = ?
-                    ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
-
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param($stmt, "i", $kakId);
+        return $data;
     }
-
-    // ✅ Execute query
-    if (!mysqli_stmt_execute($stmt)) {
-        error_log("❌ Execute failed: " . mysqli_stmt_error($stmt));
-        mysqli_stmt_close($stmt);
-        return [];
-    }
-
-    $result = mysqli_stmt_get_result($stmt);
-    $data = [];
-    $rowCount = 0;
-
-    while ($row = mysqli_fetch_assoc($result)) {
-        $kategori = $row['namaKategori'];
-        $data[$kategori][] = $row;
-        $rowCount++;
-    }
-
-    mysqli_stmt_close($stmt);
-
-    // ✅ Log hasil
-    error_log("✅ RAB Query Success");
-    error_log("Total Rows: " . $rowCount);
-    error_log("Categories: " . implode(', ', array_keys($data)));
-
-    return $data;
-}
 
     /**
      * Mengambil detail lengkap kegiatan beserta data KAK, Penanggung Jawab, dan file pendukung.

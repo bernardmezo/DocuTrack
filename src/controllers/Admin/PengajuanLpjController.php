@@ -72,14 +72,15 @@ class PengajuanLpjController extends Controller
     $rab_items_merged = [];
         if (!empty($lpj_detail['kakId'])) {
             // Pass lpjId untuk mendapatkan data bukti yang sudah diupload
-            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId'], $id], []);
+            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId']]);
         }
-
     if (empty($rab_items_merged)) {
         error_log("⚠️ Tidak ada data RAB untuk kakId={$lpj_detail['kakId']}");
     } else {
         error_log("✅ RAB berhasil diambil: " . count($rab_items_merged) . " kategori");
     }
+
+    $dataRab = $this->safeModelCall($this->adminService, 'getRABByKAK', [$lpj_detail['kakId']], []);
 
     // ... lanjutkan kode seperti biasa
     $total_items = 0;
@@ -107,7 +108,8 @@ class PengajuanLpjController extends Controller
         'komentar_revisi' => [],
         'back_url' => $back_url,
         'lpj_id' => $id,
-        'kak_id' => $lpj_detail['kakId']
+        'kak_id' => $lpj_detail['kakId'],
+        // 'rab_data' => $dataRab
     ]);
 
     $this->view('pages/admin/detail_lpj', $data, 'app');
