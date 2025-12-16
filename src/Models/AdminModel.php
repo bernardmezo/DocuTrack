@@ -304,6 +304,56 @@ class AdminModel
     }
 
     /**
+     * Mengambil RAB items dengan persiapan untuk LPJ
+     * JOIN dengan kategori dan LEFT JOIN dengan lpj_item untuk data yang sudah ada
+     */
+    public function getRABForLPJWithExisting($kakId, $lpjId = null)
+    {
+        $query = "SELECT 
+                r.rabItemId,
+                r.uraian,
+                r.rincian,
+                r.vol1,
+                r.sat1,
+                r.vol2,
+                r.sat2,
+                r.harga as hargaSatuan,
+                r.totalHarga as totalRencana,
+                cat.kategoriRabId,
+                cat.namaKategori,
+                -- ✅ Ambil data dari tbl_lpj_item jika sudah ada
+                COALESCE(li.realisasi, r.totalHarga) as realisasi,
+                li.fileBukti, -- ✅ File bukti yang sudah diupload
+                li.komentar,
+                li.lpjItemId
+              FROM tbl_rab r
+              JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+              LEFT JOIN tbl_lpj_item li ON (
+                  li.lpjId = ?  -- ✅ JOIN dengan lpjId
+                  AND li.rabItemId = r.rabItemId -- ✅ PERBAIKAN: Match rabItemId
+              )
+              WHERE r.kakId = ?
+              ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
+
+    $stmt = mysqli_prepare($this->db, $query);
+    
+    $lpjIdParam = $lpjId ?? 0;
+    mysqli_stmt_bind_param($stmt, "ii", $lpjIdParam, $kakId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    $data = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        // ✅ Debug log
+        error_log("RAB Item: rabItemId={$row['rabItemId']}, fileBukti=" . ($row['fileBukti'] ?? 'NULL'));
+        $data[$row['namaKategori']][] = $row;
+    }
+    
+    mysqli_stmt_close($stmt);
+    return $data;
+}
+
+    /**
      * Mengambil detail lengkap kegiatan beserta data KAK, Penanggung Jawab, dan file pendukung.
      *
      * Method ini melakukan JOIN dengan beberapa tabel untuk mengumpulkan informasi lengkap:

@@ -213,43 +213,179 @@ class LpjModel
         }
     }
 
-    /**
-     * Menyisipkan BANYAK item LPJ (dari array)
+     /**
+     * ✅ BARU: Insert atau Update LPJ Item dengan file bukti
+     * Digunakan saat upload bukti per item RAB
+     * 
+     * @param int $lpjId
+     * @param int $rabItemId
+     * @param string $filename Nama file bukti yang diupload
+     * @param array $itemData Data item dari RAB (uraian, rincian, dll)
+     * @return bool
      */
-    public function insertLpjItems($lpj_id, $itemsList)
+    public function upsertLpjItemBukti(int $lpjId, int $rabItemId, string $filename, array $itemData): bool
     {
-        $query = "INSERT INTO tbl_lpj_item (lpjId, jenisBelanja, uraian, rincian, satuan, totalHarga, subtotal, fileBukti) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        // ✅ PERBAIKAN: Gunakan kategoriId + uraian untuk matching (TANPA rabItemId)
+        $kategoriId = $itemData['kategoriId'] ?? 0;
+        $uraian = $itemData['uraian'] ?? '';
+        
+        // Cek apakah item sudah ada di tbl_lpj_item
+        $checkQuery = "SELECT lpjItemId FROM tbl_lpj_item 
+                       WHERE lpjId = ? AND kategoriId = ? AND uraian = ?";
+        
+        $stmt = mysqli_prepare($this->db, $checkQuery);
+        mysqli_stmt_bind_param($stmt, "iis", $lpjId, $kategoriId, $uraian);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $existing = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
 
-        $stmt = mysqli_prepare($this->db, $query);
-        if ($stmt === false) {
-            error_log('LpjModel::insertLpjItems - Prepare failed: ' . mysqli_error($this->db));
-            return false;
-        }
-
-        foreach ($itemsList as $item) {
+        if ($existing) {
+            // ✅ UPDATE: Item sudah ada, update file bukti
+            $updateQuery = "UPDATE tbl_lpj_item 
+                           SET fileBukti = ?, updatedAt = NOW()
+                           WHERE lpjItemId = ?";
+            
+            $stmt = mysqli_prepare($this->db, $updateQuery);
+            mysqli_stmt_bind_param($stmt, "si", $filename, $existing['lpjItemId']);
+            $result = mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+            
+            error_log("✅ Updated bukti for lpjItemId={$existing['lpjItemId']}: $filename");
+            return $result;
+            
+        } else {
+            // ✅ INSERT: Item belum ada, buat record baru
+            $insertQuery = "INSERT INTO tbl_lpj_item 
+                           (lpjId, kategoriId, uraian, rincian, 
+                            sat1, sat2, vol1, vol2, harga, totalHarga, 
+                            realisasi, fileBukti, createAt)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            
+            $stmt = mysqli_prepare($this->db, $insertQuery);
+            
+            // Ekstrak data dari $itemData (yang sudah didefinisikan di atas)
+            $rincian = $itemData['rincian'] ?? '';
+            $sat1 = $itemData['sat1'] ?? '';
+            $sat2 = $itemData['sat2'] ?? '';
+            $vol1 = $itemData['vol1'] ?? 0;
+            $vol2 = $itemData['vol2'] ?? 0;
+            $hargaSatuan = $itemData['harga_satuan'] ?? $itemData['harga_satuan'] ?? 0;
+            $totalRencana = $itemData['totalRencana'] ?? $itemData['total_harga'] ?? 0;
+            $realisasi = $itemData['realisasi'] ?? $totalRencana; // Default realisasi = rencana
+            
             mysqli_stmt_bind_param(
                 $stmt,
-                'issssdds',
-                $lpj_id,
-                $item['jenis_belanja'],
-                $item['uraian'],
-                $item['rincian'],
-                $item['satuan'],
-                $item['total_harga'],
-                $item['sub_total'],
-                $item['file_bukti_nota']
+                "iissssddddds",
+                $lpjId,
+                $kategoriId,
+                $uraian,
+                $rincian,
+                $sat1,
+                $sat2,
+                $vol1,
+                $vol2,
+                $hargaSatuan,
+                $totalRencana,
+                $realisasi,
+                $filename
             );
-
-            if (!mysqli_stmt_execute($stmt)) {
-                error_log('LpjModel::insertLpjItems - Execute failed: ' . mysqli_stmt_error($this->db));
+            
+            $result = mysqli_stmt_execute($stmt);
+            
+            if (!$result) {
+                error_log("❌ Failed to insert lpj_item: " . mysqli_stmt_error($stmt));
                 mysqli_stmt_close($stmt);
                 return false;
             }
+            
+            $insertedId = mysqli_insert_id($this->db);
+            mysqli_stmt_close($stmt);
+            
+            error_log("✅ Inserted new lpjItemId=$insertedId with bukti: $filename");
+            return $result;
         }
+    }
 
+        /**
+     * ✅ BARU: Ambil data RAB item untuk digunakan saat upload
+     * 
+     * @param int $rabItemId
+     * @return array|null
+     */
+    public function getRABItemById(int $rabItemId): ?array
+    {
+        $query = "SELECT 
+                    r.rabItemId,
+                    r.kategoriId,
+                    r.uraian,
+                    r.rincian,
+                    r.vol1,
+                    r.sat1,
+                    r.vol2,
+                    r.sat2,
+                    r.harga as hargaSatuan,
+                    r.totalHarga as totalRencana,
+                    cat.namaKategori
+                  FROM tbl_rab r
+                  JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
+                  WHERE r.rabItemId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $rabItemId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
         mysqli_stmt_close($stmt);
-        return true;
+        
+        return $data;
+    }
+
+    /**
+     * ✅ BARU: Hitung jumlah bukti yang sudah diupload untuk LPJ tertentu
+     * 
+     * @param int $lpjId
+     * @return array ['total' => int, 'uploaded' => int]
+     */
+    public function countUploadedBukti(int $lpjId): array
+    {
+        $query = "SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN fileBukti IS NOT NULL AND fileBukti != '' THEN 1 ELSE 0 END) as uploaded
+                  FROM tbl_lpj_item
+                  WHERE lpjId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        
+        return [
+            'total' => (int)($data['total'] ?? 0),
+            'uploaded' => (int)($data['uploaded'] ?? 0)
+        ];
+    }
+
+    /**
+     * Update status LPJ menjadi 'Menunggu' (submitted)
+     * 
+     * @param int $lpjId
+     * @return bool
+     */
+    public function markLpjAsSubmitted(int $lpjId): bool
+    {
+        $query = "UPDATE tbl_lpj 
+                  SET status = 'Menunggu', submittedAt = NOW()
+                  WHERE lpjId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        $result = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        
+        return $result;
     }
 
     /**

@@ -272,4 +272,58 @@ class PengajuanLpjController extends Controller
             );
         }
     }
+
+     /**
+     * ✅ PERBAIKAN: Upload Bukti dengan lpjId
+     */
+    public function uploadBukti()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Method tidak diizinkan', 405);
+            }
+
+            // ✅ Validasi file upload
+            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('File tidak valid atau gagal diupload');
+            }
+
+            // ✅ TAMBAHAN: Validasi lpjId (PENTING!)
+            $lpjId = $_POST['lpj_id'] ?? null;
+            $rabItemId = $_POST['item_id'] ?? null;
+            
+            error_log("📤 Upload Request: lpjId=$lpjId, rabItemId=$rabItemId, filename={$_FILES['file']['name']}");
+            
+            if (empty($lpjId) || !is_numeric($lpjId)) {
+                throw new Exception('LPJ ID tidak valid: ' . var_export($lpjId, true));
+            }
+            
+            if (empty($rabItemId) || !is_numeric($rabItemId)) {
+                throw new Exception('RAB Item ID tidak valid: ' . var_export($rabItemId, true));
+            }
+
+            // ✅ Upload file via LpjService (dengan lpjId)
+            $result = $this->lpjService->uploadLpjBukti(
+                (int)$lpjId, 
+                (int)$rabItemId, 
+                $_FILES['file']
+            );
+
+            error_log("✅ Upload Success: " . json_encode($result));
+
+            echo json_encode($result);
+
+        } catch (Exception $e) {
+            error_log("❌ Upload Error: " . $e->getMessage());
+            error_log("❌ Stack Trace: " . $e->getTraceAsString());
+            
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
 }

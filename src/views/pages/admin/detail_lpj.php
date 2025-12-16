@@ -247,240 +247,245 @@ if (!function_exists('formatRupiah')) {
 
         <!-- REALISAIS DATA LPJ -->
         <form id="form-lpj-submit" action="#" method="POST" enctype="multipart/form-data">
-            <!-- HIDDEN INPUT UNTUK JS -->
-            <input type="hidden" id="kegiatan_id" value="<?php echo $kegiatan_data['kegiatanId'] ?? $kegiatan_data['id'] ?? 0; ?>">
+            <!-- ✅ PENTING: Hidden input untuk lpjId -->
+            <input type="hidden" name="lpj_id" value="<?php echo $lpj_id; ?>">
+            <input type="hidden" name="kak_id" value="<?php echo $kak_id; ?>">
+            <input type="hidden" name="kegiatan_id" value="<?php echo $kegiatan_data['kegiatanId']; ?>">
 
-            <div class="mb-8 animate-reveal" style="animation-delay: 100ms;">
-                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Relasisasi Rencana Anggaran Biaya (RAB)</h3>
+            <div class="mb-8">
+                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">
+                    Realisasi Rencana Anggaran Biaya (RAB)
+                </h3>
                 
                 <?php
-                    $grand_total_plan = 0;
-                if (!empty($rab_items)) :
-                    foreach ($rab_items as $kategori => $items) :
-                        if (empty($items)) {
-                            continue;
-                        }
-                        $subtotal_plan = 0;
-                        ?>
-                    <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?php echo htmlspecialchars($kategori); ?></h4>
-                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table class="w-full min-w-[1200px]" data-kategori="<?php echo htmlspecialchars($kategori); ?>">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 200px;">Uraian</th>
-                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 180px;">Rincian</th>
-                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 80px;">Vol 1</th>
-                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 1</th>
-                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 80px;">Vol 2</th>
-                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 2</th>
-                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga Satuan (Rp)</th>
-                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total Rencana</th>
-                                    <th class="px-3 py-3 text-right text-xs font-bold text-blue-600 uppercase" style="width: 150px;">Realisasi (Rp)</th>
-                                    <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th>
-                                <?php if ($is_revisi || $is_selesai) : ?>
-                                        <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase" style="width: 250px;">Komentar Verifikator</th>
+                $grand_total_rencana = 0;
+                $grand_total_realisasi = 0;
+                
+                foreach ($rab_items as $kategori => $items) :
+                    if (empty($items)) continue;
+                    
+                    $subtotal_rencana = 0;
+                    $subtotal_realisasi = 0;
+                ?>
+                
+                <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3">
+                    <?php echo htmlspecialchars($kategori); ?>
+                </h4>
+                
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table class="w-full min-w-[1400px]">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase">Uraian</th>
+                                <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase">Rincian</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Vol 1</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Sat 1</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Vol 2</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Sat 2</th>
+                                <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase">Harga Satuan</th>
+                                <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase">Total Rencana</th>
+                                <th class="px-3 py-3 text-right text-xs font-bold text-blue-600 uppercase">Realisasi</th>
+                                <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Bukti</th>
+                                <?php if ($is_revisi) : ?>
+                                <th class="px-3 py-3 text-left text-xs font-bold text-gray-600 uppercase">Komentar</th>
                                 <?php endif; ?>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
                             <?php foreach ($items as $item) :
-                                    $item_id = $item['id'] ?? uniqid();
-                                    $plan = $item['harga_plan'] ?? 0;
-                                    $komentar = $item['komentar'] ?? null;
-                                    $has_comment = $is_revisi && !empty($komentar);
-                                    $bukti_uploaded = !empty($item['bukti_file']);
+                                    // ✅ PERBAIKAN: Cek field yang benar dari query
+                                    $item_id = $item['rabItemId'] ?? $item['id'] ?? null;  // Fallback jika tidak ada
+                                    $lpj_item_id = $item['lpjItemId'] ?? null;
+                                    
+                                    // ✅ Debug: Log setiap item untuk melihat data yang tersedia
+                                    error_log("📋 RAB Item Debug: " . json_encode([
+                                        'rabItemId' => $item['rabItemId'] ?? 'NULL',
+                                        'id' => $item['id'] ?? 'NULL',
+                                        'uraian' => $item['uraian'] ?? 'NULL',
+                                        'fileBukti' => $item['fileBukti'] ?? 'NULL',
+                                        'available_keys' => array_keys($item)
+                                    ]));
+                                    
+                                    // ✅ Skip item jika tidak ada ID yang valid
+                                    if (empty($item_id)) {
+                                        error_log("⚠️ Skipping item karena tidak ada rabItemId: " . ($item['uraian'] ?? 'unknown'));
+                                        continue;
+                                    }
+                                    
+                                    $plan = $item['harga_plan'] ?? $item['totalRencana'] ?? 0;
+                                    $realisasi = $item['realisasi'] ?? $plan;
+                                    $bukti = $item['fileBukti'] ?? '';
+                                    $komentar = $item['komentar'] ?? '';
+                                    
+                                    // ✅ TAMBAHAN: Cek apakah bukti sudah ada di database
+                                    $bukti_sudah_ada = !empty($bukti);
+                            ?>
 
-                                    $rincian = $item['rincian'] ?? '-';
-                                    $vol1 = $item['vol1'] ?? '-';
-                                    $sat1 = $item['sat1'] ?? '-';
-                                    $vol2 = $item['vol2'] ?? '-';
-                                    $sat2 = $item['sat2'] ?? '-';
-                                    $harga_satuan = $item['harga_satuan'] ?? 0;
-
-                                    $subtotal_plan += $plan;
-                                ?>
-                                <tr class="<?php echo $has_comment ? 'bg-yellow-50' : ''; ?>" 
-                                    data-lpj-item-id="<?php echo $item_id; ?>"
-                                    data-uraian="<?php echo htmlspecialchars($item['uraian'] ?? ''); ?>"
-                                    data-uploaded-file="<?php echo htmlspecialchars($item['bukti_file'] ?? ''); ?>">
-
-                                    <td class="px-3 py-3 text-sm text-gray-800 font-medium" style="width: 200px;">
-                                        <?php echo htmlspecialchars($item['uraian'] ?? ''); ?>
-                                        <?php if ($has_comment) : ?>
-                                            <span class="block text-xs text-yellow-600 mt-1">
-                                                <i class="fas fa-exclamation-circle"></i> Perlu revisi
-                                            </span>
-                                        <?php endif; ?>
+                                <tr data-rab-item-id="<?php echo $item_id; ?>"
+                                    data-lpj-item-id="<?php echo $lpj_item_id; ?>"
+                                    data-kategori-id="<?php echo $item['kategoriRabId']; ?>"
+                                    data-uploaded-file="<?php echo htmlspecialchars($bukti); ?>"
+                                    class="<?php echo !empty($komentar) ? 'bg-yellow-50' : ''; ?>">
+                                    
+                                    <!-- Uraian -->
+                                    <td class="px-3 py-3 text-sm text-gray-800">
+                                        <?php echo htmlspecialchars($item['uraian']); ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][uraian]" 
+                                               value="<?php echo htmlspecialchars($item['uraian']); ?>">
                                     </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600" style="width: 180px;">
-                                        <?php echo htmlspecialchars($rincian); ?>
+                                    <!-- Rincian -->
+                                    <td class="px-3 py-3 text-sm text-gray-600">
+                                        <?php echo htmlspecialchars($item['rincian']); ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][rincian]" 
+                                               value="<?php echo htmlspecialchars($item['rincian']); ?>">
                                     </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;">
-                                        <?php echo htmlspecialchars($vol1); ?>
+                                    <!-- Vol1, Sat1, Vol2, Sat2, Harga -->
+                                    <td class="px-3 py-3 text-sm text-center">
+                                        <?php echo $item['vol1']; ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][vol1]" value="<?php echo $item['vol1']; ?>">
+                                    </td>
+                                    <td class="px-3 py-3 text-sm text-center">
+                                        <?php echo htmlspecialchars($item['sat1']); ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][sat1]" value="<?php echo htmlspecialchars($item['sat1']); ?>">
+                                    </td>
+                                    <td class="px-3 py-3 text-sm text-center">
+                                        <?php echo $item['vol2']; ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][vol2]" value="<?php echo $item['vol2']; ?>">
+                                    </td>
+                                    <td class="px-3 py-3 text-sm text-center">
+                                        <?php echo htmlspecialchars($item['sat2']); ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][sat2]" value="<?php echo htmlspecialchars($item['sat2']); ?>">
+                                    </td>
+                                    <td class="px-3 py-3 text-sm text-right">
+                                        <?php echo formatRupiah($item['harga_satuan']); ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][harga_satuan]" value="<?php echo $item['harga_satuan']; ?>">
                                     </td>
                                     
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;">
-                                        <?php echo htmlspecialchars($sat1); ?>
-                                    </td>
-                                    
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 80px;">
-                                        <?php echo htmlspecialchars($vol2); ?>
-                                    </td>
-                                    
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-center" style="width: 90px;">
-                                        <?php echo htmlspecialchars($sat2); ?>
-                                    </td>
-                                    
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-right" style="width: 130px;">
-                                        <?php echo number_format($harga_satuan, 0, ',', '.'); ?>
-                                    </td>
-                                    
-                                    <td class="px-3 py-3 text-sm text-gray-600 text-right font-medium" style="width: 150px;">
+                                    <!-- Total Rencana -->
+                                    <td class="px-3 py-3 text-sm text-right font-medium">
                                         <?php echo formatRupiah($plan); ?>
+                                        <input type="hidden" name="items[<?php echo $item_id; ?>][total_rencana]" value="<?php echo $plan; ?>">
                                     </td>
-
-                                    <!-- Kolom Realisasi -->
-                                    <td class="px-3 py-3" style="width: 150px;">
-                                        <?php if ($is_draft || $is_menunggu_upload || $is_siap_submit) : ?>
+                                    
+                                    <!-- Realisasi (Editable) -->
+                                    <td class="px-3 py-3">
+                                        <?php if ($bukti_sudah_ada) : ?>
+                                            <!-- ✅ Jika bukti sudah ada, tampilkan readonly (tidak bisa edit) -->
+                                            <div class="text-right text-sm font-bold text-blue-600">
+                                                <?php echo formatRupiah($realisasi); ?>
+                                            </div>
+                                            <input type="hidden" name="items[<?php echo $item_id; ?>][realisasi]" value="<?php echo $realisasi; ?>">
+                                        <?php elseif ($is_draft || $is_menunggu_upload || $is_siap_submit || $is_revisi) : ?>
+                                            <!-- ✅ Jika bukti belum ada dan status draft/revisi, bisa edit -->
                                             <div class="relative">
                                                 <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
                                                 <input type="number" 
-                                                    class="realisasi-input w-full pl-6 pr-2 py-1 text-sm text-right border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                                    value="<?php echo $plan; ?>" 
-                                                    min="0" 
-                                                    step="1"
-                                                    data-item-id="<?php echo $item_id; ?>">
+                                                       name="items[<?php echo $item_id; ?>][realisasi]"
+                                                       class="realisasi-input w-full pl-6 pr-2 py-1 text-sm text-right border border-blue-300 rounded"
+                                                       value="<?php echo $realisasi; ?>" 
+                                                       min="0" 
+                                                       step="0.01"
+                                                       data-rab-item-id="<?php echo $item_id; ?>">
                                             </div>
                                         <?php else : ?>
+                                            <!-- ✅ Status lain, tampilkan readonly -->
                                             <div class="text-right text-sm font-bold text-blue-600">
-                                                <?php echo formatRupiah($item['realisasi'] ?? $plan); ?>
+                                                <?php echo formatRupiah($realisasi); ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>
-
-                                    <!-- Kolom Bukti -->
-                                    <td class='px-3 py-3 text-center' style="width: 100px;">
-                                        <?php if ($bukti_uploaded && !$has_comment) : ?>
+                                    
+                                    <!-- Bukti Upload -->
+                                    <td class="px-3 py-3 text-center">
+                                        <?php if ($bukti_sudah_ada) : ?>
+                                            <!-- ✅ Bukti sudah ada di database, tampilkan icon hijau -->
                                             <div class="flex items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
-                                                <span class="text-xs font-medium">Ada</span>
+                                                <span class="text-xs font-medium">Terupload</span>
                                             </div>
+                                            <input type="hidden" name="items[<?php echo $item_id; ?>][file_bukti]" value="<?php echo htmlspecialchars($bukti); ?>">
                                         <?php else : ?>
+                                            <!-- ✅ Bukti belum ada, tampilkan button upload -->
                                             <button type="button" 
-                                                    class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs font-medium hover:bg-blue-700 transition-colors <?php echo $has_comment ? 'ring-2 ring-yellow-400' : ''; ?> <?php echo !$bukti_uploaded ? 'animate-pulse' : ''; ?>" 
-                                                    data-lpj-item-id="<?php echo $item_id; ?>"
-                                                    data-item-name="<?php echo htmlspecialchars($item['uraian'] ?? 'Item'); ?>"
+                                                    class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs hover:bg-blue-700"
+                                                    data-rab-item-id="<?php echo $item_id; ?>"  
+                                                    data-item-name="<?php echo htmlspecialchars($item['uraian']); ?>"
                                                     <?php echo ($is_setuju || $is_menunggu) ? 'disabled' : ''; ?>>
-                                                <i class='fas fa-upload'></i>
+                                                <i class="fas fa-upload"></i>
                                             </button>
                                             <div id="bukti-display-<?php echo $item_id; ?>" 
-                                                class="<?php echo $bukti_uploaded ? 'flex' : 'hidden'; ?> items-center justify-center gap-2 text-green-600">
+                                                 class="hidden items-center justify-center gap-2 text-green-600">
                                                 <i class="fas fa-check-circle"></i>
-                                                <span class="text-xs font-medium">Ada</span>
+                                                <span class="text-xs font-medium">Terupload</span>
                                             </div>
+                                            <input type="hidden" name="items[<?php echo $item_id; ?>][file_bukti]" 
+                                                   id="file-bukti-<?php echo $item_id; ?>" 
+                                                   value="">
                                         <?php endif; ?>
                                     </td>
-
-                                    <?php if ($is_revisi || $is_selesai) : ?>
-                                        <td class="px-3 py-3 text-xs italic <?php echo $has_comment ? 'text-yellow-800 font-medium' : 'text-gray-500'; ?>" style="width: 250px;">
-                                            <?php echo $has_comment ? htmlspecialchars($komentar) : '-'; ?>
-                                        </td>
+                                    
+                                    <!-- Komentar (jika revisi) -->
+                                    <?php if ($is_revisi) : ?>
+                                    <td class="px-3 py-3 text-xs italic <?php echo !empty($komentar) ? 'text-yellow-800 font-medium' : 'text-gray-500'; ?>">
+                                        <?php echo !empty($komentar) ? htmlspecialchars($komentar) : '-'; ?>
+                                    </td>
                                     <?php endif; ?>
+                                    
+                                    <!-- Hidden fields untuk identifikasi -->
+                                    <input type="hidden" name="items[<?php echo $item_id; ?>][kategori_id]" value="<?php echo $item['kategoriRabId']; ?>">
+                                    <input type="hidden" name="items[<?php echo $item_id; ?>][lpj_item_id]" value="<?php echo $lpj_item_id; ?>">
                                 </tr>
-                            <?php endforeach;
-                            $grand_total_plan += $subtotal_plan; ?>
-                                
-                                <tr class="bg-gray-50 font-semibold">
-                                    <td colspan="7" class="px-4 py-3 text-right text-sm text-gray-800">Subtotal <?php echo htmlspecialchars($kategori); ?></td>
-                                    <td class="px-4 py-3 text-sm text-gray-600 text-right"><?php echo formatRupiah($subtotal_plan); ?></td>
-                                    <td class="px-4 py-3 text-sm text-blue-700 text-right subtotal-realisasi" data-subtotal-realisasi="<?php echo $subtotal_plan; ?>"><?php echo formatRupiah($subtotal_plan); ?></td>
-                                    <td colspan="<?php echo ($is_revisi || $is_selesai) ? '2' : '1'; ?>"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                        <?php
-                    endforeach;
-                else :
-                    ?>
-                    <div class="p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-lg">
-                    <div class="flex items-start gap-3">
-                        <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
-                        <div>
-                            <h4 class="text-lg font-semibold text-yellow-800 mb-2">Data RAB Tidak Ditemukan untuk lpj dengan id <?php echo htmlspecialchars($lpj_id); ?></h4>
-                            <p class="text-sm text-yellow-700 mb-3">
-                                Tidak ada data Rencana Anggaran Biaya (RAB) untuk kegiatan dengan KAK <?php echo htmlspecialchars($kak_id); ?> ini. 
-                                Kemungkinan penyebab:
-                            </p>
-                            <p class="font-semibold text-yellow-700">Penyebab Umum: isi dari rabnya <?php echo htmlspecialchars(json_encode($rab_items)); ?>
-                                
-                            </p>
-                            <ul class="text-sm text-yellow-700 list-disc list-inside space-y-1">
-                                <li>KAK (Kerangka Acuan Kegiatan) belum dibuat</li>
-                                <li>RAB belum diinput pada saat pengajuan KAK</li>
-                                <li>Data kegiatan belum lengkap</li>
-                            </ul>
-                            <p class="text-sm text-yellow-700 mt-3">
-                                Silakan hubungi admin atau pastikan KAK sudah dibuat dengan lengkap sebelum melakukan upload LPJ.
-                            </p>
-                        </div>
-                    </div>
+                            <?php endforeach; 
+                            
+                            $grand_total_rencana += $plan;
+                            $grand_total_realisasi += $subtotal_realisasi;
+                            ?>
+                            
+                            <!-- Subtotal Row -->
+                            <!-- <tr class="bg-gray-50 font-semibold">
+                                <td colspan="7" class="px-4 py-3 text-right text-sm">Subtotal <?php echo htmlspecialchars($kategori); ?></td>
+                                <td class="px-4 py-3 text-sm text-right"><?php echo formatRupiah($subtotal_rencana); ?></td>
+                                <td class="px-4 py-3 text-sm text-blue-700 text-right subtotal-realisasi">
+                                    <?php echo formatRupiah($subtotal_realisasi); ?>
+                                </td>
+                                <td colspan="<?php echo $is_revisi ? '2' : '1'; ?>"></td>
+                            </tr> -->
+                        </tbody>
+                    </table>
                 </div>
-                <?php endif; ?>
+                <?php endforeach; ?>
                 
+                <!-- Grand Total -->
                 <div class="flex justify-end mt-6 gap-4">
-                    <!-- Total Rencana -->
-                    <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 p-5 bg-gray-50 rounded-xl border border-gray-200 w-full md:w-auto min-w-[300px]">
-                        <span class="text-lg font-semibold text-gray-600">Total Rencana:</span>
-                        <span class="text-2xl font-bold text-gray-700 text-right"><?php echo formatRupiah($grand_total_plan); ?></span>
+                    <div class="p-5 bg-gray-50 rounded-xl border border-gray-200">
+                        <span class="text-sm text-gray-600">Total Rencana:</span>
+                        <span class="text-xl font-bold text-gray-700"><?php echo formatRupiah($grand_total_rencana); ?></span>
                     </div>
-                    
-                    <!-- Total Realisasi -->
-                    <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 w-full md:w-auto min-w-[350px]">
-                        <span class="text-lg font-semibold text-gray-800">Total Realisasi:</span>
-                        <span class="text-2xl font-bold text-blue-600 text-right" id="grand-total-realisasi"><?php echo formatRupiah($grand_total_plan); ?></span>
+                    <div class="p-5 bg-blue-50 rounded-xl border border-blue-200">
+                        <span class="text-sm text-gray-800">Total Realisasi:</span>
+                        <span class="text-xl font-bold text-blue-600" id="grand-total-realisasi">
+                            <?php echo formatRupiah($grand_total_realisasi); ?>
+                        </span>
                     </div>
                 </div>
             </div>
             
-            <div class="flex flex-col sm:flex-row-reverse justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
-                 
-                 <?php if ($is_setuju) : ?>
-                    <!-- LPJ sudah disetujui Bendahara - Tidak bisa edit -->
-                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
-                         <i class="fas fa-check-double"></i> LPJ Telah Disetujui
-                    </div>
-                    
-                 <?php elseif ($is_menunggu) : ?>
-                    <!-- LPJ sudah di-submit, menunggu approval Bendahara - Tidak bisa edit -->
-                    <div class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md opacity-70 cursor-not-allowed">
-                         <i class="fas fa-hourglass-half"></i> Menunggu Verifikasi Bendahara
-                    </div>
-                    
-                 <?php elseif ($is_revisi) : ?>
-                    <!-- Status revisi - Bisa submit ulang -->
-                    <button type="button" id="submit-lpj-btn" 
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
-                            <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
-                        <i class="fas fa-paper-plane"></i> Submit Revisi LPJ
-                    </button>
-                    
-                 <?php else : ?>
-                    <!-- Status draft/siap_submit - Bisa submit pertama kali -->
-                    <button type="button" id="submit-lpj-btn" 
-                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5 <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
-                            <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
-                         <i class="fas fa-check-circle"></i> 
-                         <?php echo $all_bukti_uploaded ? 'Ajukan ke Bendahara' : 'Upload Bukti Terlebih Dahulu'; ?>
-                    </button>
-                 <?php endif; ?>
-                 
-                 <a href="<?php echo htmlspecialchars($back_url); ?>" 
-                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-700 font-semibold px-6 py-3 rounded-lg shadow-sm hover:bg-gray-200 transition-all duration-300 transform hover:-translate-y-0.5">
-                     <i class="fas fa-arrow-left"></i> Kembali
-                 </a>
+            <!-- Submit Buttons (unchanged) -->
+            <div class="flex justify-between items-center mt-10 pt-6 border-t border-gray-200">
+                <a href="<?php echo htmlspecialchars($back_url); ?>" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Kembali
+                </a>
+                
+                <?php if (!$is_setuju && !$is_menunggu) : ?>
+                <button type="button" id="submit-lpj-btn" 
+                        class="btn-primary <?php echo !$all_bukti_uploaded ? 'opacity-50 cursor-not-allowed' : ''; ?>"
+                        <?php echo !$all_bukti_uploaded ? 'disabled' : ''; ?>>
+                    <i class="fas fa-paper-plane"></i> 
+                    <?php echo $is_revisi ? 'Submit Revisi' : 'Ajukan ke Bendahara'; ?>
+                </button>
+                <?php endif; ?>
             </div>
         </form>
         
@@ -618,18 +623,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // ✅ PERBAIKAN: Event listener untuk tombol upload
     document.querySelectorAll('.btn-upload-bukti').forEach(btn => {
         btn.addEventListener('click', () => {
-            // Ambil dari data-lpj-item-id, bukan data-item-id
-            const itemId = btn.dataset.lpjItemId || btn.dataset.itemId;
+            // ✅ Ambil dari data-rab-item-id yang ada di button
+            const rabItemId = btn.dataset.rabItemId;
             const itemName = btn.dataset.itemName;
             
-            console.log('Button clicked - itemId:', itemId, 'itemName:', itemName); // Debug
+            console.log('🔍 Upload button clicked:', { rabItemId, itemName }); // Debug log
             
-            if (!itemId) {
-                alert('Error: Item ID tidak ditemukan');
+            // ✅ Validasi ID
+            if (!rabItemId || rabItemId === 'null' || rabItemId === '') {
+                alert('Error: Item ID tidak ditemukan. Data mungkin belum ada.');
+                console.error('❌ Missing rabItemId:', btn.dataset);
                 return;
             }
             
-            openModal(itemId, itemName);
+            openModal(rabItemId, itemName);
         });
     });
 
@@ -660,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     removeFileBtn.addEventListener('click', resetForm);
 
-    // ✅ PERBAIKAN: AJAX UPLOAD dengan FormData yang benar
+    // ✅ PERBAIKAN: AJAX Upload dengan lpjId
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -674,9 +681,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // ✅ TAMBAHAN: Ambil lpjId dari hidden input di form
+        const lpjId = document.querySelector('input[name="lpj_id"]')?.value;
+        
+        if (!lpjId) {
+            alert('Error: LPJ ID tidak ditemukan. Refresh halaman.');
+            return;
+        }
+
         const formData = new FormData();
         formData.append('file', selectedFile);
-        formData.append('item_id', currentItemId); // ✅ Kirim item_id
+        formData.append('item_id', currentItemId); // rabItemId
+        formData.append('lpj_id', lpjId); // ✅ TAMBAHAN BARU
 
         const submitBtn = document.getElementById('confirm-upload-btn');
         const originalText = submitBtn.innerHTML;
@@ -684,23 +700,37 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
 
         try {
-            console.log('Uploading file for item:', currentItemId); // Debug
+            console.log('📤 Uploading:', { 
+                lpjId,
+                rabItemId: currentItemId, 
+                filename: selectedFile.name
+            });
             
             const response = await fetch('/docutrack/public/admin/pengajuan-lpj/upload-bukti', {
                 method: 'POST',
                 body: formData
             });
 
+            console.log('📥 Response Status:', response.status);
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const textResponse = await response.text();
+                console.error('❌ Non-JSON Response:', textResponse);
+                throw new Error('Server mengembalikan response yang tidak valid');
+            }
+
             const result = await response.json();
-            console.log('Upload response:', result); // Debug
+            console.log('📥 Upload response:', result);
 
             if (result.success) {
-                // Update UI Row
-                const row = document.querySelector(`tr[data-lpj-item-id="${currentItemId}"]`);
+                // ✅ Update UI dengan rabItemId
+                const row = document.querySelector(`tr[data-rab-item-id="${currentItemId}"]`);
                 if (row) {
+                    // ✅ Update data attribute
                     row.dataset.uploadedFile = result.filename;
                     
-                    // Update visual buttons
+                    // ✅ Hide button upload, show green indicator
                     const uploadBtn = row.querySelector('.btn-upload-bukti');
                     const displayArea = document.getElementById(`bukti-display-${currentItemId}`);
                     
@@ -709,19 +739,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         displayArea.classList.remove('hidden');
                         displayArea.classList.add('flex');
                     }
+                    
+                    // ✅ Update hidden input file_bukti
+                    const hiddenInput = document.getElementById(`file-bukti-${currentItemId}`);
+                    if (hiddenInput) {
+                        hiddenInput.value = result.filename;
+                    }
                 }
 
-                alert('Bukti berhasil diupload!');
+                alert('✅ Bukti berhasil diupload dan tersimpan!');
                 closeModal();
-                checkAllBuktiUploaded();
+                checkAllBuktiUploaded(); // ✅ Re-check untuk enable button submit
 
             } else {
-                alert('Upload Gagal: ' + result.message);
+                alert('❌ Upload Gagal: ' + (result.message || 'Terjadi kesalahan'));
             }
 
         } catch (error) {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat upload file.');
+            console.error('❌ Upload Error:', error);
+            alert('Terjadi kesalahan saat upload:\n' + error.message);
         } finally {
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
@@ -854,8 +890,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         submitLpjBtn.disabled = false;
                         submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
                     }
-                } catch (error) {
-                    console.error('Error:', error);
+                } catch (error) {                    console.error('Error:', error);
                     alert('Terjadi kesalahan koneksi: ' + error.message);
                     submitLpjBtn.disabled = false;
                     submitLpjBtn.innerHTML = '<i class="fas fa-check-circle"></i> Ajukan ke Bendahara';
