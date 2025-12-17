@@ -506,6 +506,12 @@ return [
         'method'     => 'index',
         'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
     ],
+    '/direktur/monitoring/data' => [
+        'controller' => 'Direktur\MonitoringController',
+        'method'     => 'getData',
+        'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
+        'methods'    => ['GET'],
+    ],
 
     // --- AI MODULE ROUTES (Delete to Disable) ---
     '/superadmin/ai-monitoring' => [
@@ -524,5 +530,25 @@ return [
         'method'     => 'toggleMode',
         'middleware' => ['AuthMiddleware', 'SuperAdminMiddleware'],
         'methods'    => ['POST'],
+    ],
+
+    // API Routes for Direktur Dashboard (pastikan di dalam middleware Direktur)
+    '/direktur/dashboard/api/usulan-per-jurusan' => [
+        'controller' => 'Direktur\DashboardController',
+        'method'     => 'apiUsulanPerJurusan',
+        'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
+        'methods'    => ['GET'],
+    ],
+    '/direktur/dashboard/api/dana-per-jurusan' => [
+        'controller' => 'Direktur\DashboardController',
+        'method'     => 'apiDanaPerJurusan',
+        'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
+        'methods'    => ['GET'],
+    ],
+    '/direktur/dashboard/api/pengajuan' => [
+        'controller' => 'Direktur\DashboardController',
+        'method'     => 'apiDaftarPengajuan',
+        'middleware' => ['AuthMiddleware', 'DirekturMiddleware'],
+        'methods'    => ['GET'],
     ],
 ];
