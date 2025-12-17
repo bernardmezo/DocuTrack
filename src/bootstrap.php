@@ -11,40 +11,41 @@ ini_set('log_errors', '1');
 ini_set('error_log', DOCUTRACK_ROOT . '/logs/php_error.log');
 error_reporting(E_ALL);
 
+// Debug Mode Configuration
+define('DEBUG_MODE', getenv('APP_ENV') === 'development');
+
 if (getenv('APP_ENV') === 'production') {
-    set_error_handler(function($severity, $message, $file, $line) {
+    set_error_handler(function ($severity, $message, $file, $line) {
         throw new ErrorException($message, 0, $severity, $file, $line);
     });
 }
 
-// Autoloader
+// Autoloader (PSR-4)
 spl_autoload_register(function ($class) {
-    $prefixes = [
-        'Core\\'         => DOCUTRACK_ROOT . '/src/core/',
-        'Controllers\\'  => DOCUTRACK_ROOT . '/src/controllers/',
-        'Models\\'       => DOCUTRACK_ROOT . '/src/model/',
-        'Helpers\\'      => DOCUTRACK_ROOT . '/src/helpers/',
-        'Middleware\\'   => DOCUTRACK_ROOT . '/src/middleware/',
-    ];
+    $prefix = 'App\\';
+    $base_dir = DOCUTRACK_ROOT . '/src/';
 
-    foreach ($prefixes as $prefix => $baseDir) {
-        $len = strlen($prefix);
-        if (strncmp($prefix, $class, $len) !== 0) {
-            continue;
-        }
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
 
-        $relativeClass = substr($class, $len);
-        $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
 
-        if (file_exists($file)) {
-            require $file;
-            return;
-        }
+    if (file_exists($file)) {
+        require_once $file;
     }
 });
 
 if (file_exists(DOCUTRACK_ROOT . '/vendor/autoload.php')) {
     require DOCUTRACK_ROOT . '/vendor/autoload.php';
+}
+
+// Load .env file variables
+if (class_exists('Dotenv\Dotenv') && file_exists(DOCUTRACK_ROOT . '/.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(DOCUTRACK_ROOT);
+    $dotenv->safeLoad();
 }
 
 // Config
@@ -75,14 +76,14 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Database Init
-require_once DOCUTRACK_ROOT . '/src/core/Database.php';
+
 
 try {
-    $database = \Core\Database::getInstance($config['db']);
+    $database = \App\Core\Database::getInstance($config['db']);
     $conn = $database->getConnection();
 } catch (Exception $e) {
     error_log('Bootstrap: ' . $e->getMessage());
-    
+
     if (getenv('APP_ENV') === 'development') {
         die('Database Error: ' . $e->getMessage());
     } else {
@@ -93,7 +94,7 @@ try {
 // Helper Functions
 function db(): mysqli
 {
-    return \Core\Database::getInstance()->getConnection();
+    return \App\Core\Database::getInstance()->getConnection();
 }
 
 function redirect(string $path, int $statusCode = 302): void
@@ -125,6 +126,14 @@ if (file_exists(DOCUTRACK_ROOT . '/src/helpers/security_helper.php')) {
 
 if (file_exists(DOCUTRACK_ROOT . '/src/helpers/logger_helper.php')) {
     require_once DOCUTRACK_ROOT . '/src/helpers/logger_helper.php';
+}
+
+if (file_exists(DOCUTRACK_ROOT . '/src/helpers/debug_logger_helper.php')) {
+    require_once DOCUTRACK_ROOT . '/src/helpers/debug_logger_helper.php';
+}
+
+if (file_exists(DOCUTRACK_ROOT . '/src/helpers/url_helper.php')) {
+    require_once DOCUTRACK_ROOT . '/src/helpers/url_helper.php';
 }
 
 return [

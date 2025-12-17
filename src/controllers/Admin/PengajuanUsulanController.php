@@ -1,46 +1,32 @@
 <?php
+
 // File: src/controllers/Admin/PengajuanUsulanController.php
 
-require_once '../src/core/Controller.php';
-// 1. Load Model Admin
-require_once '../src/model/adminModel.php';
+namespace App\Controllers\Admin;
 
-class AdminPengajuanUsulanController extends Controller {
-    
+use App\Core\Controller;
+use App\Services\AdminService;
+
+// Removed: use App\Services\ValidationService;
+
+class PengajuanUsulanController extends Controller
+{
     private $model;
-    
-    public function __construct() {
-        $this->model = new adminModel($this->db);
+    // validationService is now inherited from base Controller
+
+    public function __construct($db)
+    {
+ // Added $db parameter
+        parent::__construct($db); // Passed $db to parent constructor
+        $this->model = new AdminService($this->db);
+        // $this->validationService is already set in parent::__construct()
     }
 
-    public function index($data_dari_router = []) {
-        
-        // Handle action dari GET parameter
-        $action = $_GET['action'] ?? 'list';
-        $id = $_GET['id'] ?? null;
-        
-        // Route ke method yang sesuai
-        switch ($action) {
-            case 'detail':
-                if ($id) {
-                    return $this->detail($id, $data_dari_router);
-                }
-                break;
-            case 'edit':
-                if ($id) {
-                    return $this->edit($id, $data_dari_router);
-                }
-                break;
-            case 'delete':
-                if ($id) {
-                    return $this->delete($id);
-                }
-                break;
-        }
-        
+    public function index($data_dari_router = [])
+    {
         // Default: Tampilkan list
         $antrian_kak = $this->safeModelCall($this->model, 'getDashboardKAK', [], []);
-        
+
         // Support feedback messages
         $success_msg = $_SESSION['flash_message'] ?? null;
         $error_msg = $_SESSION['flash_error'] ?? null;
@@ -53,15 +39,16 @@ class AdminPengajuanUsulanController extends Controller {
             'error_message' => $error_msg
         ]);
 
-        $this->view('pages/admin/pengajuan_usulan', $data, 'app'); 
+        $this->view('pages/admin/pengajuan_usulan', $data, 'admin');
     }
-    
+
     /**
      * Detail Pengajuan Usulan
      */
-    public function detail($id, $data_dari_router = []) {
+    public function detail($id, $data_dari_router = [])
+    {
         $kegiatan = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
-        
+
         if (!$kegiatan) {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-usulan',
@@ -69,12 +56,12 @@ class AdminPengajuanUsulanController extends Controller {
                 'Data tidak ditemukan'
             );
         }
-        
+
         // Ambil data pendukung
         $rab_data = $this->safeModelCall($this->model, 'getRABByKAK', [$kegiatan['kakId'] ?? 0], []);
         $indikator_data = $this->safeModelCall($this->model, 'getIndikatorByKAK', [$kegiatan['kakId'] ?? 0], []);
         $tahapan_data = $this->safeModelCall($this->model, 'getTahapanByKAK', [$kegiatan['kakId'] ?? 0], []);
-        
+
         $data = array_merge($data_dari_router, [
             'title' => 'Detail Pengajuan - ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
             'kegiatan' => $kegiatan,
@@ -83,16 +70,17 @@ class AdminPengajuanUsulanController extends Controller {
             'tahapan_data' => $tahapan_data,
             'back_url' => '/docutrack/public/admin/pengajuan-usulan'
         ]);
-        
-        $this->view('pages/admin/pengajuan_usulan_detail', $data, 'app');
+
+        $this->view('pages/admin/pengajuan_usulan_detail', $data, 'admin');
     }
-    
+
     /**
      * Edit Pengajuan Usulan (form edit)
      */
-    public function edit($id, $data_dari_router = []) {
+    public function edit($id, $data_dari_router = [])
+    {
         $kegiatan = $this->safeModelCall($this->model, 'getDetailKegiatan', [$id], null);
-        
+
         if (!$kegiatan) {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-usulan',
@@ -100,26 +88,23 @@ class AdminPengajuanUsulanController extends Controller {
                 'Data tidak ditemukan'
             );
         }
-        
-        // Jika POST, process update
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            return $this->update($id);
-        }
-        
+
         // Tampilkan form edit
         $data = array_merge($data_dari_router, [
             'title' => 'Edit Pengajuan - ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'),
             'kegiatan' => $kegiatan,
             'back_url' => '/docutrack/public/admin/pengajuan-usulan'
         ]);
-        
-        $this->view('pages/admin/pengajuan_usulan_edit', $data, 'app');
+
+        $this->view('pages/admin/pengajuan_usulan_edit', $data, 'admin');
     }
-    
+
     /**
      * Update Pengajuan Usulan (proses form edit)
      */
-    private function update($id) {
+    public function update($id)
+    {
+ // Changed to public
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-usulan',
@@ -127,32 +112,33 @@ class AdminPengajuanUsulanController extends Controller {
                 'Method not allowed'
             );
         }
-        
+
         // TODO: Implementasi update logic di Model
         // $result = $this->model->updatePengajuan($id, $_POST);
-        
+
         $this->redirectWithMessage(
             '/docutrack/public/admin/pengajuan-usulan',
             'success',
             'Data berhasil diupdate'
         );
     }
-    
+
     /**
      * Delete Pengajuan Usulan
      */
-    public function delete($id) {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST' && !isset($_GET['confirm'])) {
+    public function delete($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { // Removed !isset($_GET['confirm'])
             $this->redirectWithMessage(
                 '/docutrack/public/admin/pengajuan-usulan',
                 'error',
                 'Konfirmasi delete diperlukan'
             );
         }
-        
+
         // TODO: Implementasi delete logic di Model
         // $result = $this->model->deletePengajuan($id);
-        
+
         $this->redirectWithMessage(
             '/docutrack/public/admin/pengajuan-usulan',
             'success',
@@ -163,22 +149,23 @@ class AdminPengajuanUsulanController extends Controller {
     /**
      * Store new pengajuan
      */
-    public function store() {
+    public function store()
+    {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: /docutrack/public/admin/pengajuan-usulan');
             exit;
         }
-        
+
         // Validasi file upload jika ada
         if (isset($_FILES['surat_pengantar']) && $_FILES['surat_pengantar']['error'] === UPLOAD_ERR_OK) {
             require_once '../src/helpers/security_helper.php';
-            
+
             $validation = validateFileUpload($_FILES['surat_pengantar'], [
                 'allowed_types' => ['application/pdf'],
                 'max_size' => 2 * 1024 * 1024, // 2MB
                 'allowed_extensions' => ['pdf']
             ]);
-            
+
             if (!$validation['valid']) {
                 $this->redirectWithMessage(
                     '/docutrack/public/admin/pengajuan-usulan',

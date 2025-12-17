@@ -1,204 +1,157 @@
 <?php
-// File: src/controllers/Admin/AdminPengajuanKegiatanController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/adminModel.php';
-require_once '../src/helpers/logger_helper.php';
-require_once __DIR__ . '/AdminController.php'; // Load AdminController for submitRincian
+namespace App\Controllers\Admin;
 
-class AdminPengajuanKegiatanController extends Controller {
-    
-    /**
-     * Menampilkan halaman daftar pengajuan kegiatan dengan filtering role-based.
-     */
-    public function index($data_dari_router = []) { 
-    $model = new adminModel($this->db);
+use App\Core\Controller;
+use App\Services\KegiatanService;
+use App\Services\WorkflowService;
+use Mpdf\Mpdf;
+use Exception;
 
-    // Ambil semua kegiatan (tanpa filter jurusan) agar halaman menampilkan SEMUA KAK
-    // yang memenuhi kriteria posisi = 1 dan status = 3.
-    $all_kegiatan = $model->getDashboardKAK();
+class PengajuanKegiatanController extends Controller
+{
+    private $kegiatanService;
+    private $workflowService;
 
-    // Filter: Hanya tampilkan kegiatan yang Posisi = Admin (1) DAN Status = Disetujui (3)
-    // Perhatian: beberapa fungsi/model mungkin memberi nama field berbeda (posisiId vs posisi, statusUtamaId vs statusId/status).
-    $list_kegiatan_disetujui = array_filter($all_kegiatan, function($item) {
-        // ambil nilai posisi dari beberapa kemungkinan key
-        $posisi = null;
-        if (isset($item['posisiId'])) {
-            $posisi = $item['posisiId'];
-        } else {
-            $posisi = 0;
-        }
+    public function __construct()
+    {
+        parent::__construct();
+        $this->kegiatanService = new KegiatanService($this->db);
+        $this->workflowService = new WorkflowService($this->db);
+    }
 
-        // ambil nilai status dari beberapa kemungkinan key
-        $statusId = null;
-        if (isset($item['statusUtamaId'])) {
-            $statusId = $item['statusUtamaId'];
-        } else {
-            $statusId = 0;
-        }
-
-        $posisi = (int) $posisi;
-        $statusId = (int) $statusId;
-
-        // Hanya posisi = 1 (Admin) dan status = 3 (Disetujui)
-        return ($posisi === 1 && $statusId === 3);
-    });
-
-    // Re-index array agar urutan kunci rapi (0, 1, 2...) untuk View
-    $list_kegiatan_disetujui = array_values($list_kegiatan_disetujui);
-
-    $data = array_merge($data_dari_router, [
-        'title' => 'List Pengajuan Kegiatan',
-        'list_kegiatan' => $list_kegiatan_disetujui,
-        'debug_info' => [
-            'total_raw' => count($all_kegiatan),
-            'total_filtered' => count($list_kegiatan_disetujui)
-        ]
-    ]);
-
-    $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'app');
-}
-
-
-    /**
-     * Menampilkan halaman detail atau rincian kegiatan.
-     */
-    public function show($id, $data_dari_router = []) {
-        $mode = $_GET['mode'] ?? 'detail';
-        $ref = $_GET['ref'] ?? 'kegiatan'; 
-        $base_url = "/docutrack/public/admin";
-        $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-kegiatan';
-
-        $model = new adminModel($this->db);
-        
-        $kegiatanDB = $model->getDetailKegiatan($id);
-
-        if (!$kegiatanDB) {
-            echo "<h1>404 - Kegiatan dengan ID $id tidak ditemukan.</h1>";
-            exit;
-        }
-        
-        if ($mode === 'rincian') {
-            $data = array_merge($data_dari_router, [
-                'title' => 'Rincian Kegiatan - ' . htmlspecialchars($kegiatanDB['namaKegiatan']),
-                'kegiatan_id' => $id,
-                'namaKeg' => $kegiatanDB['namaKegiatan'],
-                'back_url' => $back_url
-            ]);
-
-            $this->view('pages/admin/detail_kegiatan', $data, 'app');
-            return;
-        }
-        
-        $kakId = $kegiatanDB['kakId'];
-        
-        $iku_string = $kegiatanDB['iku'] ?? '';
-        $iku_array = !empty($iku_string) ? explode(',', $iku_string) : [];
-        
-        $indikator = $model->getIndikatorByKAK($kakId);
-        $tahapan = $model->getTahapanByKAK($kakId);
-        $rab = $model->getRABByKAK($kakId);
-
-        $surat_pengantar_url = '';
-        if (!empty($kegiatanDB['suratPengantar'])) {
-            $surat_pengantar_url = '/docutrack/public/uploads/surat/' . $kegiatanDB['suratPengantar'];
-        }
-
-        $kak_formatted = [
-            'nama_pengusul' => $kegiatanDB['pemilikKegiatan'],
-            'nim' => $kegiatanDB['nimPelaksana'],
-            'jurusan' => $kegiatanDB['jurusanPenyelenggara'],
-            'prodi' => $kegiatanDB['prodiPenyelenggara'],
-            'nama_kegiatan' => $kegiatanDB['namaKegiatan'],
-            'gambaran_umum' => $kegiatanDB['gambaranUmum'],
-            'penerima_manfaat' => $kegiatanDB['penerimaMaanfaat'],
-            'metode_pelaksanaan' => $kegiatanDB['metodePelaksanaan'],
-            'tanggal_mulai' => $kegiatanDB['tanggalMulai'] ?? '-',
-            'tanggal_selesai' => $kegiatanDB['tanggalSelesai'] ?? '-',
-            'surat_pengantar' => $kegiatanDB['suratPengantar'] ?? ''
-        ];
+    public function index($data_dari_router = [])
+    {
+        // Get kegiatan at Admin position with Approved status (ready for rincian)
+        $list_kegiatan_disetujui = $this->kegiatanService->getKegiatanByStatus(
+            WorkflowService::POSITION_ADMIN,
+            WorkflowService::STATUS_DISETUJUI
+        );
 
         $data = array_merge($data_dari_router, [
-            'title' => 'Detail Kegiatan - ' . htmlspecialchars($kegiatanDB['namaKegiatan']),
-            'status' => ucfirst($kegiatanDB['status_text'] ?? 'Menunggu'),
-            'user_role' => $_SESSION['user_role'] ?? 'admin',
-            'kegiatan_data' => $kak_formatted,
-            'iku_data' => $iku_array,
-            'indikator_data' => $indikator,
-            'tahapan_data' => $tahapan,
-            'rab_data' => $rab,
-            'kode_mak' => $kegiatanDB['buktiMAK'] ?? '-',
-            'komentar_revisi' => [],
-            'komentar_penolakan' => '',
-            'surat_pengantar_url' => $surat_pengantar_url,
-            'back_url' => $back_url
+            'title' => 'List Pengajuan Kegiatan',
+            'list_kegiatan' => $list_kegiatan_disetujui,
+            'workflow' => $this->workflowService
         ]);
 
-        $this->view('pages/admin/detail_kak', $data, 'app');
+        $this->view('pages/admin/pengajuan_kegiatan_list', $data, 'admin');
     }
 
-    /**
-     * Menangani submit rincian kegiatan dengan controller baru berbasis MVC.
-     */
-    public function submitRincian(): void
+    public function show($id, $data_dari_router = [])
     {
-        $controller = new \Controllers\Admin\AdminController($this->db);
-        $controller->submitRincian();
-    }
-
-    /**
-     * Mendownload surat pengantar dengan validasi keamanan.
-     */
-    public function downloadSurat($filename) {
-        $safe_filename = basename($filename);
-        $upload_dir = realpath(__DIR__ . '/../../../public/uploads/surat/');
-        
-        if ($upload_dir === false) {
-            http_response_code(500);
-            echo "Direktori upload tidak ditemukan.";
-            return;
-        }
-        
-        $file_path = realpath($upload_dir . DIRECTORY_SEPARATOR . $safe_filename);
-        
-        if ($file_path === false || !file_exists($file_path)) {
-            http_response_code(404);
-            echo "File tidak ditemukan.";
-            return;
-        }
-        
-        if (strpos($file_path, $upload_dir) !== 0) {
-            http_response_code(403);
-            error_log("[SECURITY] Path traversal attempt blocked: {$filename} from IP: {$_SERVER['REMOTE_ADDR']}");
-            echo "Akses ditolak.";
-            return;
-        }
-        
-        $allowed_extensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
-        $extension = strtolower(pathinfo($safe_filename, PATHINFO_EXTENSION));
-        
-        if (!in_array($extension, $allowed_extensions)) {
-            http_response_code(403);
-            echo "Tipe file tidak diizinkan.";
-            return;
+        // Validasi ID
+        $kegiatanId = (int)$id;
+        if ($kegiatanId <= 0) {
+            error_log("ERROR PengajuanKegiatanController::show - Invalid ID: {$id}");
+            $_SESSION['flash_error'] = 'ID kegiatan tidak valid.';
+            header('Location: /docutrack/public/admin/pengajuan-kegiatan');
+            exit;
         }
 
-        $mime_types = [
-            'pdf'  => 'application/pdf',
-            'doc'  => 'application/msword',
-            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'jpg'  => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'png'  => 'image/png'
+        $kegiatanDB = $this->kegiatanService->getDetailLengkap($kegiatanId);
+
+        if (!$kegiatanDB) {
+            error_log("ERROR PengajuanKegiatanController::show - Kegiatan ID {$kegiatanId} not found in database");
+            $_SESSION['flash_error'] = 'Kegiatan tidak ditemukan atau belum memiliki data KAK lengkap.';
+            header('Location: /docutrack/public/admin/pengajuan-kegiatan');
+            exit;
+        }
+
+        $data = [
+             'title' => 'Detail Kegiatan - ' . htmlspecialchars($kegiatanDB['namaKegiatan']),
+             'kegiatan_data' => $kegiatanDB,
+             'kegiatan_id' => $kegiatanId,
+             'namaKeg' => $kegiatanDB['namaKegiatan'] ?? 'N/A',
+             'status' => $kegiatanDB['status_text'] ?? 'Disetujui',
+             'user_role' => 'admin',
+             'komentar_revisi' => [],
+             'komentar_penolakan' => '',
+             'iku_data' => $kegiatanDB['indikator_list'] ?? [],
+             'indikator_data' => $kegiatanDB['indikator_data'] ?? [],
+             'workflow' => $this->workflowService,
+             'workflow_progress' => $this->workflowService->getProgress($kegiatanDB),
+             'rab_data' => $kegiatanDB['rab_data'] ?? [],
+             'kode_mak' => $kegiatanDB['kodeMak'] ?? '',
+             'back_url' => '/docutrack/public/admin/pengajuan-kegiatan',
+             'surat_pengantar_url' => !empty($kegiatanDB['suratPengantar']) 
+                 ? '/docutrack/public/assets/uploads/' . $kegiatanDB['suratPengantar'] 
+                 : '',
         ];
 
-        header('Content-Type: ' . ($mime_types[$extension] ?? 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . $safe_filename . '"');
-        header('Content-Length: ' . filesize($file_path));
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Pragma: no-cache');
+        if (($_GET['mode'] ?? '') === 'rincian') {
+            $this->view('pages/admin/detail_kegiatan', $data, 'admin');
+        } else {
+            $this->view('pages/admin/detail_kak', $data, 'admin');
+        }
+    }
+
+    /**
+     * Generate dan download PDF KAK
+     * 
+     * @param int $id - ID Kegiatan
+     */
+    public function downloadPDF($id)
+    {
+        error_log("=== downloadPDF START ===");
         
-        readfile($file_path);
-        exit;
+        try {
+            $kegiatanId = (int)$id;
+            if ($kegiatanId <= 0) {
+                throw new Exception("ID kegiatan tidak valid");
+            }
+
+            // Ambil data kegiatan lengkap
+            $kegiatanDB = $this->kegiatanService->getDetailLengkap($kegiatanId);
+            
+            if (!$kegiatanDB) {
+                throw new Exception("Kegiatan dengan ID {$kegiatanId} tidak ditemukan");
+            }
+
+            // Prepare data untuk template
+            $data = [
+                // Template Data
+                'kegiatan_data' => [
+                    'nama_pengusul' => $kegiatanDB['pemilikKegiatan'] ?? '-',
+                    'nim_pengusul' => $kegiatanDB['nimPelaksana'] ?? '-',
+                    'jurusan' => $kegiatanDB['jurusanPenyelenggara'] ?? '-',
+                    'prodi' => $kegiatanDB['prodiPenyelenggara'] ?? '-',
+                    'nama_kegiatan' => $kegiatanDB['namaKegiatan'] ?? 'Tidak ada judul',
+                    'gambaran_umum' => $kegiatanDB['gambaranUmum'] ?? '-',
+                    'penerima_manfaat' => $kegiatanDB['penerimaMaanfaat'] ?? '-',
+                    'metode_pelaksanaan' => $kegiatanDB['metodePelaksanaan'] ?? '-',
+                    'tahapan_kegiatan' => $kegiatanDB['tahapanKegiatan'] ?? '-',
+                    'tanggal_mulai' => $kegiatanDB['tanggalMulai'] ?? '',
+                    'tanggal_selesai' => $kegiatanDB['tanggalSelesai'] ?? ''
+                ],
+                'iku_data' => $kegiatanDB['iku_array'] ?? [],
+                'indikator_data' => $kegiatanDB['indikator_data'] ?? [],
+                'rab_data' => $kegiatanDB['rab_data'] ?? [],
+                'kode_mak' => $kegiatanDB['kodeMak'] ?? '',
+                
+                // Metadata
+                'pdf_title' => 'KAK - ' . ($kegiatanDB['namaKegiatan'] ?? 'Untitled'),
+                'pdf_author' => 'DocuTrack System'
+            ];
+
+            // Render template path
+            $templatePath = __DIR__ . '/../../views/pdf/kak_template.php';
+            
+            // Generate filename
+            $safe_filename = preg_replace('/[^A-Za-z0-9\-]/', '_', $kegiatanDB['namaKegiatan'] ?? 'doc');
+            $filename = 'KAK_' . $safe_filename . '_' . date('Ymd') . '.pdf';
+
+            // Init Service
+            $pdfService = new \App\Services\PdfService();
+            $pdfService->generate($templatePath, $data, $filename, 'D');
+            
+            error_log("=== downloadPDF END (SUCCESS) ===");
+            exit;
+            
+        } catch (Exception $e) {
+            error_log("ERROR downloadPDF: " . $e->getMessage());
+            $_SESSION['flash_error'] = 'Gagal generate PDF: ' . $e->getMessage();
+            header('Location: /docutrack/public/admin/pengajuan-kegiatan/show/' . $id);
+            exit;
+        }
     }
 }

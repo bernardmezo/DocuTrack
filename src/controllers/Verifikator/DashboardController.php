@@ -1,63 +1,56 @@
 <?php
-// File: src/controllers/Verifikator/DashboardController.php
 
-require_once '../src/core/Controller.php';
-require_once '../src/model/verifikatorModel.php';
+namespace App\Controllers\Verifikator;
 
-class VerifikatorDashboardController extends Controller {
-    
-    /**
-     * --- DATA MASTER DUMMY (STRUKTUR PNJ) ---
-     * 'jurusan' = Induk (Digunakan untuk Filter)
-     * 'prodi'   = Spesifik (Digunakan untuk Tampilan)
-     */
-    
-    public function index($data_dari_router = []) {
-        
-        $model = new verifikatorModel($this->db);
+use App\Core\Controller;
+use App\Services\VerifikatorService;
+use App\Services\LogStatusService; // Added
 
-        $stats = $model->getDashboardStats();
+class DashboardController extends Controller
+{
+    private $service;
+    private LogStatusService $logStatusService; // Added
 
-        $list_usulan = $model->getDashboardKAK();
+    public function __construct($db)
+    {
+        parent::__construct($db);
+        $this->service = new VerifikatorService($this->db);
+        $this->logStatusService = new LogStatusService($this->db); // Added
+    }
 
+    public function index($data_dari_router = [])
+    {
+        $stats = $this->safeModelCall($this->service, 'getDashboardStats', [], []);
+        $list_usulan = $this->safeModelCall($this->service, 'getDashboardKAK', [], []);
         $stats = [
-            'total' => $stats['total'],
-            'disetujui' => $stats['disetujui'],
-            'ditolak' => $stats['ditolak'],
-            'pending' => $stats['pending']
+            'total' => $stats['total'] ?? 0,
+            'disetujui' => $stats['disetujui'] ?? 0,
+            'ditolak' => $stats['ditolak'] ?? 0,
+            'pending' => $stats['pending'] ?? 0
         ];
-        
-        // Daftar Jurusan Unik (Untuk Dropdown Filter)
-        // Ambil dari master table tbl_jurusan lewat model jika tersedia,
-        // jika kosong gunakan fallback dari list_usulan (kolom 'jurusan').
-        $jurusan_list = [];
-        $jurusan_rows = $model->getListJurusan();
-
-        if (!empty($jurusan_rows)) {
-            // Map ke nama jurusan; coba beberapa kemungkinan nama kolom yang umum
-            $jurusan_list = array_map(function($r) {
-                if (isset($r['nama_jurusan'])) return $r['namaJurusan'];
-                // fallback: ambil nilai pertama non-empty pada row
-                foreach ($r as $v) { if ($v !== null && $v !== '') return $v; }
-                return null;
-            }, $jurusan_rows);
-            
-            // normalisasi: hapus null/empty, unik, urutkan
-            $jurusan_list = array_values(array_filter(array_unique($jurusan_list), fn($v) => $v !== null && $v !== ''));
+        $jurusan_list = $this->safeModelCall($this->service, 'getListJurusan', [], []);
+        if (is_array($jurusan_list) && !empty($jurusan_list)) {
+            $jurusan_list = array_map(fn($r) => $r['namaJurusan'] ?? null, $jurusan_list);
+            $jurusan_list = array_values(array_filter(array_unique($jurusan_list)));
             sort($jurusan_list);
         } else {
-            // fallback ke cara lama: ambil kolom 'jurusan' dari data usulan
-            $jurusan_list = array_unique(array_column($list_usulan, 'jurusan'));
+            $jurusan_list = array_values(array_unique(array_column($list_usulan, 'jurusan')));
             sort($jurusan_list);
         }
-        
+
         $data = array_merge($data_dari_router, [
-            'title' => 'Dashboard Verifikator',
-            'stats' => $stats,
-            'list_usulan' => $list_usulan,
-            'jurusan_list' => $jurusan_list,
-            'current_page' => 1,
-            'total_pages' => 1
+            'title' => 'Dashboard Verifikator', 'stats' => $stats, 'list_usulan' => $list_usulan,
+            'jurusan_list' => $jurusan_list, 'current_page' => 1, 'total_pages' => 1
+        ]);
+
+        // --- Ambil Notifikasi ---
+        $userId = $_SESSION['user_id'] ?? 0; // Asumsi userId ada di session
+        $notificationsData = $this->logStatusService->getNotificationsForUser($userId);
+        // --- End Notifikasi ---
+
+        $data = array_merge($data, [ // Merge again to add notification data
+            'notifications' => $notificationsData['items'],
+            'unread_notifications_count' => $notificationsData['unread_count']
         ]);
 
         $this->view('pages/verifikator/dashboard', $data, 'verifikator');

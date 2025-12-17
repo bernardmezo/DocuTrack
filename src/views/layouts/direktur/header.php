@@ -7,11 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'];
 
-function isActive($current, $target) {
-    return (strpos($current, $target) !== false)
-        ? 'nav-link-base nav-link-active'
-        : 'nav-link-base nav-link-inactive';
-}
+
 
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
@@ -52,8 +48,8 @@ switch (strtolower($userRole)) {
     case 'bendahara':
         $akun_link = '/docutrack/public/bendahara/akun';
         break;
-    case 'super-admin':
-        $akun_link = '/docutrack/public/super_admin/akun';
+    case 'superadmin':
+        $akun_link = '/docutrack/public/superadmin/akun';
         break;
     case 'direktur':
         $akun_link = '/docutrack/public/direktur/akun';
@@ -106,13 +102,13 @@ switch (strtolower($userRole)) {
                             <ul class="flex gap-4">
                                 <li>
                                     <a href="/docutrack/public/direktur/dashboard" 
-                                    class="<?= isActive($current, '/direktur/dashboard'); ?>">
+                                    class="<?= isActive($current, '/direktur/dashboard', 'nav-link-base nav-link-active', 'nav-link-base nav-link-inactive'); ?>">
                                         <i class="fas fa-th-large text-sm"></i> Dashboard
                                     </a>
                                 </li>
                                 <li>
                                     <a href="/docutrack/public/direktur/monitoring" 
-                                    class="<?= isActive($current, '/direktur/monitoring'); ?>">
+                                    class="<?= isActive($current, '/direktur/monitoring', 'nav-link-base nav-link-active', 'nav-link-base nav-link-inactive'); ?>">
                                         <i class="fas fa-desktop text-sm"></i> Monitoring
                                     </a>
                                 </li>
@@ -124,11 +120,26 @@ switch (strtolower($userRole)) {
                 <!-- Sisi Kanan: Notif, Profil, Hamburger -->
                 <div class="flex items-center gap-4 md:gap-6">
                     <!-- Ikon Notifikasi -->
-                    <div class="relative text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200">
-                        <i class="fas fa-bell"></i>
-                        <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F]">
-                            <?php echo 10; // Contoh Notif ?>
-                        </span>
+                    <div class="relative" id="notification-container">
+                        <div id="notification-icon-button" class="relative text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200">
+                            <i class="fas fa-bell"></i>
+                            <span id="notification-count" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F] hidden">
+                                0
+                            </span>
+                        </div>
+                        <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-xl py-2 z-50 hidden border border-gray-100">
+                            <div class="flex justify-between items-center px-4 py-2 border-b">
+                                <h3 class="font-semibold text-gray-800">Notifikasi</h3>
+                                <button id="mark-all-as-read-btn" class="text-sm text-blue-600 hover:underline">Tandai semua dibaca</button>
+                            </div>
+                            <div id="notification-list" class="max-h-80 overflow-y-auto">
+                                <!-- Notification items will be injected here by JavaScript -->
+                                <div class="text-center text-gray-500 py-4">Tidak ada notifikasi baru.</div>
+                            </div>
+                            <div class="px-4 py-2 border-t text-center">
+                                <a href="#" id="view-all-notifications-link" class="text-sm text-blue-600 hover:underline">Lihat semua notifikasi</a>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Profile Dropdown -->
@@ -150,10 +161,12 @@ switch (strtolower($userRole)) {
                                  <i class="fas fa-user-circle text-gray-400"></i>
                              </a>
                              <hr class="my-1 border-gray-200">
-                             <a href="/docutrack/public/logout" class="flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
-                                 <span>Logout</span>
-                                 <i class="fas fa-sign-out-alt text-red-400"></i>
-                             </a>
+                                <form action="/docutrack/public/logout" method="POST" class="block w-full">
+                                    <button type="submit" class="w-full flex items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+                                        <span>Logout</span>
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                </form>
                         </div>
                     </div>
 

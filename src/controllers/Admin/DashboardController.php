@@ -1,72 +1,65 @@
 <?php
-// File: src/controllers/Admin/DashboardController.php
 
-require_once '../src/core/Controller.php';
-// 1. Load Model Admin
-require_once '../src/model/adminModel.php';
+namespace App\Controllers\Admin;
 
-class AdminDashboardController extends Controller {
-    
-    public function index($data_dari_router = []) {
-        
-        $model = new adminModel($this->db);
+use App\Core\Controller;
+use App\Services\LpjService;
+use App\Services\KegiatanService;
+use App\Services\LogStatusService; // Added
 
-        // 1. ambil data statisti card (buat kartu yang diatas)
-        $stats = $model->getDashboardStats(); 
-        
-        // 2. ambil list lengkap kak (Filter by Jurusan user login)
+class DashboardController extends Controller
+{
+    private $lpjService;
+    private $kegiatanService;
+    private LogStatusService $logStatusService; // Added
+
+    public function __construct($db)
+    {
+        parent::__construct($db);
+        $this->lpjService = new LpjService($this->db);
+        $this->kegiatanService = new KegiatanService($this->db);
+        $this->logStatusService = new LogStatusService($this->db); // Added
+    }
+
+    public function index($data_dari_router = [])
+    {
+        $stats = $this->kegiatanService->getDashboardStats();
         $jurusan = $_SESSION['user_jurusan'] ?? null;
-        
-        $list_kak = $model->getDashboardKAK(); 
-        
-        
-        // 3. ambil list lengkap lpj
-        $list_lpj = $model->getDashboardLPJ(); 
-
-        // -------------------------------------------------------
-        // Data Statis untuk Alur Progress (Jarang berubah)
-        // -------------------------------------------------------
-        
-        // Alur KAK
+        $list_kak = $this->kegiatanService->getDashboardKAK($jurusan);
+        $list_lpj = $this->lpjService->getDashboardLPJ();
         $tahapan_kak = ['Pengajuan', 'Validasi', 'ACC PPK', 'ACC WD', 'Dana Cair'];
-        $tahap_sekarang_kak = 'Pengajuan'; // Nanti bisa dibuat dinamis per user/kegiatan jika perlu
-        $icons_kak = [ 
-            'Pengajuan' => 'fa-file-alt', 
-            'Validasi' => 'fa-check-double', 
-            'ACC PPK' => 'fa-stamp', 
-            'ACC WD' => 'fa-user-check', 
-            'Dana Cair' => 'fa-wallet'
+        $tahap_sekarang_kak = 'Pengajuan';
+        $icons_kak = [
+            'Pengajuan' => 'fa-file-alt', 'Validasi' => 'fa-check-double', 'ACC PPK' => 'fa-stamp',
+            'ACC WD' => 'fa-user-check', 'Dana Cair' => 'fa-wallet'
         ];
-        
-        // Alur LPJ
         $tahapan_lpj = ['Upload Bukti', 'Validasi', 'ACC Bendahara', 'Selesai'];
-        $tahap_sekarang_lpj = 'Validasi'; // Nanti bisa dibuat dinamis
-        $icons_lpj = [ 
-            'Upload Bukti' => 'fa-upload', 
-            'Validasi' => 'fa-check-double', 
-            'ACC Bendahara' => 'fa-file-invoice-dollar', 
-            'Selesai' => 'fa-flag-checkered' 
+        $tahap_sekarang_lpj = 'Validasi';
+        $icons_lpj = [
+            'Upload Bukti' => 'fa-upload', 'Validasi' => 'fa-check-double',
+            'ACC Bendahara' => 'fa-file-invoice-dollar', 'Selesai' => 'fa-flag-checkered'
         ];
 
-        // 4. Gabungkan semua data untuk dikirim ke View
+        // --- Ambil Notifikasi ---
+        $userId = $_SESSION['user_id'] ?? 0; // Asumsi userId ada di session
+        $notificationsData = $this->logStatusService->getNotificationsForUser($userId);
+        // --- End Notifikasi ---
+
         $data = array_merge($data_dari_router, [
             'title' => 'Admin Dashboard',
-            'stats' => $stats, // Data Real dari DB
-            
-            // Data Alur (Statis)
+            'stats' => $stats,
             'tahapan_kak' => $tahapan_kak,
             'tahap_sekarang_kak' => $tahap_sekarang_kak,
             'icons_kak' => $icons_kak,
             'tahapan_lpj' => $tahapan_lpj,
             'tahap_sekarang_lpj' => $tahap_sekarang_lpj,
             'icons_lpj' => $icons_lpj,
-            
-            // Data List Tabel (Real dari DB)
-            'list_kak' => $list_kak, 
-            'list_lpj' => $list_lpj  
+            'list_kak' => $list_kak,
+            'list_lpj' => $list_lpj,
+            'notifications' => $notificationsData['items'], // Added
+            'unread_notifications_count' => $notificationsData['unread_count'] // Added
         ]);
 
-        // 5. Tampilkan View
-        $this->view('pages/admin/dashboard', $data, 'app'); 
+        $this->view('pages/admin/dashboard', $data, 'admin');
     }
 }
