@@ -114,7 +114,7 @@
 </section>
 
 <!-- About Section - Fully Responsive with Corner-to-Corner Content -->
-<section id="about" class="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 relative overflow-hidden">
+<section id="about" class="py-12 mb-12 lg:mb-0 sm:py-16 md:py-20 lg:py-24 bg-gray-50 relative overflow-hidden">
         <!-- Background Decoration -->
         <div class="absolute inset-0 z-0 pointer-events-none hidden md:block">
             <img src="/docutrack/public/assets/images/background/about-sec.svg" 
@@ -191,6 +191,8 @@
             </div>
         </div>
     </section>
+
+
 <!-- Features Section - Fully Responsive with Better Text Spacing -->
 <section id="detail" class="relative w-full min-h-screen bg-gray-50 overflow-hidden flex items-center py-12 sm:py-16 md:py-20">
     
