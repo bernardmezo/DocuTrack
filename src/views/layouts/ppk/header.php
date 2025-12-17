@@ -69,25 +69,25 @@ switch (strtolower($userRole)) {
                         <ul class="flex gap-2 xl:gap-4">
                             <li>
                                 <a href="/docutrack/public/ppk/dashboard"
-                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-all duration-200 text-sm xl:text-base whitespace-nowrap <?= isActive($current, '/docutrack/public/ppk/dashboard') ?>">
+                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-colors whitespace-nowrap <?= isActive($current, '/ppk/dashboard') ?>">
                                     <i class="fas fa-th-large text-xs xl:text-sm"></i> Dashboard
                                 </a>
                             </li>
                             <li>
                                 <a href="/docutrack/public/ppk/pengajuan-kegiatan"
-                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-all duration-200 text-sm xl:text-base whitespace-nowrap <?= isActive($current, '/docutrack/public/ppk/pengajuan-kegiatan') ?>">
+                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-colors whitespace-nowrap <?= isActive($current, '/ppk/pengajuan-kegiatan') ?>">
                                     <i class="fas fa-file-invoice text-xs xl:text-sm"></i> Pengajuan Kegiatan
                                 </a>
                             </li>
                             <li>
                                 <a href="/docutrack/public/ppk/monitoring"
-                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-all duration-200 text-sm xl:text-base whitespace-nowrap <?= isActive($current, '/docutrack/public/ppk/monitoring') ?>">
+                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-colors whitespace-nowrap <?= isActive($current, '/ppk/monitoring') ?>">
                                     <i class="fas fa-binoculars text-xs xl:text-sm"></i> Monitoring
                                 </a>
                             </li>
                             <li>
                                 <a href="/docutrack/public/ppk/riwayat-verifikasi"
-                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-all duration-200 text-sm xl:text-base whitespace-nowrap <?= isActive($current, '/docutrack/public/ppk/riwayat-verifikasi') ?>">
+                                   class="flex items-center gap-2 px-3 xl:px-4 py-2 rounded-full transition-colors whitespace-nowrap <?= isActive($current, '/ppk/riwayat-verifikasi') ?>">
                                     <i class="fas fa-history text-xs xl:text-sm"></i> Riwayat Verifikasi
                                 </a>
                             </li>
@@ -165,28 +165,28 @@ switch (strtolower($userRole)) {
                     <!-- Navigation Links -->
                     <li>
                         <a href="/docutrack/public/ppk/dashboard"
-                           class="flex items-center gap-3 px-4 py-3 transition-all duration-200 <?= isActiveMobile($current, '/docutrack/public/ppk/dashboard') ?>">
+                           class="flex items-center gap-3 px-4 py-3 transition-colors <?= isActiveMobile($current, '/ppk/dashboard') ?>">
                             <i class="fas fa-th-large text-base w-5"></i>
                             <span class="text-sm">Dashboard</span>
                         </a>
                     </li>
                     <li>
                         <a href="/docutrack/public/ppk/pengajuan-kegiatan"
-                           class="flex items-center gap-3 px-4 py-3 transition-all duration-200 <?= isActiveMobile($current, '/docutrack/public/ppk/pengajuan-kegiatan') ?>">
+                           class="flex items-center gap-3 px-4 py-3 transition-colors <?= isActiveMobile($current, '/ppk/pengajuan-kegiatan') ?>">
                             <i class="fas fa-file-invoice text-base w-5"></i>
                             <span class="text-sm">Pengajuan Kegiatan</span>
                         </a>
                     </li>
                     <li>
                         <a href="/docutrack/public/ppk/monitoring"
-                           class="flex items-center gap-3 px-4 py-3 transition-all duration-200 <?= isActiveMobile($current, '/docutrack/public/ppk/monitoring') ?>">
+                           class="flex items-center gap-3 px-4 py-3 transition-colors <?= isActiveMobile($current, '/ppk/monitoring') ?>">
                             <i class="fas fa-binoculars text-base w-5"></i>
                             <span class="text-sm">Monitoring</span>
                         </a>
                     </li>
                     <li>
                         <a href="/docutrack/public/ppk/riwayat-verifikasi"
-                           class="flex items-center gap-3 px-4 py-3 transition-all duration-200 <?= isActiveMobile($current, '/docutrack/public/ppk/riwayat-verifikasi') ?>">
+                           class="flex items-center gap-3 px-4 py-3 transition-colors <?= isActiveMobile($current, '/ppk/riwayat-verifikasi') ?>">
                             <i class="fas fa-history text-base w-5"></i>
                             <span class="text-sm">Riwayat Verifikasi</span>
                         </a>
@@ -195,14 +195,14 @@ switch (strtolower($userRole)) {
                     <!-- Account Links (Mobile Only) -->
                     <li class="sm:hidden">
                         <a href="<?php echo $akun_link; ?>"
-                           class="flex items-center gap-3 px-4 py-3 text-gray-200 hover:bg-white/10 font-medium transition-all duration-200">
+                           class="flex items-center gap-3 px-4 py-3 text-gray-200 hover:bg-white/10 font-medium transition-colors">
                             <i class="fas fa-user-circle text-base w-5"></i>
                             <span class="text-sm">Akun Saya</span>
                         </a>
                     </li>
                     <li class="sm:hidden">
                         <a href="/docutrack/public/logout"
-                           class="flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-red-500/20 font-medium transition-all duration-200">
+                           class="flex items-center gap-3 px-4 py-3 text-red-300 hover:bg-red-500/20 font-medium transition-colors">
                             <i class="fas fa-sign-out-alt text-base w-5"></i>
                             <span class="text-sm">Logout</span>
                         </a>
