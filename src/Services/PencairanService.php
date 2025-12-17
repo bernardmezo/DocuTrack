@@ -6,7 +6,7 @@ use App\Models\Bendahara\BendaharaModel;
 use App\Services\LogStatusService;
 use Exception;
 use DateTime;
-use Throwable;
+use mysqli;
 
 class PencairanService
 {
@@ -102,15 +102,33 @@ class PencairanService
     }
 
     /**
-     * Proses Pencairan Dana (Unified).
-     * Menangani pencairan penuh maupun bertahap.
-     *
-     * @param int $kegiatanId
+     * Get Pencairan total Dana yang sudah dicairkan by Kegiatan ID
+     */
+    public function getTotalDicairkanByKegiatan($id)
+    {
+        return $this->bendaharaModel->getTotalDicairkanByKegiatan($id);
+    }
+
+    /**
+     * Get Riwayat Pencairan by Kegiatan ID
+     */
+    public function getRiwayatPencairanByKegiatan($id)
+    {
+        return $this->bendaharaModel->getRiwayatPencairanByKegiatan($id);
+    }
+
+    /**
+     * Proses Pencairan Dana Bertahap (Ported from Dev)
+     * 
+     * @param int $kegiatanId ID kegiatan
      * @param array $dataPencairan [
-     *   'jumlah' => float,
-     *   'tanggal' => string (Y-m-d),
-     *   'metode' => string ('full' | 'bertahap'),
-     *   'tahapan' => array (optional, required if metode='bertahap')
+     *   'jumlah' => float (total anggaran),
+     *   'tanggal' => string (tanggal pencairan pertama),
+     *   'metode' => string ('bertahap' | 'penuh'),
+     *   'tahapan' => array [
+     *     ['tanggal' => 'Y-m-d', 'termin' => 'string', 'nominal' => float],
+     *     ...
+     *   ],
      *   'catatan' => string (optional)
      * ]
      * @return bool
@@ -118,104 +136,122 @@ class PencairanService
      */
     public function cairkanDana($kegiatanId, $dataPencairan)
     {
-        $jumlah = $dataPencairan['jumlah'] ?? 0;
-        $tanggalCair = $dataPencairan['tanggal'] ?? date('Y-m-d');
-        $metode = $dataPencairan['metode'] ?? 'full';
-        $tahapan = $dataPencairan['tahapan'] ?? [];
+        $metode = $dataPencairan['metode'] ?? 'penuh';
         $catatan = $dataPencairan['catatan'] ?? '';
-
-        // Logic untuk menentukan Base Date perhitungan LPJ
-        $baseDateForLpj = $tanggalCair;
-        $jsonTahapan = null;
-
-        if ($metode === 'bertahap' && !empty($tahapan)) {
-            // Validasi total persentase
-            $totalPersen = array_sum(array_column($tahapan, 'persentase'));
-            if ($totalPersen != 100) {
-                throw new Exception("Total persentase tahapan harus 100%.");
-            }
-
-            // Encode JSON
-            $jsonTahapan = json_encode($tahapan);
-
-            // Ambil tanggal tahap terakhir untuk deadline LPJ
-            $lastStage = end($tahapan);
-            $baseDateForLpj = $lastStage['tanggal'];
-        }
-
-        $tenggatLpj = $this->calculateLpjDeadline($baseDateForLpj);
+        $userId = $_SESSION['user_id'] ?? 0;
 
         mysqli_begin_transaction($this->db);
+        
         try {
-            // 1. Update Kegiatan
-            // REVISI: Kembalikan posisi ke Admin (1) dengan status (1) agar Admin bisa submit LPJ?
-            // Atau sesuai remote: StatusUtama = 5 (Dana Cair)
-            $query = "UPDATE tbl_kegiatan 
-                      SET tanggalPencairan = ?, 
-                          jumlahDicairkan = ?, 
-                          metodePencairan = ?, 
-                          catatanBendahara = ?,
-                          pencairan_tahap_json = ?,
-                          statusUtamaId = 5,
-                          posisiId = 1 
-                      WHERE kegiatanId = ?";
+            if ($metode === 'bertahap') {
+                // PENCAIRAN BERTAHAP - Handle multiple termin
+                $tahapan = $dataPencairan['tahapan'] ?? [];
+                
+                $totalAnggaran = $dataPencairan['jumlah'] ?? 0; // total anggaran yang harus dicairkan (dari RAB)
+                $totalDicairkan = 0;
+                
+                // Validasi dan simpan setiap termin
+                foreach ($tahapan as $index => $tahap) {
+                    $tanggal = $tahap['tanggal'] ?? null;
+                    $termin = $tahap['termin'] ?? "Termin " . ($index + 1);
+                    $nominal = floatval($tahap['nominal'] ?? 0);
+                    
+                    if (!$tanggal || $nominal <= 0) {
+                        throw new Exception("Data tahap " . ($index + 1) . " tidak valid");
+                    }
+                    
+                    $totalDicairkan += $nominal;
+                    
+                    // Simpan ke tbl_pencairan_dana (via Model)
+                    $pencairanData = [
+                        'kegiatan_id' => $kegiatanId,
+                        'tanggal_pencairan' => $tanggal,
+                        'termin' => $termin,
+                        'nominal' => $nominal,
+                        'catatan' => $catatan,
+                        'created_by' => $userId
+                    ];
+                    
+                    if (!$this->bendaharaModel->simpanPencairanDana($pencairanData)) {
+                        throw new Exception("Gagal menyimpan data pencairan termin " . ($index + 1));
+                    }
+                }
+                
+                // Update status pencairan di tbl_kegiatan (Update total dicairkan dan status)
+                // Jika totalDicairkan < totalAnggaran, status belum lunas (6)
+                // Jika totalDicairkan >= totalAnggaran, status lunas/cair (5)
+                if (!$this->bendaharaModel->updateStatusPencairan($kegiatanId, $totalDicairkan, $totalAnggaran)) {
+                    throw new Exception("Gagal update status pencairan");
+                }
+                
+                // Update metadata kegiatan (tanggal pencairan pertama, metode)
+                $tanggalPertama = $tahapan[0]['tanggal'];
+                $queryUpdate = "UPDATE tbl_kegiatan 
+                            SET tanggalPencairan = ?,
+                                metodePencairan = 'bertahap',
+                                catatanBendahara = ?,
+                                posisiId = 1
+                            WHERE kegiatanId = ?";
+                
+                $stmt = mysqli_prepare($this->db, $queryUpdate);
+                mysqli_stmt_bind_param($stmt, "ssi", $tanggalPertama, $catatan, $kegiatanId);
+                
+                if (!mysqli_stmt_execute($stmt)) {
+                    throw new Exception("Gagal update data kegiatan");
+                }
+                mysqli_stmt_close($stmt);
+                
+                // Hitung tenggat LPJ dari tanggal termin terakhir
+                $tanggalTerakhir = end($tahapan)['tanggal'];
+                $tenggatLpj = $this->calculateLpjDeadline($tanggalTerakhir);
+                
+                if (!$this->createOrUpdateLpjPlaceholder($kegiatanId, $tenggatLpj)) {
+                    throw new Exception("Gagal set tenggat LPJ");
+                }
+                
+            } else {
+                // PENCAIRAN PENUH
+                $jumlah = $dataPencairan['jumlah'] ?? 0;
+                $tanggalCair = $dataPencairan['tanggal'] ?? date('Y-m-d');
+                
+                // Update tbl_kegiatan directly
+                $query = "UPDATE tbl_kegiatan 
+                          SET tanggalPencairan = ?, 
+                              jumlahDicairkan = ?, 
+                              metodePencairan = 'penuh', 
+                              catatanBendahara = ?,
+                              statusUtamaId = 5,
+                              statusPencairanId = 5,
+                              posisiId = 1 
+                          WHERE kegiatanId = ?";
 
-            $stmt = mysqli_prepare($this->db, $query);
-            mysqli_stmt_bind_param(
-                $stmt,
-                "sdsssi",
-                $tanggalCair,
-                $jumlah,
-                $metode,
-                $catatan,
-                $jsonTahapan,
-                $kegiatanId
-            );
+                $stmt = mysqli_prepare($this->db, $query);
+                mysqli_stmt_bind_param($stmt, "sdsi", $tanggalCair, $jumlah, $catatan, $kegiatanId);
+                
+                if (!mysqli_stmt_execute($stmt)) {
+                    throw new Exception("Gagal memproses pencairan penuh");
+                }
+                mysqli_stmt_close($stmt);
 
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception("Gagal update data pencairan: " . mysqli_error($this->db));
+                // Hitung tenggat LPJ
+                $tenggatLpj = $this->calculateLpjDeadline($tanggalCair);
+                if (!$this->createOrUpdateLpjPlaceholder($kegiatanId, $tenggatLpj)) {
+                     throw new Exception("Gagal set tenggat LPJ");
+                }
             }
-            mysqli_stmt_close($stmt);
-
-            // 2. Update/Create LPJ Deadline
-            if (!$this->createOrUpdateLpjPlaceholder($kegiatanId, $tenggatLpj)) {
-                 throw new Exception("Gagal set tenggat LPJ.");
-            }
-
-            // 3. Log History
-            $statusDisetujui = 3;
+            
+            // Log History (Unified)
+            $statusDisetujui = 3; // Status Disetujui (Internal History) or 5 (Cair)? Using 3 per Dev code.
             $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, ?, NOW())";
             $stmtHist = mysqli_prepare($this->db, $historyQuery);
             mysqli_stmt_bind_param($stmtHist, "ii", $kegiatanId, $statusDisetujui);
             mysqli_stmt_execute($stmtHist);
             mysqli_stmt_close($stmtHist);
-
+            
             mysqli_commit($this->db);
-
-            // --- NOTIFICATION TRIGGER ---
-            try {
-                $kegiatan = $this->bendaharaModel->getDetailPencairan($kegiatanId);
-                if ($kegiatan && isset($kegiatan['userId'])) {
-                    $pesan = "Dana untuk kegiatan \"{$kegiatan['namaKegiatan']}\" telah dicairkan sebesar Rp " . number_format($jumlah, 0, ',', '.');
-                    if ($metode === 'bertahap') {
-                         $pesan .= " (Metode Bertahap)";
-                    }
-
-                    $this->logStatusService->createNotification(
-                        (int) $kegiatan['userId'],
-                        'PENCAIRAN',
-                        $pesan,
-                        $kegiatanId,
-                        'INFO',
-                        $kegiatanId
-                    );
-                }
-            } catch (Throwable $e) {
-                error_log("Gagal kirim notifikasi pencairan: " . $e->getMessage());
-            }
-            // ----------------------------
-
+            
             return true;
+            
         } catch (Exception $e) {
             mysqli_rollback($this->db);
             error_log("cairkanDana Error: " . $e->getMessage());
@@ -224,7 +260,10 @@ class PencairanService
     }
 
     /**
-     * Helper: Hitung Tenggat LPJ (14 Hari Kerja setelah pencairan).
+     * Hitung Tenggat LPJ (14 Hari Kerja setelah tanggal tertentu)
+     * 
+     * @param string $startDate Format Y-m-d
+     * @return string Format Y-m-d
      */
     private function calculateLpjDeadline($startDate)
     {
@@ -233,9 +272,10 @@ class PencairanService
 
         while ($workingDaysToAdd > 0) {
             $date->modify('+1 day');
-            // 6 = Saturday, 7 = Sunday
-            $dayOfWeek = (int)$date->format('N');
-            if ($dayOfWeek < 6) {
+            $dayOfWeek = (int) $date->format('N'); // 1=Monday, 7=Sunday
+            
+            // Hitung hanya hari kerja (Senin-Jumat)
+            if ($dayOfWeek <= 5) {
                 $workingDaysToAdd--;
             }
         }
@@ -245,10 +285,14 @@ class PencairanService
 
     /**
      * Membuat atau update row LPJ saat dana dicairkan
+     * 
+     * @param int $kegiatanId
+     * @param string $tenggatLpj
+     * @return bool
      */
     private function createOrUpdateLpjPlaceholder($kegiatanId, $tenggatLpj)
     {
-        // Cek apakah row LPJ sudah ada
+        // Cek apakah sudah ada LPJ untuk kegiatan ini
         $checkQuery = "SELECT lpjId FROM tbl_lpj WHERE kegiatanId = ? LIMIT 1";
         $stmt = mysqli_prepare($this->db, $checkQuery);
         mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
@@ -258,21 +302,17 @@ class PencairanService
         mysqli_stmt_close($stmt);
 
         if ($existing) {
-            // Row sudah ada, update saja tenggatLpj
+            // Update existing LPJ
             $updateQuery = "UPDATE tbl_lpj SET tenggatLpj = ? WHERE kegiatanId = ?";
             $stmt = mysqli_prepare($this->db, $updateQuery);
             mysqli_stmt_bind_param($stmt, "si", $tenggatLpj, $kegiatanId);
-            $success = mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-            return $success;
+            return mysqli_stmt_execute($stmt);
         }
 
-        // Row belum ada, INSERT baru
+        // Insert new LPJ
         $insertQuery = "INSERT INTO tbl_lpj (kegiatanId, tenggatLpj) VALUES (?, ?)";
         $stmt = mysqli_prepare($this->db, $insertQuery);
         mysqli_stmt_bind_param($stmt, "is", $kegiatanId, $tenggatLpj);
-        $success = mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
-        return $success;
+        return mysqli_stmt_execute($stmt);
     }
 }

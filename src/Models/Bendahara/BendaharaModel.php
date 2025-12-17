@@ -333,27 +333,88 @@ class BendaharaModel
         $tahapan = $dataPencairan['tahapan'] ?? [];
         $catatan = $dataPencairan['catatan'] ?? '';
 
-        // Logic untuk menentukan Base Date perhitungan LPJ
-        // Jika bertahap, biasanya dihitung dari tahap terakhir.
-        // Namun jika aturan bisnis = 14 hari dari uang diterima (tahap 1), gunakan $tanggalCair.
-        // Asumsi disini: Tenggat dihitung dari pencairan TERAKHIR yang direncanakan.
+        // Ambil Total Anggaran Disetujui (RAB) untuk validasi
+        $queryBudget = "SELECT COALESCE(SUM(r.totalHarga), 0) as total 
+                        FROM tbl_rab r 
+                        JOIN tbl_kak kak ON r.kakId = kak.kakId 
+                        WHERE kak.kegiatanId = ?";
+        $stmtBudget = mysqli_prepare($this->db, $queryBudget);
+        mysqli_stmt_bind_param($stmtBudget, "i", $kegiatanId);
+        mysqli_stmt_execute($stmtBudget);
+        $resBudget = mysqli_stmt_get_result($stmtBudget);
+        $rowBudget = mysqli_fetch_assoc($resBudget);
+        $totalAnggaran = (float)($rowBudget['total'] ?? 0);
+        mysqli_stmt_close($stmtBudget);
 
         $baseDateForLpj = $tanggalCair;
         $jsonTahapan = null;
 
         if ($metode === 'bertahap' && !empty($tahapan)) {
-            // Validasi total persentase
-            $totalPersen = array_sum(array_column($tahapan, 'persentase'));
-            if ($totalPersen != 100) {
-                throw new Exception("Total persentase tahapan harus 100%.");
+            // Cek tipe input: Nominal atau Persentase
+            $firstStage = reset($tahapan);
+            $isNominalInput = isset($firstStage['nominal']);
+            
+            $processedTahapan = [];
+            
+            if ($isNominalInput) {
+                // --- VALIDASI NOMINAL ---
+                $totalNominal = 0;
+                foreach ($tahapan as $t) {
+                    $totalNominal += (float)$t['nominal'];
+                }
+
+                // Toleransi float (0.01)
+                if (abs($totalNominal - $totalAnggaran) > 100) { 
+                    throw new Exception("Total nominal tahapan (" . number_format($totalNominal) . ") tidak sesuai dengan anggaran disetujui (" . number_format($totalAnggaran) . ").");
+                }
+                
+                // Konversi ke format lengkap
+                foreach ($tahapan as $idx => $t) {
+                    $nominal = (float)$t['nominal'];
+                    $persen = ($totalAnggaran > 0) ? ($nominal / $totalAnggaran) * 100 : 0;
+                    $processedTahapan[] = [
+                        'tahap' => $idx + 1,
+                        'tanggal' => $t['tanggal'],
+                        'persentase' => round($persen, 2),
+                        'jumlah' => $nominal,
+                        'status' => 'scheduled'
+                    ];
+                }
+                
+            } else {
+                // --- VALIDASI PERSENTASE ---
+                $totalPersen = array_sum(array_column($tahapan, 'persentase'));
+                if (abs($totalPersen - 100) > 0.1) {
+                    throw new Exception("Total persentase tahapan harus 100%. Saat ini: {$totalPersen}%");
+                }
+
+                foreach ($tahapan as $idx => $t) {
+                    $persen = (float)$t['persentase'];
+                    $nominal = ($persen / 100) * $totalAnggaran;
+                    $processedTahapan[] = [
+                        'tahap' => $idx + 1,
+                        'tanggal' => $t['tanggal'],
+                        'persentase' => $persen,
+                        'jumlah' => $nominal,
+                        'status' => 'scheduled'
+                    ];
+                }
             }
 
-            // Encode JSON
-            $jsonTahapan = json_encode($tahapan);
+            // Encode JSON yang sudah dinormalisasi
+            $jsonTahapan = json_encode($processedTahapan);
 
             // Ambil tanggal tahap terakhir untuk deadline LPJ
-            $lastStage = end($tahapan);
+            $lastStage = end($processedTahapan);
             $baseDateForLpj = $lastStage['tanggal'];
+            
+            // Override jumlah yang dicairkan (tracking initial disbursement or total committed?)
+            // Usually for bertahap, jumlahDicairkan might track 'total committed' or 'first tranche'.
+            // Keeping passed $jumlah or setting to totalAnggaran. 
+            // Standard practice: if 'bertahap', amount disbursed *now* depends on current date, 
+            // but the column `jumlahDicairkan` often means "Total Dana Realisasi". 
+            // Let's trust the input $jumlah if provided (e.g. first tranche), otherwise use totalAnggaran.
+            if ($jumlah == 0) $jumlah = $totalAnggaran; 
         }
 
         $tenggatLpj = $this->calculateLpjDeadline($baseDateForLpj);
@@ -361,9 +422,6 @@ class BendaharaModel
         mysqli_begin_transaction($this->db);
         try {
             // 1. Update Kegiatan
-            // Setelah dana dicairkan:
-            // - statusUtamaId = 5 (Dana diberikan)
-            // - posisiId = 1 (Dikembalikan ke Admin/Pengusul untuk submit LPJ)
             $query = "UPDATE tbl_kegiatan 
                       SET tanggalPencairan = ?, 
                           jumlahDicairkan = ?, 
@@ -409,7 +467,7 @@ class BendaharaModel
         } catch (Exception $e) {
             mysqli_rollback($this->db);
             error_log("cairkanDana Error: " . $e->getMessage());
-            return false;
+            throw $e; // Re-throw to controller
         }
     }
 
