@@ -269,10 +269,10 @@
                     </div>
                 </div>
 
-                <!-- Title Section - Constrained within background boundary -->
-                <div class="w-full lg:w-2/5 text-center lg:text-right order-1 lg:order-2">
-                    <div class="lg:max-w-[90%] lg:ml-auto">
-                        <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-[38px] xl:text-[42px] font-bold text-gray-800 lg:text-white leading-[1.2] drop-shadow-2xl">
+                <!-- Title Section - Moved further right with better responsive control -->
+                <div class="w-full lg:w-2/5 text-center lg:text-right order-1 lg:order-2 lg:pr-8 xl:pr-12">
+                    <div class="lg:max-w-none lg:ml-auto lg:pl-8 xl:pl-16 2xl:pl-24">
+                        <h2 class="text-2xl sm:text-3xl md:text-4xl lg:text-[38px] xl:text-[42px] 2xl:text-[46px] font-bold text-gray-800 lg:text-white leading-[1.2] drop-shadow-2xl">
                             Other features &<br>advantages
                         </h2>
                     </div>
