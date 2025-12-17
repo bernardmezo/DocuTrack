@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.config = config;
             
             this.tbody = document.getElementById(config.tbodyId);
+            this.mobileList = document.getElementById(`mobile-${config.type}-list`);
             this.paginationContainer = document.getElementById(config.paginationId);
             this.showingSpan = document.getElementById(config.showingId);
             this.totalSpan = document.getElementById(config.totalId);
@@ -60,6 +61,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = 1;
                 this.applyFilters();
             });
+            
+            // Window resize handler
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    this.render();
+                }, 250);
+            });
         }
         
         applyFilters() {
@@ -85,28 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return matchSearch && matchStatus && matchJurusan;
             });
 
-            // Highlight filter Status
-            if (statusFilter) {
-                this.filterStatus.style.color = '#000';
-            } else {
-                this.filterStatus.style.backgroundColor = '';
-                this.filterStatus.style.color = '';
-            }
-
-            // Highlight filter Jurusan
-            if (jurusanFilter) {
-                this.filterJurusan.style.color = '#000';
-            } else {
-                this.filterJurusan.style.backgroundColor = '';
-                this.filterJurusan.style.color = '';
-            }
-
-            // Highlight search input
-            if (searchTerm) {
-                this.searchInput.style.borderColor = '#000';
-            } else {
-                this.searchInput.style.borderColor = '';
-            }
+            // Highlight filters
+            this.filterStatus.style.borderColor = statusFilter ? '#10b981' : '';
+            this.filterJurusan.style.borderColor = jurusanFilter ? '#10b981' : '';
+            this.searchInput.style.borderColor = searchTerm ? '#10b981' : '';
             
             this.render();
         }
@@ -137,12 +129,37 @@ document.addEventListener('DOMContentLoaded', function() {
             </span>`;
         }
         
+        getStatusBadgeMobile(status) {
+            const statusLower = status.toLowerCase();
+            const badges = {
+                'disetujui': 'bg-green-100 text-green-700 border-green-200',
+                'dana diberikan': 'bg-green-300 text-green-800 border-green-400',
+                'ditolak': 'bg-red-100 text-red-700 border-red-200',
+                'revisi': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                'menunggu': 'bg-blue-100 text-blue-700 border-blue-200',
+                'telah direvisi': 'bg-purple-100 text-purple-700 border-purple-200'
+            };
+            
+            const icons = {
+                'disetujui': 'fa-check-circle',
+                'dana diberikan': 'fa-money-check-alt',
+                'ditolak': 'fa-times-circle',
+                'revisi': 'fa-pencil-alt',
+                'menunggu': 'fa-hourglass-half',
+                'telah direvisi': 'fa-edit'
+            };
+            
+            return `<span class="status-badge ${badges[statusLower] || badges['menunggu']} border">
+                <i class="fas ${icons[statusLower] || 'fa-question-circle'}"></i>
+                ${status}
+            </span>`;
+        }
+        
         getTenggatDisplay(tenggatLpj, status) {
             if (!tenggatLpj || tenggatLpj === null || tenggatLpj === '') {
                 return '<span class="text-gray-500 italic text-sm">Belum Ada Tenggat</span>';
             }
             
-            // Parse tanggal dengan benar
             const tenggatDate = new Date(tenggatLpj.replace(' ', 'T'));
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -190,7 +207,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const end = start + this.itemsPerPage;
             const pageData = this.filteredData.slice(start, end);
             
-            // Tentukan colspan berdasarkan tipe tabel
             const colspan = this.config.type === 'lpj' ? '6' : '5';
             
             if (pageData.length === 0) {
@@ -211,14 +227,9 @@ document.addEventListener('DOMContentLoaded', function() {
             this.tbody.innerHTML = pageData.map((item, index) => {
                 const rowNumber = start + index + 1;
                 const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
-                
-                // Nama mahasiswa - gunakan nama_mahasiswa untuk LPJ, pengusul untuk KAK
                 const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
-                
-                // Prodi - tampilkan prodi, bukan jurusan
                 const prodi = item.prodi || item.jurusan || '-';
                 
-                // Format tanggal pengajuan
                 let tglPengajuanDisplay = '-';
                 if (item.tanggal_pengajuan) {
                     const tglPengajuan = new Date(item.tanggal_pengajuan);
@@ -229,78 +240,171 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Untuk tabel LPJ - tambahkan kolom tenggat
                 if (this.config.type === 'lpj') {
-                return `
-                    <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
-                        <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                        <td class='px-6 py-5 text-sm'>
-                            <div class="flex flex-col">
-                                <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
-                                <span class="text-gray-600 text-xs">
-                                    ${this.escapeHtml(namaMahasiswa)} 
-                                    <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
-                                </span>
-                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
-                                    <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
-                                </span>
-                            </div>
-                        </td>
-                        <td class='px-6 py-5 whitespace-nowrap text-sm text-gray-600'>
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
-                                ${tglPengajuanDisplay}
-                            </div>
-                        </td>
-                        <td class='px-6 py-5 whitespace-nowrap text-sm'>${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</td>
-                        <td class='px-6 py-5 whitespace-nowrap text-xs font-semibold'>${this.getStatusBadge(item.status)}</td>
-                        <td class='px-6 py-5 whitespace-nowrap text-sm font-medium'>
-                            <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                            class='bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors inline-flex items-center gap-2'>
-                                <i class="fas fa-eye"></i>
-                                Lihat
-                            </a>
-                        </td>
-                    </tr>
+                    return `
+                        <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
+                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
+                            <td class='px-6 py-5 text-sm'>
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
+                                    <span class="text-gray-600 text-xs">
+                                        ${this.escapeHtml(namaMahasiswa)} 
+                                        <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
+                                    </span>
+                                    <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                        <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class='px-6 py-5 whitespace-nowrap text-sm text-gray-600'>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
+                                    ${tglPengajuanDisplay}
+                                </div>
+                            </td>
+                            <td class='px-6 py-5 whitespace-nowrap text-sm'>${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</td>
+                            <td class='px-6 py-5 whitespace-nowrap text-xs font-semibold'>${this.getStatusBadge(item.status)}</td>
+                            <td class='px-6 py-5 whitespace-nowrap text-sm font-medium'>
+                                <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                                class='bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors inline-flex items-center gap-2'>
+                                    <i class="fas fa-eye"></i>
+                                    Lihat
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    return `
+                        <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
+                            <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
+                            <td class='px-6 py-5 text-sm'>
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
+                                    <span class="text-gray-600 text-xs">
+                                        ${this.escapeHtml(namaMahasiswa)} 
+                                        <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
+                                    </span>
+                                    <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                        <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class='px-6 py-5 whitespace-nowrap text-sm text-gray-600'>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
+                                    ${tglPengajuanDisplay}
+                                </div>
+                            </td>
+                            <td class='px-6 py-5 whitespace-nowrap text-xs font-semibold'>${this.getStatusBadge(item.status)}</td>
+                            <td class='px-6 py-5 whitespace-nowrap text-sm font-medium'>
+                                <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                                class='bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors inline-flex items-center gap-2'>
+                                    <i class="fas fa-eye"></i>
+                                    Lihat
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+        }
+        
+        renderMobileCards() {
+            if (!this.mobileList) return;
+            
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            const pageData = this.filteredData.slice(start, end);
+            
+            if (pageData.length === 0) {
+                this.mobileList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <div class="empty-state-text">Tidak ada data yang ditemukan</div>
+                        <div class="text-sm text-gray-400 mt-2">Coba ubah filter atau kata kunci pencarian</div>
+                    </div>
                 `;
-            } else {
-                // Untuk tabel KAK
-                return `
-                    <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
-                        <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
-                        <td class='px-6 py-5 text-sm'>
-                            <div class="flex flex-col">
-                                <span class="font-semibold text-gray-900 mb-1">${this.escapeHtml(item.nama)}</span>
-                                <span class="text-gray-600 text-xs">
-                                    ${this.escapeHtml(namaMahasiswa)} 
-                                    <span class="text-gray-500">(${this.escapeHtml(item.nim)})</span>
-                                </span>
-                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
-                                    <i class="fas fa-graduation-cap mr-1"></i>${this.escapeHtml(prodi)}
-                                </span>
-                            </div>
-                        </td>
-                        <td class='px-6 py-5 whitespace-nowrap text-sm text-gray-600'>
-                            <div class="flex items-center gap-2">
-                                <i class="fas fa-calendar-alt text-gray-400 text-xs"></i>
-                                ${tglPengajuanDisplay}
-                            </div>
-                        </td>
-                        <td class='px-6 py-5 whitespace-nowrap text-xs font-semibold'>${this.getStatusBadge(item.status)}</td>
-                        <td class='px-6 py-5 whitespace-nowrap text-sm font-medium'>
-                            <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                            class='bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 transition-colors inline-flex items-center gap-2'>
-                                <i class="fas fa-eye"></i>
-                                Lihat
-                            </a>
-                        </td>
-                    </tr>
-                `;
+                return;
             }
+            
+            this.mobileList.innerHTML = pageData.map((item, index) => {
+                const rowNumber = start + index + 1;
+                const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
+                const prodi = item.prodi || item.jurusan || '-';
+                
+                let tglPengajuanDisplay = '-';
+                if (item.tanggal_pengajuan) {
+                    const tglPengajuan = new Date(item.tanggal_pengajuan);
+                    tglPengajuanDisplay = tglPengajuan.toLocaleDateString('id-ID', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                }
+                
+                const themeClass = this.config.type === 'lpj' ? 'green-theme' : 'blue-theme';
+                const colorClass = this.config.type === 'lpj' ? 'green' : 'blue';
+                
+                let tenggatHTML = '';
+                if (this.config.type === 'lpj') {
+                    tenggatHTML = `
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label ${colorClass}">
+                                <i class="fas fa-clock"></i>
+                                Tenggat LPJ
+                            </div>
+                            <div class="mobile-card-value">${this.getTenggatDisplay(item.tenggat_lpj, item.status)}</div>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="mobile-card ${themeClass}" style="animation-delay: ${index * 0.05}s">
+                        <div class="mobile-card-header">
+                            <div class="mobile-card-number ${colorClass}">#${rowNumber}</div>
+                            ${this.getStatusBadgeMobile(item.status)}
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label ${colorClass}">
+                                <i class="fas fa-calendar-alt"></i>
+                                Nama Kegiatan
+                            </div>
+                            <div class="mobile-card-kegiatan">${this.escapeHtml(item.nama)}</div>
+                            <div class="mobile-card-pengusul">
+                                ${this.escapeHtml(namaMahasiswa)} 
+                                <span style="color: #9ca3af;">(${this.escapeHtml(item.nim)})</span>
+                            </div>
+                            <div class="mobile-card-prodi">
+                                <i class="fas fa-graduation-cap"></i>
+                                ${this.escapeHtml(prodi)}
+                            </div>
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label ${colorClass}">
+                                <i class="fas fa-calendar-check"></i>
+                                Tanggal Pengajuan
+                            </div>
+                            <div class="mobile-card-value">${tglPengajuanDisplay}</div>
+                        </div>
+                        
+                        ${tenggatHTML}
+                        
+                        <div class="mobile-card-actions">
+                            <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                               class="mobile-card-btn ${colorClass}">
+                                <i class="fas fa-eye"></i>
+                                Lihat Detail
+                            </a>
+                        </div>
+                    </div>
+                `;
             }).join('');
         }
         
         escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -316,7 +420,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let buttons = [];
             
-            // Previous button
             buttons.push(`
                 <button onclick="tableManagers.${this.config.type}.goToPage(${this.currentPage - 1})" 
                         ${this.currentPage === 1 ? 'disabled' : ''} 
@@ -328,7 +431,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             `);
             
-            // Page numbers
             for (let i = 1; i <= totalPages; i++) {
                 if (i === 1 || i === totalPages || (i >= this.currentPage - 1 && i <= this.currentPage + 1)) {
                     buttons.push(`
@@ -345,7 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Next button
             buttons.push(`
                 <button onclick="tableManagers.${this.config.type}.goToPage(${this.currentPage + 1})" 
                         ${this.currentPage === totalPages ? 'disabled' : ''} 
@@ -370,6 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         render() {
             this.renderTable();
+            this.renderMobileCards();
             this.renderPagination();
             this.updateInfo();
         }
@@ -380,8 +482,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = page;
                 this.render();
                 
-                // Smooth scroll to table
-                const section = this.tbody.closest('section');
+                const section = this.tbody ? this.tbody.closest('section') : this.mobileList?.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }

@@ -15,8 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
             this.currentPage = 1;
             this.itemsPerPage = ITEMS_PER_PAGE;
             this.config = config;
+            this.isMobile = window.innerWidth < 768;
             
             this.tbody = document.getElementById(config.tbodyId);
+            this.cardsContainer = document.getElementById(config.cardsId);
             this.paginationContainer = document.getElementById(config.paginationId);
             this.showingSpan = document.getElementById(config.showingId);
             this.totalSpan = document.getElementById(config.totalId);
@@ -26,11 +28,26 @@ document.addEventListener('DOMContentLoaded', function() {
             this.resetBtn = document.getElementById(config.resetBtnId);
             
             this.init();
+            this.setupResponsive();
         }
         
         init() {
             this.render();
             this.attachEventListeners();
+        }
+        
+        setupResponsive() {
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    const wasMobile = this.isMobile;
+                    this.isMobile = window.innerWidth < 768;
+                    if (wasMobile !== this.isMobile) {
+                        this.render();
+                    }
+                }, 250);
+            });
         }
         
         attachEventListeners() {
@@ -78,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const matchStatus = !statusFilter || 
                     item.status.toLowerCase() === statusFilter;
                     
-                // Filter berdasarkan JURUSAN (bukan prodi)
                 const matchJurusan = !jurusanFilter || 
                     item.jurusan === jurusanFilter;
                 
@@ -117,10 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusLower = status.toLowerCase();
             const badges = {
                 'disetujui': 'text-green-700 bg-green-100 border border-green-200',
-
-                // TAMBAHAN BARU: Status Disetujui Verifikator (UNGU)
-                // 'disetujui verifikator': 'text-purple-700 bg-purple-100 border border-purple-200',
-
                 'setuju': 'text-green-700 bg-green-100 border border-green-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
@@ -142,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const displayText = {
                 'disetujui': 'Disetujui',
-                'disetujui verifikator': 'Disetujui Verifikator', // Teks yang akan tampil
+                'disetujui verifikator': 'Disetujui Verifikator',
                 'setuju': 'Disetujui',
                 'ditolak': 'Ditolak',
                 'revisi': 'Revisi',
@@ -162,12 +174,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const status = item.status.toLowerCase();
             
-            // Untuk status menunggu_upload
             if (status === 'menunggu_upload') {
                 return '<span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 border border-orange-200 text-orange-700"><i class="fas fa-upload"></i><span>Perlu Upload Bukti</span></span>';
             }
             
-            // Hanya hitung deadline jika status 'setuju' atau 'disetujui'
             if (status !== 'setuju' && status !== 'disetujui') {
                 return '<span class="text-gray-400 text-xs italic">Menunggu Persetujuan</span>';
             }
@@ -214,12 +224,171 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
         
-        renderTable() {
+        renderCards() {
+            if (!this.cardsContainer) return;
+            
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
             const pageData = this.filteredData.slice(start, end);
             
-            // KAK = 5 kolom, LPJ = 6 kolom
+            if (pageData.length === 0) {
+                this.cardsContainer.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="flex flex-col items-center gap-3">
+                            <i class="fas fa-inbox text-5xl text-gray-300"></i>
+                            <p class="text-gray-500 font-medium">Tidak ada data yang ditemukan</p>
+                            <p class="text-sm text-gray-400">Coba ubah filter atau kata kunci pencarian</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const gradientColor = this.config.type === 'kak' 
+                ? 'from-blue-50 to-indigo-50' 
+                : 'from-green-50 to-emerald-50';
+            const accentColor = this.config.type === 'kak' ? 'blue' : 'green';
+            
+            this.cardsContainer.innerHTML = pageData.map((item, index) => {
+                const rowNumber = start + index + 1;
+                const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
+                const prodi = item.prodi || item.jurusan || 'N/A';
+                
+                let tglPengajuanDisplay = '-';
+                if (item.tanggal_pengajuan) {
+                    const tglPengajuan = new Date(item.tanggal_pengajuan);
+                    tglPengajuanDisplay = tglPengajuan.toLocaleDateString('id-ID', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                }
+                
+                const buttonLabel = (this.config.type === 'lpj' && item.status.toLowerCase() === 'menunggu_upload') 
+                    ? 'Upload Bukti' 
+                    : 'Lihat Detail';
+                
+                // Card untuk LPJ dengan deadline
+                if (this.config.type === 'lpj') {
+                    return `
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+                            <div class="bg-gradient-to-r ${gradientColor} px-4 py-3 border-b border-gray-200">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="flex-shrink-0 w-7 h-7 bg-${accentColor}-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                                                ${rowNumber}
+                                            </span>
+                                            <h4 class="text-sm font-semibold text-gray-800 line-clamp-2">${this.escapeHtml(item.nama)}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    ${this.getStatusBadge(item.status)}
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">Pengusul</p>
+                                        <p class="text-gray-800 font-semibold">${this.escapeHtml(namaMahasiswa)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">NIM</p>
+                                        <p class="text-gray-800 font-semibold">${this.escapeHtml(item.nim)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">Tgl. Pengajuan</p>
+                                        <p class="text-gray-800 font-semibold">${tglPengajuanDisplay}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">Tenggat LPJ</p>
+                                        <div>${this.calculateDeadline(item)}</div>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <p class="text-gray-500 mb-1 font-medium">Jurusan/Prodi</p>
+                                        <p class="text-gray-800 font-semibold text-[11px] leading-tight">
+                                            <i class="fas fa-graduation-cap mr-1 text-${accentColor}-500"></i>${this.escapeHtml(prodi)}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-3 border-t border-gray-100">
+                                    <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-${accentColor}-500 hover:bg-${accentColor}-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95">
+                                        <i class="fas fa-eye text-xs"></i>
+                                        ${buttonLabel}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Card untuk KAK tanpa deadline
+                    return `
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-200 overflow-hidden">
+                            <div class="bg-gradient-to-r ${gradientColor} px-4 py-3 border-b border-gray-200">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="flex-shrink-0 w-7 h-7 bg-${accentColor}-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                                                ${rowNumber}
+                                            </span>
+                                            <h4 class="text-sm font-semibold text-gray-800 line-clamp-2">${this.escapeHtml(item.nama)}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    ${this.getStatusBadge(item.status)}
+                                </div>
+                                
+                                <div class="grid grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">Pengusul</p>
+                                        <p class="text-gray-800 font-semibold">${this.escapeHtml(namaMahasiswa)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">NIM</p>
+                                        <p class="text-gray-800 font-semibold">${this.escapeHtml(item.nim)}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-500 mb-1 font-medium">Tgl. Pengajuan</p>
+                                        <p class="text-gray-800 font-semibold">${tglPengajuanDisplay}</p>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <p class="text-gray-500 mb-1 font-medium">Jurusan/Prodi</p>
+                                        <p class="text-gray-800 font-semibold text-[11px] leading-tight">
+                                            <i class="fas fa-graduation-cap mr-1 text-${accentColor}-500"></i>${this.escapeHtml(prodi)}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-3 border-t border-gray-100">
+                                    <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                                       class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-${accentColor}-500 hover:bg-${accentColor}-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md active:scale-95">
+                                        <i class="fas fa-eye text-xs"></i>
+                                        Lihat Detail
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+        
+        renderTable() {
+            if (!this.tbody) return;
+            
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            const pageData = this.filteredData.slice(start, end);
+            
             const colspan = this.config.type === 'lpj' ? '6' : '5';
             
             if (pageData.length === 0) {
@@ -242,8 +411,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
                 
                 const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
-                
-                // PERUBAHAN UTAMA: Tampilkan PRODI di kolom
                 const prodi = item.prodi || item.jurusan || 'N/A';
                 
                 let tglPengajuanDisplay = '-';
@@ -256,7 +423,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Tentukan label tombol berdasarkan status
                 let buttonLabel = 'Lihat';
                 const status = item.status.toLowerCase();
                 if (this.config.type === 'lpj' && status === 'menunggu_upload') {
@@ -264,7 +430,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (this.config.type === 'lpj') {
-                    // TABEL LPJ - 6 KOLOM (No, Nama Kegiatan, Tgl Pengajuan, Tenggat LPJ, Status, Aksi)
                     return `
                         <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
@@ -284,18 +449,17 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.calculateDeadline(item)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                             <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-                            <div class='flex gap-2'>
-                                <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
-                                class='inline-flex items-center gap-2 bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 focus:outline-none focus:ring-2 focus:ring-${this.config.color}-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md'>
-                                    <i class="fas fa-eye"></i>
-                                    <span>${buttonLabel}</span>
-                                </a>
-                            </div>
-                        </td>
+                                <div class='flex gap-2'>
+                                    <a href="${this.config.viewUrl}${item.id}?ref=dashboard" 
+                                    class='inline-flex items-center gap-2 bg-${this.config.color}-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-${this.config.color}-700 focus:outline-none focus:ring-2 focus:ring-${this.config.color}-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md'>
+                                        <i class="fas fa-eye"></i>
+                                        <span>${buttonLabel}</span>
+                                    </a>
+                                </div>
+                            </td>
                         </tr>
                     `;
                 } else {
-                    // TABEL KAK - 5 KOLOM (No, Nama Kegiatan, Tgl Pengajuan, Status, Aksi)
                     return `
                         <tr class='${rowClass} hover:bg-${this.config.color}-50/50 transition-colors duration-150'>
                             <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
@@ -394,7 +558,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         render() {
-            this.renderTable();
+            // Render sesuai viewport
+            if (this.isMobile && this.cardsContainer) {
+                this.renderCards();
+            } else if (!this.isMobile && this.tbody) {
+                this.renderTable();
+            }
+            
             this.renderPagination();
             this.updateInfo();
         }
@@ -405,7 +575,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = page;
                 this.render();
                 
-                const section = this.tbody.closest('section');
+                // Scroll ke section
+                const section = this.isMobile && this.cardsContainer 
+                    ? this.cardsContainer.closest('section')
+                    : this.tbody ? this.tbody.closest('section') : null;
+                    
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -419,6 +593,7 @@ document.addEventListener('DOMContentLoaded', function() {
             type: 'kak',
             color: 'blue',
             tbodyId: 'tbody-kak',
+            cardsId: 'cards-kak',
             paginationId: 'pagination-kak',
             showingId: 'showing-kak',
             totalId: 'total-kak',
@@ -432,6 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
             type: 'lpj',
             color: 'green',
             tbodyId: 'tbody-lpj',
+            cardsId: 'cards-lpj',
             paginationId: 'pagination-lpj',
             showingId: 'showing-lpj',
             totalId: 'total-lpj',

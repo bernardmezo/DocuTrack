@@ -14,12 +14,46 @@ if (!isset($list_lpj)) {
 // Extract unique jurusan for filter
 $jurusan_list = array_unique(array_filter(array_column($list_lpj, 'jurusan')));
 sort($jurusan_list);
+
+// Fungsi utilitas untuk formatting tanggal
+function format_tanggal($date_string) {
+    if (!$date_string) return '-';
+    $timestamp = strtotime($date_string);
+    // Ubah ke format 'd M Y' (contoh: 15 Des 2025)
+    return date('d M Y', $timestamp);
+}
+
+// Fungsi utilitas untuk mendapatkan info status
+function get_status_info($status_raw) {
+    $status_raw = strtolower($status_raw);
+    return match ($status_raw) {
+        'setuju' => ['text' => 'Disetujui', 'class' => 'status-ok', 'icon' => 'fa-check-circle'],
+        'revisi' => ['text' => 'Revisi', 'class' => 'status-rev', 'icon' => 'fa-exclamation-triangle'],
+        'menunggu_upload' => ['text' => 'Perlu Upload', 'class' => 'status-upload', 'icon' => 'fa-upload'],
+        'siap_submit' => ['text' => 'Siap Submit', 'class' => 'text-blue-700 bg-blue-100 border border-blue-200', 'icon' => 'fa-file-upload'],
+        'menunggu' => ['text' => 'Menunggu', 'class' => 'status-wait', 'icon' => 'fa-hourglass-half'],
+        default => ['text' => 'Tidak Diketahui', 'class' => 'text-red-800 bg-red-100 border border-red-200', 'icon' => 'fa-question-circle'],
+    };
+}
+
+// Fungsi utilitas untuk mendapatkan info tombol aksi
+function get_action_button_info($status_raw) {
+    $status_raw = strtolower($status_raw);
+    return match ($status_raw) {
+        'menunggu_upload' => ['text' => 'Upload Bukti', 'color' => 'bg-orange-600 hover:bg-orange-700', 'icon' => 'fa-upload'],
+        'siap_submit' => ['text' => 'Submit LPJ', 'color' => 'bg-blue-600 hover:bg-blue-700', 'icon' => 'fa-file-upload'],
+        'menunggu' => ['text' => 'Lihat Status', 'color' => 'bg-gray-600 hover:bg-gray-700', 'icon' => 'fa-eye'],
+        'setuju' => ['text' => 'Lihat Detail', 'color' => 'bg-green-600 hover:bg-green-700', 'icon' => 'fa-eye'],
+        'revisi' => ['text' => 'Lihat Revisi', 'color' => 'bg-yellow-600 hover:bg-yellow-700', 'icon' => 'fa-eye'],
+        default => ['text' => 'Review', 'color' => 'bg-indigo-600 hover:bg-indigo-700', 'icon' => 'fa-eye'],
+    };
+}
 ?>
 
 <main class="main-content font-poppins p-4 md:p-7 -mt-8 md:-mt-20 max-w-7xl mx-auto w-full">
 
     <?php if($success_msg): ?>
-    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm">
+    <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg shadow-sm" role="alert">
         <div class="flex items-center">
             <i class="fas fa-check-circle text-green-500 mr-3"></i>
             <p class="text-green-700 font-medium"><?= htmlspecialchars($success_msg) ?></p>
@@ -28,7 +62,7 @@ sort($jurusan_list);
     <?php endif; ?>
 
     <?php if($error_msg): ?>
-    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+    <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm" role="alert">
         <div class="flex items-center">
             <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
             <p class="text-red-700 font-medium"><?= htmlspecialchars($error_msg) ?></p>
@@ -36,80 +70,93 @@ sort($jurusan_list);
     </div>
     <?php endif; ?>
 
-    <section class="bg-white p-4 md:p-7 rounded-2xl shadow-lg mb-8">
+    <section class="bg-white p-4 md:p-7 rounded-2xl shadow-lg overflow-hidden mb-6 md:mb-8 flex flex-col">
         
-        <!-- Header Section -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-5 border-b border-gray-200 gap-4">
-            <div>
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 pb-4 md:pb-5 border-b border-gray-200 gap-3">
+            
+            <div class="flex-shrink-0">
                 <h2 class="text-xl md:text-2xl font-bold text-gray-800">Antrian LPJ</h2>
+                <p class="text-sm text-gray-500 mt-1 hidden md:block">Daftar Laporan Pertanggungjawaban yang perlu diverifikasi.</p>
             </div>
             
-            <div class="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-                <!-- Filter Jurusan -->
-                <div class="relative w-full md:w-auto">
-                    <select id="filter-jurusan" style="color: #1f2937;" class="w-full md:min-w-[220px] pl-4 pr-10 py-2.5 text-sm font-medium bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm cursor-pointer appearance-none hover:border-gray-400">
-                        <option value="" style="color: #6b7280;">Semua Jurusan</option>
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-wrap justify-end flex-shrink-0">
+                
+                <div class="relative flex-1 sm:flex-none w-full sm:w-auto min-w-[280px]">
+                    <i class="fas fa-graduation-cap absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 pointer-events-none z-10 text-xs sm:text-sm"></i>
+                    <select id="filter-jurusan" 
+                            style="color: #374151 !important; font-size: 14px !important;"
+                            class="select-filter w-full pl-9 pr-9 py-2 sm:py-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
+                        <option value="" style="color: #374151 !important; font-weight: 600;">Semua Jurusan</option>
                         <?php foreach ($jurusan_list as $jurusan): ?>
-                            <option value="<?= htmlspecialchars($jurusan) ?>" style="color: #1f2937;"><?= htmlspecialchars($jurusan) ?></option>
+                            <option value="<?= htmlspecialchars(strtolower($jurusan)) ?>"><?= htmlspecialchars($jurusan) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                    <i class="fas fa-chevron-down absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
                 </div>
 
-                <!-- Filter Status -->
-                <div class="relative w-full md:w-40">
-                    <select id="filter-status" class="w-full pl-4 pr-10 py-2.5 text-sm bg-gray-50 border border-gray-300 rounded-full focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm cursor-pointer appearance-none">
-                        <option value="">Semua Status</option>
+                <div class="relative flex-1 sm:flex-none w-full sm:w-auto min-w-[150px]">
+                    <i class="fas fa-filter absolute top-1/2 left-3 -translate-y-1/2 text-gray-400 pointer-events-none z-10 text-xs sm:text-sm"></i>
+                    <select id="filter-status" 
+                            style="color: #374151 !important; font-size: 14px !important;"
+                            class="select-filter w-full pl-9 pr-9 py-2 sm:py-2.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 appearance-none cursor-pointer hover:border-gray-400 hover:bg-gray-50">
+                        <option value="" style="color: #374151 !important; font-weight: 600;">Semua Status</option>
                         <option value="menunggu_upload">Perlu Upload</option>
                         <option value="siap_submit">Siap Submit</option>
                         <option value="menunggu">Menunggu</option>
                         <option value="revisi">Revisi</option>
                         <option value="setuju">Setuju</option>
                     </select>
-                    <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
+                    <i class="fas fa-chevron-down absolute top-1/2 right-3 -translate-y-1/2 text-gray-600 pointer-events-none text-xs"></i>
                 </div>
-
-                <!-- Search Input -->
-                <div class="relative w-full md:w-80">
-                    <i class="fas fa-search absolute top-1/2 left-4 -translate-y-1/2 text-gray-400 peer-focus-within:text-blue-600 transition-colors duration-200"></i>
-                    <input type="text" id="search-lpj-input" placeholder="Cari Kegiatan atau Mahasiswa..."
-                           class="peer w-full pl-10 pr-4 py-2.5 text-sm text-gray-800 bg-gray-50 rounded-full border border-gray-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition-all duration-200 shadow-sm"
-                           aria-label="Cari LPJ">
-                </div>
+                
+                <button id="reset-filter" class="w-full sm:w-auto px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center gap-2 md:hidden">
+                    <i class="fas fa-redo text-xs"></i>
+                    <span>Reset Filter</span>
+                </button>
             </div>
+            
+        </div>
+        
+        <div class="relative mb-4">
+            <i class="fas fa-search absolute top-1/2 left-3 sm:left-4 -translate-y-1/2 text-gray-400 z-10 text-xs sm:text-sm"></i>
+            <input type="text" id="search-lpj-input" placeholder="Cari Kegiatan atau Mahasiswa..."
+                   class="w-full pl-9 sm:pl-11 pr-4 py-2 sm:py-2.5 text-sm text-gray-900 font-medium bg-white rounded-lg border-2 border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 shadow-sm hover:border-gray-400"
+                   aria-label="Cari LPJ">
         </div>
 
-        <!-- Table Container - Fixed Height -->
-        <div class="border border-gray-100 rounded-lg" style="min-height: 400px;">
-            <table class="w-full min-w-[700px]">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nama Kegiatan</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Tgl. Pengajuan</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Tenggat LPJ</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-4 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100" id="table-body">
-                    <?php if (!empty($list_lpj)): 
-                        $nomor = 1;
-                        foreach ($list_lpj as $item): 
-                            $status_raw = strtolower($item['status'] ?? 'menunggu');
-                            $tgl_pengajuan_ts = strtotime($item['tanggal_pengajuan'] ?? 'now');
-                            $tenggat_lpj = $item['tenggatLpj'] ?? null;
-                            
-                            // --- LOGIKA TENGGAT WAKTU ---
-                            $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 border border-gray-200 text-gray-600"><i class="fas fa-clock"></i><span>Menunggu</span></div>';
-
-                            // KHUSUS STATUS MENUNGGU_UPLOAD
-                            if ($status_raw === 'menunggu_upload') {
-                                if ($tenggat_lpj) {
-                                    $tenggat_ts = strtotime($tenggat_lpj);
+        <div class="hidden md:block overflow-x-auto">
+            <div class="overflow-y-auto" style="max-height: 500px;">
+                <table class="w-full min-w-[900px]">
+                    <thead class="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-10">No</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[250px]">Nama Kegiatan</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[100px]">Tgl. Pengajuan</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[150px]">Tenggat LPJ</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[120px]">Status</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-36">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white" id="table-body-desktop">
+                        <?php if (!empty($list_lpj)): 
+                            $nomor = 1;
+                            foreach ($list_lpj as $item): 
+                                $status_raw = strtolower($item['status'] ?? 'menunggu');
+                                $status_info = get_status_info($status_raw);
+                                $btn_info = get_action_button_info($status_raw);
+                                $tgl_pengajuan = format_tanggal($item['tanggal_pengajuan'] ?? null);
+                                $tenggat_lpj_date = $item['tenggatLpj'] ?? null;
+                                
+                                // LOGIKA TENGGAT WAKTU UNTUK DESKTOP
+                                $deadline_html = '<span class="text-gray-600 font-medium">-</span>';
+                                
+                                if ($status_raw === 'menunggu_upload' && $tenggat_lpj_date) {
+                                    $tenggat_ts = strtotime($tenggat_lpj_date);
                                     $hari_ini_ts = time();
                                     $diff_seconds = $tenggat_ts - $hari_ini_ts;
-                                    $sisa_hari = ceil($diff_seconds / (60 * 60 * 24));
+                                    $sisa_hari = ceil($diff_seconds / (60 * 60 * 24)); 
+
+                                    $tenggat_display = format_tanggal($tenggat_lpj_date);
 
                                     if ($sisa_hari < 0) {
                                         $badge_class = 'bg-red-50 border-red-200 text-red-700';
@@ -128,127 +175,117 @@ sort($jurusan_list);
                                         $icon = 'fa-calendar-day';
                                         $text_status = 'Sisa ' . $sisa_hari . ' hari';
                                     }
-                                    $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border '.$badge_class.'"><i class="fas '.$icon.'"></i><span>'.$text_status.'</span></div>';
-                                } else {
-                                    $deadline_html = '<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 border border-orange-200 text-orange-700"><i class="fas fa-upload"></i><span>Perlu Upload Bukti</span></div>';
+                                    
+                                    $deadline_html = '<div class="flex flex-col items-start gap-1">
+                                                        <span class="text-gray-900 font-medium">'.$tenggat_display.'</span>
+                                                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border '.$badge_class.'">
+                                                            <i class="fas '.$icon.'"></i><span>'.$text_status.'</span>
+                                                        </div>
+                                                    </div>';
+                                } else if ($tenggat_lpj_date) {
+                                    $tenggat_display = format_tanggal($tenggat_lpj_date);
+                                    $deadline_html = '<span class="text-gray-900 font-medium">'.$tenggat_display.'</span>';
+                                } else if ($status_raw === 'menunggu_upload') {
+                                    $deadline_html = '<span class="px-2 py-0.5 rounded-full text-orange-700 bg-orange-100 border border-orange-200 text-xs font-medium">Belum Ditetapkan</span>';
                                 }
-                            }
-                            // --- END LOGIKA TENGGAT ---
-
-                            // Status Badge
-                            $status_badge = match ($status_raw) {
-                                'setuju' => 'text-green-600 bg-green-100',
-                                'revisi' => 'text-yellow-600 bg-yellow-100',
-                                'menunggu_upload' => 'text-orange-600 bg-orange-100',
-                                'siap_submit' => 'text-blue-600 bg-blue-100',
-                                default => 'text-gray-600 bg-gray-100',
-                            };
+                                
+                        ?>
+                        <tr class="data-row hover:bg-gray-50 transition-colors"
+                            data-jurusan="<?php echo strtolower($item['jurusan'] ?? ''); ?>"
+                            data-status="<?php echo $status_raw; ?>"
+                            data-search="<?php echo strtolower(($item['nama'] ?? '') . ' ' . ($item['nama_mahasiswa'] ?? '') . ' ' . ($item['prodi'] ?? '')); ?>">
                             
-                            // Status Display Text
-                            $status_display = match ($status_raw) {
-                                'setuju' => 'Disetujui',
-                                'revisi' => 'Revisi',
-                                'menunggu_upload' => 'Perlu Upload',
-                                'siap_submit' => 'Siap Submit',
-                                default => 'Menunggu',
-                            };
-                    ?>
-                    <tr class="data-row hover:bg-gray-50 transition-colors"
-                        data-jurusan="<?php echo strtolower($item['jurusan'] ?? ''); ?>"
-                        data-status="<?php echo $status_raw; ?>"
-                        data-search="<?php echo strtolower(($item['nama'] ?? '') . ' ' . ($item['nama_mahasiswa'] ?? '') . ' ' . ($item['prodi'] ?? '')); ?>">
-                        
-                        <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                            <?php echo $nomor++; ?>.
-                        </td>
+                            <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-700 font-medium">
+                                <?php echo $nomor++; ?>.
+                            </td>
 
-                        <td class="px-4 py-3 md:px-6 md:py-5 text-sm">
-                            <div class="flex flex-col">
-                                <span class="font-semibold text-gray-900 mb-1"><?php echo htmlspecialchars($item['nama'] ?? 'Tanpa Judul'); ?></span>
-                                <span class="text-gray-600 text-xs">
-                                    <?php echo htmlspecialchars($item['nama_mahasiswa'] ?? 'N/A'); ?> 
-                                    <span class="text-gray-500">(<?php echo htmlspecialchars($item['nim'] ?? '-'); ?>)</span>
+                            <td class="px-6 py-5 text-sm">
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-gray-900 mb-1 leading-snug"><?php echo htmlspecialchars($item['nama'] ?? 'Tanpa Judul'); ?></span>
+                                    <span class="text-gray-600 text-xs mt-1">
+                                        <?php echo htmlspecialchars($item['nama_mahasiswa'] ?? 'N/A'); ?> 
+                                        <span class="text-gray-500 font-medium">(<?php echo htmlspecialchars($item['nim'] ?? '-'); ?>)</span>
+                                    </span>
+                                    <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                        <i class="fas fa-graduation-cap mr-1 text-blue-500"></i><?php echo htmlspecialchars($item['prodi'] ?? $item['jurusan'] ?? '-'); ?>
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-gray-500 text-xs"></i>
+                                    <?php echo $tgl_pengajuan; ?>
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-5 text-sm">
+                                <?php echo $deadline_html; ?>
+                            </td>
+
+                            <td class="px-6 py-5 whitespace-nowrap text-xs font-semibold">
+                                <span class="px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 <?php echo $status_info['class']; ?>">
+                                    <i class="fas <?php echo $status_info['icon']; ?>"></i>
+                                    <?php echo $status_info['text']; ?>
                                 </span>
-                                <span class="text-gray-500 text-xs mt-0.5 font-medium">
-                                    <i class="fas fa-graduation-cap mr-1"></i><?php echo htmlspecialchars($item['prodi'] ?? $item['jurusan'] ?? '-'); ?>
-                                </span>
-                            </div>
-                        </td>
+                            </td>
 
-                        <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-gray-600">
-                            <?php echo date('d M Y', $tgl_pengajuan_ts); ?>
-                        </td>
-
-                        <td class="px-4 py-3 md:px-6 md:py-4 text-sm">
-                            <?php echo $deadline_html; ?>
-                        </td>
-
-                        <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-xs font-semibold">
-                            <span class="px-3 py-1 rounded-full <?php echo $status_badge; ?>">
-                                <?php echo $status_display; ?>
-                            </span>
-                        </td>
-
-                        <td class="px-4 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex gap-2 items-center">
-                                <?php 
-                                $button_text = match ($status_raw) {
-                                    'menunggu_upload' => 'Upload Bukti',
-                                    'siap_submit' => 'Submit LPJ',
-                                    'menunggu' => 'Lihat Status',
-                                    'setuju' => 'Lihat Detail',
-                                    'revisi' => 'Lihat Revisi',
-                                    default => 'Review',
-                                };
-                                $button_color = match ($status_raw) {
-                                    'menunggu_upload' => 'bg-orange-600 hover:bg-orange-700',
-                                    'siap_submit' => 'bg-blue-600 hover:bg-blue-700',
-                                    'setuju' => 'bg-green-600 hover:bg-green-700',
-                                    default => 'bg-gray-600 hover:bg-gray-700',
-                                };
-                                ?>
+                            <td class="px-6 py-5 whitespace-nowrap text-sm font-medium">
                                 <a href="/docutrack/public/admin/pengajuan-lpj/show/<?php echo $item['id'] ?? 0; ?>" 
-                                   class="<?php echo $button_color; ?> text-white px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-medium transition-colors">
-                                    <?php echo $button_text; ?>
+                                   class="<?php echo $btn_info['color']; ?> text-white px-4 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-all duration-300 transform hover:scale-105 active:scale-95 inline-flex items-center gap-2">
+                                    <i class="fas <?php echo $btn_info['icon']; ?>"></i> <?php echo $btn_info['text']; ?>
                                 </a>
-                            </div>
-                        </td>
-                    </tr>
-                    <?php endforeach; else: ?>
-                    <tr id="empty-row">
-                        <td colspan="6" class="text-center py-10 text-gray-500 italic">
-                            Belum ada data pengajuan LPJ.
-                        </td>
-                    </tr>
-                    <?php endif; ?>
-                    
-                    <tr id="no-results-row" class="hidden">
-                        <td colspan="6" class="text-center py-10 text-gray-500 italic">
-                            Data tidak ditemukan.
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        <?php endforeach; else: ?>
+                        <tr id="empty-row-desktop">
+                            <td colspan="6" class="px-6 py-10">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <div class="empty-state-text">Belum ada data pengajuan LPJ.</div>
+                                    <div class="empty-state-subtext">Semua LPJ yang diajukan akan muncul di sini.</div>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endif; ?>
+                        
+                        <tr id="no-results-row-desktop" class="hidden">
+                            <td colspan="6" class="px-6 py-10">
+                                <div class="empty-state">
+                                    <i class="fas fa-search-minus"></i>
+                                    <div class="empty-state-text">Data tidak ditemukan.</div>
+                                    <div class="empty-state-subtext">Coba ganti filter atau kata kunci pencarian.</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="md:hidden overflow-y-auto" style="min-height: 400px;">
+            <div id="mobile-lpj-list" class="space-y-3">
+                <div id="empty-row-mobile" class="empty-state p-10 <?php echo !empty($list_lpj) ? 'hidden' : ''; ?>">
+                    <i class="fas fa-inbox"></i>
+                    <div class="empty-state-text">Belum ada data pengajuan LPJ.</div>
+                    <div class="empty-state-subtext">Semua LPJ yang diajukan akan muncul di sini.</div>
+                </div>
+                <div id="no-results-row-mobile" class="empty-state p-10 hidden">
+                    <i class="fas fa-search-minus"></i>
+                    <div class="empty-state-text">Data tidak ditemukan.</div>
+                    <div class="empty-state-subtext">Coba ganti filter atau kata kunci pencarian.</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Pagination -->
-        <div class="flex flex-col md:flex-row justify-between items-center mt-6 pt-5 border-t border-gray-100 gap-4">
-            <div class="text-sm text-gray-600">
-                Menampilkan <span class="font-semibold text-gray-800" id="showing-start">0</span> - 
-                <span class="font-semibold text-gray-800" id="showing-end">0</span> dari 
-                <span class="font-semibold text-gray-800" id="total-records">0</span> data
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button id="prev-page" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    <i class="fas fa-chevron-left text-xs"></i>
-                </button>
-                
-                <div id="page-numbers" class="flex gap-1"></div>
-                
-                <button id="next-page" class="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    <i class="fas fa-chevron-right text-xs"></i>
-                </button>
+        <div class="p-3 sm:p-4 mt-4 border-t border-gray-200 bg-gray-50 rounded-lg flex-shrink-0">
+            <div class="flex flex-col gap-3">
+                <div id="pagination-buttons" class="flex gap-1 flex-wrap justify-center"></div>
+                <div class="text-xs sm:text-sm text-gray-600 text-center">
+                    Menampilkan <span id="showing-start" class="font-semibold text-gray-800">0</span> s.d. 
+                    <span id="showing-end" class="font-semibold text-gray-800">0</span> dari 
+                    <span id="total-records" class="font-semibold text-gray-800">0</span> data
+                </div>
             </div>
         </div>
 
@@ -256,221 +293,688 @@ sort($jurusan_list);
 
 </main>
 
+<style>
+    /* Mobile Card Styling */
+    .mobile-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e5e7eb;
+        border-left: 4px solid #3b82f6; /* Warna biru untuk LPJ */
+        border-radius: 12px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    
+    .mobile-card:active {
+        transform: scale(0.98);
+    }
+    
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .mobile-card-number {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
+    
+    .mobile-card-row {
+        margin-bottom: 0.875rem;
+    }
+    
+    .mobile-card-row:last-of-type {
+        margin-bottom: 0;
+    }
+    
+    .mobile-card-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.375rem;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .mobile-card-label i {
+        color: #3b82f6;
+        font-size: 0.75rem;
+    }
+    
+    .mobile-card-value {
+        font-size: 0.9rem;
+        color: #1f2937;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+    
+    .mobile-card-kegiatan {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #111827;
+        line-height: 1.4;
+    }
+    
+    .mobile-card-mahasiswa {
+        font-size: 0.85rem;
+        color: #4b5563;
+        margin-top: 0.25rem;
+    }
+    
+    .mobile-card-prodi {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .mobile-card-footer {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .mobile-card-date {
+        font-size: 0.8rem;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+    
+    .mobile-card-btn {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        color: white;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .mobile-card-btn:active {
+        opacity: 0.9;
+        transform: scale(0.98);
+    }
+    
+    /* Status Badge Styling */
+    .status-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        border: 1px solid;
+    }
+    
+    .status-badge i {
+        font-size: 0.625rem;
+    }
+    
+    .status-upload {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border-color: #fcd34d;
+    }
+    
+    .status-wait {
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        color: #4b5563;
+        border-color: #d1d5db;
+    }
+
+    .status-rev {
+        background: linear-gradient(135deg, #fef9c3 0%, #fcd34d 100%);
+        color: #78350f;
+        border-color: #f59e0b;
+    }
+
+    .status-ok {
+        background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%);
+        color: #065f46;
+        border-color: #34d399;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: #6b7280;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #d1d5db;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-text {
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    
+    .empty-state-subtext {
+        font-size: 0.85rem;
+        color: #9ca3af;
+        margin-top: 0.5rem;
+    }
+    
+    /* Animations */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .mobile-card {
+        animation: slideIn 0.3s ease forwards;
+    }
+    
+    /* Pagination Buttons */
+    .pagination-btn {
+        min-width: 2.25rem;
+        height: 2.25rem;
+        padding: 0.5rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        transition: all 0.2s;
+    }
+    
+    .pagination-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .pagination-btn.active {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border-color: transparent;
+    }
+    
+    .pagination-btn:not(:disabled):hover:not(.active) {
+        background: #f3f4f6;
+    }
+    
+    .pagination-btn:not(:disabled):active {
+        transform: scale(0.95);
+    }
+</style>
+
 <script>
+// Data PHP di-encode ke JS agar bisa dirender ulang
+window.lpjData = <?php echo json_encode($list_lpj ?? []); ?>;
+
 document.addEventListener('DOMContentLoaded', () => {
+    const allData = window.lpjData || [];
+    const ROWS_PER_PAGE = 5;
+    
+    let filteredData = [...allData];
+    let currentPage = 1;
+    
     const searchInput = document.getElementById('search-lpj-input');
     const filterJurusan = document.getElementById('filter-jurusan');
     const filterStatus = document.getElementById('filter-status');
-    const tableBody = document.getElementById('table-body');
-    const allRows = Array.from(tableBody.querySelectorAll('.data-row'));
-    const emptyRow = document.getElementById('empty-row');
-    const noResultsRow = document.getElementById('no-results-row');
+    const resetButton = document.getElementById('reset-filter'); 
     
-    let currentPage = 1;
-    const rowsPerPage = 5; // Maksimal 5 baris per halaman
-    let filteredRows = [...allRows];
+    const tableBodyDesktop = document.getElementById('table-body-desktop');
+    const mobileList = document.getElementById('mobile-lpj-list');
+    const paginationButtons = document.getElementById('pagination-buttons');
+    
+    const emptyRowDesktop = document.getElementById('empty-row-desktop');
+    const noResultsRowDesktop = document.getElementById('no-results-row-desktop');
+    const emptyRowMobile = document.getElementById('empty-row-mobile');
+    const noResultsRowMobile = document.getElementById('no-results-row-mobile');
 
-    // Auto-adjust dropdown width based on content
-    function adjustDropdownWidth(selectElement) {
-        const tempSpan = document.createElement('span');
-        tempSpan.style.visibility = 'hidden';
-        tempSpan.style.position = 'absolute';
-        tempSpan.style.whiteSpace = 'nowrap';
-        tempSpan.style.fontSize = getComputedStyle(selectElement).fontSize;
-        tempSpan.style.fontFamily = getComputedStyle(selectElement).fontFamily;
-        tempSpan.style.fontWeight = getComputedStyle(selectElement).fontWeight;
-        tempSpan.style.padding = '0 40px';
-        document.body.appendChild(tempSpan);
+    const showingStart = document.getElementById('showing-start');
+    const showingEnd = document.getElementById('showing-end');
+    const totalRecords = document.getElementById('total-records');
 
-        let maxWidth = 0;
-        
-        Array.from(selectElement.options).forEach(option => {
-            tempSpan.textContent = option.text;
-            const width = tempSpan.offsetWidth;
-            if (width > maxWidth) {
-                maxWidth = width;
-            }
-        });
-
-        document.body.removeChild(tempSpan);
-
-        const minWidth = 220;
-        const maxWidthLimit = 400;
-        const finalWidth = Math.max(minWidth, Math.min(maxWidth + 20, maxWidthLimit));
-        
-        selectElement.style.width = finalWidth + 'px';
+    // --- FUNGSI UTILITY ---
+    
+    // HTML escape function
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    // Status and Button Utility (Replikasi PHP di JS untuk render Mobile)
+    function getStatusInfo(status_raw) {
+        const statusMap = {
+            'setuju': { text: 'Disetujui', class: 'status-ok', icon: 'fa-check-circle' },
+            'revisi': { text: 'Revisi', class: 'status-rev', icon: 'fa-exclamation-triangle' },
+            'menunggu_upload': { text: 'Perlu Upload', class: 'status-upload', icon: 'fa-upload' },
+            // Kelas Tailwind eksplisit di JS
+            'siap_submit': { text: 'Siap Submit', class: 'text-blue-700 bg-blue-100 border border-blue-200', icon: 'fa-file-upload' }, 
+            'menunggu': { text: 'Menunggu', class: 'status-wait', icon: 'fa-hourglass-half' },
+        };
+        return statusMap[status_raw] || { text: 'Tidak Diketahui', class: 'text-red-800 bg-red-100 border border-red-200', icon: 'fa-question-circle' };
+    }
+    
+    function getActionButtonInfo(status_raw) {
+        const buttonAction = {
+            'menunggu_upload': { text: 'Upload Bukti', color: 'bg-orange-600 hover:bg-orange-700', icon: 'fa-upload' },
+            'siap_submit': { text: 'Submit LPJ', color: 'bg-blue-600 hover:bg-blue-700', icon: 'fa-file-upload' },
+            'menunggu': { text: 'Lihat Status', color: 'bg-gray-600 hover:bg-gray-700', icon: 'fa-eye' },
+            'setuju': { text: 'Lihat Detail', color: 'bg-green-600 hover:bg-green-700', icon: 'fa-eye' },
+            'revisi': { text: 'Lihat Revisi', color: 'bg-yellow-600 hover:bg-yellow-700', icon: 'fa-eye' },
+            'default': { text: 'Review', color: 'bg-indigo-600 hover:bg-indigo-700', icon: 'fa-eye' },
+        };
+        return buttonAction[status_raw] || buttonAction['default'];
+    }
+    
+    function formatDate(date_string) {
+        if (!date_string) return '-';
+        return new Date(date_string).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+    }
+    
+    // Logic highlight filter
+    function highlightFilter(selectElement) {
+        const value = selectElement.value.toLowerCase();
+        if (value) {
+            selectElement.classList.add('font-bold', 'border-blue-500', 'bg-blue-50');
+            selectElement.classList.remove('font-semibold', 'border-gray-300', 'bg-white');
+        } else {
+            selectElement.classList.add('font-semibold', 'border-gray-300', 'bg-white');
+            selectElement.classList.remove('font-bold', 'border-blue-500', 'bg-blue-50');
+        }
     }
 
-    // Adjust jurusan dropdown on load
-    if (filterJurusan) {
-        adjustDropdownWidth(filterJurusan);
-        
-        // Highlight saat ada filter aktif
-        filterJurusan.addEventListener('change', function() {
-            if (this.value) {
-                this.style.fontWeight = '600';
-                this.style.borderColor = '#2563eb';
-                this.style.backgroundColor = '#eff6ff';
-            } else {
-                this.style.fontWeight = '500';
-                this.style.borderColor = '';
-                this.style.backgroundColor = '';
-            }
-        });
-        
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 768) {
-                adjustDropdownWidth(filterJurusan);
-            } else {
-                filterJurusan.style.width = '100%';
-            }
-        });
-    }
+    // --- FUNGSI FILTER DAN RENDER UTAMA ---
 
-    // Highlight filter Status
-    if (filterStatus) {
-        filterStatus.addEventListener('change', function() {
-            if (this.value) {
-                this.style.fontWeight = '600';
-                this.style.borderColor = '#2563eb';
-                this.style.backgroundColor = '#eff6ff';
-            } else {
-                this.style.fontWeight = 'normal';
-                this.style.borderColor = '';
-                this.style.backgroundColor = '';
-            }
-        });
-    }
-
-    function filterTable() {
+    function applyFilters() {
         const searchText = searchInput.value.toLowerCase().trim();
-        const jurusanFilter = filterJurusan.value.toLowerCase();
-        const statusFilter = filterStatus.value.toLowerCase();
+        const jurusanFilter = filterJurusan.value.toLowerCase().trim();
+        const statusFilter = filterStatus.value.toLowerCase().trim();
 
-        filteredRows = allRows.filter(row => {
-            const searchData = row.dataset.search || '';
-            const jurusan = row.dataset.jurusan || '';
-            const status = row.dataset.status || '';
-            return (!searchText || searchData.includes(searchText)) &&
+        filteredData = allData.filter(item => {
+            const searchData = (item.nama || '') + ' ' + (item.nama_mahasiswa || '') + ' ' + (item.prodi || '');
+            const jurusan = (item.jurusan || '').toLowerCase();
+            const status = (item.status || '').toLowerCase();
+            
+            return (!searchText || searchData.toLowerCase().includes(searchText)) &&
                    (!jurusanFilter || jurusan === jurusanFilter) &&
                    (!statusFilter || status === statusFilter);
         });
 
-        // Highlight search input
+        highlightFilter(filterJurusan);
+        highlightFilter(filterStatus);
+        
+        // Highlight search input (dibuat sederhana)
         if (searchText) {
-            searchInput.style.borderColor = '#000';
+            searchInput.classList.add('border-blue-500');
         } else {
-            searchInput.style.borderColor = '';
+            searchInput.classList.remove('border-blue-500');
         }
 
-        currentPage = 1; // Reset ke halaman 1 saat filter
-        renderTable();
+        currentPage = 1; 
+        render();
+    }
+    
+    function resetFilters() {
+        searchInput.value = '';
+        filterJurusan.value = '';
+        filterStatus.value = '';
+        applyFilters();
     }
 
-    function renderTable() {
-        allRows.forEach(row => row.style.display = 'none');
+    function render() {
+        const start = (currentPage - 1) * ROWS_PER_PAGE;
+        const end = start + ROWS_PER_PAGE;
+        const pageData = filteredData.slice(start, end);
+        const totalPages = Math.ceil(filteredData.length / ROWS_PER_PAGE);
         
-        if (filteredRows.length > 0) {
-            const start = (currentPage - 1) * rowsPerPage;
-            const paginatedRows = filteredRows.slice(start, start + rowsPerPage);
-            
-            paginatedRows.forEach((row, index) => {
-                row.style.display = '';
-                const numCell = row.querySelector('td:first-child');
-                if(numCell) numCell.textContent = (start + index + 1) + '.';
-            });
-            
-            if(emptyRow) emptyRow.style.display = 'none';
-            if(noResultsRow) noResultsRow.style.display = 'none';
-        } else {
-            if(allRows.length > 0) {
-                if(noResultsRow) noResultsRow.style.display = '';
-                if(emptyRow) emptyRow.style.display = 'none';
-            } else {
-                if(emptyRow) emptyRow.style.display = '';
-                if(noResultsRow) noResultsRow.style.display = 'none';
-            }
-        }
-        updatePaginationUI();
-    }
-
-    function updatePaginationUI() {
-        const total = filteredRows.length;
-        const totalPages = Math.ceil(total / rowsPerPage) || 1;
-        
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
-        if (currentPage < 1) {
-            currentPage = 1;
-        }
-        
-        const start = total === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-        const end = Math.min(currentPage * rowsPerPage, total);
-        
-        document.getElementById('showing-start').textContent = start;
-        document.getElementById('showing-end').textContent = end;
-        document.getElementById('total-records').textContent = total;
-
-        const pageContainer = document.getElementById('page-numbers');
-        pageContainer.innerHTML = '';
-
-        if (totalPages > 1) {
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-                    const btn = document.createElement('button');
-                    btn.textContent = i;
-                    btn.className = `px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        currentPage === i 
-                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-md' 
-                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                    }`;
-                    btn.onclick = () => { 
-                        currentPage = i; 
-                        renderTable();
-                    };
-                    btn.setAttribute('aria-label', `Halaman ${i}`);
-                    btn.setAttribute('aria-current', currentPage === i ? 'page' : 'false');
-                    pageContainer.appendChild(btn);
-                } else if (i === currentPage - 2 || i === currentPage + 2) {
-                    const span = document.createElement('span');
-                    span.textContent = '...';
-                    span.className = 'px-2 text-gray-400 self-center';
-                    span.setAttribute('aria-hidden', 'true');
-                    pageContainer.appendChild(span);
+        // 1. Render Desktop Table
+        if (tableBodyDesktop) {
+            if (pageData.length === 0) {
+                tableBodyDesktop.innerHTML = ''; 
+                if (allData.length === 0) {
+                    if(emptyRowDesktop) emptyRowDesktop.classList.remove('hidden');
+                    if(noResultsRowDesktop) noResultsRowDesktop.classList.add('hidden');
+                } else {
+                    if(emptyRowDesktop) emptyRowDesktop.classList.add('hidden');
+                    if(noResultsRowDesktop) noResultsRowDesktop.classList.remove('hidden');
                 }
+            } else {
+                if(emptyRowDesktop) emptyRowDesktop.classList.add('hidden');
+                if(noResultsRowDesktop) noResultsRowDesktop.classList.add('hidden');
+                
+                let desktopHtml = '';
+                pageData.forEach((item, index) => {
+                    const no = start + index + 1;
+                    const status_raw = (item.status || 'menunggu').toLowerCase();
+                    const status_info = getStatusInfo(status_raw);
+                    const btn_info = getActionButtonInfo(status_raw);
+                    const tgl_pengajuan = formatDate(item.tanggal_pengajuan);
+                    const tenggat_lpj_date = item.tenggatLpj;
+                    
+                    // Logic Tenggat Waktu (Desktop Replikasi)
+                    let deadlineHtml = '';
+                    if (status_raw === 'menunggu_upload' && tenggat_lpj_date) {
+                        const tenggat_ts = new Date(tenggat_lpj_date).getTime();
+                        const hari_ini_ts = new Date().getTime();
+                        const diff_seconds = (tenggat_ts - hari_ini_ts) / 1000;
+                        const sisa_hari = Math.ceil(diff_seconds / (60 * 60 * 24));
+                        
+                        let badge_class;
+                        let icon;
+                        let text_status;
+                        
+                        if (sisa_hari < 0) {
+                            badge_class = 'bg-red-50 border-red-200 text-red-700';
+                            icon = 'fa-exclamation-triangle';
+                            text_status = 'Terlewat ' + Math.abs(sisa_hari) + ' hari';
+                        } else if (sisa_hari == 0) {
+                            badge_class = 'bg-red-50 border-red-200 text-red-700';
+                            icon = 'fa-exclamation-circle';
+                            text_status = 'Hari Ini!';
+                        } else if (sisa_hari <= 3) {
+                            badge_class = 'bg-orange-50 border-orange-200 text-orange-700';
+                            icon = 'fa-hourglass-end';
+                            text_status = 'Sisa ' + sisa_hari + ' hari';
+                        } else {
+                            badge_class = 'bg-blue-50 border-blue-200 text-blue-700';
+                            icon = 'fa-calendar-day';
+                            text_status = 'Sisa ' + sisa_hari + ' hari';
+                        }
+                        
+                        deadlineHtml = `
+                            <div class="flex flex-col items-start gap-1">
+                                <span class="text-gray-900 font-medium">${formatDate(tenggat_lpj_date)}</span>
+                                <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${badge_class}">
+                                    <i class="fas ${icon}"></i><span>${text_status}</span>
+                                </div>
+                            </div>`;
+                    } else if (tenggat_lpj_date) {
+                        deadlineHtml = `<span class="text-gray-900 font-medium">${formatDate(tenggat_lpj_date)}</span>`;
+                    } else if (status_raw === 'menunggu_upload') {
+                        deadlineHtml = `<span class="px-2 py-0.5 rounded-full text-orange-700 bg-orange-100 border border-orange-200 text-xs font-medium">Belum Ditetapkan</span>`;
+                    } else {
+                        deadlineHtml = `<span class="text-gray-600 font-medium">-</span>`;
+                    }
+
+                    
+                    desktopHtml += `
+                        <tr class="data-row hover:bg-gray-50 transition-colors"
+                            data-jurusan="${escapeHtml((item.jurusan || '').toLowerCase())}"
+                            data-status="${status_raw}"
+                            data-search="${escapeHtml(((item.nama || '') + ' ' + (item.nama_mahasiswa || '') + ' ' + (item.prodi || '')).toLowerCase())}">
+                            
+                            <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-700 font-medium">${no}.</td>
+
+                            <td class="px-6 py-5 text-sm">
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-gray-900 mb-1 leading-snug">${escapeHtml(item.nama || 'Tanpa Judul')}</span>
+                                    <span class="text-gray-600 text-xs mt-1">
+                                        ${escapeHtml(item.nama_mahasiswa || 'N/A')} 
+                                        <span class="text-gray-500 font-medium">(${escapeHtml(item.nim || '-')})</span>
+                                    </span>
+                                    <span class="text-gray-500 text-xs mt-0.5 font-medium">
+                                        <i class="fas fa-graduation-cap mr-1 text-blue-500"></i>${escapeHtml(item.prodi || item.jurusan || '-')}
+                                    </span>
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-5 whitespace-nowrap text-sm text-gray-600">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-calendar-alt text-gray-500 text-xs"></i>
+                                    ${tgl_pengajuan}
+                                </div>
+                            </td>
+
+                            <td class="px-6 py-5 text-sm">${deadlineHtml}</td>
+
+                            <td class="px-6 py-5 whitespace-nowrap text-xs font-semibold">
+                                <span class="px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 ${status_info.class}">
+                                    <i class="fas ${status_info.icon}"></i>
+                                    ${status_info.text}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-5 whitespace-nowrap text-sm font-medium">
+                                <a href="/docutrack/public/admin/pengajuan-lpj/show/${item.id || 0}" 
+                                   class="<?php echo $btn_info['color']; ?> text-white px-4 py-1.5 rounded-lg text-xs font-semibold shadow-md transition-all duration-300 transform hover:scale-105 active:scale-95 inline-flex items-center gap-2">
+                                    <i class="fas ${btn_info.icon}"></i> ${btn_info.text}
+                                </a>
+                            </td>
+                        </tr>`;
+                });
+                tableBodyDesktop.innerHTML = desktopHtml;
             }
         }
+        
+        // 2. Render Mobile Cards
+        if (mobileList) {
+            if(emptyRowMobile) emptyRowMobile.classList.add('hidden');
+            if(noResultsRowMobile) noResultsRowMobile.classList.add('hidden');
+            
+            if (pageData.length === 0) {
+                 if (allData.length === 0) {
+                    if(emptyRowMobile) emptyRowMobile.classList.remove('hidden');
+                } else {
+                    if(noResultsRowMobile) noResultsRowMobile.classList.remove('hidden');
+                }
+                mobileList.innerHTML = mobileList.querySelector('.empty-state') ? mobileList.innerHTML : '';
+            } else {
+                mobileList.innerHTML = pageData.map((item, index) => {
+                    const no = start + index + 1;
+                    const status_raw = (item.status || 'menunggu').toLowerCase();
+                    const status_info = getStatusInfo(status_raw);
+                    const btn_info = getActionButtonInfo(status_raw);
+                    const tgl_pengajuan = formatDate(item.tanggal_pengajuan);
+                    const tenggat_lpj_date = item.tenggatLpj;
+                    
+                    // Logic Tenggat Waktu (Mobile Card)
+                    let deadlineHtml = '';
+                    if (status_raw === 'menunggu_upload' && tenggat_lpj_date) {
+                        const tenggat_ts = new Date(tenggat_lpj_date).getTime();
+                        const hari_ini_ts = new Date().getTime();
+                        const diff_seconds = (tenggat_ts - hari_ini_ts) / 1000;
+                        const sisa_hari = Math.ceil(diff_seconds / (60 * 60 * 24));
+                        
+                        let deadline_badge_class = '';
+                        let text_status = formatDate(tenggat_lpj_date);
 
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
+                        if (sisa_hari < 0) {
+                            deadline_badge_class = 'text-red-700 font-bold';
+                            text_status += ' (Terlewat)';
+                        } else if (sisa_hari == 0) {
+                            deadline_badge_class = 'text-red-700 font-bold';
+                            text_status += ' (Hari Ini!)';
+                        } else if (sisa_hari <= 3) {
+                            deadline_badge_class = 'text-orange-700 font-bold';
+                            text_status += ` (Sisa ${sisa_hari} hari)`;
+                        } else {
+                            deadline_badge_class = 'text-blue-700';
+                            text_status += ` (Sisa ${sisa_hari} hari)`;
+                        }
+
+                        deadlineHtml = `
+                            <div class="mobile-card-row">
+                                <div class="mobile-card-label">
+                                    <i class="fas fa-hourglass-end"></i> Tenggat LPJ
+                                </div>
+                                <div class="mobile-card-value ${deadline_badge_class}">${escapeHtml(text_status)}</div>
+                            </div>`;
+                    } else if (tenggat_lpj_date) {
+                         deadlineHtml = `
+                            <div class="mobile-card-row">
+                                <div class="mobile-card-label">
+                                    <i class="fas fa-calendar-check"></i> Tenggat LPJ
+                                </div>
+                                <div class="mobile-card-value">${formatDate(tenggat_lpj_date)}</div>
+                            </div>`;
+                    }
+                    
+                    const namaMahasiswa = item.nama_mahasiswa || 'N/A';
+                    
+                    return `
+                    <div class="mobile-card">
+                        <div class="mobile-card-header">
+                            <div class="mobile-card-number">#${no}</div>
+                            <span class="status-badge ${status_info.class}">
+                                <i class="fas ${status_info.icon}"></i>
+                                ${escapeHtml(status_info.text)}
+                            </span>
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-clipboard-list"></i>
+                                Nama Kegiatan
+                            </div>
+                            <div class="mobile-card-kegiatan">${escapeHtml(item.nama || 'Tanpa Judul')}</div>
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-user"></i>
+                                Pengusul
+                            </div>
+                            <div class="mobile-card-mahasiswa">
+                                ${escapeHtml(namaMahasiswa)}
+                                <span class="text-gray-500">(${escapeHtml(item.nim || '-')})</span>
+                            </div>
+                            <div class="mobile-card-prodi">
+                                <i class="fas fa-graduation-cap"></i>
+                                ${escapeHtml(item.prodi || item.jurusan || '-')}
+                            </div>
+                        </div>
+                        
+                        ${deadlineHtml}
+                        
+                        <div class="mobile-card-footer">
+                            <div class="mobile-card-date">
+                                <i class="fas fa-calendar-alt text-gray-500"></i>
+                                Tgl. Pengajuan: ${tgl_pengajuan}
+                            </div>
+                            <a href="/docutrack/public/admin/pengajuan-lpj/show/${item.id || 0}" class="mobile-card-btn ${btn_info.color}">
+                                <i class="fas ${btn_info.icon}"></i>
+                                ${btn_info.text}
+                            </a>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
         
-        prevBtn.disabled = currentPage === 1;
-        nextBtn.disabled = currentPage === totalPages;
+        // 3. Update pagination info
+        const totalItems = filteredData.length;
+        const showStart = totalItems === 0 ? 0 : start + 1;
+        const showEnd = Math.min(end, totalItems);
         
-        prevBtn.setAttribute('aria-label', 'Halaman sebelumnya');
-        nextBtn.setAttribute('aria-label', 'Halaman selanjutnya');
+        if (showingStart) showingStart.textContent = showStart;
+        if (showingEnd) showingEnd.textContent = showEnd;
+        if (totalRecords) totalRecords.textContent = totalItems;
+        
+        // 4. Render pagination
+        renderPagination(totalPages);
     }
 
-    searchInput?.addEventListener('input', filterTable);
-    filterJurusan?.addEventListener('change', filterTable);
-    filterStatus?.addEventListener('change', filterTable);
-    
-    document.getElementById('prev-page')?.addEventListener('click', () => {
-        if (currentPage > 1) { 
-            currentPage--; 
-            renderTable();
+    // Render pagination (Diadaptasi dari kode dashboard)
+    function renderPagination(totalPages) {
+        if (!paginationButtons) return;
+        
+        if (totalPages <= 1) {
+            paginationButtons.innerHTML = '';
+            return;
         }
-    });
-    
-    document.getElementById('next-page')?.addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-        if (currentPage < totalPages) { 
-            currentPage++; 
-            renderTable();
+        
+        let html = '';
+        
+        // Previous button
+        const prevDisabled = currentPage === 1;
+        html += `<button class="pagination-btn ${prevDisabled ? 'disabled' : ''}" 
+                        onclick="goToPage(${currentPage - 1})" 
+                        ${prevDisabled ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>`;
+        
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                const isActive = i === currentPage;
+                html += `<button class="pagination-btn ${isActive ? 'active' : ''}" 
+                                onclick="goToPage(${i})">${i}</button>`;
+            } else if (i === currentPage - 2 || i === currentPage + 2) {
+                html += `<span class="px-2 text-gray-400 self-center">...</span>`;
+            }
         }
-    });
+        
+        // Next button
+        const nextDisabled = currentPage === totalPages;
+        html += `<button class="pagination-btn ${nextDisabled ? 'disabled' : ''}" 
+                        onclick="goToPage(${currentPage + 1})" 
+                        ${nextDisabled ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>`;
+        
+        paginationButtons.innerHTML = html;
+    }
 
-    renderTable();
+    // Go to page function
+    window.goToPage = function(page) {
+        const totalPages = Math.ceil(filteredData.length / ROWS_PER_PAGE);
+        if (page >= 1 && page <= totalPages && page !== currentPage) {
+            currentPage = page;
+            render();
+            // Scroll ke atas section agar user melihat data baru
+            document.querySelector('.overflow-y-auto').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
+    // --- EVENT LISTENERS ---
+
+    // Gunakan debounce untuk search input agar performa lebih baik
+    let debounceTimer;
+    searchInput?.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applyFilters, 300);
+    });
+    
+    filterJurusan?.addEventListener('change', applyFilters);
+    filterStatus?.addEventListener('change', applyFilters);
+
+    // Event listener untuk tombol reset filter
+    resetButton?.addEventListener('click', resetFilters);
+    
+    // Initial render
+    applyFilters();
 });
 </script>

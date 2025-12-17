@@ -1,5 +1,3 @@
-
-
 document.addEventListener('DOMContentLoaded', function() {
     
     // Data dari PHP
@@ -58,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.config = config;
             
             this.tbody = document.getElementById(config.tbodyId);
+            this.mobileList = document.getElementById('mobile-riwayat-list');
             this.paginationContainer = document.getElementById(config.paginationId);
             this.showingSpan = document.getElementById(config.showingId);
             this.totalSpan = document.getElementById(config.totalId);
@@ -101,11 +100,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = 1;
                 this.applyFilters();
             });
+            
+            // Window resize handler
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    this.render();
+                }, 250);
+            });
         }
         
         applyFilters() {
             const searchTerm = this.searchInput.value.toLowerCase();
-            // Ambil value status dan ubah ke lowercase agar pencocokan tidak sensitif huruf besar/kecil
             const statusFilter = this.filterStatus.value.toLowerCase();
             const jurusanFilter = this.filterJurusan.value;
             
@@ -117,8 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     (item.nama_mahasiswa && item.nama_mahasiswa.toLowerCase().includes(searchTerm)) ||
                     item.nim.toLowerCase().includes(searchTerm);
                 
-                // 2. Filter Status (FIXED)
-                // Membandingkan status item (lowercase) dengan value dropdown (lowercase)
+                // 2. Filter Status
                 const matchStatus = !statusFilter || 
                     (item.status && item.status.toLowerCase() === statusFilter);
                     
@@ -140,9 +146,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Styling UI Filter
-            this.filterStatus.style.color = statusFilter ? '#000' : '';
+            this.filterStatus.style.borderColor = statusFilter ? '#10b981' : '';
             this.filterJurusan.style.borderColor = jurusanFilter ? '#10b981' : '';
-            this.searchInput.style.borderColor = searchTerm ? '#000' : '';
+            this.searchInput.style.borderColor = searchTerm ? '#10b981' : '';
             
             this.render();
         }
@@ -173,6 +179,28 @@ document.addEventListener('DOMContentLoaded', function() {
             </span>`;
         }
         
+        getStatusBadgeMobile(status) {
+            const statusLower = status.toLowerCase();
+            const statusMap = {
+                'dana diberikan': 'status-dana-diberikan',
+                'revisi': 'status-revisi',
+                'disetujui': 'status-disetujui',
+                'ditolak': 'status-ditolak'
+            };
+            
+            const icons = {
+                'disetujui': 'fa-check-circle',
+                'dana diberikan': 'fa-money-check-alt',
+                'ditolak': 'fa-times-circle',
+                'revisi': 'fa-pencil-alt'
+            };
+            
+            return `<span class="status-badge ${statusMap[statusLower] || statusMap['dana diberikan']}">
+                <i class="fas ${icons[statusLower] || 'fa-question-circle'}"></i>
+                ${status}
+            </span>`;
+        }
+        
         renderTable() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
@@ -198,8 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rowClass = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
                 
                 const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
-                
-                // Ambil Nama Prodi (Prioritas field 'prodi', fallback ke 'jurusan')
                 const displayProdi = item.prodi || item.jurusan || '-';
                 
                 let tglVerifikasiDisplay = '-';
@@ -212,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // PERUBAHAN TAMPILAN: PRODI DISAMPING NIM (ABU-ABU) + LINK KE DETAIL
                 return `
                     <tr class='${rowClass} hover:bg-blue-50/50 transition-colors duration-150 cursor-pointer' onclick="window.location.href='/docutrack/public/bendahara/riwayat-verifikasi/show/${item.id}?ref=riwayat-verifikasi'">
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
@@ -231,6 +256,78 @@ document.addEventListener('DOMContentLoaded', function() {
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglVerifikasiDisplay}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
                     </tr>
+                `;
+            }).join('');
+        }
+        
+        renderMobileCards() {
+            if (!this.mobileList) return;
+            
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            const pageData = this.filteredData.slice(start, end);
+            
+            if (pageData.length === 0) {
+                this.mobileList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <div class="empty-state-text">Tidak ada data yang ditemukan</div>
+                        <div class="empty-state-subtext">Coba ubah filter atau kata kunci pencarian</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            this.mobileList.innerHTML = pageData.map((item, index) => {
+                const rowNumber = start + index + 1;
+                const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
+                const displayProdi = item.prodi || item.jurusan || '-';
+                
+                let tglVerifikasiDisplay = '-';
+                if (item.tgl_verifikasi) {
+                    const tglVerifikasi = new Date(item.tgl_verifikasi);
+                    tglVerifikasiDisplay = tglVerifikasi.toLocaleDateString('id-ID', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                }
+                
+                return `
+                    <div class="mobile-card" 
+                         style="animation-delay: ${index * 0.05}s"
+                         onclick="window.location.href='/docutrack/public/bendahara/riwayat-verifikasi/show/${item.id}?ref=riwayat-verifikasi'">
+                        <div class="mobile-card-header">
+                            <div class="mobile-card-number">#${rowNumber}</div>
+                            ${this.getStatusBadgeMobile(item.status)}
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Nama Kegiatan
+                            </div>
+                            <div class="mobile-card-kegiatan">${this.escapeHtml(item.nama)}</div>
+                            <div class="mobile-card-mahasiswa">
+                                ${this.escapeHtml(namaMahasiswa)} 
+                                <span style="color: #9ca3af;">(${this.escapeHtml(item.nim)})</span>
+                            </div>
+                            <div class="mobile-card-prodi">
+                                <i class="fas fa-graduation-cap"></i>
+                                ${this.escapeHtml(displayProdi)}
+                            </div>
+                        </div>
+                        
+                        <div class="mobile-card-footer">
+                            <div class="mobile-card-date">
+                                <i class="fas fa-calendar-check"></i>
+                                ${tglVerifikasiDisplay}
+                            </div>
+                            <div style="color: #3b82f6; font-size: 0.875rem;">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
@@ -306,6 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         render() {
             this.renderTable();
+            this.renderMobileCards();
             this.renderPagination();
             this.updateInfo();
         }
@@ -315,7 +413,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (page >= 1 && page <= totalPages) {
                 this.currentPage = page;
                 this.render();
-                const section = this.tbody.closest('section');
+                
+                const section = this.tbody ? this.tbody.closest('section') : this.mobileList?.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }

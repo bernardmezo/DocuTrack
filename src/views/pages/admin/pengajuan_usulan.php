@@ -347,6 +347,464 @@
 
 </main>
 
+<style>
+/* ================================================
+   STEPPER RESPONSIVENESS - MOBILE & TABLET FIX
+   ================================================ */
+
+/* Base Stepper Styling */
+#stepper-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#stepper-container nav {
+    min-width: 100%;
+}
+
+#stepper-container ol {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+/* ================================================
+   MOBILE RESPONSIVE (< 768px)
+   ================================================ */
+@media (max-width: 767px) {
+    /* Container */
+    #stepper-container {
+        padding: 1rem 0.5rem !important;
+    }
+    
+    /* Stepper Items */
+    #stepper-container ol {
+        gap: 0.25rem;
+        min-width: 100%;
+    }
+    
+    #stepper-container li {
+        flex: 1;
+        min-width: 0;
+        max-width: 25%;
+    }
+    
+    /* Step Number Circle */
+    #stepper-container span.flex.items-center.justify-center {
+        width: 2.25rem !important;  /* 36px */
+        height: 2.25rem !important; /* 36px */
+        min-width: 2.25rem !important;
+    }
+    
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: 0.875rem !important; /* 14px */
+    }
+    
+    /* Step Container */
+    #stepper-container .flex.flex-col.items-center {
+        width: 100% !important;
+        min-width: 0;
+        padding: 0 0.125rem;
+    }
+    
+    /* Step Text - Main Label */
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        font-size: 0.625rem !important;  /* 10px */
+        line-height: 1.1 !important;
+        max-width: 100%;
+        word-wrap: break-word;
+        white-space: normal;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        margin-top: 0.25rem !important;
+        padding: 0 0.125rem;
+    }
+    
+    /* Step Text - Subtitle (Hide on Mobile) */
+    #stepper-container .mt-2 span:last-child,
+    #stepper-container .mt-3 span:last-child {
+        display: none !important;
+    }
+    
+    /* Progress Line Background */
+    #stepper-container .absolute.left-0.top-6 {
+        top: 1.125rem !important; /* Align with smaller circles */
+        height: 2px !important;
+    }
+    
+    /* Progress Line Fill */
+    #stepper-container .stepper-line {
+        top: 1.125rem !important;
+        height: 2px !important;
+    }
+    
+    /* Check Icon Size */
+    #stepper-container i.fa-check {
+        font-size: 0.75rem !important; /* 12px */
+    }
+    
+    /* Ring Size Adjustment */
+    #stepper-container .ring-4 {
+        --tw-ring-offset-width: 0px !important;
+        --tw-ring-width: 2px !important;
+    }
+}
+
+/* ================================================
+   SMALL MOBILE (< 375px) - iPhone SE, etc
+   ================================================ */
+@media (max-width: 374px) {
+    #stepper-container span.flex.items-center.justify-center {
+        width: 2rem !important;  /* 32px */
+        height: 2rem !important; /* 32px */
+        min-width: 2rem !important;
+    }
+    
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: 0.75rem !important; /* 12px */
+    }
+    
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        font-size: 0.5rem !important; /* 8px */
+        -webkit-line-clamp: 2;
+    }
+    
+    #stepper-container .absolute.left-0.top-6 {
+        top: 1rem !important;
+    }
+    
+    #stepper-container .stepper-line {
+        top: 1rem !important;
+    }
+}
+
+/* ================================================
+   TABLET RESPONSIVE (768px - 1023px)
+   ================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+    #stepper-container {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    #stepper-container ol {
+        gap: 0.75rem;
+    }
+    
+    #stepper-container span.flex.items-center.justify-center {
+        width: 2.75rem !important;  /* 44px */
+        height: 2.75rem !important; /* 44px */
+    }
+    
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: 1.125rem !important; /* 18px */
+    }
+    
+    #stepper-container .flex.flex-col.items-center {
+        width: 7rem !important; /* 112px */
+    }
+    
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        font-size: 0.75rem !important; /* 12px */
+    }
+    
+    #stepper-container .mt-2 span:last-child,
+    #stepper-container .mt-3 span:last-child {
+        font-size: 0.625rem !important; /* 10px */
+    }
+}
+
+/* ================================================
+   DESKTOP (> 1024px) - Optimized & Responsive
+   ================================================ */
+@media (min-width: 1024px) {
+    #stepper-container {
+        padding: 2rem !important;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    #stepper-container ol {
+        gap: 1.5rem;
+        max-width: 100%;
+    }
+    
+    #stepper-container li {
+        flex: 1;
+        max-width: 180px;
+    }
+    
+    /* Step Number Circle */
+    #stepper-container span.flex.items-center.justify-center {
+        width: 3rem !important;  /* 48px */
+        height: 3rem !important; /* 48px */
+        min-width: 3rem !important;
+    }
+    
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: 1.25rem !important; /* 20px */
+        font-weight: 700 !important;
+    }
+    
+    /* Step Container */
+    #stepper-container .flex.flex-col.items-center {
+        width: 8rem !important; /* 128px */
+        max-width: 100%;
+    }
+    
+    /* Step Text - Main Label */
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        font-size: 0.875rem !important; /* 14px */
+        line-height: 1.3 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Step Text - Subtitle */
+    #stepper-container .mt-2 span:last-child,
+    #stepper-container .mt-3 span:last-child {
+        font-size: 0.75rem !important; /* 12px */
+        line-height: 1.2 !important;
+        margin-top: 0.125rem !important;
+    }
+    
+    /* Check Icon Size */
+    #stepper-container i.fa-check {
+        font-size: 1.125rem !important; /* 18px */
+    }
+    
+    /* Progress Line */
+    #stepper-container .absolute.left-0.top-6 {
+        top: 1.5rem !important;
+        height: 6px !important;
+    }
+    
+    #stepper-container .stepper-line {
+        top: 1.5rem !important;
+        height: 6px !important;
+    }
+}
+
+/* ================================================
+   LARGE DESKTOP (> 1440px) - Extra Space
+   ================================================ */
+@media (min-width: 1441px) {
+    #stepper-container {
+        max-width: 1400px;
+    }
+    
+    #stepper-container ol {
+        gap: 2rem;
+    }
+    
+    #stepper-container li {
+        max-width: 200px;
+    }
+    
+    /* Slightly larger elements for big screens */
+    #stepper-container span.flex.items-center.justify-center {
+        width: 3.5rem !important;  /* 56px */
+        height: 3.5rem !important; /* 56px */
+    }
+    
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: 1.5rem !important; /* 24px */
+    }
+    
+    #stepper-container .flex.flex-col.items-center {
+        width: 10rem !important; /* 160px */
+    }
+    
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        font-size: 1rem !important; /* 16px */
+    }
+    
+    #stepper-container .mt-2 span:last-child,
+    #stepper-container .mt-3 span:last-child {
+        font-size: 0.875rem !important; /* 14px */
+    }
+}
+
+/* ================================================
+   MEDIUM DESKTOP (1024px - 1440px) - Balanced
+   ================================================ */
+@media (min-width: 1024px) and (max-width: 1440px) {
+    #stepper-container {
+        padding: 1.75rem 1.5rem !important;
+    }
+    
+    #stepper-container ol {
+        gap: 1.25rem;
+    }
+}
+
+/* ================================================
+   LANDSCAPE MODE FIX
+   ================================================ */
+@media (max-height: 500px) and (orientation: landscape) {
+    #stepper-container {
+        padding: 0.75rem 0.5rem !important;
+    }
+    
+    #stepper-container span.flex.items-center.justify-center {
+        width: 2rem !important;
+        height: 2rem !important;
+    }
+    
+    #stepper-container .mt-2,
+    #stepper-container .mt-3 {
+        margin-top: 0.25rem !important;
+    }
+}
+
+/* ================================================
+   ANIMATION & TRANSITIONS
+   ================================================ */
+#stepper-container * {
+    transition: all 0.3s ease;
+}
+
+/* Prevent horizontal scroll on body */
+#stepper-container::-webkit-scrollbar {
+    height: 0;
+    display: none;
+}
+
+/* ================================================
+   FLUID SCALING FOR IN-BETWEEN SIZES
+   ================================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+    /* Fluid font sizes using clamp */
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: clamp(1rem, 2vw, 1.25rem) !important;
+    }
+    
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        font-size: clamp(0.75rem, 1.5vw, 0.875rem) !important;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1440px) {
+    /* Fluid sizing for medium desktop */
+    #stepper-container span.flex.items-center.justify-center {
+        width: clamp(2.75rem, 3.5vw, 3rem) !important;
+        height: clamp(2.75rem, 3.5vw, 3rem) !important;
+    }
+    
+    #stepper-container span.flex.items-center.justify-center span {
+        font-size: clamp(1.125rem, 1.5vw, 1.25rem) !important;
+    }
+}
+
+/* ================================================
+   PREVENT LAYOUT SHIFT
+   ================================================ */
+#stepper-container {
+    min-height: 120px;
+}
+
+@media (min-width: 1024px) {
+    #stepper-container {
+        min-height: 160px;
+    }
+}
+
+/* ================================================
+   ACCESSIBILITY - Touch Targets
+   ================================================ */
+@media (max-width: 767px) {
+    #stepper-container a,
+    #stepper-container li {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+/* ================================================
+   DESKTOP INTERACTIVITY & HOVER STATES
+   ================================================ */
+@media (min-width: 1024px) {
+    /* Hover effect on completed steps */
+    #stepper-container li a:hover .bg-gradient-to-br {
+        transform: scale(1.05);
+        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Hover effect on future steps */
+    #stepper-container li a:hover .bg-gray-200 {
+        background-color: #e5e7eb;
+        transform: scale(1.02);
+    }
+    
+    /* Smooth transitions */
+    #stepper-container span.flex.items-center.justify-center {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    /* Active step pulse animation (optional) */
+    @keyframes pulse-ring {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+        }
+    }
+    
+    #stepper-container .ring-blue-500 {
+        animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    /* Cursor pointer for interactive elements */
+    #stepper-container a {
+        cursor: pointer;
+    }
+    
+    /* Focus visible for keyboard navigation */
+    #stepper-container a:focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 4px;
+        border-radius: 0.5rem;
+    }
+}
+
+/* ================================================
+   FIX FOR VERY LONG TEXT
+   ================================================ */
+@media (max-width: 767px) {
+    /* Truncate jika text terlalu panjang */
+    #stepper-container .mt-2 span:first-child,
+    #stepper-container .mt-3 span:first-child {
+        max-height: 2.2em;
+    }
+}
+
+/* ================================================
+   PRINT STYLES
+   ================================================ */
+@media print {
+    #stepper-container {
+        page-break-inside: avoid;
+    }
+}
+</style>
+
 <?php
 // Script eksternal
 ?>
