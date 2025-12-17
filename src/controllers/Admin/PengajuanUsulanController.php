@@ -136,14 +136,21 @@ class PengajuanUsulanController extends Controller
             );
         }
 
-        // TODO: Implementasi delete logic di Model
-        // $result = $this->model->deletePengajuan($id);
+        $result = $this->safeModelCall($this->model, 'softDeleteKegiatan', [$id], false);
 
-        $this->redirectWithMessage(
-            '/docutrack/public/admin/pengajuan-usulan',
-            'success',
-            'Data berhasil dihapus'
-        );
+        if ($result) {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-usulan',
+                'success',
+                'Data berhasil dihapus (soft-delete)'
+            );
+        } else {
+            $this->redirectWithMessage(
+                '/docutrack/public/admin/pengajuan-usulan',
+                'error',
+                'Gagal menghapus data'
+            );
+        }
     }
 
     /**

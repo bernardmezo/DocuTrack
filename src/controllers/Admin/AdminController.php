@@ -31,10 +31,6 @@ class AdminController extends Controller
         $errorRedirectUrl = '/docutrack/public/admin/pengajuan-kegiatan/show/' . ($kegiatanIdFromPost ? (int)$kegiatanIdFromPost : '') . '?mode=rincian';
 
         try {
-            // Log incoming data for debugging
-            error_log("AdminController::submitRincian - POST data: " . print_r($_POST, true));
-            error_log("AdminController::submitRincian - FILES data: " . print_r($_FILES, true));
-            
             $this->kegiatanService->processRincianKegiatan($_POST, $_FILES['surat_pengantar'] ?? null);
 
             $this->redirectWithMessage('/docutrack/public/admin/pengajuan-kegiatan', 'success', 'Rincian kegiatan berhasil disimpan dan dikirim ke PPK.');

@@ -269,6 +269,32 @@ class BendaharaModel
     }
 
     /**
+     * Ambil semua riwayat pencairan untuk history dashboard
+     */
+    public function getRiwayatPencairan($limit = 50)
+    {
+        $checkTable = mysqli_query($this->db, "SHOW TABLES LIKE 'tbl_tahapan_pencairan'");
+        if (mysqli_num_rows($checkTable) == 0) return [];
+
+        $query = "SELECT t.*, k.namaKegiatan, k.pemilikKegiatan 
+                FROM tbl_tahapan_pencairan t
+                JOIN tbl_kegiatan k ON t.idKegiatan = k.kegiatanId
+                ORDER BY t.createdAt DESC LIMIT ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $limit);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
+        }
+        mysqli_stmt_close($stmt);
+        return $data;
+    }
+
+    /**
      * Ambil semua riwayat pencairan berdasarkan Kegiatan ID
      */
     public function getRiwayatPencairanByKegiatan($kegiatanId)
@@ -369,7 +395,7 @@ class BendaharaModel
                   FROM tbl_kegiatan k
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
                   WHERE k.posisiId = 5
-                  ORDER BY k.updatedAt DESC 
+                  ORDER BY k.createdAt DESC 
                   LIMIT ?";
         
         $stmt = mysqli_prepare($this->db, $query);
@@ -388,7 +414,9 @@ class BendaharaModel
     public function getAntrianLPJ()
     {
         // Asumsi statusId 1 = Submitted/Menunggu
-        $query = "SELECT l.*, k.namaKegiatan, k.pemilikKegiatan, k.nimPelaksana, s.namaStatusUsulan as status_text
+        $query = "SELECT l.*, k.namaKegiatan, k.pemilikKegiatan, k.nimPelaksana, 
+                         k.prodiPenyelenggara, k.jurusanPenyelenggara, k.userId,
+                         s.namaStatusUsulan as status_text
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
                   LEFT JOIN tbl_status_utama s ON l.statusId = s.statusId
@@ -403,5 +431,157 @@ class BendaharaModel
             }
         }
         return $data;
+    }
+
+    /**
+     * Get Detail LPJ by ID
+     */
+    public function getDetailLPJ($lpjId)
+    {
+        $query = "SELECT l.*, k.namaKegiatan, k.pemilikKegiatan, k.nimPelaksana, 
+                         k.prodiPenyelenggara, k.jurusanPenyelenggara, k.userId
+                  FROM tbl_lpj l
+                  JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                  WHERE l.lpjId = ?";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        mysqli_stmt_execute($stmt);
+        return mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    }
+
+    /**
+     * Get line items for a specific LPJ
+     */
+    public function getLPJItems($lpjId)
+    {
+        $query = "SELECT * FROM tbl_lpj_item WHERE lpjId = ? ORDER BY lpjItemId ASC";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
+        }
+        return $data;
+    }
+
+    /**
+     * Approve LPJ and update status
+     */
+    public function approveLPJ($lpjId)
+    {
+        // 1. Update status di tbl_lpj (Status 3 = Disetujui)
+        $query = "UPDATE tbl_lpj SET statusId = 3, approvedAt = NOW() WHERE lpjId = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $lpjId);
+        $success = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        
+        if ($success) {
+            // 2. Log ke progress history (Opsional tapi disarankan)
+            $lpj = $this->getDetailLPJ($lpjId);
+            $kegiatanId = $lpj['kegiatanId'] ?? 0;
+            if ($kegiatanId) {
+                $histQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, 3, NOW())";
+                $stmtH = mysqli_prepare($this->db, $histQuery);
+                mysqli_stmt_bind_param($stmtH, "i", $kegiatanId);
+                mysqli_stmt_execute($stmtH);
+                mysqli_stmt_close($stmtH);
+            }
+        }
+        
+        return $success;
+    }
+
+    /**
+     * Revise LPJ and update status
+     */
+    public function reviseLPJ($lpjId, $komentarPerKategori, $catatanUmum)
+    {
+        mysqli_begin_transaction($this->db);
+        try {
+            // 1. Update status di tbl_lpj (Status 2 = Revisi)
+            $query = "UPDATE tbl_lpj SET statusId = 2, komentarRevisi = ? WHERE lpjId = ?";
+            $stmt = mysqli_prepare($this->db, $query);
+            mysqli_stmt_bind_param($stmt, "si", $catatanUmum, $lpjId);
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Gagal update status LPJ.");
+            }
+            mysqli_stmt_close($stmt);
+
+            // 2. Update komentar per item jika ada (Asumsi $komentarPerKategori adalah array ['rab_kategori_name' => 'comment'])
+            // Namun karena kita butuh mapping kategori ke item, kita harus iterate
+            if (!empty($komentarPerKategori)) {
+                $updateItemQuery = "UPDATE tbl_lpj_item SET komentar = ? WHERE lpjId = ? AND kategoriId = (SELECT kategoriRabId FROM tbl_kategori_rab WHERE namaKategori = ? LIMIT 1)";
+                $stmtItem = mysqli_prepare($this->db, $updateItemQuery);
+                
+                foreach ($komentarPerKategori as $key => $comment) {
+                    if (empty(trim($comment))) continue;
+                    
+                    // Ekstrak nama kategori dari key (misal rab_teknik_listrik -> Teknik Listrik)
+                    // Ini butuh mapping yang konsisten dengan view
+                    // Namun di view kita pakai render_comment_box_rab_lpj('rab_' . strtolower(str_replace(' ', '_', $kategori)), ...)
+                    
+                    // Kita akan mencoba mencari kategori yang cocok
+                    // Cara lebih aman: cari semua kategori di tbl_kategori_rab dan cocokkan
+                    // Untuk sementara kita gunakan logic yang lebih generic:
+                    // Jika key diawali 'rab_', kita coba match
+                    if (str_starts_with($key, 'rab_')) {
+                        // Kita butuh list kategori untuk pencocokan balik
+                        // (Implementasi sederhana: kita iterate semua kategori)
+                    }
+                }
+                
+                // REFACTOR: Sebaiknya kita kirim mapping yang jelas dari controller atau handle di sini
+                // Kita ambil semua kategori yang ada di LPJ ini
+                $kategoriQuery = "SELECT DISTINCT c.namaKategori, c.kategoriRabId 
+                                  FROM tbl_lpj_item li 
+                                  JOIN tbl_kategori_rab c ON li.kategoriId = c.kategoriRabId 
+                                  WHERE li.lpjId = ?";
+                $stmtKat = mysqli_prepare($this->db, $kategoriQuery);
+                mysqli_stmt_bind_param($stmtKat, "i", $lpjId);
+                mysqli_stmt_execute($stmtKat);
+                $resKat = mysqli_stmt_get_result($stmtKat);
+                
+                $kategoriMapping = [];
+                while ($row = mysqli_fetch_assoc($resKat)) {
+                    $formKey = 'rab_' . strtolower(str_replace(' ', '_', $row['namaKategori']));
+                    $kategoriMapping[$formKey] = $row['kategoriRabId'];
+                }
+                mysqli_stmt_close($stmtKat);
+
+                $stmtUpdate = mysqli_prepare($this->db, "UPDATE tbl_lpj_item SET komentar = ? WHERE lpjId = ? AND kategoriId = ?");
+                foreach ($komentarPerKategori as $formKey => $comment) {
+                    if (isset($kategoriMapping[$formKey]) && !empty(trim($comment))) {
+                        mysqli_stmt_bind_param($stmtUpdate, "sii", $comment, $lpjId, $kategoriMapping[$formKey]);
+                        mysqli_stmt_execute($stmtUpdate);
+                    }
+                }
+                mysqli_stmt_close($stmtUpdate);
+            }
+
+            mysqli_commit($this->db);
+            return true;
+        } catch (Exception $e) {
+            mysqli_rollback($this->db);
+            error_log("❌ reviseLPJ Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Reject LPJ and update status
+     */
+    public function rejectLPJ($lpjId, $alasan)
+    {
+        $query = "UPDATE tbl_lpj SET statusId = 4, komentarPenolakan = ? WHERE lpjId = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "si", $alasan, $lpjId);
+        $success = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        return $success;
     }
 }

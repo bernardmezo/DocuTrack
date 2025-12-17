@@ -304,26 +304,30 @@ class PengajuanLpjController extends Controller
                 throw new Exception('RAB Item ID tidak valid: ' . var_export($rabItemId, true));
             }
 
-            // ✅ Upload file via LpjService (dengan lpjId)
+            // Upload file via LpjService (dengan lpjId)
             $result = $this->lpjService->uploadLpjBukti(
                 (int)$lpjId, 
                 (int)$rabItemId, 
                 $_FILES['file']
             );
 
-            error_log("✅ Upload Success: " . json_encode($result));
+            error_log("Upload Success: " . json_encode($result));
 
+            // Clean any potential output buffer (like whitespace or BOM)
+            if (ob_get_length()) ob_clean();
             echo json_encode($result);
+            exit;
 
         } catch (Exception $e) {
-            error_log("❌ Upload Error: " . $e->getMessage());
-            error_log("❌ Stack Trace: " . $e->getTraceAsString());
+            error_log("Upload Error: " . $e->getMessage());
             
+            if (ob_get_length()) ob_clean();
             http_response_code(400);
             echo json_encode([
                 'success' => false, 
                 'message' => $e->getMessage()
             ]);
+            exit;
         }
     }
 }

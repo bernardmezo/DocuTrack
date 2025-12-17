@@ -50,7 +50,7 @@ php_error.log
 
 # Database Exports (Ignore local dumps, keep schemas/migrations)
 /database/*.sql
-!/database/merged_schema.sql
+!/database/db_docutrack2.sql
 !/database/migrations/*.sql
 
 # Tests

@@ -128,15 +128,14 @@ class SuperAdminModel
                         ELSE 'Menunggu'
                     END as status,
                     
-                    -- Detailed Position/Step Logic
+                    -- Current Position/Role Logic
                     CASE 
-                        WHEN k.tanggalPencairan IS NOT NULL THEN 'LPJ'
-                        WHEN k.posisiId = 5 THEN 'Dana Cair'
-                        WHEN k.posisiId = 4 THEN 'ACC PPK'
-                        WHEN k.posisiId = 3 THEN 'ACC WD'
-                        WHEN k.posisiId = 2 THEN 'Verifikasi'
-                        WHEN k.posisiId = 1 THEN 'Pengajuan'
-                        ELSE 'Draft'
+                        WHEN k.posisiId = 1 THEN 'Admin'
+                        WHEN k.posisiId = 2 THEN 'Verifikator'
+                        WHEN k.posisiId = 3 THEN 'Wakil Direktur'
+                        WHEN k.posisiId = 4 THEN 'PPK'
+                        WHEN k.posisiId = 5 THEN 'Bendahara'
+                        ELSE 'Unknown'
                     END as posisi_sekarang
 
                   FROM tbl_kegiatan k
