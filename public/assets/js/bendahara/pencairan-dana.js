@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.config = config;
             
             this.tbody = document.getElementById(config.tbodyId);
+            this.mobileList = document.getElementById('mobile-kak-list');
             this.paginationContainer = document.getElementById(config.paginationId);
             this.showingSpan = document.getElementById(config.showingId);
             this.totalSpan = document.getElementById(config.totalId);
@@ -90,6 +91,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.filterJurusan.value = '';
                 this.currentPage = 1;
                 this.applyFilters();
+            });
+            
+            // Window resize handler
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    this.render();
+                }, 250);
             });
         }
         
@@ -148,6 +158,26 @@ document.addEventListener('DOMContentLoaded', function() {
             </span>`;
         }
         
+        getStatusBadgeMobile(status) {
+            const statusLower = status.toLowerCase();
+            const statusClasses = {
+                'dana diberikan': 'status-dana-diberikan',
+                'ditolak': 'status-ditolak',
+                'menunggu': 'status-menunggu'
+            };
+            
+            const icons = {
+                'dana diberikan': 'fa-check-circle',
+                'ditolak': 'fa-times-circle',
+                'menunggu': 'fa-hourglass-half'
+            };
+            
+            return `<span class="status-badge ${statusClasses[statusLower] || statusClasses['menunggu']}">
+                <i class="fas ${icons[statusLower] || 'fa-question-circle'}"></i>
+                ${status}
+            </span>`;
+        }
+        
         renderTable() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
@@ -187,8 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // PERUBAHAN TAMPILAN DISINI:
-                // Format: Nama (NIM) - Prodi
                 return `
                     <tr class='${rowClass} hover:bg-blue-50/50 transition-colors duration-150'>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium'>${rowNumber}.</td>
@@ -206,16 +234,92 @@ document.addEventListener('DOMContentLoaded', function() {
                         </td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm text-gray-600'>${tglPengajuanDisplay}</td>
                         <td class='px-6 py-4 whitespace-nowrap text-sm'>${this.getStatusBadge(item.status)}</td>
-                       <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
-    <div class='flex gap-2'>
-        <a href="${this.config.viewUrl}${item.id}?ref=pencairan-dana" 
-           class='bg-emerald-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-emerald-700 transition-all inline-flex items-center gap-2 shadow-sm hover:shadow'>
-            <i class='fas fa-hand-holding-usd'></i>
-            <span>Cairkan Dana</span>
-        </a>
-    </div>
-</td>
+                        <td class='px-6 py-4 whitespace-nowrap text-sm font-medium'>
+                            <div class='flex gap-2'>
+                                <a href="${this.config.viewUrl}${item.id}?ref=pencairan-dana" 
+                                   class='bg-emerald-600 text-white px-4 py-2 rounded-md text-xs font-medium hover:bg-emerald-700 transition-all inline-flex items-center gap-2 shadow-sm hover:shadow'>
+                                    <i class='fas fa-hand-holding-usd'></i>
+                                    <span>Cairkan Dana</span>
+                                </a>
+                            </div>
+                        </td>
                     </tr>
+                `;
+            }).join('');
+        }
+        
+        renderMobileCards() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            const pageData = this.filteredData.slice(start, end);
+            
+            if (!this.mobileList) return;
+            
+            if (pageData.length === 0) {
+                this.mobileList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <div class="empty-state-text">Tidak ada data yang ditemukan</div>
+                        <div class="empty-state-subtext">Coba ubah filter atau kata kunci pencarian</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            this.mobileList.innerHTML = pageData.map((item, index) => {
+                const rowNumber = start + index + 1;
+                const namaMahasiswa = item.nama_mahasiswa || item.pengusul || 'N/A';
+                const displayProdi = item.prodi || item.jurusan || '-';
+                
+                let tglPengajuanDisplay = '-';
+                if (item.tanggal_pengajuan) {
+                    const tglPengajuan = new Date(item.tanggal_pengajuan);
+                    tglPengajuanDisplay = tglPengajuan.toLocaleDateString('id-ID', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                }
+                
+                return `
+                    <div class="mobile-card" style="animation-delay: ${index * 0.05}s">
+                        <div class="mobile-card-header">
+                            <div class="mobile-card-number">#${rowNumber}</div>
+                            ${this.getStatusBadgeMobile(item.status)}
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Nama Kegiatan
+                            </div>
+                            <div class="mobile-card-kegiatan">${this.escapeHtml(item.nama)}</div>
+                            <div class="mobile-card-pengusul">
+                                ${this.escapeHtml(namaMahasiswa)} 
+                                <span style="color: #9ca3af;">(${this.escapeHtml(item.nim)})</span>
+                            </div>
+                            <div class="mobile-card-prodi">
+                                <i class="fas fa-graduation-cap"></i>
+                                ${this.escapeHtml(displayProdi)}
+                            </div>
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-calendar-check"></i>
+                                Tanggal Pengajuan
+                            </div>
+                            <div class="mobile-card-value">${tglPengajuanDisplay}</div>
+                        </div>
+                        
+                        <div class="mobile-card-actions">
+                            <a href="${this.config.viewUrl}${item.id}?ref=pencairan-dana" 
+                               class="mobile-card-btn mobile-card-btn-primary">
+                                <i class="fas fa-hand-holding-usd"></i>
+                                Cairkan Dana
+                            </a>
+                        </div>
+                    </div>
                 `;
             }).join('');
         }
@@ -290,7 +394,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         render() {
+            // Render both desktop table and mobile cards
             this.renderTable();
+            this.renderMobileCards();
             this.renderPagination();
             this.updateInfo();
         }
@@ -300,7 +406,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (page >= 1 && page <= totalPages) {
                 this.currentPage = page;
                 this.render();
-                const section = this.tbody.closest('section');
+                
+                // Scroll to top of section
+                const section = this.tbody ? this.tbody.closest('section') : this.mobileList?.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -308,6 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Initialize Table Manager
     window.kakTable = new TableManager(dataKAK, 'table-kak', {
         type: 'kak',
         color: 'blue',

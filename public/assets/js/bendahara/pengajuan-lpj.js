@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.config = config;
             
             this.tbody = document.getElementById(config.tbodyId);
+            this.mobileList = document.getElementById('mobile-lpj-list');
             this.paginationContainer = document.getElementById(config.paginationId);
             this.showingSpan = document.getElementById(config.showingId);
             this.totalSpan = document.getElementById(config.totalId);
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dataCount: this.allData.length,
                 elements: {
                     tbody: !!this.tbody,
+                    mobileList: !!this.mobileList,
                     pagination: !!this.paginationContainer,
                     search: !!this.searchInput,
                     filterJurusan: !!this.filterJurusan,
@@ -61,6 +63,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.applyFilters();
                 });
             }
+            
+            // Window resize handler
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    this.render();
+                }, 250);
+            });
         }
         
         applyFilters() {
@@ -82,16 +93,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             // Highlight filters
-            if (jurusanFilter) {
-                this.filterJurusan.style.borderColor = '#10b981';
-            } else {
-                this.filterJurusan.style.borderColor = '';
+            if (this.filterJurusan) {
+                this.filterJurusan.style.borderColor = jurusanFilter ? '#10b981' : '';
             }
 
-            if (searchTerm) {
-                this.searchInput.style.borderColor = '#10b981';
-            } else {
-                this.searchInput.style.borderColor = '';
+            if (this.searchInput) {
+                this.searchInput.style.borderColor = searchTerm ? '#10b981' : '';
             }
             
             this.render();
@@ -119,12 +126,33 @@ document.addEventListener('DOMContentLoaded', function() {
             </span>`;
         }
         
+        getStatusBadgeMobile(status) {
+            const statusLower = status.toLowerCase();
+            const statusMap = {
+                'menunggu': 'status-menunggu',
+                'telah direvisi': 'status-telah-direvisi',
+                'revisi': 'status-revisi',
+                'disetujui': 'status-disetujui'
+            };
+            
+            const icons = {
+                'menunggu': 'fa-hourglass-half',
+                'telah direvisi': 'fa-edit',
+                'revisi': 'fa-pencil-alt',
+                'disetujui': 'fa-check-circle'
+            };
+            
+            return `<span class="status-badge ${statusMap[statusLower] || statusMap['menunggu']}">
+                <i class="fas ${icons[statusLower] || 'fa-question-circle'}"></i>
+                ${status}
+            </span>`;
+        }
+        
         getTenggatDisplay(tenggatLpj, status) {
             if (!tenggatLpj || tenggatLpj === null || tenggatLpj === '') {
                 return '<span class="text-gray-500 italic text-sm">Belum Ada Tenggat</span>';
             }
             
-            // Parse tanggal dengan benar - tambahkan T untuk format ISO
             const tenggatDate = new Date(tenggatLpj.replace(' ', 'T'));
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -154,7 +182,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon = 'fa-clock';
                 text = diffDays + ' hari lagi';
             } else {
-                // Untuk sisa hari > 7 hari
                 badgeClass = 'bg-blue-100 text-blue-700';
                 icon = 'fa-calendar-check';
                 text = diffDays + ' hari lagi';
@@ -162,6 +189,53 @@ document.addEventListener('DOMContentLoaded', function() {
             
             return `
                 <span class="${badgeClass} px-2.5 py-1 rounded text-xs font-medium inline-flex items-center gap-1.5">
+                    ${icon ? `<i class="fas ${icon}"></i>` : ''}
+                    ${text}
+                </span>
+            `;
+        }
+        
+        getTenggatDisplayMobile(tenggatLpj) {
+            if (!tenggatLpj || tenggatLpj === null || tenggatLpj === '') {
+                return '<span class="text-gray-500 italic text-sm">Belum Ada Tenggat</span>';
+            }
+            
+            const tenggatDate = new Date(tenggatLpj.replace(' ', 'T'));
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            tenggatDate.setHours(0, 0, 0, 0);
+            
+            const diffTime = tenggatDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let badgeClass = '';
+            let icon = '';
+            let text = '';
+            
+            if (diffDays < 0) {
+                badgeClass = 'bg-red-100 text-red-700';
+                icon = 'fa-exclamation-circle';
+                text = 'Terlambat ' + Math.abs(diffDays) + ' hari';
+            } else if (diffDays === 0) {
+                badgeClass = 'bg-orange-100 text-orange-700';
+                icon = 'fa-clock';
+                text = 'Hari ini';
+            } else if (diffDays <= 3) {
+                badgeClass = 'bg-orange-100 text-orange-700';
+                icon = 'fa-clock';
+                text = diffDays + ' hari lagi';
+            } else if (diffDays <= 7) {
+                badgeClass = 'bg-yellow-100 text-yellow-700';
+                icon = 'fa-clock';
+                text = diffDays + ' hari lagi';
+            } else {
+                badgeClass = 'bg-blue-100 text-blue-700';
+                icon = 'fa-calendar-check';
+                text = diffDays + ' hari lagi';
+            }
+            
+            return `
+                <span class="tenggat-badge ${badgeClass}">
                     ${icon ? `<i class="fas ${icon}"></i>` : ''}
                     ${text}
                 </span>
@@ -234,7 +308,92 @@ document.addEventListener('DOMContentLoaded', function() {
             }).join('');
         }
         
+        renderMobileCards() {
+            if (!this.mobileList) return;
+            
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            const pageData = this.filteredData.slice(start, end);
+            
+            if (pageData.length === 0) {
+                this.mobileList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <div class="empty-state-text">Tidak ada data yang ditemukan</div>
+                        <div class="empty-state-subtext">Coba ubah filter atau kata kunci pencarian</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            this.mobileList.innerHTML = pageData.map((item, index) => {
+                const rowNumber = start + index + 1;
+                const namaMahasiswa = item.nama_mahasiswa || 'N/A';
+                const prodi = item.prodi || 'N/A';
+                
+                let tglPengajuanDisplay = '-';
+                if (item.tanggal_pengajuan) {
+                    const tglPengajuan = new Date(item.tanggal_pengajuan);
+                    tglPengajuanDisplay = tglPengajuan.toLocaleDateString('id-ID', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                    });
+                }
+                
+                return `
+                    <div class="mobile-card" style="animation-delay: ${index * 0.05}s">
+                        <div class="mobile-card-header">
+                            <div class="mobile-card-number">#${rowNumber}</div>
+                            ${this.getStatusBadgeMobile(item.status)}
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Nama Kegiatan
+                            </div>
+                            <div class="mobile-card-kegiatan">${this.escapeHtml(item.nama)}</div>
+                            <div class="mobile-card-mahasiswa">
+                                ${this.escapeHtml(namaMahasiswa)} 
+                                <span style="color: #9ca3af;">(${this.escapeHtml(item.nim)})</span>
+                            </div>
+                            <div class="mobile-card-prodi">
+                                <i class="fas fa-graduation-cap"></i>
+                                ${this.escapeHtml(prodi)}
+                            </div>
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-calendar-check"></i>
+                                Tanggal Pengajuan
+                            </div>
+                            <div class="mobile-card-value">${tglPengajuanDisplay}</div>
+                        </div>
+                        
+                        <div class="mobile-card-row">
+                            <div class="mobile-card-label">
+                                <i class="fas fa-clock"></i>
+                                Tenggat LPJ
+                            </div>
+                            <div class="mobile-card-value">${this.getTenggatDisplayMobile(item.tenggat_lpj)}</div>
+                        </div>
+                        
+                        <div class="mobile-card-actions">
+                            <a href="${this.config.viewUrl}${item.id}?ref=lpj" 
+                               class="mobile-card-btn mobile-card-btn-primary">
+                                <i class="fas fa-eye"></i>
+                                Lihat Detail
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
         escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
@@ -301,6 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         render() {
             this.renderTable();
+            this.renderMobileCards();
             this.renderPagination();
             this.updateInfo();
         }
@@ -311,7 +471,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.currentPage = page;
                 this.render();
                 
-                const section = this.tbody.closest('section');
+                const section = this.tbody ? this.tbody.closest('section') : this.mobileList?.closest('section');
                 if (section) {
                     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
