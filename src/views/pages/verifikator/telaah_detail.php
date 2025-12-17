@@ -550,15 +550,23 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                     6. Kode Mata Anggaran Kegiatan (MAK)
                     <?php showCommentIcon('kode_mak', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
                 </h3>
-                <div class="relative max-w-md">
-                    <i class="fas fa-key absolute top-3 md:top-3.5 left-3 text-gray-400 peer-focus:text-blue-600 pointer-events-none"></i>
+                
+                <div class="relative max-w-md group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fas fa-key text-gray-400 group-focus-within:text-blue-600 transition-colors duration-200"></i>
+                    </div>
+
                     <input type="text" id="kode_mak" name="kode_mak" 
-                           class="block w-full px-3 md:px-4 py-3 md:py-3.5 pl-10 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:border-blue-600 peer <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['kode_mak']) ? 'border-yellow-500 ring-2 ring-yellow-300' : ''; ?>" 
-                           value="<?php echo htmlspecialchars($kode_mak); ?>" placeholder=" " 
-                           <?php echo (($is_disetujui || $is_ditolak) && !empty($kode_mak)) ? 'readonly' : ''; ?>>
-                    <label for="kode_mak" class="floating-label absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-10 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">Masukkan Kode MAK</label>
+                        class="block w-full px-4 py-3 md:py-3.5 pl-11 text-sm text-gray-800 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all peer <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['kode_mak']) ? 'border-yellow-500 ring-2 ring-yellow-300' : ''; ?>" 
+                        value="<?php echo htmlspecialchars($kode_mak); ?>" placeholder=" " 
+                        <?php echo (($is_disetujui || $is_ditolak) && !empty($kode_mak)) ? 'readonly' : ''; ?>>
+
+                    <label for="kode_mak" class="floating-label absolute text-sm text-gray-500 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white px-2 start-9 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-3 peer-placeholder-shown:text-gray-400 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-blue-600 pointer-events-none">
+                        Masukkan Kode MAK
+                    </label>
                 </div>
-                 <?php if (($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['kode_mak'])): ?>
+
+                <?php if (($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['kode_mak'])): ?>
                     <p class="text-xs text-yellow-600 mt-1 italic"><?php echo htmlspecialchars($komentar_revisi['kode_mak']); ?></p>
                 <?php endif; ?>
                 <?php if (!$is_ditolak) render_comment_box('kode_mak', $is_menunggu, $is_telah_direvisi); ?>
