@@ -25,7 +25,7 @@ if (!function_exists('formatRupiah')) {
  * Helper render comment box RAB
  */
 if (!function_exists('render_comment_box_rab_lpj')) {
-    function render_comment_box_rab_lpj($field_name, $is_menunggu_status, $is_telah_direvisi_status)
+    function render_comment_box_rab_lpj($field_name, $is_menunggu_status, $is_telah_direvisi_status, $existing_comment = null)
     {
         if ($is_menunggu_status || $is_telah_direvisi_status) {
             ?>
@@ -39,7 +39,7 @@ if (!function_exists('render_comment_box_rab_lpj')) {
                           name="komentar[<?= htmlspecialchars($field_name) ?>]"
                           rows="3"
                           class="mt-1 block w-full text-sm text-gray-800 bg-yellow-50 rounded-lg border border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 py-2.5 leading-relaxed resize-none"
-                          placeholder="Tulis catatan revisi di sini..."><?= htmlspecialchars($_POST['komentar'][$field_name] ?? '') ?></textarea>
+                          placeholder="Tulis catatan revisi di sini..."><?= htmlspecialchars($existing_comment ?? $_POST['komentar'][$field_name] ?? '') ?></textarea>
             </div>
             <?php
         }
@@ -152,6 +152,10 @@ if (!function_exists('showCommentIcon')) {
                         $subtotal_kategori = 0;
                         // key komentar per-kategori
                         $rab_comment_key = 'rab_' . strtolower(str_replace(' ', '_', $kategori));
+                        
+                        // Ambil komentar existing dari salah satu item dalam kategori ini (jika ada)
+                        $first_item = reset($items);
+                        $existing_comment = $first_item['komentar'] ?? null;
                         ?>
                     <h4 class="text-md font-semibold text-gray-700 mt-6 mb-3"><?= htmlspecialchars($kategori) ?></h4>
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
@@ -216,12 +220,12 @@ if (!function_exists('showCommentIcon')) {
                                     
                                     <td class="px-3 py-3 text-center">
                                         <?php if ($bukti_file) : ?>
-                                            <a href="/docutrack/public/uploads/lpj_bukti/<?= htmlspecialchars($bukti_file) ?>" 
-                                               target="_blank"
-                                               class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline">
-                                                <i class="fas fa-file-pdf"></i>
-                                                <span>Lihat</span>
-                                            </a>
+                                            <button type="button" 
+                                               onclick="openViewModal('<?= htmlspecialchars($bukti_file) ?>', '<?= htmlspecialchars($uraian) ?>')"
+                                               class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs font-bold hover:underline bg-blue-50 px-2 py-1 rounded">
+                                                <i class="fas fa-eye"></i>
+                                                <span>Pratinjau</span>
+                                            </button>
                                         <?php else : ?>
                                             <span class="text-xs text-gray-400 italic">-</span>
                                         <?php endif; ?>
@@ -242,7 +246,7 @@ if (!function_exists('showCommentIcon')) {
                         <?php
                         // Comment box per kategori
                         if (!$is_revisi && !$is_disetujui) {
-                            render_comment_box_rab_lpj($rab_comment_key, $is_menunggu, $is_telah_direvisi);
+                            render_comment_box_rab_lpj($rab_comment_key, $is_menunggu, $is_telah_direvisi, $existing_comment);
                         }
                         ?>
 
@@ -267,7 +271,7 @@ if (!function_exists('showCommentIcon')) {
                 <textarea name="catatan_umum" 
                           rows="3" 
                           placeholder="Tambahkan catatan umum untuk LPJ ini jika diperlukan..."
-                          class="w-full text-sm p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"></textarea>
+                          class="w-full text-sm p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"><?= htmlspecialchars($kegiatan_data['komentarRevisi'] ?? '') ?></textarea>
             </div>
             <?php endif; ?>
 
@@ -310,7 +314,79 @@ if (!function_exists('showCommentIcon')) {
     </section>
 </main>
 
+<!-- Modal Pratinjau Bukti -->
+<div id="view-modal-backdrop" class="fixed inset-0 bg-black/60 z-[1030] hidden opacity-0 transition-opacity duration-300"></div>
+<div id="view-modal-content" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-[1040] w-[95%] max-w-4xl hidden opacity-0 scale-95 transition-all duration-300">
+    <div class="flex justify-between items-center p-5 border-b border-gray-200 bg-gradient-to-r from-emerald-600 to-green-700 rounded-t-xl">
+        <h3 class="text-lg font-semibold text-white flex items-center gap-2"><i class="fas fa-file-alt"></i> Pratinjau Bukti LPJ</h3>
+        <button onclick="closeViewModal()" class="text-white hover:text-gray-200 transition-colors"><i class="fas fa-times text-xl"></i></button>
+    </div>
+    <div class="p-6">
+        <p class="text-base font-semibold text-gray-900 mb-4 p-3 bg-gray-50 rounded-lg border-l-4 border-emerald-600" id="view-modal-item-name">...</p>
+        <div class="flex justify-center items-center bg-gray-100 rounded-lg overflow-hidden h-[70vh]">
+            <img id="view-modal-image" src="" alt="Bukti LPJ" class="hidden object-contain max-h-full max-w-full">
+            <iframe id="view-modal-pdf" src="" class="hidden w-full h-full" frameborder="0"></iframe>
+            <div id="view-modal-error" class="hidden flex-col items-center gap-3">
+                <i class="fas fa-exclamation-circle text-4xl text-red-500"></i>
+                <p class="text-red-600 font-medium">Gagal memuat dokumen.</p>
+            </div>
+        </div>
+        <div class="flex justify-between items-center mt-4">
+            <a id="view-modal-download-link" href="#" target="_blank" class="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-800 text-sm font-bold bg-emerald-50 px-4 py-2 rounded-lg transition-all"><i class="fas fa-download"></i> Unduh File</a>
+        </div>
+    </div>
+</div>
+
 <script>
+const baseBuktiUrl = '/docutrack/public/uploads/lpj/';
+const viewModal = document.getElementById('view-modal-content');
+const viewBackdrop = document.getElementById('view-modal-backdrop');
+
+function openViewModal(fileName, itemName) {
+    const filePath = baseBuktiUrl + fileName;
+    const isPdf = fileName.toLowerCase().endsWith('.pdf');
+    
+    document.getElementById('view-modal-item-name').textContent = itemName;
+    document.getElementById('view-modal-download-link').href = filePath;
+    
+    const img = document.getElementById('view-modal-image');
+    const iframe = document.getElementById('view-modal-pdf');
+    const errorMsg = document.getElementById('view-modal-error');
+    
+    img.classList.add('hidden');
+    iframe.classList.add('hidden');
+    errorMsg.classList.add('hidden');
+    
+    if (isPdf) {
+        iframe.src = filePath;
+        iframe.classList.remove('hidden');
+    } else {
+        img.src = filePath;
+        img.classList.remove('hidden');
+        img.onerror = () => {
+            img.classList.add('hidden');
+            errorMsg.classList.remove('hidden');
+        };
+    }
+
+    viewBackdrop.classList.remove('hidden');
+    viewModal.classList.remove('hidden');
+    setTimeout(() => { 
+        viewBackdrop.classList.add('opacity-100'); 
+        viewModal.classList.add('opacity-100', 'scale-100'); 
+        viewModal.classList.remove('scale-95'); 
+    }, 10);
+}
+
+function closeViewModal() {
+    const iframe = document.getElementById('view-modal-pdf');
+    iframe.src = '';
+    viewBackdrop.classList.remove('opacity-100');
+    viewModal.classList.remove('opacity-100', 'scale-100');
+    viewModal.classList.add('scale-95');
+    setTimeout(() => { viewBackdrop.classList.add('hidden'); viewModal.classList.add('hidden'); }, 300);
+}
+
 function konfirmasiSetuju() {
     if (typeof Swal !== 'undefined') {
         Swal.fire({

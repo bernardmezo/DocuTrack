@@ -107,7 +107,7 @@ return [
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
         'methods'    => ['POST'],
     ],
-    '/admin/pengajuan-kegiatan/submitRincian' => [
+    '/admin/pengajuan-kegiatan/submitrincian' => [
         'controller' => 'Admin\AdminController',
         'method'     => 'submitRincian',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],

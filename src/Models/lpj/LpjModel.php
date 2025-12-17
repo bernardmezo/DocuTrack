@@ -67,7 +67,7 @@ class LpjModel
     public function updateLpjGrandTotal($lpj_id)
     {
         $query = "UPDATE tbl_lpj SET grandTotalRealisasi = 
-                    (SELECT COALESCE(SUM(subtotal), 0) FROM tbl_lpj_item WHERE lpjId = ?)
+                    (SELECT COALESCE(SUM(realisasi), 0) FROM tbl_lpj_item WHERE lpjId = ?)
                   WHERE lpjId = ?";
 
         $stmt = mysqli_prepare($this->db, $query);
@@ -225,16 +225,12 @@ class LpjModel
      */
     public function upsertLpjItemBukti(int $lpjId, int $rabItemId, string $filename, array $itemData): bool
     {
-        // ✅ PERBAIKAN: Gunakan kategoriId + uraian untuk matching (TANPA rabItemId)
-        $kategoriId = $itemData['kategoriId'] ?? 0;
-        $uraian = $itemData['uraian'] ?? '';
-        
-        // Cek apakah item sudah ada di tbl_lpj_item
+        // Cek apakah item sudah ada di tbl_lpj_item berdasarkan rabItemId
         $checkQuery = "SELECT lpjItemId FROM tbl_lpj_item 
-                       WHERE lpjId = ? AND kategoriId = ? AND uraian = ?";
+                       WHERE lpjId = ? AND rabItemId = ?";
         
         $stmt = mysqli_prepare($this->db, $checkQuery);
-        mysqli_stmt_bind_param($stmt, "iis", $lpjId, $kategoriId, $uraian);
+        mysqli_stmt_bind_param($stmt, "ii", $lpjId, $rabItemId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $existing = mysqli_fetch_assoc($result);
@@ -243,40 +239,41 @@ class LpjModel
         if ($existing) {
             // ✅ UPDATE: Item sudah ada, update file bukti
             $updateQuery = "UPDATE tbl_lpj_item 
-                           SET fileBukti = ?, updatedAt = NOW()
+                           SET fileBukti = ?
                            WHERE lpjItemId = ?";
             
             $stmt = mysqli_prepare($this->db, $updateQuery);
             mysqli_stmt_bind_param($stmt, "si", $filename, $existing['lpjItemId']);
             $result = mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
-            
-            error_log("✅ Updated bukti for lpjItemId={$existing['lpjItemId']}: $filename");
             return $result;
             
         } else {
             // ✅ INSERT: Item belum ada, buat record baru
             $insertQuery = "INSERT INTO tbl_lpj_item 
-                                                      (lpjId, kategoriId, uraian, rincian,
-                                                       sat1, sat2, vol1, vol2, harga, totalHarga,
-                                                       realisasi, fileBukti, createdAt)                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                            (lpjId, rabItemId, kategoriId, uraian, rincian,
+                             sat1, sat2, vol1, vol2, harga, totalHarga,
+                             realisasi, fileBukti, createdAt) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
             
             $stmt = mysqli_prepare($this->db, $insertQuery);
             
-            // Ekstrak data dari $itemData (yang sudah didefinisikan di atas)
+            $kategoriId = $itemData['kategoriId'] ?? 0;
+            $uraian = $itemData['uraian'] ?? '';
             $rincian = $itemData['rincian'] ?? '';
             $sat1 = $itemData['sat1'] ?? '';
             $sat2 = $itemData['sat2'] ?? '';
             $vol1 = $itemData['vol1'] ?? 0;
             $vol2 = $itemData['vol2'] ?? 0;
-            $hargaSatuan = $itemData['harga_satuan'] ?? $itemData['harga_satuan'] ?? 0;
+            $hargaSatuan = $itemData['hargaSatuan'] ?? $itemData['harga_satuan'] ?? 0;
             $totalRencana = $itemData['totalRencana'] ?? $itemData['total_harga'] ?? 0;
             $realisasi = $itemData['realisasi'] ?? $totalRencana; // Default realisasi = rencana
             
             mysqli_stmt_bind_param(
                 $stmt,
-                "iissssddddds",
+                "iiissssddddds",
                 $lpjId,
+                $rabItemId,
                 $kategoriId,
                 $uraian,
                 $rincian,
@@ -291,17 +288,7 @@ class LpjModel
             );
             
             $result = mysqli_stmt_execute($stmt);
-            
-            if (!$result) {
-                error_log("❌ Failed to insert lpj_item: " . mysqli_stmt_error($stmt));
-                mysqli_stmt_close($stmt);
-                return false;
-            }
-            
-            $insertedId = mysqli_insert_id($this->db);
             mysqli_stmt_close($stmt);
-            
-            error_log("✅ Inserted new lpjItemId=$insertedId with bukti: $filename");
             return $result;
         }
     }
@@ -376,7 +363,7 @@ class LpjModel
     public function markLpjAsSubmitted(int $lpjId): bool
     {
         $query = "UPDATE tbl_lpj 
-                  SET status = 'Menunggu', submittedAt = NOW()
+                  SET statusId = 1, submittedAt = NOW()
                   WHERE lpjId = ?";
         
         $stmt = mysqli_prepare($this->db, $query);
@@ -385,6 +372,66 @@ class LpjModel
         mysqli_stmt_close($stmt);
         
         return $result;
+    }
+
+    /**
+     * Memasukkan item-item LPJ secara batch
+     * 
+     * @param int $lpjId
+     * @param array $items
+     * @return bool
+     */
+    public function insertLpjItems(int $lpjId, array $items): bool
+    {
+        $query = "INSERT INTO tbl_lpj_item 
+                  (lpjId, jenisBelanja, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga, realisasi, fileBukti, createdAt) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        
+        $stmt = mysqli_prepare($this->db, $query);
+        if (!$stmt) {
+            error_log("LpjModel::insertLpjItems - Prepare failed: " . mysqli_error($this->db));
+            return false;
+        }
+
+        foreach ($items as $item) {
+            $jenisBelanja = $item['jenis_belanja'] ?? '';
+            $uraian = $item['uraian'] ?? '';
+            $rincian = $item['rincian'] ?? '';
+            $sat1 = $item['sat1'] ?? $item['satuan'] ?? '';
+            $sat2 = $item['sat2'] ?? '';
+            $vol1 = floatval($item['vol1'] ?? 1);
+            $vol2 = floatval($item['vol2'] ?? 1);
+            $harga = floatval($item['harga'] ?? $item['total_harga'] ?? 0);
+            $totalHarga = floatval($item['total_harga'] ?? $item['sub_total'] ?? 0);
+            $realisasi = floatval($item['realisasi'] ?? $totalHarga);
+            $fileBukti = $item['file_bukti'] ?? $item['file_bukti_nota'] ?? null;
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                "isssssddddds",
+                $lpjId,
+                $jenisBelanja,
+                $uraian,
+                $rincian,
+                $sat1,
+                $sat2,
+                $vol1,
+                $vol2,
+                $harga,
+                $totalHarga,
+                $realisasi,
+                $fileBukti
+            );
+
+            if (!mysqli_stmt_execute($stmt)) {
+                error_log("LpjModel::insertLpjItems - Execute failed: " . mysqli_stmt_error($stmt));
+                mysqli_stmt_close($stmt);
+                return false;
+            }
+        }
+
+        mysqli_stmt_close($stmt);
+        return true;
     }
 
     /**
@@ -410,6 +457,27 @@ class LpjModel
             mysqli_stmt_close($stmt);
             return false;
         }
+    }
+
+    /**
+     * Mengambil jumlah dana yang sudah dicairkan untuk suatu kegiatan.
+     * 
+     * @param int $kegiatanId
+     * @return float
+     */
+    public function getDisbursedAmount(int $kegiatanId): float
+    {
+        $query = "SELECT COALESCE(SUM(nominal), 0) as total FROM tbl_tahapan_pencairan WHERE idKegiatan = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        if (!$stmt) return 0.0;
+        
+        mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        
+        return (float)($row['total'] ?? 0.0);
     }
 
     /**
@@ -454,13 +522,19 @@ class LpjModel
             if (!empty($row['lpjItemId'])) {
                 $lpjData['items'][] = [
                     'lpj_item_id' => $row['lpjItemId'],
-                    'jenis_belanja' => $row['jenisBelanja'],
+                    'kategori_id' => $row['kategoriId'] ?? null,
+                    'jenis_belanja' => $row['jenisBelanja'] ?? null,
                     'uraian' => $row['uraian'],
                     'rincian' => $row['rincian'],
-                    'satuan' => $row['satuan'],
-                    'total_harga' => $row['totalHarga'],
-                    'sub_total' => $row['subtotal'],
-                    'file_bukti_nota' => $row['fileBukti']
+                    'sat1' => $row['sat1'] ?? null,
+                    'sat2' => $row['sat2'] ?? null,
+                    'vol1' => $row['vol1'] ?? null,
+                    'vol2' => $row['vol2'] ?? null,
+                    'harga' => $row['harga'] ?? null,
+                    'total_rencana' => $row['totalHarga'],
+                    'realisasi' => $row['realisasi'] ?? $row['subTotal'] ?? 0,
+                    'file_bukti' => $row['fileBukti'],
+                    'komentar' => $row['komentar'] ?? null
                 ];
             }
         }
@@ -555,10 +629,77 @@ class LpjModel
         }
     }
 
+    /**
+     * Memperbarui realisasi item LPJ.
+     * Digunakan saat submit LPJ dari Admin.
+     * 
+     * @param int $lpjId
+     * @param array $items Array of items with 'id' (rabItemId), 'total' (realisasi), and other details
+     * @return bool
+     */
+    public function updateLpjItemsRealisasi(int $lpjId, array $items): bool
+    {
+        foreach ($items as $item) {
+            $rabItemId = (int)$item['id'];
+            
+            // Get RAB details for this item
+            $rabData = $this->getRABItemById($rabItemId);
+            if (!$rabData) continue;
+
+            $kategoriId = $rabData['kategoriId'] ?? 0;
+            $uraian = $item['uraian'] ?? $rabData['uraian'] ?? '';
+            $rincian = $item['rincian'] ?? $rabData['rincian'] ?? '';
+            $sat1 = $rabData['sat1'] ?? '';
+            $sat2 = $rabData['sat2'] ?? '';
+            $vol1 = floatval($rabData['vol1'] ?? 1);
+            $vol2 = floatval($rabData['vol2'] ?? 1);
+            $harga = floatval($rabData['hargaSatuan'] ?? 0);
+            $totalHarga = floatval($rabData['totalRencana'] ?? 0);
+            $realisasi = floatval($item['total'] ?? 0);
+            $fileBukti = !empty($item['file_bukti']) ? $item['file_bukti'] : null;
+
+            // Check if item exists by rabItemId
+            $checkQuery = "SELECT lpjItemId, fileBukti FROM tbl_lpj_item WHERE lpjId = ? AND rabItemId = ?";
+            $stmtCheck = mysqli_prepare($this->db, $checkQuery);
+            mysqli_stmt_bind_param($stmtCheck, "ii", $lpjId, $rabItemId);
+            mysqli_stmt_execute($stmtCheck);
+            $resultCheck = mysqli_stmt_get_result($stmtCheck);
+            $existing = mysqli_fetch_assoc($resultCheck);
+            mysqli_stmt_close($stmtCheck);
+
+            if ($existing) {
+                // Update existing item
+                $finalFileBukti = $fileBukti ?? $existing['fileBukti'];
+                
+                $updateQuery = "UPDATE tbl_lpj_item SET 
+                                rincian = ?, sat1 = ?, sat2 = ?, vol1 = ?, vol2 = ?, 
+                                harga = ?, totalHarga = ?, realisasi = ?, fileBukti = ?
+                                WHERE lpjItemId = ?";
+                $stmtUpdate = mysqli_prepare($this->db, $updateQuery);
+                mysqli_stmt_bind_param($stmtUpdate, "ssssddddsi", 
+                    $rincian, $sat1, $sat2, $vol1, $vol2, 
+                    $harga, $totalHarga, $realisasi, $finalFileBukti, $existing['lpjItemId']);
+                mysqli_stmt_execute($stmtUpdate);
+                mysqli_stmt_close($stmtUpdate);
+            } else {
+                // Insert new item
+                $insertQuery = "INSERT INTO tbl_lpj_item 
+                                (lpjId, rabItemId, kategoriId, uraian, rincian, sat1, sat2, vol1, vol2, harga, totalHarga, realisasi, fileBukti, createdAt) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+                $stmtInsert = mysqli_prepare($this->db, $insertQuery);
+                mysqli_stmt_bind_param($stmtInsert, "iiissssddddds", 
+                    $lpjId, $rabItemId, $kategoriId, $uraian, $rincian, $sat1, $sat2, $vol1, $vol2, $harga, $totalHarga, $realisasi, $fileBukti);
+                mysqli_stmt_execute($stmtInsert);
+                mysqli_stmt_close($stmtInsert);
+            }
+        }
+
+        return true;
+    }
+
     public function submitRevisiLpj(int $lpjId, string $komentarRevisi): bool
     {
-        // Asumsi struktur tabel untuk komentar revisi dan cara menyimpannya
-        // Ini adalah contoh, perlu disesuaikan dengan struktur DB yang sebenarnya
+        // Status 2 = Revisi
         $query = "UPDATE tbl_lpj SET statusId = 2, komentarRevisi = ?, submittedAt = NOW() WHERE lpjId = ?";
 
         $stmt = mysqli_prepare($this->db, $query);

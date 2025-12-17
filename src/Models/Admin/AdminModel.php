@@ -183,8 +183,10 @@ class AdminModel
                     l.approvedAt,
                     l.tenggatLpj,
                     CASE 
-                        WHEN l.approvedAt IS NOT NULL THEN 'Setuju'
-                        WHEN l.submittedAt IS NOT NULL THEN 'Menunggu'
+                        WHEN l.statusId = 3 THEN 'Setuju'
+                        WHEN l.statusId = 2 THEN 'Revisi'
+                        WHEN l.statusId = 4 THEN 'Ditolak'
+                        WHEN l.statusId = 1 THEN 'Menunggu'
                         WHEN EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
@@ -196,9 +198,10 @@ class AdminModel
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
                   ORDER BY 
                     CASE 
-                        WHEN l.approvedAt IS NULL AND l.submittedAt IS NOT NULL THEN 1
-                        WHEN l.approvedAt IS NULL AND l.submittedAt IS NULL THEN 2
-                        ELSE 3
+                        WHEN l.statusId = 1 THEN 1
+                        WHEN l.statusId = 2 THEN 2
+                        WHEN l.statusId IS NULL THEN 3
+                        ELSE 4
                     END,
                     l.submittedAt DESC";
 
@@ -228,22 +231,19 @@ class AdminModel
                     k.kegiatanId,
                     kak.kakId,
                     CASE 
-                        -- Priority 1: Cek apakah sudah approved (harus setelah submitted)
-                        WHEN l.approvedAt IS NOT NULL AND l.submittedAt IS NOT NULL THEN 'Setuju'
-                        -- Priority 2: Cek apakah sudah submitted (menunggu approval)
-                        WHEN l.submittedAt IS NOT NULL AND l.approvedAt IS NULL THEN 'Menunggu'
-                        -- Priority 3: Jika ada item dengan bukti kosong (belum upload semua)
+                        WHEN l.statusId = 3 THEN 'Setuju'
+                        WHEN l.statusId = 2 THEN 'Revisi'
+                        WHEN l.statusId = 4 THEN 'Ditolak'
+                        WHEN l.statusId = 1 THEN 'Menunggu'
                         WHEN EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
                             AND (li.fileBukti IS NULL OR li.fileBukti = '')
                         ) THEN 'Menunggu_Upload'
-                        -- Priority 4: Semua bukti sudah ada, siap submit
                         WHEN EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId
                         ) THEN 'Siap_Submit'
-                        -- Priority 5: Belum ada item sama sekali (LPJ baru dibuat)
                         ELSE 'Belum_Ada_Item'
                     END as status
                   FROM tbl_lpj l
@@ -855,7 +855,7 @@ class AdminModel
     }
 
     /**
-     * Insert progress history untuk audit trail
+     * Update progress history untuk audit trail
      * Mencatat setiap perubahan status kegiatan
      *
      * @param int $kegiatanId
@@ -883,6 +883,30 @@ class AdminModel
         }
 
         mysqli_stmt_close($stmt);
+
+        return $result;
+    }
+
+    /**
+     * Soft Delete Kegiatan (Update status to Ditolak/Dibatalkan)
+     *
+     * @param int $kegiatanId
+     * @return bool
+     */
+    public function softDeleteKegiatan($kegiatanId)
+    {
+        // statusUtamaId 4 = Ditolak / Dihapus dari antrian aktif
+        $query = "UPDATE tbl_kegiatan SET statusUtamaId = 4 WHERE kegiatanId = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        if (!$stmt) return false;
+
+        mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
+        $result = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+
+        if ($result) {
+            $this->insertProgressHistory($kegiatanId, 4, $_SESSION['user_id'] ?? null);
+        }
 
         return $result;
     }
