@@ -6,13 +6,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'] ?? '';
 
-
-function isActiveMobile($current_url, $target_prefix) {
-    return (strpos($current_url, $target_prefix) === 0)
-        ? 'bg-white/20 text-white font-bold border-l-4 border-white'
-        : 'text-gray-200 hover:bg-white/10 font-medium';
-}
-
 // Data User
 $userData = $_SESSION['user_data'] ?? [];
 $userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';

@@ -3,16 +3,16 @@
 namespace App\Controllers\Direktur;
 
 use App\Core\Controller;
-use App\Services\LogStatusService; // Added
+use App\Services\LogStatusService;
 
 class DashboardController extends Controller
 {
-    private LogStatusService $logStatusService; // Added
+    private LogStatusService $logStatusService;
 
-    public function __construct($db)
+    public function __construct()
     {
-        parent::__construct($db);
-        $this->logStatusService = new LogStatusService($this->db); // Added
+        parent::__construct();
+        $this->logStatusService = new LogStatusService($this->db);
     }
 
     public function index($data_dari_router = [])
