@@ -41,12 +41,74 @@ if (!function_exists('formatRupiah')) {
             </div>
         </div>
 
-        <?php if ($status_lower === 'menunggu') : ?>
-        <form method="POST" action="/docutrack/public/bendahara/pencairan-dana/proses" id="formPencairan">
-            <input type="hidden" name="kak_id" value="<?= $kegiatan_data['id'] ?? '' ?>">
-            <!-- Simpan total anggaran asli untuk validasi -->
-            <input type="hidden" name="total_anggaran" id="total_anggaran" value="<?= $anggaran_disetujui ?? 0 ?>">
-        <?php endif; ?>
+    <?php if (!empty($riwayat_pencairan)) : ?>
+        <div class="mb-8 pt-6 border-t border-gray-200">
+            <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">
+                <i class="fas fa-history text-blue-600"></i> Riwayat Pencairan Dana
+            </h3>
+            
+            <div class="overflow-x-auto border border-gray-200 rounded-lg mb-4">
+                <table class="w-full">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">No</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Tanggal</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Termin</th>
+                            <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Nominal</th>
+                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        <?php foreach ($riwayat_pencairan as $index => $pencairan) : ?>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm text-gray-700"><?= $index + 1 ?></td>
+                            <td class="px-4 py-3 text-sm text-gray-700">
+                                <?= date('d M Y', strtotime($pencairan['tanggal_pencairan'] ?? $pencairan['tglPencairan'])) ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700 font-medium">
+                                <?= htmlspecialchars($pencairan['termin']) ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right">
+                                <?= formatRupiah($pencairan['nominal']) ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">
+                                <?= htmlspecialchars($pencairan['catatan'] ?: '-') ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Summary Box -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p class="text-xs font-semibold text-gray-600 uppercase">Total Anggaran</p>
+                    <p class="text-xl font-bold text-blue-600"><?= formatRupiah($anggaran_disetujui) ?></p>
+                </div>
+                
+                <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p class="text-xs font-semibold text-gray-600 uppercase">Sudah Dicairkan</p>
+                    <p class="text-xl font-bold text-green-600"><?= formatRupiah($total_dicairkan) ?></p>
+                </div>
+                
+                <div class="p-4 <?= $sisa_dana > 0 ? 'bg-orange-50 border-orange-200' : 'bg-gray-50 border-gray-200' ?> rounded-lg border">
+                    <p class="text-xs font-semibold text-gray-600 uppercase">Sisa Dana</p>
+                    <p class="text-xl font-bold <?= $sisa_dana > 0 ? 'text-orange-600' : 'text-gray-600' ?>">
+                        <?= formatRupiah($sisa_dana) ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
+    
+    <?php if ($status_lower === 'menunggu' || $status_lower === 'dana belum diberikan semua') : ?>
+    <form method="POST" action="/docutrack/public/bendahara/pencairan-dana/proses" id="formPencairan">
+        <input type="hidden" name="kegiatanId" value="<?= $kegiatan_data['id'] ?? '' ?>">
+        <input type="hidden" name="total_anggaran" id="total_anggaran" value="<?= $anggaran_disetujui ?? 0 ?>"> <!-- anggaran yang harus dicairkan -->
+        <input type="hidden" name="sisa_dana" id="sisa_dana" value="<?= $sisa_dana ?? 0 ?>">
+        <input type="hidden" name="metode_pencairan" value="bertahap">
+    <?php endif; ?>
 
             <div class="mb-8">
                 <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">1. Kerangka Acuan Kegiatan (KAK)</h3>
@@ -221,76 +283,79 @@ if (!function_exists('formatRupiah')) {
                 </div>
             </div>
 
-            <?php if ($status_lower === 'menunggu' || $status_lower === 'dana diberikan') : ?>
-            <div class="mb-8 pt-6 border-t border-gray-200">
-                <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">Proses Pencairan Dana</h3>
-                
-                <div class="grid grid-cols-1 gap-y-5">
+            <?php if ($boleh_cairkan_lagi) : ?>
+                <div class="mb-8 pt-6 border-t border-gray-200">
+                    <h3 class="text-xl font-bold text-gray-700 pb-3 mb-4 border-b border-gray-200">
+                        <?= empty($riwayat_pencairan) ? 'Proses Pencairan Dana Bertahap' : 'Pencairan Dana Tambahan' ?>
+                    </h3>
                     
-                    <!-- Pilihan Metode -->
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
-                            Metode Pencairan <span class="text-red-500">*</span>
-                        </label>
-                        <div class="flex gap-4">
-                            <label class="flex-1 flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
-                                <input type="radio" name="metode_pencairan" value="penuh" class="peer mr-3" checked onchange="toggleMetode('penuh')">
+                    <div class="grid grid-cols-1 gap-y-5">
+                        
+                        <!-- Info Total Anggaran -->
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-info-circle text-blue-600 text-xl"></i>
                                 <div>
-                                    <span class="text-sm font-semibold text-gray-700 block">Pencairan Penuh</span>
-                                    <span class="text-xs text-gray-500">Cairkan 100% dana sekaligus</span>
+                                    <p class="text-sm font-semibold text-blue-900">Total Anggaran yang Disetujui</p>
+                                    <p class="text-2xl font-bold text-blue-600"><?= formatRupiah($sisa_dana) ?></p>
                                 </div>
-                            </label>
-                            <label class="flex-1 flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
-                                <input type="radio" name="metode_pencairan" value="bertahap" class="peer mr-3" onchange="toggleMetode('bertahap')">
-                                <div>
-                                    <span class="text-sm font-semibold text-gray-700 block">Pencairan Bertahap</span>
-                                    <span class="text-xs text-gray-500">Cairkan dana dalam beberapa termin</span>
-                                </div>
-                            </label>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Container Input Penuh -->
-                    <div id="container-penuh" class="space-y-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
+                        <!-- Container Input Bertahap -->
+                        <div class="space-y-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <label class="text-sm font-bold text-gray-700">Rincian Tahapan Pencairan</label>
+                                    <p class="text-xs text-gray-500 mt-1">Masukkan detail setiap termin pencairan dana</p>
+                                </div>
+                                <button type="button" onclick="addStage()" class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <i class="fas fa-plus"></i> Tambah Tahap
+                                </button>
+                            </div>
+                            
+                            <input type="hidden" name="jumlah_tahap" id="jumlah_tahap" value="0">
+                            
+                            <div id="stages-wrapper" class="space-y-3">
+                                <!-- Dynamic inputs will appear here -->
+                            </div>
+                            
+                            <div class="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="font-semibold text-gray-700">Total Nominal:</span>
+                                    <span id="total-nominal" class="text-xl font-bold text-gray-800">Rp 0</span>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500">
+                                    <i class="fas fa-exclamation-circle"></i> 
+                                    Total nominal harus sama dengan total anggaran yang disetujui
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Catatan -->
                         <div>
-                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                Nominal Pencairan (Rp) <span class="text-red-500">*</span>
-                            </label>
-                            <div class="relative mt-1">
-                                <input type="text" id="jumlah_dicairkan" name="jumlah_dicairkan" 
-                                       value="<?= number_format($grand_total_rab, 0, '', '') ?>"
-                                       class="block w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                       oninput="formatRupiah(this)">
+                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Catatan Bendahara (Opsional)</label>
+                            <textarea name="catatan" rows="3" placeholder="Tambahkan catatan atau instruksi khusus untuk pencairan bertahap..." class="mt-1 block w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+
+                    </div>
+                </div>
+                <?php else: ?>
+                <!-- Tampilkan pesan jika sudah lunas -->
+                <div class="mb-8 pt-6 border-t border-gray-200">
+                    <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-check-circle text-green-600 text-2xl"></i>
+                            <div>
+                                <p class="text-sm font-semibold text-green-900">Dana Sudah Dicairkan Seluruhnya</p>
+                                <p class="text-xs text-green-700 mt-1">
+                                    Total dana sebesar <?= formatRupiah($anggaran_disetujui) ?> telah dicairkan. 
+                                    Tidak ada pencairan tambahan yang diperlukan.
+                                </p>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Container Input Bertahap -->
-                    <div id="container-bertahap" class="hidden space-y-4 p-5 bg-gray-50 rounded-xl border border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rincian Tahapan</label>
-                            <button type="button" onclick="addStage()" class="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-md hover:bg-blue-200 transition-colors">
-                                + Tambah Tahap
-                            </button>
-                        </div>
-                        
-                        <input type="hidden" name="jumlah_tahap" id="jumlah_tahap" value="0">
-                        <div id="stages-wrapper" class="space-y-3">
-                            <!-- Dynamic inputs will appear here -->
-                        </div>
-                        <div class="text-right text-xs text-gray-500 mt-2">
-                            Total Persentase: <span id="total-persen" class="font-bold text-gray-800">0%</span>
-                        </div>
-                    </div>
-
-                    <!-- Catatan -->
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Catatan Bendahara (Opsional)</label>
-                        <textarea name="catatan" rows="2" class="mt-1 block w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
-                    </div>
-
                 </div>
-            </div>
             <?php endif; ?>
 
             <div class="flex flex-col sm:flex-row justify-between items-center mt-10 pt-6 border-t border-gray-200 gap-4">
@@ -298,139 +363,317 @@ if (!function_exists('formatRupiah')) {
                     <i class="fas fa-arrow-left text-xs"></i> Kembali
                 </a>
                  
-                <?php if ($status_lower === 'menunggu') : ?>
+                <?php if ($status_lower === 'menunggu' || $status_lower === 'dana belum diberikan semua') : ?>
                 <div class="flex gap-4 w-full sm:w-auto">
                     <button type="button" onclick="submitForm()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition-all">
-                        <i class="fas fa-check-circle text-xs"></i> Proses Pencairan
+                        <i class="fas fa-check-circle text-xs"></i> Proses Pencairan Bertahap
                     </button>
                 </div>
                 <?php endif; ?>
             </div>
 
-        <?php if ($status_lower === 'menunggu') : ?>
-        </form>
-        <?php endif; ?>
+    <?php if ($status_lower === 'menunggu' || $status_lower === 'dana belum diberikan semua') : ?>
+    </form>
+    <?php endif; ?>
 
     </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Init state
+// State management
 let stageCount = 0;
+const totalAnggaranRaw = <?= $grand_total_rab ?? 0 ?>;
+// const totalAnggaran = rupiahToInt(totalAnggaranRaw.toString());
+
+function rupiahToInt(value) {
+    return parseInt(value.replace(/\D/g, '')) || 0;
+}
+
+// ✅ GANTI: Gunakan sisa_dana, bukan total_anggaran
+let sisaDana = parseInt(document.getElementById("sisa_dana").value) || 0;
+
+// ✅ TAMBAHAN: Simpan juga total anggaran untuk display
+let totalAnggaran = parseInt(document.getElementById("total_anggaran").value) || 0;
 
 document.addEventListener('DOMContentLoaded', function() {
-    formatRupiah(document.getElementById('jumlah_dicairkan'));
-    // Initialize 2 stages by default if in bertahap mode
+    console.log('Total Anggaran:', totalAnggaran);
+    console.log('Sisa Dana Belum dicairkan:', sisaDana);
+    
+    // Initialize 2 stages by default
     addStage();
     addStage();
 });
 
-function toggleMetode(metode) {
-    const containerPenuh = document.getElementById('container-penuh');
-    const containerBertahap = document.getElementById('container-bertahap');
-    
-    if (metode === 'penuh') {
-        containerPenuh.classList.remove('hidden');
-        containerBertahap.classList.add('hidden');
-    } else {
-        containerPenuh.classList.add('hidden');
-        containerBertahap.classList.remove('hidden');
-    }
-}
-
+/**
+ * Tambah tahap pencairan baru
+ */
 function addStage() {
-    if(stageCount >= 5) return; // Max 5 tahap
+    if (stageCount >= 5) {
+        Swal.fire('Perhatian', 'Maksimal 5 tahap pencairan', 'warning');
+        return;
+    }
+    
     stageCount++;
     document.getElementById('jumlah_tahap').value = stageCount;
     
     const wrapper = document.getElementById('stages-wrapper');
     const div = document.createElement('div');
-    div.className = 'flex gap-3 items-end animate-fade-in-up';
+    div.className = 'flex gap-3 items-start p-4 bg-white rounded-lg border border-gray-200 animate-fade-in-up';
+    div.id = `stage-${stageCount}`;
     div.innerHTML = `
-        <div class="w-10 text-center py-2.5 text-sm font-bold text-gray-400">#${stageCount}</div>
-        <div class="flex-1">
-            <label class="text-[10px] uppercase text-gray-500 font-semibold">Tanggal Pencairan</label>
-            <input type="date" name="tanggal_tahap_${stageCount}" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required>
+        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-600 font-bold text-sm flex-shrink-0">
+            ${stageCount}
         </div>
-        <div class="w-24">
-            <label class="text-[10px] uppercase text-gray-500 font-semibold">Persentase</label>
-            <div class="relative">
-                <input type="number" name="persentase_tahap_${stageCount}" class="w-full pl-3 pr-6 py-2 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-right" placeholder="0" min="1" max="100" oninput="updateTotalPersen()">
-                <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">%</span>
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+                <label class="text-xs font-semibold text-gray-600 block mb-1">Tanggal Pencairan <span class="text-red-500">*</span></label>
+                <input type="date" name="tanggalTahapan[]" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-gray-600 block mb-1">Termin <span class="text-red-500">*</span></label>
+                <input type="text" name="terminTahapan[]" placeholder="Contoh: Termin 1" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+            </div>
+            <div>
+                <label class="text-xs font-semibold text-gray-600 block mb-1">Nominal (Rp) <span class="text-red-500">*</span></label>
+                <input type="text" name="nominalTahapan[]" placeholder="0" class="nominal-input w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-right" oninput="formatRupiahInput(this); updateTotalNominal()" required>
             </div>
         </div>
+        <button type="button" onclick="removeStage(${stageCount})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded transition-colors flex-shrink-0" title="Hapus tahap ini">
+            <i class="fas fa-trash text-sm"></i>
+        </button>
     `;
     wrapper.appendChild(div);
 }
 
-function updateTotalPersen() {
-    let total = 0;
-    for(let i=1; i<=stageCount; i++) {
-        const val = parseFloat(document.querySelector(`input[name="persentase_tahap_${i}"]`).value) || 0;
-        total += val;
+/**
+ * Hapus tahap pencairan
+ */
+function removeStage(stageId) {
+    const stageElement = document.getElementById(`stage-${stageId}`);
+    if (stageElement) {
+        stageElement.remove();
+        updateTotalNominal();
+        
+        // Update stage count
+        const remainingStages = document.querySelectorAll('[id^="stage-"]').length;
+        stageCount = remainingStages;
+        document.getElementById('jumlah_tahap').value = stageCount;
     }
-    const display = document.getElementById('total-persen');
-    display.innerText = total + '%';
-    display.className = total === 100 ? 'font-bold text-green-600' : 'font-bold text-red-500';
 }
 
-function formatRupiah(input) {
-    let value = input.value.replace(/\D/g, '');
-    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+/**
+ * Format input rupiah dengan titik pemisah ribuan
+ */
+function formatRupiahInput(input) {
+    let value = input.value.replace(/\D/g, ''); // Hapus semua non-digit
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Tambah titik setiap 3 digit
     input.value = value;
 }
 
-function submitForm() {
-    const form = document.getElementById('formPencairan');
-    const metode = document.querySelector('input[name="metode_pencairan"]:checked').value;
+/**
+ * Update total nominal dari semua tahapan
+ */
+function updateTotalNominal() {
+    let total = 0;
+    const inputs = document.querySelectorAll('.nominal-input');
     
-    if (metode === 'penuh') {
-        const jumlah = document.getElementById('jumlah_dicairkan').value.replace(/\./g, '');
-        if (!jumlah || parseInt(jumlah) <= 0) {
-            Swal.fire('Error', 'Nominal pencairan tidak valid', 'error');
-            return;
-        }
-        // Set value clean without dots
-        document.getElementById('jumlah_dicairkan').value = jumlah;
-    } else {
-        let total = 0;
-        for(let i=1; i<=stageCount; i++) {
-            total += parseFloat(document.querySelector(`input[name="persentase_tahap_${i}"]`).value) || 0;
-        }
-        if (Math.abs(total - 100) > 0.1) {
-            Swal.fire('Error', `Total persentase harus 100% (Saat ini: ${total}%)`, 'error');
-            return;
-        }
-    }
-
-    Swal.fire({
-        title: 'Konfirmasi Pencairan',
-        text: "Apakah data yang dimasukkan sudah benar? Tindakan ini tidak dapat dibatalkan.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#2563eb',
-        cancelButtonColor: '#d1d5db',
-        confirmButtonText: 'Ya, Cairkan Dana',
-        cancelButtonText: 'Batal'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const hiddenAction = document.createElement('input');
-            hiddenAction.type = 'hidden';
-            hiddenAction.name = 'action';
-            hiddenAction.value = 'cairkan';
-            form.appendChild(hiddenAction);
-            
-            form.submit();
-        }
+    inputs.forEach(input => {
+        const cleanValue = input.value.replace(/\D/g, ''); // Hapus titik dan char lain
+        total += parseInt(cleanValue) || 0;
     });
+    
+    const display = document.getElementById('total-nominal');
+    display.innerText = 'Rp ' + total.toLocaleString('id-ID');
+    
+    // ✅ GANTI: Visual feedback berdasarkan sisa dana
+    if (total === sisaDana) {
+        display.className = 'text-xl font-bold text-green-600';
+    } else if (total > sisaDana) {
+        display.className = 'text-xl font-bold text-red-600';
+    } else {
+        display.className = 'text-xl font-bold text-gray-800';
+    }
+}
+
+/**
+ * Validasi dan submit form pencairan
+ */
+function submitForm() {
+    try {
+        const form = document.getElementById('formPencairan');
+        if (!form) {
+            Swal.fire('Error', 'Form tidak ditemukan di halaman', 'error');
+            return;
+        }
+        
+        // Validasi minimal 2 tahap
+        const tanggalInputs = document.querySelectorAll('input[name="tanggalTahapan[]"]');
+        const terminInputs = document.querySelectorAll('input[name="terminTahapan[]"]');
+        const nominalInputs = document.querySelectorAll('input[name="nominalTahapan[]"]');
+        
+        // if (tanggalInputs.length < 2) {
+        //     Swal.fire('Error', 'Minimal 2 tahap pencairan diperlukan', 'error');
+        //     return;
+        // }
+
+        // Validasi semua field harus terisi
+        let hasEmptyField = false;
+        let totalNominal = 0;
+        
+        for (let i = 0; i < tanggalInputs.length; i++) {
+            const tanggal = tanggalInputs[i].value;
+            const termin = terminInputs[i].value;
+            const nominalRaw = nominalInputs[i].value;
+            const nominal = parseFloat(nominalRaw.replace(/\D/g, '')) || 0;
+            
+            if (!tanggal || !termin || nominal <= 0) {
+                hasEmptyField = true;
+                break;
+            }
+            
+            totalNominal += nominal;
+        }
+        
+        if (hasEmptyField) {
+            Swal.fire('Error', 'Semua field tahapan harus diisi dengan benar', 'error');
+            return;
+        }
+
+        // ✅ GANTI: Validasi dengan sisa dana
+        const sisaDanaInt = parseInt(sisaDana);
+        const totalNominalInt = parseInt(totalNominal);
+        
+        // Validasi total nominal tidak boleh MELEBIHI sisa dana (tapi boleh kurang dari sisa dana)
+        if (totalNominalInt > sisaDanaInt || totalNominalInt < 0) {
+            Swal.fire({
+                title: 'Total Nominal Tidak Sesuai',
+                html: `
+                    <div class="text-left">
+                        <p class="mb-2">Total nominal tahapan tidak sama dengan sisa dana yang tersedia:</p>
+                        <div class="bg-gray-50 p-3 rounded">
+                            <p><strong>Total Anggaran:</strong> Rp ${totalAnggaran.toLocaleString('id-ID')}</p>
+                            <p><strong>Sudah Dicairkan:</strong> Rp ${(totalAnggaran - sisaDanaInt).toLocaleString('id-ID')}</p>
+                            <p><strong>Sisa Dana:</strong> Rp ${sisaDanaInt.toLocaleString('id-ID')}</p>
+                            <p><strong>Total Input:</strong> Rp ${totalNominalInt.toLocaleString('id-ID')}</p>
+                            <p class="mt-2 text-${totalNominalInt > sisaDanaInt ? 'red' : 'orange'}-600">
+                                <strong>Selisih:</strong> Rp ${Math.abs(sisaDanaInt - totalNominalInt).toLocaleString('id-ID')}
+                            </p>
+                        </div>
+                    </div>
+                `,
+                icon: 'error'
+            });
+            return;
+        }
+
+        // ✅ Tambahan: Warning jika mencairkan kurang dari sisa dana (opsional, bisa dihapus jika tidak perlu)
+        if (totalNominalInt < sisaDanaInt && totalNominalInt > 0 || totalNominalInt === sisaDanaInt) {
+            const sisaSetelahPencairan = sisaDanaInt - totalNominalInt;
+            
+            // Konfirmasi ke bendahara bahwa masih ada sisa dana
+            Swal.fire({
+                title: 'Konfirmasi Pencairan Sebagian',
+                html: `
+                    <div class="text-left">
+                        <p class="mb-3">Anda akan mencairkan dana <strong>sebagian</strong> dari sisa yang tersedia:</p>
+                        <div class="bg-blue-50 p-3 rounded border border-blue-200 mb-3">
+                            <p><strong>Sisa Dana Saat Ini:</strong> Rp ${sisaDanaInt.toLocaleString('id-ID')}</p>
+                            <p class="text-blue-600 font-semibold"><strong>Yang Akan Dicairkan:</strong> Rp ${totalNominalInt.toLocaleString('id-ID')}</p>
+                            <p class="text-orange-600"><strong>Sisa Setelah Pencairan:</strong> Rp ${sisaSetelahPencairan.toLocaleString('id-ID')}</p>
+                        </div>
+                        <p class="text-sm text-gray-600">
+                            <i class="fas fa-exclamation-circle text-orange-500"></i> 
+                            Masih ada sisa dana sebesar <strong>Rp ${sisaSetelahPencairan.toLocaleString('id-ID')}</strong> yang belum dicairkan.
+                        </p>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Anda bisa melakukan pencairan tambahan nanti untuk sisa dana tersebut.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#d1d5db',
+                confirmButtonText: 'Ya, Lanjutkan Pencairan',
+                cancelButtonText: 'Batal, Periksa Lagi'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Lanjutkan ke proses submit dengan parameter yang benar
+                    executeFinalSubmit(form, tanggalInputs.length, totalNominalInt);
+                }
+            });
+            return; // Stop di sini, tunggu konfirmasi user
+        }
+        
+        // Jika totalNominal SAMA DENGAN sisaDana, langsung submit
+        // executeFinalSubmit(form, tanggalInputs.length, totalNominalInt);
+
+        // Helper function untuk final submit
+        function executeFinalSubmit(form, jumlahTahap, totalNominalInt) {
+            Swal.fire({
+                title: 'Konfirmasi Pencairan Bertahap',
+                html: `
+                    <div class="text-left">
+                        <p class="mb-3">Anda akan mencairkan dana sebanyak <strong>${jumlahTahap} tahap</strong> dengan total:</p>
+                        <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                            <p class="text-2xl font-bold text-blue-600">Rp ${totalNominalInt.toLocaleString('id-ID')}</p>
+                        </div>
+                        <p class="mt-3 text-sm text-gray-600">Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#d1d5db',
+                confirmButtonText: 'Ya, Cairkan Dana',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const existingAction = form.querySelector('input[name="action"]');
+                    if (existingAction) existingAction.remove();
+                    
+                    const hiddenAction = document.createElement('input');
+                    hiddenAction.type = 'hidden';
+                    hiddenAction.name = 'action';
+                    hiddenAction.value = 'cairkan';
+                    form.appendChild(hiddenAction);
+                    
+                    const kakIdEl = form.querySelector('input[name="kegiatanId"]');
+                    if (!kakIdEl || !kakIdEl.value) {
+                        Swal.fire('Error', 'KAK ID tidak ditemukan. Silakan muat ulang halaman.', 'error');
+                        return;
+                    }
+                    
+                    console.log('=== FORM SUBMIT ===');
+                    console.log('KAK ID:', kakIdEl.value);
+                    console.log('Total Tahapan:', jumlahTahap);
+                    console.log('Total Nominal:', totalNominalInt);
+                    
+                    form.submit();
+                }
+            });
+        }
+        
+    } catch (error) {
+        console.error('submitForm error:', error);
+        Swal.fire('Error', 'Terjadi kesalahan: ' + error.message, 'error');
+    }
 }
 </script>
 
 <style>
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(5px); }
-        to { opacity: 1; transform: translateY(0); }
+@keyframes fadeInUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
     }
-    .animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+.animate-fade-in-up { 
+    animation: fadeInUp 0.3s ease-out forwards; 
+}
 </style>

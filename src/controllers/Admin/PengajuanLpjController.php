@@ -35,72 +35,85 @@ class PengajuanLpjController extends Controller
         $this->view('pages/admin/pengajuan_lpj_list', $data, 'admin');
     }
 
+   
     public function show($id, $data_dari_router = [])
-    {
-        $ref = $_GET['ref'] ?? 'lpj';
-        $base_url = "/docutrack/public/admin";
-        $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-lpj';
+{
+    $ref = $_GET['ref'] ?? 'lpj';
+    $base_url = "/docutrack/public/admin";
+    $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/pengajuan-lpj';
 
-        $lpj_detail = $this->safeModelCall($this->adminService, 'getDetailLPJ', [$id], null);
+    // ✅ Get LPJ detail dengan error handling
+    $lpj_detail = $this->safeModelCall($this->adminService, 'getDetailLPJ', [$id], null);
 
-        if (!$lpj_detail) {
-            $this->redirectWithMessage($back_url, 'error', 'Data LPJ tidak ditemukan.');
-        }
+    if (!$lpj_detail) {
+        error_log("❌ LPJ tidak ditemukan atau KAK belum dibuat: lpjId=$id");
+        $this->redirectWithMessage($back_url, 'error', 'Data LPJ tidak ditemukan atau KAK belum dibuat untuk kegiatan ini.');
+        return;
+    }
 
-        $status = $lpj_detail['status'];
-        $kegiatan_data = [
-            'nama_kegiatan' => $lpj_detail['nama_kegiatan'],
-            'pengusul' => $lpj_detail['pengusul']
-        ];
+    // ✅ Validasi kakId ada
+    if (empty($lpj_detail['kakId'])) {
+        error_log("❌ KAK tidak ditemukan untuk kegiatan: kegiatanId={$lpj_detail['kegiatanId']}");
+        $this->redirectWithMessage($back_url, 'error', 'KAK belum dibuat untuk kegiatan ini. Silakan buat KAK terlebih dahulu.');
+        return;
+    }
 
-        $rab_items_merged = [];
+    $status = strtolower($lpj_detail['status'] ?? 'draft');
+    
+    $kegiatan_data = [
+        'kegiatanId' => $lpj_detail['kegiatanId'],
+        'nama_kegiatan' => $lpj_detail['nama_kegiatan'],
+        'pengusul' => $lpj_detail['pengusul']
+    ];
+
+    // ✅ Fetch RAB items dengan logging
+    error_log("📋 Fetching RAB: kakId={$lpj_detail['kakId']}, lpjId=$id");
+    
+    $rab_items_merged = [];
         if (!empty($lpj_detail['kakId'])) {
             // Pass lpjId untuk mendapatkan data bukti yang sudah diupload
-            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId'], $id], []);
+            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId']]);
         }
-
-        $data = array_merge($data_dari_router, [
-            'title' => 'Detail LPJ - ' . htmlspecialchars($kegiatan_data['nama_kegiatan']),
-            'status' => $status,
-            'kegiatan_data' => $kegiatan_data,
-            'rab_items' => $rab_items_merged,
-            'komentar_revisi' => [],
-            'back_url' => $back_url,
-            'lpj_id' => $id  // Tambahkan lpjId untuk referensi
-        ]);
-
-        $this->view('pages/admin/detail_lpj', $data, 'admin');
+    if (empty($rab_items_merged)) {
+        error_log("⚠️ Tidak ada data RAB untuk kakId={$lpj_detail['kakId']}");
+    } else {
+        error_log("✅ RAB berhasil diambil: " . count($rab_items_merged) . " kategori");
     }
 
-    public function uploadBukti()
-    {
-        header('Content-Type: application/json');
+    $dataRab = $this->safeModelCall($this->adminService, 'getRABByKAK', [$lpj_detail['kakId']], []);
 
-        try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Metode tidak diizinkan', 405);
+    // ... lanjutkan kode seperti biasa
+    $total_items = 0;
+    $uploaded_items = 0;
+    
+    foreach ($rab_items_merged as $kategori => $items) {
+        foreach ($items as $item) {
+            $total_items++;
+            if (!empty($item['bukti_file'])) {
+                $uploaded_items++;
             }
-
-            // Validasi input
-            $rules = ['item_id' => 'required|numeric'];
-            $validatedData = $this->validationService->validate($_POST, $rules);
-
-            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-                throw new ValidationException('File tidak valid atau tidak ditemukan', ['file' => ['File bukti wajib diunggah.']]);
-            }
-
-            // Panggil service
-            $result = $this->lpjService->uploadLpjBukti((int)$validatedData['item_id'], $_FILES['file']);
-
-            echo json_encode($result);
-        } catch (ValidationException $e) {
-            http_response_code(422); // Unprocessable Entity
-            echo json_encode(['success' => false, 'message' => 'Data tidak valid.', 'errors' => $e->getErrors()]);
-        } catch (Exception $e) {
-            http_response_code($e->getCode() >= 400 ? $e->getCode() : 500);
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+    
+    $all_bukti_uploaded = ($total_items > 0 && $uploaded_items === $total_items);
+
+    $data = array_merge($data_dari_router, [
+        'title' => 'Detail LPJ - ' . htmlspecialchars($kegiatan_data['nama_kegiatan']),
+        'status' => $status,
+        'kegiatan_data' => $kegiatan_data,
+        'rab_items' => $rab_items_merged,
+        'total_items' => $total_items,
+        'uploaded_items' => $uploaded_items,
+        'all_bukti_uploaded' => $all_bukti_uploaded,
+        'komentar_revisi' => [],
+        'back_url' => $back_url,
+        'lpj_id' => $id,
+        'kak_id' => $lpj_detail['kakId'],
+        // 'rab_data' => $dataRab
+    ]);
+
+    $this->view('pages/admin/detail_lpj', $data, 'admin');
+}
 
     public function submitLpj()
     {
@@ -257,6 +270,60 @@ class PengajuanLpjController extends Controller
                 'error',
                 $e->getMessage()
             );
+        }
+    }
+
+     /**
+     * ✅ PERBAIKAN: Upload Bukti dengan lpjId
+     */
+    public function uploadBukti()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Method tidak diizinkan', 405);
+            }
+
+            // ✅ Validasi file upload
+            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('File tidak valid atau gagal diupload');
+            }
+
+            // ✅ TAMBAHAN: Validasi lpjId (PENTING!)
+            $lpjId = $_POST['lpj_id'] ?? null;
+            $rabItemId = $_POST['item_id'] ?? null;
+            
+            error_log("📤 Upload Request: lpjId=$lpjId, rabItemId=$rabItemId, filename={$_FILES['file']['name']}");
+            
+            if (empty($lpjId) || !is_numeric($lpjId)) {
+                throw new Exception('LPJ ID tidak valid: ' . var_export($lpjId, true));
+            }
+            
+            if (empty($rabItemId) || !is_numeric($rabItemId)) {
+                throw new Exception('RAB Item ID tidak valid: ' . var_export($rabItemId, true));
+            }
+
+            // ✅ Upload file via LpjService (dengan lpjId)
+            $result = $this->lpjService->uploadLpjBukti(
+                (int)$lpjId, 
+                (int)$rabItemId, 
+                $_FILES['file']
+            );
+
+            error_log("✅ Upload Success: " . json_encode($result));
+
+            echo json_encode($result);
+
+        } catch (Exception $e) {
+            error_log("❌ Upload Error: " . $e->getMessage());
+            error_log("❌ Stack Trace: " . $e->getTraceAsString());
+            
+            http_response_code(400);
+            echo json_encode([
+                'success' => false, 
+                'message' => $e->getMessage()
+            ]);
         }
     }
 }
