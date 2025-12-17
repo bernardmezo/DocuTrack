@@ -35,14 +35,6 @@ switch (strtolower($userRole)) {
     default:
         $akun_link = '/docutrack/public/bendahara/akun';
 }
-
-function isActive($current, $link) {
-    return strpos($current, $link) !== false ? 'bg-white/20 font-bold' : 'hover:bg-white/10';
-}
-
-function isActiveMobile($current, $link) {
-    return strpos($current, $link) !== false ? 'bg-white/20 font-bold' : 'text-gray-200 hover:bg-white/10';
-}
 ?>
 <!DOCTYPE html>
 <html lang="id">
