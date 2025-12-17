@@ -236,17 +236,17 @@ function getStatusBadge($status) {
                         <?php foreach($list_lpj as $l): ?>
                             <tr class="hover:bg-purple-50/30 transition-colors">
                                 <td class="px-6 py-4 text-gray-500 whitespace-nowrap">
-                                    <?= date('d M Y', strtotime($l['tanggal_upload'])) ?>
+                                    <?= !empty($l['tanggal_upload']) ? date('d M Y', strtotime($l['tanggal_upload'])) : '-' ?>
                                 </td>
                                 <td class="px-6 py-4 font-medium text-gray-800">
-                                    <?= htmlspecialchars($l['nama_kegiatan']) ?>
-                                    <div class="text-xs text-gray-400 mt-0.5"><?= htmlspecialchars($l['jurusan']) ?></div>
+                                    <?= htmlspecialchars($l['nama_kegiatan'] ?? '') ?>
+                                    <div class="text-xs text-gray-400 mt-0.5"><?= htmlspecialchars($l['jurusan'] ?? '') ?></div>
                                 </td>
                                 <td class="px-6 py-4 text-gray-700">
-                                    <?= htmlspecialchars($l['pengusul']) ?>
+                                    <?= htmlspecialchars($l['pengusul'] ?? '') ?>
                                 </td>
                                 <td class="px-6 py-4 text-right font-mono text-gray-700">
-                                    Rp <?= number_format($l['total_realisasi'], 0, ',', '.') ?>
+                                    Rp <?= number_format($l['total_realisasi'] ?? 0, 0, ',', '.') ?>
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <span class="<?= getStatusBadge($l['status_lpj']) ?>">
@@ -291,7 +291,7 @@ function getStatusBadge($status) {
                             <div class="flex items-center justify-between">
                                 <span class="text-gray-400">Total Realisasi</span>
                                 <span class="font-mono font-semibold text-gray-800">
-                                    Rp <?= number_format($l['total_realisasi'], 0, ',', '.') ?>
+                                    Rp <?= number_format($l['total_realisasi'] ?? 0, 0, ',', '.') ?>
                                 </span>
                             </div>
                         </div>
@@ -299,7 +299,7 @@ function getStatusBadge($status) {
                         <!-- Footer -->
                         <div class="flex items-center gap-1.5 pt-2 border-t border-gray-100 text-xs text-gray-500">
                             <i class="far fa-calendar text-[10px]"></i>
-                            <span>Upload: <?= date('d M Y', strtotime($l['tanggal_upload'])) ?></span>
+                            <span>Upload: <?= !empty($l['tanggal_upload']) ? date('d M Y', strtotime($l['tanggal_upload'])) : '-' ?></span>
                         </div>
                     </div>
                 <?php endforeach; ?>
