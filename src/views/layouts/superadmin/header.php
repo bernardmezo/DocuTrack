@@ -8,7 +8,6 @@ if (session_status() === PHP_SESSION_NONE) {
 $current = $_SERVER['REQUEST_URI'];
 
 
-
 // ============================================
 // LOGIKA DATA USER (SINKRONISASI DENGAN CONTROLLER AKUN)
 // ============================================
