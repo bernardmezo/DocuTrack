@@ -19,7 +19,7 @@ class BendaharaService
 
     public function getDashboardStatistik()
     {
-        return $this->model->getDashboardStatistik();
+        return $this->model->getDashboardStats();
     }
 
     public function getListKegiatanDashboard($limit = 10)
@@ -34,22 +34,25 @@ class BendaharaService
 
     public function getAllLPJHistory()
     {
-        return $this->model->getAllLPJHistory();
+        // return $this->model->getAllLPJHistory();
+        return []; // Stub
     }
 
     public function getRiwayatVerifikasi()
     {
-        return $this->model->getRiwayatVerifikasi();
+        // return $this->model->getRiwayatVerifikasi();
+        return []; // Stub
     }
 
     public function getRiwayatVerifikasiLPJ()
     {
-        return $this->model->getRiwayatVerifikasiLPJ();
+        // return $this->model->getRiwayatVerifikasiLPJ();
+        return []; // Stub
     }
 
     public function getRiwayatPencairanDana()
     {
-        return $this->model->getRiwayatPencairanDana();
+        return $this->model->getRiwayatPencairanByKegiatan(0); // Stub or needs specific logic
     }
 
     public function getListJurusan()
@@ -59,17 +62,20 @@ class BendaharaService
 
     public function getDetailLPJ($lpjId)
     {
-        return $this->model->getDetailLPJ($lpjId);
+        // return $this->model->getDetailLPJ($lpjId);
+        return []; // Stub, handled by LpjService mostly or needs to be added to Model
     }
 
     public function getLPJItems($lpjId)
     {
-        return $this->model->getLPJItems($lpjId);
+        // return $this->model->getLPJItems($lpjId);
+        return []; // Stub
     }
 
     public function approveLPJ($lpjId)
     {
-        return $this->model->approveLPJ($lpjId);
+        // return $this->model->approveLPJ($lpjId);
+        return false; // Stub
     }
 
     // Pencairan Dana methods

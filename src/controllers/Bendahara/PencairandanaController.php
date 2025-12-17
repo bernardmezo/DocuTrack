@@ -53,7 +53,7 @@ class PencairandanaController extends Controller
     public function show($id, $data_dari_router = [])
     {
         $ref = $_GET['ref'] ?? 'pencairan-dana';
-        $base_url = baseUrl('bendahara');
+        $base_url = "/docutrack/public/bendahara";
         $back_url = $base_url . '/' . $ref;
 
         $kegiatan = $this->pencairanService->getDetailPencairan($id);
@@ -122,7 +122,7 @@ class PencairandanaController extends Controller
             'indikator_data' => $indikator_data,
             'rab_data' => $rab_data,
             'anggaran_disetujui' => $totalAnggaran ?? 0,
-            'surat_pengantar_url' => !empty($kegiatan['suratPengantar']) ? baseUrl('uploads/surat/' . $kegiatan['suratPengantar']) : '',
+            'surat_pengantar_url' => !empty($kegiatan['suratPengantar']) ? '/docutrack/public/uploads/surat/' . $kegiatan['suratPengantar'] : '',
             'jumlah_dicairkan' => $totalDicairkan ?? 0,
             'tanggal_pencairan' => $kegiatan['tanggalPencairan'] ?? null,
             'metode_pencairan' => $kegiatan['metodePencairan'] ?? 'uang_muka',
@@ -144,7 +144,7 @@ class PencairandanaController extends Controller
     public function proses()
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . baseUrl('bendahara/pencairan-dana'));
+            header('Location: /docutrack/public/bendahara/pencairan-dana');
             exit;
         }
 
@@ -158,7 +158,7 @@ class PencairandanaController extends Controller
 
         if (!$kegiatanId || !$action) {
             $_SESSION['flash_error'] = 'Data tidak lengkap!';
-            header('Location: ' . baseUrl('bendahara/pencairan-dana'));
+            header('Location: /docutrack/public/bendahara/pencairan-dana');
             exit;
         }
 
@@ -264,7 +264,7 @@ class PencairandanaController extends Controller
         }
 
         // Redirect back to original URL
-        header('Location: ' . baseUrl('bendahara/pencairan-dana'));
+        header('Location: /docutrack/public/bendahara/pencairan-dana');
         exit;
     }
 }

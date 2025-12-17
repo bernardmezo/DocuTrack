@@ -90,3 +90,25 @@ if (!function_exists('isActive')) {
         return $inactiveClass ?: 'text-gray-200 hover:bg-white/10 hover:text-white transition-colors font-medium';
     }
 }
+
+if (!function_exists('isActiveMobile')) {
+    /**
+     * Menentukan apakah link navigasi mobile aktif.
+     * Wrapper untuk isActive dengan style default mobile.
+     *
+     * @param string $currentUrl
+     * @param string $targetPath
+     * @param string $activeClass
+     * @param string $inactiveClass
+     * @return string
+     */
+    function isActiveMobile(string $currentUrl, string $targetPath, string $activeClass = '', string $inactiveClass = ''): string
+    {
+        return isActive(
+            $currentUrl, 
+            $targetPath, 
+            $activeClass ?: 'bg-white/20 text-white font-bold border-l-4 border-white', 
+            $inactiveClass ?: 'text-gray-200 hover:bg-white/10 font-medium'
+        );
+    }
+}

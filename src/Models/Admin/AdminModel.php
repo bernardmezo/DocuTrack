@@ -272,6 +272,7 @@ class AdminModel
             // JOIN dengan tbl_lpj_item untuk mendapatkan bukti yang sudah diupload
             $query = "SELECT 
                         r.rabItemId as id,
+                        r.kategoriId as kategoriRabId,
                         r.uraian,
                         r.rincian,
                         r.vol1,
@@ -296,6 +297,7 @@ class AdminModel
             // Query original tanpa JOIN lpj_item
             $query = "SELECT 
                         r.rabItemId as id,
+                        r.kategoriId as kategoriRabId,
                         r.uraian,
                         r.rincian,
                         r.vol1,

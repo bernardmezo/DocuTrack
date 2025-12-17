@@ -162,7 +162,7 @@ class PencairanService
                     
                     $totalDicairkan += $nominal;
                     
-                    // Simpan ke tbl_pencairan_dana (via Model)
+                    // Simpan ke tbl_tahapan_pencairan (via Model)
                     $pencairanData = [
                         'kegiatan_id' => $kegiatanId,
                         'tanggal_pencairan' => $tanggal,
@@ -178,9 +178,13 @@ class PencairanService
                 }
                 
                 // Update status pencairan di tbl_kegiatan (Update total dicairkan dan status)
-                // Jika totalDicairkan < totalAnggaran, status belum lunas (6)
+                // Jika totalDicairkan < totalAnggaran, status belum lunas (6 -> mapped to 5 in model logic currently)
                 // Jika totalDicairkan >= totalAnggaran, status lunas/cair (5)
-                if (!$this->bendaharaModel->updateStatusPencairan($kegiatanId, $totalDicairkan, $totalAnggaran)) {
+                // Get current total disbursed from DB to be safe + this new amount
+                $currentTotal = $this->bendaharaModel->getTotalDicairkanByKegiatan($kegiatanId); 
+                // Note: simpanPencairanDana above already inserted, so getTotalDicairkanByKegiatan should reflect new total
+                
+                if (!$this->bendaharaModel->updateStatusPencairan($kegiatanId, $currentTotal, $totalAnggaran)) {
                     throw new Exception("Gagal update status pencairan");
                 }
                 
@@ -221,7 +225,6 @@ class PencairanService
                               metodePencairan = 'penuh', 
                               catatanBendahara = ?,
                               statusUtamaId = 5,
-                              statusPencairanId = 5,
                               posisiId = 1 
                           WHERE kegiatanId = ?";
 
@@ -232,6 +235,19 @@ class PencairanService
                     throw new Exception("Gagal memproses pencairan penuh");
                 }
                 mysqli_stmt_close($stmt);
+
+                // Insert into history table as well for consistency?
+                // For now, we follow legacy "penuh" logic but we should probably record it in tbl_tahapan_pencairan too for consistency.
+                // Added for consistency with new schema:
+                $pencairanData = [
+                    'kegiatan_id' => $kegiatanId,
+                    'tanggal_pencairan' => $tanggalCair,
+                    'termin' => 'Pencairan Penuh',
+                    'nominal' => $jumlah,
+                    'catatan' => $catatan,
+                    'created_by' => $userId
+                ];
+                $this->bendaharaModel->simpanPencairanDana($pencairanData);
 
                 // Hitung tenggat LPJ
                 $tenggatLpj = $this->calculateLpjDeadline($tanggalCair);

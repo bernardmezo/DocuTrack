@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $current = $_SERVER['REQUEST_URI'] ?? '';
 
+<<<<<<< HEAD
 function isActive($current_url, $target_prefix) {
     return (strpos($current_url, $target_prefix) === 0)
         ? 'bg-white text-[#114177] font-extrabold shadow-lg shadow-white/50'
@@ -18,6 +19,8 @@ function isActiveMobile($current_url, $target_prefix) {
         : 'text-gray-200 hover:bg-white/10 font-medium';
 }
 
+=======
+>>>>>>> 5f8a3abdcab9bd9a558521d92174a16da16ddb40
 // Data User
 $userData = $_SESSION['user_data'] ?? [];
 $userName = $userData['username'] ?? $_SESSION['user_name'] ?? 'User';

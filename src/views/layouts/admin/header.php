@@ -7,6 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Ambil URL saat ini (tanpa domain)
 $current = $_SERVER['REQUEST_URI'] ?? '';
+<<<<<<< HEAD
 
 /**
  * Fungsi untuk menentukan menu aktif berdasarkan prefix URL
@@ -22,6 +23,8 @@ function isActiveMobile($current_url, $target_prefix) {
         ? 'bg-white/20 text-white font-bold border-l-4 border-white'
         : 'text-gray-200 hover:bg-white/10 font-medium';
 }
+=======
+>>>>>>> 5f8a3abdcab9bd9a558521d92174a16da16ddb40
 
 // ============================================
 // LOGIKA DATA USER

@@ -3,8 +3,8 @@
     <footer class="relative w-full text-white bg-white">
     
     <div class="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-0 h-full w-full lg:min-w-[1200px] lg:left-1/2 lg:-translate-x-1/2">
-            <svg class="w-full h-full" viewBox="0 0 1440 534" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+        <div class="absolute top-0 h-full w-full min-w-[1200px] left-1/2 -translate-x-1/2 lg:w-full lg:min-w-0 lg:left-0 lg:translate-x-0">
+            <svg class="w-full h-full" viewBox="0 0 1440 534" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                 <path d="M916.136 106.928C531.374 -88.8183 240.667 34.5848 0 83.8337V534H1440V83.8337C1304.74 133.083 1065.74 183.038 916.136 106.928Z" fill="url(#paint_footer_gradient)"/>
                 <defs>
                     <linearGradient id="paint_footer_gradient" x1="720" y1="0" x2="720" y2="534" gradientUnits="userSpaceOnUse">
