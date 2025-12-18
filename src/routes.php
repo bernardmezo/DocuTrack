@@ -19,6 +19,16 @@ return [
         'method'     => 'logout',
         'middleware' => [],
     ],
+    '/captcha' => [
+        'controller' => 'CaptchaController',
+        'method'     => 'generate',
+        'middleware' => [],
+    ],
+    '/captcha/refresh' => [
+        'controller' => 'CaptchaController',
+        'method'     => 'refresh',
+        'middleware' => [],
+    ],
     // Health Check routes (replaces direct access files like cek_koneksi.php)
     '/health-check' => [
         'controller' => 'HealthCheckController',

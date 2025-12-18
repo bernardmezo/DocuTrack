@@ -1,5 +1,5 @@
 <!-- popup_login.php - RESPONSIVE VERSION FIXED -->
-<div id="popup-login" class="popup-container fixed inset-0 z-[1000] <?php echo isset($_SESSION['login_error']) ? 'flex' : 'hidden'; ?> items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+<div id="popup-login" class="popup-container fixed inset-0 z-[1000] <?php echo isset($_SESSION['login_error']) || isset($_SESSION['flash_errors']) ? 'flex' : 'hidden'; ?> items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
     
     <!-- Main Container dengan Background SVG -->
     <div class="relative w-full max-w-[893px] rounded-[20px] md:rounded-[30px] overflow-hidden shadow-2xl bg-white" style="min-height: 400px; max-height: 90vh;">
@@ -58,6 +58,22 @@
                     </div>
                 <?php endif; ?>
                 
+                <?php
+                    // Tampilkan error dari ValidationException
+                if (isset($_SESSION['flash_errors'])) :
+                    foreach ($_SESSION['flash_errors'] as $field => $errors) :
+                        foreach ($errors as $error) :
+                ?>
+                    <div class="mb-4 rounded bg-red-100 p-3 text-center text-sm text-red-700">
+                        <?php echo htmlspecialchars($error); ?>
+                    </div>
+                <?php
+                        endforeach;
+                    endforeach;
+                    unset($_SESSION['flash_errors']);
+                endif;
+                ?>
+                
                 <form action="<?= baseUrl('login') ?>" method="POST" class="space-y-4 md:space-y-6">
                     
                     <!-- Email Input -->
@@ -101,6 +117,48 @@
                                 </svg>
                             </button>
                         </div>
+                    </div>
+                    
+                    <!-- CAPTCHA Input -->
+                    <div class="input-group">
+                        <label class="block text-sm font-medium text-[#0A2540] mb-2">
+                            Kode Keamanan
+                        </label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <input 
+                                    type="text" 
+                                    id="captcha-code" 
+                                    name="captcha_code" 
+                                    required 
+                                    maxlength="6"
+                                    class="w-full px-4 py-2.5 md:py-3 text-base md:text-lg text-[#0A2540] bg-white border-2 border-[#E2E8F0] rounded-lg outline-none transition-all duration-300 focus:border-[#4299E1] focus:ring-4 focus:ring-blue-100 uppercase" 
+                                    placeholder="Masukkan kode"
+                                    autocomplete="off"
+                                >
+                            </div>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2">
+                            <div class="relative bg-gray-100 rounded-lg overflow-hidden border-2 border-[#E2E8F0]">
+                                <img 
+                                    id="captcha-image" 
+                                    src="<?= baseUrl('captcha') ?>?t=<?= time() ?>" 
+                                    alt="CAPTCHA" 
+                                    class="h-[60px] w-[200px] object-cover"
+                                >
+                            </div>
+                            <button 
+                                type="button"
+                                onclick="refreshCaptcha()"
+                                class="p-2.5 bg-[#4299E1] hover:bg-[#3182CE] text-white rounded-lg transition-all duration-300 hover:shadow-lg"
+                                title="Refresh CAPTCHA"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Masukkan kode yang terlihat pada gambar</p>
                     </div>
                     
                     <!-- Login Button dengan gradient dari SVG -->
@@ -147,6 +205,27 @@
                 }
             }
         };
+        
+        // Refresh CAPTCHA function
+        window.refreshCaptcha = function() {
+            const captchaImage = document.getElementById('captcha-image');
+            const captchaInput = document.getElementById('captcha-code');
+            if (captchaImage) {
+                captchaImage.src = '<?= baseUrl("captcha") ?>?t=' + new Date().getTime();
+            }
+            if (captchaInput) {
+                captchaInput.value = '';
+                captchaInput.focus();
+            }
+        };
+        
+        // Auto uppercase CAPTCHA input
+        const captchaInput = document.getElementById('captcha-code');
+        if (captchaInput) {
+            captchaInput.addEventListener('input', function(e) {
+                this.value = this.value.toUpperCase();
+            });
+        }
         
         // Function to open popup
         window.openLoginPopup = function() {
