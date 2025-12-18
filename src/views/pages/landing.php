@@ -283,7 +283,6 @@
     </div>
 </section>
 
-<!-- Process Section - Fully Responsive -->
 <!-- Process Section - Wind Flow Theme -->
 <section id="proses" class="py-12 sm:py-16 md:py-20 lg:py-24 bg-white relative overflow-hidden">
     
@@ -323,16 +322,15 @@
         <!-- Section Header -->
         <div class="text-center mb-12 sm:mb-16 md:mb-20">
             <div class="inline-block mb-4 floating">
-                <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 rounded-full text-sm font-semibold text-white shadow-lg">
-                    <i class="fas fa-wind"></i>
-                    Alur Proses
-                </span>
             </div>
             <div class="inline-block mb-4">
                 <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold px-8 py-4 text-transparent bg-clip-text bg-gradient-to-r from-teal-700 via-cyan-700 to-blue-700 custom-shadow">
                     Tahapan Pengajuan
                 </h2>
             </div>
+            <p class="text-gray-700 text-base sm:text-lg max-w-2xl mx-auto">
+                Mengalir seperti angin, setiap tahapan berjalan lancar dan transparan
+            </p>
         </div>
 
         <!-- Flowing Path Container -->
@@ -657,140 +655,207 @@
                                             </span>
                                         </div>
                                         <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
-                                            Bendahara memeriksa kelengkapan dan kesesuaian LPJ dengan realisasi an
+                                            Bendahara memeriksa kelengkapan dan kesesuaian LPJ dengan realisasi anggaran
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 9 - Penyerahan Hard Copy -->
+                <div class="relative lg:ml-0" style="animation-delay: 0.9s;">
+                    <div class="flex items-start gap-4 lg:gap-6">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-teal-700 to-cyan-800 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    9
+                                </div>
+                                <div class="absolute inset-0 bg-teal-700/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-teal-700/30 to-cyan-800/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-teal-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-teal-700 to-cyan-800 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-box-open text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Penyerahan Dokumen</h3>
+                                            <span class="px-3 py-1 bg-teal-50 rounded-full text-teal-700 text-xs font-semibold border border-teal-200">
+                                                <i class="far fa-user mr-1"></i>Pengusul
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Pengusul menyerahkan hard copy LPJ sebagai dokumentasi dan arsip fisik
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Completion Badge with Wind Effect -->
+            <div class="mt-16 sm:mt-20 lg:mt-24 flex justify-center">
+                <div class="relative floating">
+                    <div class="inline-flex items-center gap-3 sm:gap-4 px-6 sm:px-8 lg:px-10 py-4 sm:py-5 lg:py-6 bg-gradient-to-r from-teal-700 via-cyan-700 to-teal-700 rounded-3xl shadow-2xl text-white">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                            <i class="fas fa-check-circle text-2xl sm:text-3xl lg:text-4xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs sm:text-sm font-medium opacity-90">Proses Selesai</p>
+                            <p class="text-base sm:text-lg lg:text-xl font-bold">Kegiatan Tuntas</p>
+                        </div>
+                    </div>
+                    <!-- Glow effect -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-teal-700 via-cyan-700 to-teal-700 rounded-3xl blur-xl opacity-50 -z-10"></div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
 
 <style>
-        /* Custom Shadow for Title */
-        .custom-shadow {
-            filter: drop-shadow(0 6px 25px rgba(34, 211, 238, 0.7)) 
-                    drop-shadow(0 12px 45px rgba(39, 75, 143, 0.6))
-                    drop-shadow(0 2px 15px rgba(51, 171, 160, 0.5));
-        }
+/* Custom Shadow for Title */
+.custom-shadow {
+    filter: drop-shadow(0 6px 25px rgba(34, 211, 238, 0.7)) 
+            drop-shadow(0 12px 45px rgba(39, 75, 143, 0.6))
+            drop-shadow(0 2px 15px rgba(51, 171, 160, 0.5));
+}
 
-        /* Wind Flow Animations */
-        @keyframes cloudFloat {
-            0%, 100% {
-                transform: translateX(-100px) translateY(0);
-            }
-            50% {
-                transform: translateX(calc(100vw + 100px)) translateY(-20px);
-            }
-        }
+/* Wind Flow Animations */
+@keyframes cloudFloat {
+    0%, 100% {
+        transform: translateX(-100px) translateY(0);
+    }
+    50% {
+        transform: translateX(calc(100vw + 100px)) translateY(-20px);
+    }
+}
 
-        @keyframes windFlow {
-            0% {
-                stroke-dashoffset: 1000;
-                opacity: 0;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                stroke-dashoffset: 0;
-                opacity: 0;
-            }
-        }
+@keyframes windFlow {
+    0% {
+        stroke-dashoffset: 1000;
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        stroke-dashoffset: 0;
+        opacity: 0;
+    }
+}
 
-        @keyframes floating {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
+@keyframes floating {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
 
-        @keyframes ping-slow {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            75%, 100% {
-                transform: scale(2);
-                opacity: 0;
-            }
-        }
+@keyframes ping-slow {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
 
-        /* Cloud animations */
-        .cloud-1 {
-            top: 10%;
-            animation: cloudFloat 40s infinite linear;
-        }
+/* Cloud animations */
+.cloud-1 {
+    top: 10%;
+    animation: cloudFloat 40s infinite linear;
+}
 
-        .cloud-2 {
-            top: 30%;
-            animation: cloudFloat 50s infinite linear 5s;
-        }
+.cloud-2 {
+    top: 30%;
+    animation: cloudFloat 50s infinite linear 5s;
+}
 
-        .cloud-3 {
-            top: 60%;
-            animation: cloudFloat 45s infinite linear 10s;
-        }
+.cloud-3 {
+    top: 60%;
+    animation: cloudFloat 45s infinite linear 10s;
+}
 
-        /* Wind line animations */
-        .wind-line-1 {
-            animation: windFlow 8s infinite ease-in-out;
-        }
+/* Wind line animations */
+.wind-line-1 {
+    animation: windFlow 8s infinite ease-in-out;
+}
 
-        .wind-line-2 {
-            animation: windFlow 8s infinite ease-in-out 2s;
-        }
+.wind-line-2 {
+    animation: windFlow 8s infinite ease-in-out 2s;
+}
 
-        .wind-line-3 {
-            animation: windFlow 8s infinite ease-in-out 4s;
-        }
+.wind-line-3 {
+    animation: windFlow 8s infinite ease-in-out 4s;
+}
 
-        /* Flowing path animation */
-        .flowing-path {
-            stroke-dasharray: 20 10;
-            animation: dashFlow 3s linear infinite;
-        }
+/* Flowing path animation */
+.flowing-path {
+    stroke-dasharray: 20 10;
+    animation: dashFlow 3s linear infinite;
+}
 
-        @keyframes dashFlow {
-            to {
-                stroke-dashoffset: -30;
-            }
-        }
+@keyframes dashFlow {
+    to {
+        stroke-dashoffset: -30;
+    }
+}
 
-        /* Card float animations */
-        .wind-card-float {
-            animation: floating 3s ease-in-out infinite;
-        }
+/* Card float animations */
+.wind-card-float {
+    animation: floating 3s ease-in-out infinite;
+}
 
-        .wind-card-float-content {
-            animation: floating 3s ease-in-out infinite 0.2s;
-        }
+.wind-card-float-content {
+    animation: floating 3s ease-in-out infinite 0.2s;
+}
 
-        .floating {
-            animation: floating 4s ease-in-out infinite;
-        }
+.floating {
+    animation: floating 4s ease-in-out infinite;
+}
 
-        /* Ping animation */
-        .animate-ping-slow {
-            animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
-        }
+/* Ping animation */
+.animate-ping-slow {
+    animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
 
-        /* Smooth transitions */
-        .transition-all {
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 500ms;
-        }
+/* Smooth transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 500ms;
+}
 
-        /* Hover effects */
-        .group:hover .group-hover\:translate-x-1 {
-            transform: translateX(0.25rem);
-        }
+/* Hover effects */
+.group:hover .group-hover\:translate-x-1 {
+    transform: translateX(0.25rem);
+}
 
-        .group:hover .group-hover\:-translate-y-1 {
-            transform: translateY(-0.25rem);
-        }
+.group:hover .group-hover\:-translate-y-1 {
+    transform: translateY(-0.25rem);
+}
 
-        /* Responsive adjustments */
-        @media (max-width: 1024px) {
-            .wind-card-float,
-            .wind-card-float-content {
-                animation: none;
-            }
-        }
-    </style>
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .wind-card-float,
+    .wind-card-float-content {
+        animation: none;
+    }
+}
+</style>
