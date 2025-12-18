@@ -39,12 +39,16 @@ class AuthController extends Controller
         }
 
         try {
+            // Validate CAPTCHA first
+            $this->validateCaptcha($_POST['captcha_code'] ?? '');
+            
             $rules = [
                 'login_email'    => 'required|email',
                 // 'nosanitize' is used for password to prevent htmlspecialchars
                 // from altering the raw password before it's processed by the AuthService.
                 'login_password' => 'required|min:8|nosanitize',
                 'login_role'     => 'nosanitize', // Role is also not html content
+                'captcha_code'   => 'required|nosanitize',
             ];
             $data = $this->validationService->validate($_POST, $rules);
 
@@ -132,6 +136,28 @@ class AuthController extends Controller
             $_SESSION['login_error'] = 'Role pengguna tidak dikenali: ' . htmlspecialchars($user['namaRole']);
             $this->redirect('/docutrack/public/');
         }
+    }
+
+    private function validateCaptcha($inputCode)
+    {
+        if (!isset($_SESSION['captcha_code'])) {
+            throw new ValidationException("CAPTCHA tidak valid. Silakan refresh halaman.", ['captcha_code' => ["CAPTCHA tidak ditemukan."]]);
+        }
+        
+        // Check if CAPTCHA is expired (5 minutes)
+        if (isset($_SESSION['captcha_time']) && (time() - $_SESSION['captcha_time']) > 300) {
+            unset($_SESSION['captcha_code']);
+            unset($_SESSION['captcha_time']);
+            throw new ValidationException("CAPTCHA telah kadaluarsa. Silakan refresh.", ['captcha_code' => ["CAPTCHA kadaluarsa."]]);
+        }
+        
+        if (strtoupper($inputCode) !== strtoupper($_SESSION['captcha_code'])) {
+            throw new ValidationException("Kode CAPTCHA salah.", ['captcha_code' => ["Kode CAPTCHA tidak sesuai."]]);
+        }
+        
+        // Clear CAPTCHA after successful validation
+        unset($_SESSION['captcha_code']);
+        unset($_SESSION['captcha_time']);
     }
 
     public function logout()

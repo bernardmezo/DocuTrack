@@ -56,4 +56,22 @@ class UserModel
         mysqli_stmt_close($stmt);
         return $users;
     }
+
+    /**
+     * Get user ID by email address.
+     *
+     * @param string $email
+     * @return int|null
+     */
+    public function getUserIdByEmail(string $email): ?int
+    {
+        $query = "SELECT userId FROM {$this->table} WHERE email = ?";
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "s", $email);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $user = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+        return $user['userId'] ?? null;
+    }
 }

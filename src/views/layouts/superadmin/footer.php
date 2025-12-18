@@ -100,5 +100,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+<script src="/docutrack/public/assets/js/page-scripts/notifikasi.js"></script>
 </body>
 </html>

@@ -555,10 +555,16 @@ document.addEventListener('DOMContentLoaded', () => {
         updateRABTotal(); 
     }
 
-    // Print PDF
+    // Print PDF - Redirect to PDF download endpoint
     document.getElementById('print-pdf-btn')?.addEventListener('click', (e) => {
-        e.preventDefault(); 
-        window.print(); 
+        e.preventDefault();
+        
+        // Get kegiatan ID from current URL or data attribute
+        const currentPath = window.location.pathname;
+        const kegiatanId = currentPath.split('/').pop(); // Assumes URL like /admin/detail-kak/{id}
+        
+        // Redirect to PDF download endpoint
+        window.location.href = `/docutrack/public/admin/detail-kak/${kegiatanId}/pdf`;
     });
 
     // Simpan Revisi

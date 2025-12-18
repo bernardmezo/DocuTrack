@@ -13,6 +13,7 @@ class NotificationService
     private $mailer;
     private $kegiatanModel;
     private $userModel;
+    private LogStatusService $logStatusService;
 
     public function __construct($db)
     {
@@ -20,6 +21,7 @@ class NotificationService
         $this->mailer = new Mailer();
         $this->kegiatanModel = new KegiatanModel($db);
         $this->userModel = new UserModel($db);
+        $this->logStatusService = new LogStatusService($db);
     }
 
     /**
@@ -251,6 +253,18 @@ class NotificationService
             'catatan_tambahan' => $additionalMessage, // Pass additional message as catatan_tambahan
             'link_action' => $link_action
         ];
+
+        // Create in-app notifications for all recipients
+        foreach ($to as $recipient) {
+            try {
+                $recipientUserId = $this->userModel->getUserIdByEmail($recipient['email']);
+                if ($recipientUserId) {
+                    $this->logStatusService->createNotification($recipientUserId, $notificationType, $pesan_pembuka, $kegiatanId);
+                }
+            } catch (Exception $e) {
+                error_log("NotificationService: Failed to create in-app notification for {$recipient['email']} for Kegiatan ID {$kegiatanId} ({$notificationType}): " . $e->getMessage());
+            }
+        }
 
         foreach ($to as $recipient) {
             try {

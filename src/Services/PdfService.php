@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Mpdf\Mpdf;
 use Exception;
 
 class PdfService
@@ -20,6 +19,11 @@ class PdfService
      */
     public function generate($viewPath, $data = [], $filename = 'document.pdf', $mode = 'I', $config = [])
     {
+        // Check if mPDF is installed
+        if (!class_exists('\Mpdf\Mpdf')) {
+            throw new Exception("mPDF library not found. Please run: composer require mpdf/mpdf");
+        }
+
         if (!file_exists($viewPath)) {
             throw new Exception("PDF Template not found: {$viewPath}");
         }
@@ -46,16 +50,17 @@ class PdfService
             'margin_header' => 10,
             'margin_footer' => 10,
             'orientation' => 'P',
-            'default_font' => 'Arial'
+            'default_font' => 'Arial',
+            'tempDir' => sys_get_temp_dir() // Tambahkan temp directory
         ];
 
         $mpdfConfig = array_merge($defaultConfig, $config);
 
         // 3. Generate PDF
         try {
-            $mpdf = new Mpdf($mpdfConfig);
+            $mpdf = new \Mpdf\Mpdf($mpdfConfig);
             
-            // Set Metadata if available in data
+            // Set Metadata
             if (isset($data['pdf_title'])) {
                 $mpdf->SetTitle($data['pdf_title']);
             }

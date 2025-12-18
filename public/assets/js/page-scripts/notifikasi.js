@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Update daftar notifikasi. Note: Backend key is 'items', JS was 'notifications'
-        const notifications = data.items || data.notifications || [];
+        const notifications = data.items || [];
         
         if (notifications.length === 0) {
             listElement.innerHTML = `<div class="text-center text-gray-500 py-4">Tidak ada notifikasi.</div>`;
@@ -67,14 +67,14 @@ document.addEventListener('DOMContentLoaded', function () {
      * Membuat HTML untuk satu item notifikasi
      */
     function createNotificationItem(notification) {
-        const isUnread = notification.status === 'UNREAD';
+        const isUnread = notification.status === 'BELUM_DIBACA';
         const readClass = isUnread ? 'bg-blue-50' : 'bg-white';
         const timeAgo = formatTimeAgo(notification.created_at);
 
         return `
-            <a href="${notification.link_ref || '#'}" 
+            <a href="${notification.link || '#'}" 
                class="flex items-start px-4 py-3 hover:bg-gray-100 transition-colors duration-200 ${readClass}"
-               data-id="${notification.log_id}"
+               data-id="${notification.id}"
                ${isUnread ? 'data-action="mark-read"' : ''}>
                 <div class="flex-shrink-0">
                     <i class="fas ${getIconForType(notification.tipe_log)} text-blue-500 text-xl"></i>
