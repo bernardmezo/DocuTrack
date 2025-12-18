@@ -19,6 +19,7 @@ $is_menunggu_upload = ($status === 'menunggu_upload');
 $is_belum_ada_item = ($status === 'belum_ada_item');
 $is_draft = ($status === 'draft');
 $is_revisi = ($status === 'revisi');
+$is_diajukan = ($status === 'diajukan'); // New flag for 'Diajukan' status
 
 // Gabungkan flag untuk kondisi "bisa upload"
 $can_upload = ($is_draft || $is_menunggu_upload || $is_siap_submit || $is_revisi || $is_belum_ada_item);

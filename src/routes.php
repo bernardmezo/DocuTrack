@@ -90,6 +90,19 @@ return [
         'method'     => 'downloadPdf',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
     ],
+    // Route untuk edit usulan revisi
+    '/admin/detail-kak/{id}/edit-usulan' => [
+        'controller' => 'Admin\DetailKakController',
+        'method'     => 'editUsulan',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+    ],
+    // Route untuk resubmit usulan revisi
+    '/admin/detail-kak/{id}/resubmit-usulan' => [
+        'controller' => 'Admin\DetailKakController',
+        'method'     => 'resubmitUsulan',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+        'methods'    => ['POST'],
+    ],
     '/admin/pengajuan-usulan' => [
         'controller' => 'Admin\PengajuanUsulanController',
         'method'     => 'index',
@@ -175,6 +188,12 @@ return [
     '/admin/pengajuan-lpj/submit' => [ // Specific action
         'controller' => 'Admin\PengajuanLpjController',
         'method'     => 'submitLpj',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+        'methods'    => ['POST'],
+    ],
+    '/admin/pengajuan-lpj/save-draft' => [ // Save draft without submit
+        'controller' => 'Admin\PengajuanLpjController',
+        'method'     => 'saveDraft',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
         'methods'    => ['POST'],
     ],

@@ -50,6 +50,7 @@ class DetailKakController extends Controller
         // Extract data kegiatan dengan null coalescing untuk keamanan data
         // Note: Query sudah return alias yang tepat dari JOIN tbl_user
         $kegiatan_data = [
+            'kegiatanId' => $id, // Tambahkan ID untuk form edit
             'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',          // dari u.nama (user yang buat kegiatan)
             'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',           // dari k.nimPelaksana (NIM pelaksana)
             'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',        // dari k.pemilikKegiatan (nama pelaksana)
@@ -207,5 +208,118 @@ class DetailKakController extends Controller
                 echo "Terjadi kesalahan saat membuat PDF. Silakan hubungi administrator.";
             }
         }
+    }
+
+    /**
+     * Form edit usulan untuk revisi
+     */
+    public function editUsulan($id, $data_dari_router = [])
+    {
+        $ref = $_GET['ref'] ?? 'kegiatan';
+        $base_url = "/docutrack/public/admin";
+        $back_url = ($ref === 'dashboard') ? $base_url . '/dashboard' : $base_url . '/detail-kak/' . $id;
+
+        $dataDB = $this->model->getDetailKegiatan($id);
+
+        if (!$dataDB) {
+            $_SESSION['flash_error'] = 'Data kegiatan tidak ditemukan.';
+            header('Location: ' . $back_url);
+            exit;
+        }
+
+        // Cek apakah status revisi
+        $statusLower = strtolower($dataDB['status_text'] ?? '');
+        if ($statusLower !== 'revisi') {
+            $_SESSION['flash_error'] = 'Usulan ini tidak dalam status revisi.';
+            header('Location: ' . $back_url);
+            exit;
+        }
+
+        $kakId = $dataDB['kakId'];
+
+        $indikator  = $this->model->getIndikatorByKAK($kakId);
+        $tahapan    = $this->model->getTahapanByKAK($kakId);
+        $rab        = $this->model->getRABByKAK($kakId);
+        $komentar   = $this->model->getKomentarTerbaru($id);
+
+        $tahapan_string = "";
+        foreach ($tahapan as $index => $tahap) {
+            $tahapan_string .= ($index + 1) . ". " . $tahap . "\n";
+        }
+
+        $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
+
+        $kegiatan_data = [
+            'kegiatanId' => $id,
+            'kakId' => $kakId,
+            'nama_pengusul' => $dataDB['nama_pengusul'] ?? '',
+            'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '',
+            'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '',
+            'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '',
+            'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '',
+            'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '',
+            'prodi' => $dataDB['prodi'] ?? '',
+            'nama_kegiatan' => $dataDB['namaKegiatan'] ?? '',
+            'gambaran_umum' => $dataDB['gambaranUmum'] ?? '',
+            'penerima_manfaat' => $dataDB['penerimaManfaat'] ?? '',
+            'metode_pelaksanaan' => $dataDB['metodePelaksanaan'] ?? '',
+            'tahapan_kegiatan' => $tahapan_string,
+            'tanggal_mulai' => $dataDB['tanggal_mulai'] ?? '',
+            'tanggal_selesai' => $dataDB['tanggal_selesai'] ?? ''
+        ];
+
+        $data = array_merge($data_dari_router, [
+            'title' => 'Edit Usulan - ' . htmlspecialchars($dataDB['namaKegiatan']),
+            'status' => 'Revisi',
+            'kegiatan_data' => $kegiatan_data,
+            'iku_data' => $iku_array,
+            'indikator_data' => $indikator,
+            'rab_data' => $rab,
+            'komentar_revisi' => $komentar,
+            'tahapan_array' => $tahapan,
+            'back_url' => $back_url
+        ]);
+
+        $this->view('pages/admin/edit_usulan', $data, 'admin');
+    }
+
+    /**
+     * Resubmit usulan setelah revisi
+     */
+    public function resubmitUsulan($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $_SESSION['flash_error'] = 'Invalid request method.';
+            header('Location: /docutrack/public/admin/detail-kak/' . $id);
+            exit;
+        }
+
+        try {
+            $dataDB = $this->model->getDetailKegiatan($id);
+
+            if (!$dataDB) {
+                throw new \Exception('Data kegiatan tidak ditemukan.');
+            }
+
+            // Cek apakah status revisi
+            $statusLower = strtolower($dataDB['status_text'] ?? '');
+            if ($statusLower !== 'revisi') {
+                throw new \Exception('Usulan ini tidak dalam status revisi.');
+            }
+
+            // Update usulan dengan data baru
+            $result = $this->model->updateUsulanRevisi($id, $_POST);
+
+            if ($result) {
+                $_SESSION['flash_message'] = 'Usulan berhasil diperbarui dan dikirim ulang untuk verifikasi.';
+                header('Location: /docutrack/public/admin/dashboard');
+            } else {
+                throw new \Exception('Gagal memperbarui usulan.');
+            }
+        } catch (\Exception $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+            header('Location: /docutrack/public/admin/detail-kak/' . $id . '/edit-usulan');
+        }
+        exit;
     }
 }

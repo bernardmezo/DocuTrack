@@ -183,24 +183,28 @@ class AdminModel
                     l.approvedAt,
                     l.tenggatLpj,
                     CASE 
-                        WHEN l.statusId = 3 THEN 'Setuju'
-                        WHEN l.statusId = 2 THEN 'Revisi'
-                        WHEN l.statusId = 4 THEN 'Ditolak'
-                        WHEN l.statusId = 1 THEN 'Menunggu'
-                        WHEN EXISTS (
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 3 THEN 'Setuju'
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 2 THEN 'Revisi'
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 4 THEN 'Ditolak'
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 1 THEN 'Menunggu'
+                        WHEN l.submittedAt IS NULL AND EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
                             AND (li.fileBukti IS NULL OR li.fileBukti = '')
                         ) THEN 'Menunggu_Upload'
-                        ELSE 'Siap_Submit'
+                        WHEN l.submittedAt IS NULL AND EXISTS (
+                            SELECT 1 FROM tbl_lpj_item li 
+                            WHERE li.lpjId = l.lpjId
+                        ) THEN 'Siap_Submit'
+                        ELSE 'Draft'
                     END as status
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
                   ORDER BY 
                     CASE 
-                        WHEN l.statusId = 1 THEN 1
+                        WHEN l.statusId = 1 AND l.submittedAt IS NOT NULL THEN 1
                         WHEN l.statusId = 2 THEN 2
-                        WHEN l.statusId IS NULL THEN 3
+                        WHEN l.submittedAt IS NULL THEN 3
                         ELSE 4
                     END,
                     l.submittedAt DESC";
@@ -231,20 +235,22 @@ class AdminModel
                     k.kegiatanId,
                     kak.kakId,
                     CASE 
-                        WHEN l.statusId = 3 THEN 'Setuju'
-                        WHEN l.statusId = 2 THEN 'Revisi'
-                        WHEN l.statusId = 4 THEN 'Ditolak'
-                        WHEN l.statusId = 1 THEN 'Menunggu'
-                        WHEN EXISTS (
+                        -- Jika sudah pernah di-submit (submittedAt IS NOT NULL), gunakan statusId
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 3 THEN 'Setuju'
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 2 THEN 'Revisi'
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 4 THEN 'Ditolak'
+                        WHEN l.submittedAt IS NOT NULL AND l.statusId = 1 THEN 'Menunggu'
+                        -- Jika belum pernah di-submit (submittedAt IS NULL), statusnya Draft
+                        WHEN l.submittedAt IS NULL AND EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
                             AND (li.fileBukti IS NULL OR li.fileBukti = '')
                         ) THEN 'Menunggu_Upload'
-                        WHEN EXISTS (
+                        WHEN l.submittedAt IS NULL AND EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId
                         ) THEN 'Siap_Submit'
-                        ELSE 'Belum_Ada_Item'
+                        ELSE 'Draft'
                     END as status
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
@@ -270,6 +276,7 @@ class AdminModel
     {
         if ($lpjId) {
             // JOIN dengan tbl_lpj_item untuk mendapatkan bukti yang sudah diupload
+            // Gunakan li.rabItemId untuk JOIN yang benar dengan r.rabItemId
             $query = "SELECT 
                         r.rabItemId as id,
                         r.kategoriId as kategoriRabId,
@@ -284,10 +291,11 @@ class AdminModel
                         li.fileBukti as bukti_file,
                         li.komentar as komentar,
                         li.lpjItemId as lpj_item_id,
+                        li.realisasi as realisasi,
                         cat.namaKategori
                     FROM tbl_rab r
                     JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId
-                    LEFT JOIN tbl_lpj_item li ON r.rabItemId = li.lpjItemId AND li.lpjId = ?
+                    LEFT JOIN tbl_lpj_item li ON r.rabItemId = li.rabItemId AND li.lpjId = ?
                     WHERE r.kakId = ?
                     ORDER BY cat.kategoriRabId ASC, r.rabItemId ASC";
 
@@ -496,26 +504,43 @@ class AdminModel
 
     /**
      * Mengambil komentar penolakan terbaru untuk suatu kegiatan.
+     * Status 4 = Ditolak
+     * Mencari komentar di tbl_revisi_comment yang terkait dengan status penolakan
      */
     public function getKomentarPenolakan($kegiatanId)
     {
+        // Query mencari komentar penolakan (targetKolom NULL atau targetTabel tbl_kegiatan)
         $query = "SELECT rc.komentarRevisi 
                   FROM tbl_revisi_comment rc
                   JOIN tbl_progress_history ph ON rc.progressHistoryId = ph.progressHistoryId
                   WHERE ph.kegiatanId = ? 
                   AND ph.statusId = 4
-                  AND rc.targetKolom IS NULL
-                  ORDER BY ph.progressHistoryId DESC 
+                  AND (rc.targetTabel = 'tbl_kegiatan' OR rc.targetTabel IS NULL)
+                  ORDER BY ph.timestamp DESC 
                   LIMIT 1";
 
         $stmt = mysqli_prepare($this->db, $query);
+        if (!$stmt) {
+            error_log('getKomentarPenolakan - Prepare failed: ' . mysqli_error($this->db));
+            return '';
+        }
+        
         mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $row = mysqli_fetch_assoc($result);
         mysqli_stmt_close($stmt);
 
-        return $row['komentarRevisi'] ?? '';
+        $komentar = $row['komentarRevisi'] ?? '';
+        
+        // Log untuk debugging
+        if (!empty($komentar)) {
+            error_log("PENOLAKAN - Found rejection comment for kegiatan $kegiatanId: " . substr($komentar, 0, 100));
+        } else {
+            error_log("PENOLAKAN - No rejection comment found for kegiatan $kegiatanId");
+        }
+
+        return $komentar;
     }
 
     /**
@@ -909,5 +934,140 @@ class AdminModel
         }
 
         return $result;
+    }
+
+    /**
+     * Update usulan yang diminta revisi dan ubah status ke "Telah Direvisi"
+     * 
+     * @param int $kegiatanId ID kegiatan yang akan diupdate
+     * @param array $data Data usulan yang sudah direvisi
+     * @return bool True jika berhasil
+     */
+    public function updateUsulanRevisi($kegiatanId, $data)
+    {
+        $connection = $this->db;
+        $transactionStarted = false;
+
+        try {
+            $connection->begin_transaction();
+            $transactionStarted = true;
+
+            // Get kakId from tbl_kak (bukan dari tbl_kegiatan)
+            $queryKak = "SELECT kakId FROM tbl_kak WHERE kegiatanId = ?";
+            $stmtKak = $connection->prepare($queryKak);
+            if (!$stmtKak) {
+                throw new Exception('Failed to prepare statement: ' . $connection->error);
+            }
+            $stmtKak->bind_param("i", $kegiatanId);
+            $stmtKak->execute();
+            $resultKak = $stmtKak->get_result();
+            $rowKak = $resultKak->fetch_assoc();
+            $stmtKak->close();
+
+            if (!$rowKak) {
+                throw new Exception('Data KAK tidak ditemukan untuk kegiatan ini.');
+            }
+
+            $kakId = $rowKak['kakId'];
+
+            // 1. Update tbl_kegiatan
+            $namaKegiatan = trim($data['nama_kegiatan'] ?? '');
+            if (empty($namaKegiatan)) {
+                throw new Exception('Nama kegiatan harus diisi.');
+            }
+
+            $queryKegiatan = "UPDATE tbl_kegiatan 
+                             SET namaKegiatan = ?,
+                                 statusUtamaId = 1,
+                                 posisiId = 2
+                             WHERE kegiatanId = ?";
+            
+            $stmtKegiatan = $connection->prepare($queryKegiatan);
+            if (!$stmtKegiatan) {
+                throw new Exception('Failed to prepare kegiatan update: ' . $connection->error);
+            }
+            $stmtKegiatan->bind_param("si", $namaKegiatan, $kegiatanId);
+            if (!$stmtKegiatan->execute()) {
+                throw new Exception('Gagal update kegiatan: ' . $stmtKegiatan->error);
+            }
+            $stmtKegiatan->close();
+
+            // 2. Update tbl_kak
+            $gambaranUmum = trim($data['gambaran_umum'] ?? '');
+            $penerimaManfaat = trim($data['penerima_manfaat'] ?? '');
+            $metodePelaksanaan = trim($data['metode_pelaksanaan'] ?? '');
+
+            if (empty($gambaranUmum) || empty($penerimaManfaat) || empty($metodePelaksanaan)) {
+                throw new Exception('Semua field KAK harus diisi.');
+            }
+
+            $queryKak = "UPDATE tbl_kak 
+                        SET gambaranUmum = ?,
+                            penerimaManfaat = ?,
+                            metodePelaksanaan = ?
+                        WHERE kakId = ?";
+            
+            $stmtKak = $connection->prepare($queryKak);
+            if (!$stmtKak) {
+                throw new Exception('Failed to prepare KAK update: ' . $connection->error);
+            }
+            $stmtKak->bind_param("sssi", $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $kakId);
+            if (!$stmtKak->execute()) {
+                throw new Exception('Gagal update KAK: ' . $stmtKak->error);
+            }
+            $stmtKak->close();
+
+            // 3. Update tahapan kegiatan (tabel: tbl_tahapan_pelaksanaan)
+            $tahapanKegiatan = trim($data['tahapan_kegiatan'] ?? '');
+            if (!empty($tahapanKegiatan)) {
+                // Delete existing tahapan
+                $queryDeleteTahapan = "DELETE FROM tbl_tahapan_pelaksanaan WHERE kakId = ?";
+                $stmtDelete = $connection->prepare($queryDeleteTahapan);
+                if ($stmtDelete) {
+                    $stmtDelete->bind_param("i", $kakId);
+                    $stmtDelete->execute();
+                    $stmtDelete->close();
+                }
+
+                // Insert new tahapan
+                $tahapanArray = array_filter(array_map('trim', explode("\n", $tahapanKegiatan)));
+                $queryInsertTahapan = "INSERT INTO tbl_tahapan_pelaksanaan (kakId, namaTahapan) VALUES (?, ?)";
+                $stmtInsert = $connection->prepare($queryInsertTahapan);
+                
+                if ($stmtInsert) {
+                    foreach ($tahapanArray as $tahapan) {
+                        // Remove numbering if exists (e.g., "1. " or "1) ")
+                        $tahapan = preg_replace('/^\d+[\.\)]\s*/', '', $tahapan);
+                        if (!empty($tahapan)) {
+                            $stmtInsert->bind_param("is", $kakId, $tahapan);
+                            $stmtInsert->execute();
+                        }
+                    }
+                    $stmtInsert->close();
+                }
+            }
+
+            // 4. Insert progress history (status 1 = Menunggu, tapi sudah Telah Direvisi, kirim ke posisi 2 = Verifikator)
+            $userId = $_SESSION['user_id'] ?? null;
+            $statusId = 1; // Menunggu (akan direview ulang oleh Verifikator)
+            
+            $queryHistory = "INSERT INTO tbl_progress_history (kegiatanId, statusId, changedByUserId) VALUES (?, ?, ?)";
+            $stmtHistory = $connection->prepare($queryHistory);
+            if ($stmtHistory) {
+                $stmtHistory->bind_param("iii", $kegiatanId, $statusId, $userId);
+                $stmtHistory->execute();
+                $stmtHistory->close();
+            }
+
+            $connection->commit();
+            return true;
+
+        } catch (Exception $e) {
+            if ($transactionStarted) {
+                $connection->rollback();
+            }
+            error_log('AdminModel::updateUsulanRevisi - Error: ' . $e->getMessage());
+            return false;
+        }
     }
 }

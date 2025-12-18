@@ -36,7 +36,7 @@ class LpjService
             // [SECURITY FIX] Validate Disbursed Funds
             $disbursedAmount = $this->lpjModel->getDisbursedAmount($kegiatanId);
             if ($disbursedAmount <= 0) {
-                 throw new Exception("LPJ cannot be submitted. No funds have been disbursed for this activity yet.");
+                 throw new Exception("LPJ tidak dapat diajukan. Dana belum dicairkan untuk kegiatan ini.");
             }
 
             // Get or create LPJ record
@@ -45,6 +45,26 @@ class LpjService
 
             if (!$lpjId) {
                 throw new Exception("Gagal memproses record LPJ.");
+            }
+
+            error_log("🔍 DEBUG Submit LPJ: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
+
+            // ✅ [VALIDATION] Cek apakah LPJ sudah pernah di-submit sebelumnya
+            // Izinkan submit ulang jika statusnya adalah 'Revisi' (status_id = 2)
+            $lpjData = $this->lpjModel->getLpjWithItemsById($lpjId);
+            $isRevision = isset($lpjData['status_id']) && $lpjData['status_id'] == 2;
+
+            if ($lpjData && !empty($lpjData['submitted_at']) && !$isRevision) {
+                throw new Exception("LPJ sudah pernah disubmit sebelumnya pada " . date('d/m/Y H:i', strtotime($lpjData['submitted_at'])) . ". Tidak dapat submit ulang.");
+            }
+
+            // [VALIDATION] Cek apakah semua bukti sudah diupload
+            $uploadStatus = $this->lpjModel->getUploadBuktiStatus($lpjId);
+            error_log("📊 Upload Status: " . json_encode($uploadStatus));
+            
+            // Jika belum ada items sama sekali di tbl_lpj_item, items akan diinsert dari parameter
+            if ($uploadStatus['total'] > 0 && $uploadStatus['uploaded'] < $uploadStatus['total']) {
+                throw new Exception("Mohon upload semua bukti terlebih dahulu. (" . $uploadStatus['uploaded'] . "/" . $uploadStatus['total'] . " item sudah diupload)");
             }
 
             // Update realisasi items (Upsert behavior to preserve existing fileBukti)
@@ -68,12 +88,18 @@ class LpjService
                 }
             }
 
+            // Update grand total
             $this->lpjModel->updateLpjGrandTotal($lpjId);
-            $this->lpjModel->updateLpjStatus($lpjId, 'Submitted');
+            
+            // ✅ UPDATE STATUS KE 'Submitted' AGAR submittedAt TERISI
+            if (!$this->lpjModel->updateLpjStatus($lpjId, 'Submitted')) {
+                throw new Exception("Gagal mengupdate status LPJ.");
+            }
 
             $this->db->commit();
 
-            return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara'];
+            error_log("✅ LPJ berhasil disubmit: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
+            return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara untuk verifikasi'];
         } catch (Exception $e) {
             if ($this->db->in_transaction) {
                 $this->db->rollback();
@@ -167,7 +193,7 @@ class LpjService
                 'success' => true,
                 'message' => 'Bukti berhasil diupload dan tersimpan',
                 'filename' => $filename,
-                'path' => '/uploads/lpj/' . $filename
+                'path' => 'uploads/lpj/' . $filename
             ];
 
         } catch (Exception $e) {

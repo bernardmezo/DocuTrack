@@ -604,16 +604,24 @@ class VerifikatorModel
                 throw new RuntimeException('Gagal mencatat riwayat.');
             }
 
-            // Insert rejection comment
+            // Insert rejection comment (targetKolom = NULL untuk alasan umum penolakan)
             if (!empty($alasanPenolakan)) {
-                $this->insertRevisiComment(
+                $insertResult = $this->insertRevisiComment(
                     $historyId,
                     $userId,
                     $roleId,
                     $alasanPenolakan,
                     'tbl_kegiatan',
-                    'statusUtamaId' // Asumsi komentar terkait status utama
+                    null // NULL karena ini alasan penolakan umum, bukan spesifik ke kolom
                 );
+                
+                if (!$insertResult) {
+                    error_log("REJECT - Failed to insert rejection comment for kegiatan $kegiatanId");
+                } else {
+                    error_log("REJECT - Success insert comment for kegiatan $kegiatanId, historyId $historyId");
+                }
+            } else {
+                error_log("REJECT - No rejection reason provided for kegiatan $kegiatanId");
             }
 
             $connection->commit();

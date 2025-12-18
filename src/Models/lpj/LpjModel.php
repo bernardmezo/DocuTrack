@@ -34,13 +34,18 @@ class LpjModel
     }
 
     /**
-     * Membuat record LPJ baru
+     * Membuat record LPJ baru sebagai DRAFT
+     * statusId = 1 (default Menunggu) tapi submittedAt = NULL menandakan Draft
+     * Logic: submittedAt IS NULL → Draft, submittedAt IS NOT NULL → Submitted
      */
     public function insertLpj($kegiatan_id)
     {
         $grand_total_default = 0.00;
-        $query = "INSERT INTO tbl_lpj (kegiatanId, grandTotalRealisasi, submittedAt, approvedAt) 
-                  VALUES (?, ?, NULL, NULL)";
+        // statusId = 1 (Menunggu) sesuai DEFAULT schema
+        // submittedAt = NULL → Status Draft (belum disubmit)
+        // Saat submit nanti, submittedAt akan diisi NOW() untuk menandakan sudah di-submit
+        $query = "INSERT INTO tbl_lpj (kegiatanId, grandTotalRealisasi, statusId, submittedAt, approvedAt) 
+                  VALUES (?, ?, 1, NULL, NULL)";
 
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
@@ -51,8 +56,7 @@ class LpjModel
         mysqli_stmt_bind_param($stmt, 'id', $kegiatan_id, $grand_total_default);
 
         if (mysqli_stmt_execute($stmt)) {
-            $newId = mysqli_insert_id($this->db);
-            mysqli_stmt_close($stmt);
+            $newId = mysqli_insert_id($this->db);            error_log("✅ LPJ Draft created: lpjId={$newId}, kegiatanId={$kegiatan_id}, statusId=1, submittedAt=NULL (Draft)");            mysqli_stmt_close($stmt);
             return $newId;
         } else {
             error_log('LpjModel::insertLpj - Execute failed: ' . mysqli_stmt_error($this->db));
@@ -101,15 +105,15 @@ class LpjModel
                 $statusId = 1; // Menunggu (LPJ submitted, awaiting review)
                 $timestampColumn = 'submittedAt';
                 break;
+            case 'Revised':
+                $statusId = 2; // Revisi (LPJ sent back for revision)
+                break;
             case 'Approved':
                 $statusId = 3; // Disetujui (LPJ approved)
                 $timestampColumn = 'approvedAt';
                 break;
             case 'Rejected':
                 $statusId = 4; // Ditolak (LPJ rejected)
-                break;
-            case 'Revised':
-                $statusId = 2; // Revisi (LPJ sent back for revision)
                 break;
             default:
                 error_log('LpjModel::updateLpjStatus - Invalid status provided: ' . $new_status);
@@ -125,19 +129,23 @@ class LpjModel
         }
         $query .= " WHERE lpjId = ?";
 
+        error_log("🔍 DEBUG updateLpjStatus: lpjId={$lpj_id}, status={$new_status}, statusId={$statusId}, query={$query}");
+
         $stmt = mysqli_prepare($this->db, $query);
         if ($stmt === false) {
-            error_log('LpjModel::updateLpjStatus - Prepare failed: ' . mysqli_error($this->db));
+            error_log('❌ LpjModel::updateLpjStatus - Prepare failed: ' . mysqli_error($this->db));
             return false;
         }
 
         mysqli_stmt_bind_param($stmt, $bind_params, ...$bind_values);
 
         if (mysqli_stmt_execute($stmt)) {
+            $affected = mysqli_stmt_affected_rows($stmt);
+            error_log("✅ LpjModel::updateLpjStatus - Success: lpjId={$lpj_id}, statusId={$statusId}, {$timestampColumn}=NOW(), affected={$affected}");
             mysqli_stmt_close($stmt);
             return true;
         } else {
-            error_log('LpjModel::updateLpjStatus - Execute failed: ' . mysqli_stmt_error($this->db));
+            error_log('❌ LpjModel::updateLpjStatus - Execute failed: ' . mysqli_stmt_error($stmt));
             mysqli_stmt_close($stmt);
             return false;
         }
@@ -226,7 +234,7 @@ class LpjModel
     public function upsertLpjItemBukti(int $lpjId, int $rabItemId, string $filename, array $itemData): bool
     {
         // Cek apakah item sudah ada di tbl_lpj_item berdasarkan rabItemId
-        $checkQuery = "SELECT lpjItemId FROM tbl_lpj_item 
+        $checkQuery = "SELECT lpjItemId, realisasi FROM tbl_lpj_item 
                        WHERE lpjId = ? AND rabItemId = ?";
         
         $stmt = mysqli_prepare($this->db, $checkQuery);
@@ -237,7 +245,8 @@ class LpjModel
         mysqli_stmt_close($stmt);
 
         if ($existing) {
-            // ✅ UPDATE: Item sudah ada, update file bukti
+            // ✅ UPDATE: Item sudah ada, update file bukti saja
+            // Realisasi dibiarkan apa adanya (tetap menggunakan nilai yang ada di DB)
             $updateQuery = "UPDATE tbl_lpj_item 
                            SET fileBukti = ?
                            WHERE lpjItemId = ?";
@@ -267,7 +276,9 @@ class LpjModel
             $vol2 = $itemData['vol2'] ?? 0;
             $hargaSatuan = $itemData['hargaSatuan'] ?? $itemData['harga_satuan'] ?? 0;
             $totalRencana = $itemData['totalRencana'] ?? $itemData['total_harga'] ?? 0;
-            $realisasi = $itemData['realisasi'] ?? $totalRencana; // Default realisasi = rencana
+            
+            // Saat pertama kali upload bukti (INSERT), set realisasi = total rencana sebagai default
+            $realisasi = $itemData['realisasi'] ?? $totalRencana; 
             
             mysqli_stmt_bind_param(
                 $stmt,
@@ -352,6 +363,16 @@ class LpjModel
             'total' => (int)($data['total'] ?? 0),
             'uploaded' => (int)($data['uploaded'] ?? 0)
         ];
+    }
+
+    /**
+     * ✅ Alias method untuk compatibility
+     * @param int $lpjId
+     * @return array ['total' => int, 'uploaded' => int]
+     */
+    public function getUploadBuktiStatus(int $lpjId): array
+    {
+        return $this->countUploadedBukti($lpjId);
     }
 
     /**
@@ -512,6 +533,7 @@ class LpjModel
                     'lpj_id' => $row['lpjId'],
                     'kegiatan_id' => $row['kegiatanId'],
                     'grand_total_realisasi' => $row['grandTotalRealisasi'],
+                    'status_id' => $row['statusId'],
                     'submitted_at' => $row['submittedAt'],
                     'approved_at' => $row['approvedAt'],
                     'tenggat_lpj' => $row['tenggatLpj'],

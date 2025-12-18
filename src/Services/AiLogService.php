@@ -23,7 +23,7 @@ class AiLogService
      */
     public function getSmartSummary(int $limit = 50, int $cacheDurationSeconds = 3600): array
     {
-        $modelName = 'Gemini 2.5 Flash'; // Source of Truth for Model Name in Service
+        $modelName = 'Gemini 3 Flash'; // Source of Truth for Model Name in Service
 
         // 1. Check Cache (if DB is available)
         if ($this->db) {
@@ -153,7 +153,7 @@ class AiLogService
 
         try {
             // Using Gemini 1.5 Flash model (more widely available on Free Tier)
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
             
             $headers = [
                 'Content-Type: application/json',

@@ -8,6 +8,9 @@ $is_revisi = (strtolower($status) === 'revisi');
 $is_disetujui = (strtolower($status) === 'disetujui' || strtolower($status) === 'usulan disetujui');
 $is_ditolak = (strtolower($status) === 'ditolak');
 
+// Get kegiatan ID for edit link
+$kegiatanId = $kegiatan_data['kegiatanId'] ?? ($id ?? 0);
+
 $komentar_revisi = $komentar_revisi ?? [];
 $komentar_penolakan = $komentar_penolakan ?? '';
 $kegiatan_data = $kegiatan_data ?? [];
@@ -98,7 +101,14 @@ function isEditable($field_name, $is_revisi_mode, $komentar_list) {
                 <i class="fas fa-times-circle text-red-500 text-xl sm:text-2xl mt-0.5 flex-shrink-0"></i>
                 <div class="ml-3 sm:ml-4 flex-1">
                     <h3 class="text-base sm:text-lg font-bold text-red-800">Usulan Ditolak</h3>
-                    <p class="text-xs sm:text-sm text-red-700 mt-1 break-words">Alasan: "<?= htmlspecialchars($komentar_penolakan); ?>"</p>
+                    <?php if (!empty($komentar_penolakan)): ?>
+                        <p class="text-xs sm:text-sm text-red-700 mt-2 mb-1 font-semibold">Alasan Penolakan:</p>
+                        <div class="bg-white p-3 rounded border border-red-200 text-sm text-gray-700 mt-1">
+                            <?= nl2br(htmlspecialchars($komentar_penolakan)); ?>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-xs sm:text-sm text-red-700 mt-1 italic">Tidak ada alasan penolakan yang tercatat.</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -468,9 +478,10 @@ function isEditable($field_name, $is_revisi_mode, $komentar_list) {
                 </a>
                 <div class="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4 w-full sm:w-auto order-1 sm:order-2">
                     <?php if ($is_revisi): ?>
-                        <button type="submit" id="btn-simpan-revisi" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-yellow-600 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg text-sm sm:text-base">
-                            <i class="fas fa-save"></i> <span>Simpan Revisi</span>
-                        </button>
+                        <a href="/docutrack/public/admin/detail-kak/<?= htmlspecialchars($kegiatan_data['kegiatanId'] ?? $id ?? 0) ?>/edit-usulan" 
+                           class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-yellow-600 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg text-sm sm:text-base">
+                            <i class="fas fa-edit"></i> <span>Edit Usulan</span>
+                        </a>
                     <?php elseif ($is_disetujui): ?>
                         <button type="button" id="print-pdf-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 text-white font-semibold px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-red-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg text-sm sm:text-base">
                             <i class="fas fa-print"></i> <span>Print PDF</span>
