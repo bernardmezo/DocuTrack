@@ -82,8 +82,6 @@ class WadirService
                         (int) $kegiatan['userId'],
                         'APPROVAL',
                         "Usulan kegiatan \"{$kegiatan['namaKegiatan']}\" telah disetujui oleh Wakil Direktur.",
-                        $kegiatanId,
-                        'APPROVAL',
                         $kegiatanId
                     );
                 }

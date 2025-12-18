@@ -166,7 +166,7 @@ class PengajuanLpjController extends Controller
                         $pengusulId = $lpjData['userId'];
                         $namaKegiatan = $lpjData['namaKegiatan'] ?? 'Kegiatan';
                         $pesan = "LPJ untuk kegiatan '{$namaKegiatan}' telah disetujui oleh Bendahara.";
-                        $this->logStatusService->createNotification($pengusulId, 'APPROVAL', $pesan, $lpj_id, null, $lpjData['kegiatanId']);
+                        $this->logStatusService->createNotification($pengusulId, 'APPROVAL', $pesan, $lpj_id);
                     }
                     // --- End Notifikasi ---
                 } else {
@@ -203,7 +203,7 @@ class PengajuanLpjController extends Controller
                         $pengusulId = $lpjData['userId'];
                         $namaKegiatan = $lpjData['namaKegiatan'] ?? 'Kegiatan';
                         $pesan = "LPJ untuk kegiatan '{$namaKegiatan}' memerlukan revisi. \nCatatan: " . ($catatan_umum ?: "Lihat detail LPJ untuk komentar item.");
-                        $this->logStatusService->createNotification($pengusulId, 'REVISION', $pesan, $lpj_id, null, $lpjData['kegiatanId']);
+                        $this->logStatusService->createNotification($pengusulId, 'REVISION', $pesan, $lpj_id);
                     }
                 } else {
                     throw new Exception('Gagal memproses permintaan revisi.');

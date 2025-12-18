@@ -100,54 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     
-    // ============================================
-    // NOTIFICATION DROPDOWN FUNCTIONALITY
-    // ============================================
-    const notificationBtn = document.getElementById('notification-icon-button');
-    const notificationDropdown = document.getElementById('notification-dropdown');
-    
-    if (notificationBtn && notificationDropdown) {
-        // Toggle notification dropdown on click
-        notificationBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            notificationDropdown.classList.toggle('hidden');
-            
-            // Close profile menu if open
-            if (profileMenu && !profileMenu.classList.contains('hidden')) {
-                profileMenu.classList.add('hidden');
-            }
-        });
-        
-        // Close notification dropdown when clicking outside
-        window.addEventListener('click', function(e) {
-            if (!notificationBtn.contains(e.target) && !notificationDropdown.contains(e.target)) {
-                notificationDropdown.classList.add('hidden');
-            }
-        });
-        
-        // Close notification dropdown on Escape key
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !notificationDropdown.classList.contains('hidden')) {
-                notificationDropdown.classList.add('hidden');
-            }
-        });
-    }
-    
-    // Mark all notifications as read
-    const markAllReadBtn = document.getElementById('mark-all-as-read-btn');
-    if (markAllReadBtn) {
-        markAllReadBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Add your logic here to mark all notifications as read
-            console.log('Marking all notifications as read...');
-            
-            // Hide notification count
-            const notificationCount = document.getElementById('notification-count');
-            if (notificationCount) {
-                notificationCount.classList.add('hidden');
-            }
-        });
-    }
+
 });
 </script>
 <!-- Custom Page-specific Scripts -->

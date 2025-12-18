@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // File: src/views/layouts/bendahara/header.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -99,41 +99,28 @@ switch (strtolower($userRole)) {
                 
                 <!-- Notifikasi -->
                 <div class="relative" id="notification-container">
-                    <div id="notification-icon-button" class="relative text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200">
+                    <div id="notification-icon-button" class="text-base sm:text-lg md:text-xl text-gray-200 hover:text-white cursor-pointer transition-colors duration-200 relative">
                         <i class="fas fa-bell"></i>
-                        <span id="notification-count" class="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[9px] font-bold text-white ring-2 ring-[#0A4A7F] <?php echo (isset($unread_notifications_count) && $unread_notifications_count > 0) ? '' : 'hidden'; ?>">
-                            <?php echo isset($unread_notifications_count) ? $unread_notifications_count : 0; ?>
+                        <span id="notification-count" class="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 flex h-3.5 w-3.5 sm:h-4 sm:w-4 items-center justify-center rounded-full bg-red-600 text-[8px] sm:text-[9px] font-bold text-white ring-1 sm:ring-2 ring-[#0A4A7F] hidden">
+                            0
                         </span>
                     </div>
-                    <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-xl py-2 z-50 hidden border border-gray-100">
-                        <div class="flex justify-between items-center px-4 py-2 border-b">
-                            <h3 class="font-semibold text-gray-800">Notifikasi</h3>
-                            <button id="mark-all-as-read-btn" class="text-sm text-blue-600 hover:underline">Tandai semua dibaca</button>
+
+                    <!-- Dropdown Notifikasi -->
+                    <div id="notification-dropdown" class="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-lg shadow-xl z-50 hidden border border-gray-100 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <h3 class="text-sm font-semibold text-gray-700">Notifikasi</h3>
+                            <button id="mark-all-as-read-btn" class="text-xs text-blue-600 hover:text-blue-800 font-medium focus:outline-none">
+                                Tandai semua dibaca
+                            </button>
                         </div>
                         <div id="notification-list" class="max-h-80 overflow-y-auto">
-                            <?php if (!empty($notifications) && is_array($notifications)): ?>
-                                <?php foreach ($notifications as $notif): ?>
-                                    <div class="notification-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors" 
-                                         data-id="<?= htmlspecialchars($notif['id']) ?>">
-                                        <div class="flex items-start gap-3">
-                                            <div class="flex-shrink-0 mt-1">
-                                                <i class="fas fa-bell text-blue-500"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-gray-900"><?= htmlspecialchars($notif['title'] ?? 'Notifikasi') ?></p>
-                                                <p class="text-xs text-gray-600 mt-1"><?= htmlspecialchars($notif['message'] ?? '') ?></p>
-                                                <p class="text-xs text-gray-400 mt-1"><?= htmlspecialchars($notif['created_at'] ?? '') ?></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <div class="text-center text-gray-500 py-4">Tidak ada notifikasi baru.</div>
-                            <?php endif; ?>
+                            <!-- Item notifikasi akan dimuat di sini via JS -->
+                            <div class="text-center text-gray-500 py-4 text-sm">Memuat...</div>
                         </div>
-                        <div class="px-4 py-2 border-t text-center">
-                            <a href="#" id="view-all-notifications-link" class="text-sm text-blue-600 hover:underline">Lihat semua notifikasi</a>
-                        </div>
+                        <!-- <div class="px-4 py-2 border-t border-gray-100 text-center bg-gray-50">
+                            <a href="/docutrack/public/notifikasi" class="text-xs text-gray-600 hover:text-gray-800 font-medium">Lihat Semua</a>
+                        </div> -->
                     </div>
                 </div>
 

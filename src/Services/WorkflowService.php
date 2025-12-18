@@ -355,9 +355,9 @@ class WorkflowService
             $roleName = $this->getPositionName($rejectedBy);
             $this->logStatusModel->createNotification(
                 $row['userId'],
-                $kegiatanId,
-                "Pengajuan ditolak oleh {$roleName}",
-                "Alasan: {$reason}"
+                'REJECTION', // Corrected: Notification type as string
+                "Pengajuan ditolak oleh {$roleName}. Alasan: {$reason}", // Combined message and reason
+                $kegiatanId // Corrected: Reference ID
             );
         }
     }
@@ -379,9 +379,9 @@ class WorkflowService
             $roleName = $this->getPositionName($requestedBy);
             $this->logStatusModel->createNotification(
                 $row['userId'],
-                $kegiatanId,
-                "Revisi diminta oleh {$roleName}",
-                "Catatan: {$comments}"
+                'REVISION', // Corrected: Notification type as string
+                "Revisi diminta oleh {$roleName}. Catatan: {$comments}", // Combined message and comments
+                $kegiatanId // Corrected: Reference ID
             );
         }
     }
