@@ -328,9 +328,6 @@
                     Tahapan Pengajuan
                 </h2>
             </div>
-            <p class="text-gray-700 text-base sm:text-lg max-w-2xl mx-auto">
-                Mengalir seperti angin, setiap tahapan berjalan lancar dan transparan
-            </p>
         </div>
 
         <!-- Flowing Path Container -->
