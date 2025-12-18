@@ -248,7 +248,20 @@ $grand_total_rab = 0;
 <body>
 
 <div class="cover-page-container">
-    <img src="<?= __DIR__ . '/../../../public/assets/images/logo/logoPnj.JPG'; ?>" class="cover-logo" alt="Logo PNJ" style="width: 300px;">
+    <?php
+    // Path logo yang benar
+    $logoPath = __DIR__ . '/../../../public/assets/images/logo/logoPnj.jpeg';
+    
+    // Gunakan base64 encoding jika file ada, atau skip jika tidak ada
+    if (file_exists($logoPath)) {
+        $imageData = base64_encode(file_get_contents($logoPath));
+        $src = 'data:image/jpeg;base64,' . $imageData;
+    } else {
+        // Fallback: gunakan URL atau skip
+        $src = '/docutrack/public/assets/images/logo/logoPnj.jpeg';
+    }
+    ?>
+    <img src="<?= $src; ?>" class="cover-logo" alt="Logo PNJ" style="width: 300px;">
 
     <div class="cover-main-title">
         KERANGKA ACUAN KERJA

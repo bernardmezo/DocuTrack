@@ -74,6 +74,12 @@ return [
         'method'     => 'show',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
     ],
+    // Route untuk download PDF KAK
+    '/admin/detail-kak/{id}/pdf' => [
+        'controller' => 'Admin\DetailKakController',
+        'method'     => 'downloadPdf',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+    ],
     '/admin/pengajuan-usulan' => [
         'controller' => 'Admin\PengajuanUsulanController',
         'method'     => 'index',
