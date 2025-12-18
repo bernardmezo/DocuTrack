@@ -530,7 +530,8 @@ if (!function_exists('formatRupiah')) {
             <div id="file-preview-area" class="hidden mt-4">
                 <div class="flex items-center justify-between bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center gap-3">
-                        <i class="fas fa-file-alt text-3xl text-green-600"></i>
+                        <i class="fas fa-file-alt text-3xl text-green-600 hidden" id="file-icon-placeholder"></i>
+                        <img id="image-preview" src="#" alt="Image Preview" class="max-h-24 rounded-md hidden object-cover">
                         <div>
                             <span id="file-preview-name" class="text-sm font-medium text-gray-800 block">namafile.pdf</span>
                             <span class="text-xs text-gray-500">Siap diupload</span>
@@ -616,19 +617,40 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedFile = null;
         fileInput.value = '';
         filePreview.classList.add('hidden');
+        document.getElementById('image-preview').classList.add('hidden');
+        document.getElementById('image-preview').src = '#';
+        document.getElementById('file-icon-placeholder').classList.remove('hidden'); // Show file icon for non-image files
     }
 
     function handleFile(file) {
-        if (file && (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/jpg')) {
-            if (file.size > 5 * 1024 * 1024) {
-                alert('Ukuran file maksimal 5MB');
-                return;
-            }
+        if (!file) {
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran file maksimal 5MB');
+            resetForm();
+            return;
+        }
+
+        // Check if the file is an image
+        if (file.type.startsWith('image/')) {
             selectedFile = file;
             filePreviewName.textContent = file.name;
             filePreview.classList.remove('hidden');
+            
+            // Show image preview
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview').classList.remove('hidden');
+                document.getElementById('file-icon-placeholder').classList.add('hidden'); // Hide file icon
+            };
+            reader.readAsDataURL(file);
         } else {
-            alert('Format file tidak didukung. Gunakan PNG atau JPG.');
+            // Not an image, show generic file icon
+            alert('Format file tidak didukung. Harap upload gambar (PNG, JPG).');
+            resetForm();
         }
     }
 
