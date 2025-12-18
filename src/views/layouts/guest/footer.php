@@ -3,19 +3,32 @@
     <footer class="relative w-full text-white bg-white">
     
     <div class="absolute inset-0 w-full h-full z-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-0 h-full w-full min-w-[1200px] left-1/2 -translate-x-1/2 lg:w-full lg:min-w-0 lg:left-0 lg:translate-x-0">
-            <svg class="w-full h-full" viewBox="0 0 1440 534" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                <path d="M916.136 106.928C531.374 -88.8183 240.667 34.5848 0 83.8337V534H1440V83.8337C1304.74 133.083 1065.74 183.038 916.136 106.928Z" fill="url(#paint_footer_gradient)"/>
-                <defs>
-                    <linearGradient id="paint_footer_gradient" x1="720" y1="0" x2="720" y2="534" gradientUnits="userSpaceOnUse">
-                        <stop stop-color="#114177"/>
-                        <stop offset="0.5" stop-color="#006A9A"/>
-                        <stop offset="1" stop-color="#17A18A"/>
-                    </linearGradient>
-                </defs>
-            </svg>
-        </div>
+    <div class="absolute top-0 h-full w-full min-w-[1200px] left-1/2 -translate-x-1/2 lg:w-full lg:min-w-0 lg:left-0 lg:translate-x-0">
+        <!-- SVG untuk Desktop (lg ke atas) -->
+        <svg class="hidden lg:block w-full h-full" viewBox="0 0 1440 534" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M916.136 106.928C531.374 -88.8183 240.667 34.5848 0 83.8337V534H1440V83.8337C1304.74 133.083 1065.74 183.038 916.136 106.928Z" fill="url(#paint_footer_gradient_desktop)"/>
+            <defs>
+                <linearGradient id="paint_footer_gradient_desktop" x1="720" y1="0" x2="720" y2="534" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#114177"/>
+                    <stop offset="0.5" stop-color="#006A9A"/>
+                    <stop offset="1" stop-color="#17A18A"/>
+                </linearGradient>
+            </defs>
+        </svg>
+        
+        <!-- SVG untuk Mobile (di bawah lg) - Full dengan Lengkungan Kecil -->
+        <svg class="block lg:hidden w-full h-full" viewBox="0 0 1440 534" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M0 80C240 50 480 40 720 50C960 60 1200 70 1440 80V534H0V80Z" fill="url(#paint_footer_gradient_mobile)"/>
+            <defs>
+                <linearGradient id="paint_footer_gradient_mobile" x1="720" y1="40" x2="720" y2="534" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#114177"/>
+                    <stop offset="0.5" stop-color="#006A9A"/>
+                    <stop offset="1" stop-color="#17A18A"/>
+                </linearGradient>
+            </defs>
+        </svg>
     </div>
+</div>
 
     <div class="relative z-10 w-full px-6 pt-44 pb-10 sm:px-10 sm:pt-48 sm:pb-12 lg:px-20 lg:pt-52">
         
