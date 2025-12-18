@@ -38,8 +38,27 @@ spl_autoload_register(function ($class) {
     }
 });
 
-if (file_exists(DOCUTRACK_ROOT . '/vendor/autoload.php')) {
-    require DOCUTRACK_ROOT . '/vendor/autoload.php';
+// Load Composer autoload
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// Manual autoload mPDF jika composer gagal
+if (!class_exists('\Mpdf\Mpdf')) {
+    spl_autoload_register(function ($class) {
+        $prefix = 'Mpdf\\';
+        $base_dir = __DIR__ . '/../vendor/mpdf/mpdf/src/';
+
+        $len = strlen($prefix);
+        if (strncmp($prefix, $class, $len) !== 0) {
+            return;
+        }
+
+        $relative_class = substr($class, $len);
+        $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+
+        if (file_exists($file)) {
+            require $file;
+        }
+    });
 }
 
 // Load .env file variables

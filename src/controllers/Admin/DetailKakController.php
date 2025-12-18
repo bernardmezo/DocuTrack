@@ -4,19 +4,15 @@ namespace App\Controllers\Admin;
 
 use App\Core\Controller;
 use App\Models\Admin\AdminModel;
-
-// Corrected to use namespaced AdminModel
+use App\Services\PdfService;
 
 class DetailKakController extends Controller
 {
- // Renamed class to match file naming convention
-
     private $model;
 
     public function __construct()
     {
-        parent::__construct(); // Initialize $this->db from parent Controller
-        // Use the fully qualified class name for AdminModel
+        parent::__construct();
         $this->model = new AdminModel($this->db);
     }
 
@@ -93,5 +89,123 @@ class DetailKakController extends Controller
         ]);
 
         $this->view('pages/admin/detail_kak', $data, 'admin');
+    }
+
+    public function downloadPdf($id)
+    {
+        try {
+            // Ambil data kegiatan
+            $dataDB = $this->model->getDetailKegiatan($id);
+
+            if (!$dataDB) {
+                http_response_code(404);
+                die("Kegiatan dengan ID $id tidak ditemukan.");
+            }
+
+            $kakId = $dataDB['kakId'];
+
+            // Ambil data pendukung
+            $indikator  = $this->model->getIndikatorByKAK($kakId);
+            $tahapan    = $this->model->getTahapanByKAK($kakId);
+            $rab        = $this->model->getRABByKAK($kakId);
+
+            // Format tahapan
+            $tahapan_string = "";
+            foreach ($tahapan as $index => $tahap) {
+                $tahapan_string .= ($index + 1) . ". " . $tahap . "\n";
+            }
+
+            $iku_array = !empty($dataDB['iku']) ? explode(',', $dataDB['iku']) : [];
+
+            // Prepare data untuk PDF
+            $kegiatan_data = [
+                'nama_pengusul' => $dataDB['nama_pengusul'] ?? '-',
+                'nim_pengusul' => $dataDB['nim_pelaksana'] ?? '-',
+                'nama_pelaksana' => $dataDB['nama_pelaksana'] ?? '-',
+                'nama_penanggung_jawab' => $dataDB['nama_pj'] ?? '-',
+                'nip_penanggung_jawab' => $dataDB['nim_pj'] ?? '-',
+                'jurusan' => $dataDB['jurusanPenyelenggara'] ?? '-',
+                'prodi' => $dataDB['prodi'] ?? '-', // Tambahkan prodi
+                'nama_kegiatan' => $dataDB['namaKegiatan'] ?? 'Tidak ada judul',
+                'gambaran_umum' => $dataDB['gambaranUmum'] ?? '-',
+                'penerima_manfaat' => $dataDB['penerimaManfaat'] ?? '-',
+                'metode_pelaksanaan' => $dataDB['metodePelaksanaan'] ?? '-',
+                'tahapan_kegiatan' => $tahapan_string,
+                'tanggal_mulai' => $dataDB['tanggal_mulai'] ?? null,
+                'tanggal_selesai' => $dataDB['tanggal_selesai'] ?? null
+            ];
+
+            // Hitung grand total RAB
+            $grand_total_rab = 0;
+            foreach ($rab as $items) {
+                if (is_array($items)) {
+                    foreach ($items as $item) {
+                        $vol1 = $item['vol1'] ?? 0;
+                        $vol2 = $item['vol2'] ?? 1;
+                        $harga = $item['harga'] ?? 0;
+                        $grand_total_rab += ($vol1 * $vol2 * $harga);
+                    }
+                }
+            }
+
+            // Data untuk template PDF
+            $pdfData = [
+                'kegiatan_data' => $kegiatan_data,
+                'iku_data' => $iku_array,
+                'indikator_data' => $indikator,
+                'rab_data' => $rab,
+                'grand_total_rab' => $grand_total_rab,
+                'kode_mak' => $dataDB['buktiMAK'] ?? '-',
+                'status' => ucfirst($dataDB['status_text'] ?? 'Menunggu'),
+                'pdf_title' => 'KAK - ' . $dataDB['namaKegiatan'],
+                'pdf_author' => 'DocuTrack System'
+            ];
+
+            // Generate PDF
+            $pdfService = new PdfService();
+            
+            // Path yang benar ke template
+            $templatePath = dirname(__DIR__) . '/../views/pdf/kak_template.php';
+            
+            // Debug: Cek apakah file ada
+            if (!file_exists($templatePath)) {
+                throw new \Exception("Template PDF tidak ditemukan di: " . $templatePath);
+            }
+            
+            // Nama file: KAK_{nama_kegiatan}_{tanggal}.pdf
+            $namaKegiatan = preg_replace('/[^a-zA-Z0-9_-]/', '_', $dataDB['namaKegiatan']);
+            $filename = 'KAK_' . substr($namaKegiatan, 0, 30) . '_' . date('Ymd') . '.pdf';
+            
+            // Konfigurasi mPDF
+            $config = [
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'margin_left' => 25,
+                'margin_right' => 25,
+                'margin_top' => 25,
+                'margin_bottom' => 25,
+                'orientation' => 'P'
+            ];
+            
+            // Mode 'D' = Download
+            $pdfService->generate($templatePath, $pdfData, $filename, 'D', $config);
+            
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            error_log("PDF Generation Error: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            
+            http_response_code(500);
+            
+            // Tampilkan error detail di development mode
+            if (getenv('APP_ENV') === 'development') {
+                echo "<h1>Error Generating PDF</h1>";
+                echo "<p><strong>Message:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
+                echo "<p><strong>File:</strong> " . htmlspecialchars($e->getFile()) . " on line " . $e->getLine() . "</p>";
+                echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+            } else {
+                echo "Terjadi kesalahan saat membuat PDF. Silakan hubungi administrator.";
+            }
+        }
     }
 }

@@ -19,6 +19,16 @@ return [
         'method'     => 'logout',
         'middleware' => [],
     ],
+    '/captcha' => [
+        'controller' => 'CaptchaController',
+        'method'     => 'generate',
+        'middleware' => [],
+    ],
+    '/captcha/refresh' => [
+        'controller' => 'CaptchaController',
+        'method'     => 'refresh',
+        'middleware' => [],
+    ],
     // Health Check routes (replaces direct access files like cek_koneksi.php)
     '/health-check' => [
         'controller' => 'HealthCheckController',
@@ -72,6 +82,12 @@ return [
     '/admin/detail-kak/show/{id}' => [
         'controller' => 'Admin\DetailKakController',
         'method'     => 'show',
+        'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
+    ],
+    // Route untuk download PDF KAK
+    '/admin/detail-kak/{id}/pdf' => [
+        'controller' => 'Admin\DetailKakController',
+        'method'     => 'downloadPdf',
         'middleware' => ['AuthMiddleware', 'AdminMiddleware'],
     ],
     '/admin/pengajuan-usulan' => [
