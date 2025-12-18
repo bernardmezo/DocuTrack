@@ -408,12 +408,24 @@ if (!function_exists('formatRupiah')) {
                                             <input type="hidden" name="items[<?php echo $item_id; ?>][file_bukti]" value="<?php echo htmlspecialchars($bukti); ?>">
                                         <?php else : ?>
                                             <!-- ✅ Bukti belum ada, tampilkan button upload -->
+                                            <?php
+                                            // 🔍 DEBUG: Log LENGKAP semua variabel status
+                                            error_log("🔘 ========== BUTTON DEBUG ==========");
+                                            error_log("🔍 STATUS: '" . ($status ?? 'UNDEFINED') . "'");
+                                            error_log("🔍 Flags: is_setuju=" . ($is_setuju ? 'TRUE' : 'FALSE') . 
+                                                     ", is_menunggu=" . ($is_menunggu ? 'TRUE' : 'FALSE'));
+                                            error_log("🔍 DISABLED: " . (($is_setuju || $is_menunggu) ? '🔴 YES' : '🟢 NO'));
+                                            error_log("🔍 Item: " . ($item['uraian'] ?? 'NULL'));
+                                            ?>
                                             <button type="button" 
                                                     class="btn-upload-bukti bg-blue-600 text-white px-3 py-1.5 rounded-md text-xs hover:bg-blue-700"
                                                     data-rab-item-id="<?php echo $item_id; ?>"  
                                                     data-item-name="<?php echo htmlspecialchars($item['uraian']); ?>"
-                                                    <?php echo ($is_setuju || $is_menunggu) ? 'disabled' : ''; ?>>
-                                                <i class="fas fa-upload"></i>
+                                                    data-debug-status="<?php echo htmlspecialchars($status); ?>"
+                                                    style="border: 3px solid <?php echo ($is_setuju || $is_menunggu) ? 'red' : 'lime'; ?> !important;" 
+                                                    <?php echo ($is_setuju || $is_menunggu) ? '' : 'disabled'; ?>>
+                                                <i class="fas fa-upload"></i> 
+                                                [<?php echo strtoupper($status); ?>]
                                             </button>
                                             <div id="bukti-display-<?php echo $item_id; ?>" 
                                                  class="hidden items-center justify-center gap-2 text-green-600">
@@ -933,5 +945,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial check on load
     checkAllBuktiUploaded();
+    
+    // 🔍 DEBUG: Final check - apakah button bisa diklik manual?
+    console.log('🔍 DEBUG: Script initialization complete!');
+    console.log('🔍 DEBUG: Total upload buttons found:', document.querySelectorAll('.btn-upload-bukti').length);
+    
+    // Test: Coba klik programmatically
+    setTimeout(() => {
+        const firstBtn = document.querySelector('.btn-upload-bukti');
+        if (firstBtn) {
+            console.log('🔍 DEBUG: First button details:', {
+                id: firstBtn.id,
+                disabled: firstBtn.disabled,
+                style: firstBtn.getAttribute('style'),
+                display: window.getComputedStyle(firstBtn).display,
+                visibility: window.getComputedStyle(firstBtn).visibility,
+                pointerEvents: window.getComputedStyle(firstBtn).pointerEvents,
+                zIndex: window.getComputedStyle(firstBtn).zIndex
+            });
+        }
+    }, 1000);
 });
 </script>

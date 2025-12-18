@@ -60,6 +60,13 @@ class PengajuanLpjController extends Controller
 
     $status = strtolower($lpj_detail['status'] ?? 'draft');
     
+    // 🔍 DEBUG: Log status dari database
+    error_log("🔍 ========== STATUS DEBUG (Controller) ==========");
+    error_log("🔍 RAW status dari DB: '" . ($lpj_detail['status'] ?? 'NULL') . "'");
+    error_log("🔍 After strtolower: '" . $status . "'");
+    error_log("🔍 LPJ Detail keys: " . implode(', ', array_keys($lpj_detail)));
+    error_log("🔍 ================================================");
+    
     $kegiatan_data = [
         'kegiatanId' => $lpj_detail['kegiatanId'],
         'nama_kegiatan' => $lpj_detail['nama_kegiatan'],
