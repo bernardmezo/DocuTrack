@@ -39,30 +39,32 @@ class LpjService
                  throw new Exception("LPJ cannot be submitted. No funds have been disbursed for this activity yet.");
             }
 
+            // Get or create LPJ record
             $existingLpj = $this->lpjModel->getLpjWithItemsByKegiatanId($kegiatanId);
             $lpjId = $existingLpj ? $existingLpj['lpj_id'] : $this->lpjModel->insertLpj($kegiatanId);
 
             if (!$lpjId) {
-                throw new Exception("Gagal memproses draft LPJ.");
+                throw new Exception("Gagal memproses record LPJ.");
             }
 
-            if ($existingLpj) {
-                $this->lpjModel->deleteLpjItemsByLpjId($lpjId);
-            }
-
+            // Update realisasi items (Upsert behavior to preserve existing fileBukti)
             if (!empty($items)) {
-                $dbItems = array_map(fn($item) => [
-                    'jenis_belanja' => $item['kategori'] ?? 'Lainnya',
-                    'uraian' => $item['uraian'] ?? '',
-                    'rincian' => $item['rincian'] ?? '',
-                    'satuan' => $item['satuan'] ?? '',
-                    'total_harga' => floatval($item['harga_satuan'] ?? 0),
-                    'sub_total' => floatval($item['total'] ?? 0),
-                    'file_bukti_nota' => $item['file_bukti'] ?? null
-                ], $items);
+                // [VALIDATION] Ensure realisasi <= plan
+                foreach ($items as $item) {
+                    $rabItemId = (int)$item['id'];
+                    $realisasiVal = floatval($item['total'] ?? 0);
+                    
+                    $rabData = $this->lpjModel->getRABItemById($rabItemId);
+                    if ($rabData) {
+                        $maxPlan = floatval($rabData['totalRencana'] ?? 0);
+                        if ($realisasiVal > $maxPlan) {
+                            throw new Exception("Item '{$rabData['uraian']}' melebihi anggaran! (Realisasi: {$realisasiVal}, Anggaran: {$maxPlan})");
+                        }
+                    }
+                }
 
-                if (!$this->lpjModel->insertLpjItems($lpjId, $dbItems)) {
-                    throw new Exception("Gagal menyimpan item LPJ.");
+                if (!$this->lpjModel->updateLpjItemsRealisasi((int)$lpjId, $items)) {
+                    throw new Exception("Gagal memperbarui item realisasi LPJ.");
                 }
             }
 
@@ -76,7 +78,7 @@ class LpjService
             if ($this->db->in_transaction) {
                 $this->db->rollback();
             }
-            // Re-throw the exception to be caught by the controller or global handler
+            error_log("❌ LpjService::submitLpj Error: " . $e->getMessage());
             throw $e;
         }
     }

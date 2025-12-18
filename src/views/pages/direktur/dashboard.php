@@ -193,9 +193,12 @@
                 <i class="fas fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                 <select id="filterJurusan" class="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 border-transparent rounded-lg focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all outline-none appearance-none text-slate-600 cursor-pointer">
                     <option value="">Semua Jurusan</option>
-                    <option value="Teknik Informatika">Teknik Informatika</option>
-                    <option value="Akuntansi">Akuntansi</option>
-                    </select>
+                    <?php foreach ($list_jurusan as $jurusan): ?>
+                        <option value="<?= htmlspecialchars($jurusan) ?>">
+                            <?= htmlspecialchars($jurusan) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
                 <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] pointer-events-none"></i>
             </div>
         </div>
@@ -296,71 +299,17 @@
 </style>
 <script>
     // ===============================================
-    // DATA INITIALIZATION
+    // DATA INITIALIZATION FROM SERVER
     // ===============================================
     var phpDataKAK = <?= json_encode($list_kak ?? []) ?>;
-    var phpDataLPJ = <?= json_encode($list_lpj ?? []) ?>;
-    var listProdi = <?= json_encode($list_prodi ?? []) ?>;
-    
+    var listJurusan = <?= json_encode($list_jurusan ?? []) ?>;
+
     console.log('📊 Data Initialization:');
     console.log('- KAK:', phpDataKAK.length, 'items');
-    console.log('- LPJ:', phpDataLPJ.length, 'items');
-    console.log('- Prodi:', listProdi);
+    console.log('- Jurusan:', listJurusan);
 
-    // Generate data simulasi jika diperlukan
-    function generateSimulationDataProdi(count) {
-        var statuses = ['menunggu', 'disetujui', 'ditolak', 'revisi'];
-        var statusWeights = [0.35, 0.40, 0.15, 0.10];
-        var data = [];
-        var now = new Date();
-        
-        for (var i = 0; i < count; i++) {
-            var randomDaysAgo = Math.floor(Math.random() * 365);
-            var randomHours = Math.floor(Math.random() * 24);
-            var date = new Date(now);
-            date.setDate(date.getDate() - randomDaysAgo);
-            date.setHours(randomHours, 0, 0, 0);
-            
-            var random = Math.random();
-            var cumulativeWeight = 0;
-            var selectedStatus = statuses[0];
-            
-            for (var j = 0; j < statuses.length; j++) {
-                cumulativeWeight += statusWeights[j];
-                if (random <= cumulativeWeight) {
-                    selectedStatus = statuses[j];
-                    break;
-                }
-            }
-            
-            var randomProdi = listProdi[Math.floor(Math.random() * listProdi.length)];
-            
-            data.push({
-                id: i + 1,
-                created_at: date.toISOString(),
-                tanggal: date.toISOString().split('T')[0],
-                status: selectedStatus,
-                jurusan: randomProdi,
-                nama: 'Usulan ' + (i + 1)
-            });
-        }
-        
-        return data.sort(function(a, b) {
-            return new Date(b.created_at) - new Date(a.created_at);
-        });
-    }
-
-    var hasValidData = phpDataKAK.length > 0 && phpDataKAK[0].hasOwnProperty('created_at');
-    
-    if (!hasValidData || phpDataKAK.length < 10) {
-        console.log('⚠️ Menggunakan data simulasi untuk grafik');
-        window.dataKAK = generateSimulationDataProdi(80);
-        window.dataLPJ = generateSimulationDataProdi(60);
-    } else {
-        console.log('✅ Menggunakan data asli');
-        window.dataKAK = phpDataKAK;
-        window.dataLPJ = phpDataLPJ;
-    }
+    // Use real data dari server
+    window.dataKAK = phpDataKAK;
 
     // ===============================================
     // HELPER FUNCTIONS
@@ -370,7 +319,7 @@
         var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         
         return data.filter(function(item) {
-            var itemDate = new Date(item.created_at || item.tanggal);
+            var itemDate = new Date(item.createdAt);
             
             switch(period) {
                 case 'today':
@@ -393,39 +342,40 @@
         });
     }
 
-    function getProdiData(period) {
-        var allData = window.dataKAK.concat(window.dataLPJ);
-        var filteredData = filterDataByPeriod(allData, period);
+    function getJurusanData(period) {
+        var filteredData = filterDataByPeriod(window.dataKAK, period);
         
-        var prodiCounts = {};
-        listProdi.forEach(function(prodi) {
-            prodiCounts[prodi] = 0;
+        var jurusanCounts = {};
+        listJurusan.forEach(function(jurusan) {
+            jurusanCounts[jurusan] = 0;
         });
         
         filteredData.forEach(function(item) {
-            var prodi = item.jurusan;
-            if (prodiCounts.hasOwnProperty(prodi)) {
-                prodiCounts[prodi]++;
+            var jurusan = item.jurusanPenyelenggara;
+            if (jurusanCounts.hasOwnProperty(jurusan)) {
+                jurusanCounts[jurusan]++;
             }
         });
         
-        var sortedProdi = Object.keys(prodiCounts).sort(function(a, b) {
-            return prodiCounts[b] - prodiCounts[a];
+        // Sort by count descending
+        var sortedJurusan = Object.keys(jurusanCounts).sort(function(a, b) {
+            return jurusanCounts[b] - jurusanCounts[a];
         });
         
-        var values = sortedProdi.map(function(prodi) {
-            return prodiCounts[prodi];
+        var values = sortedJurusan.map(function(jurusan) {
+            return jurusanCounts[jurusan];
         });
         
-        return { labels: sortedProdi, data: values };
+        return { labels: sortedJurusan, data: values };
     }
 
     function updateSummaryStats(data) {
         var total = data.reduce(function(sum, val) { return sum + val; }, 0);
-        var max = Math.max.apply(null, data);
+        var max = data.length > 0 ? Math.max.apply(null, data) : 0;
         var avg = data.length > 0 ? (total / data.length).toFixed(1) : 0;
+        var totalJurusan = data.filter(function(val) { return val > 0; }).length;
         
-        document.getElementById('totalProdi').textContent = data.length;
+        document.getElementById('totalProdi').textContent = totalJurusan;
         document.getElementById('maxUsulan').textContent = max;
         document.getElementById('avgUsulan').textContent = avg;
         document.getElementById('totalUsulanProdi').textContent = total;
@@ -436,33 +386,47 @@
     // ===============================================
     var colorPalette = [
         'rgba(59, 130, 246, 0.85)',   // Blue
+        'rgba(16, 185, 129, 0.85)',   // Emerald
+        'rgba(245, 158, 11, 0.85)',   // Amber
+        'rgba(239, 68, 68, 0.85)',    // Red
+        'rgba(139, 92, 246, 0.85)',   // Violet
+        'rgba(236, 72, 153, 0.85)',   // Pink
+        'rgba(20, 184, 166, 0.85)',   // Teal
+        'rgba(249, 115, 22, 0.85)'    // Orange
     ];
 
     var borderColorPalette = [
-        'rgb(14, 165, 233)',
+        'rgb(37, 99, 235)',
+        'rgb(5, 150, 105)',
+        'rgb(217, 119, 6)',
+        'rgb(220, 38, 38)',
+        'rgb(109, 40, 217)',
+        'rgb(219, 39, 119)',
+        'rgb(13, 148, 136)',
+        'rgb(234, 88, 12)'
     ];
 
     // ===============================================
-    // BAR CHART - USULAN PER PRODI
+    // BAR CHART - USULAN PER JURUSAN
     // ===============================================
-    var prodiCtx = document.getElementById('prodiChart').getContext('2d');
+    var jurusanCtx = document.getElementById('prodiChart').getContext('2d');
     var currentPeriod = 'today';
-    var initialProdiData = getProdiData(currentPeriod);
+    var initialJurusanData = getJurusanData(currentPeriod);
     
-    var prodiChart = new Chart(prodiCtx, {
+    var jurusanChart = new Chart(jurusanCtx, {
         type: 'bar',
         data: {
-            labels: initialProdiData.labels,
+            labels: initialJurusanData.labels,
             datasets: [{
                 label: 'Jumlah Usulan',
-                data: initialProdiData.data,
+                data: initialJurusanData.data,
                 backgroundColor: colorPalette,
                 borderColor: borderColorPalette,
                 borderWidth: 2,
                 borderRadius: 8,
                 borderSkipped: false,
                 barThickness: 'flex',
-                maxBarThickness: 60
+                maxBarThickness: 80
             }]
         },
         options: {
@@ -487,7 +451,7 @@
                     callbacks: {
                         label: function(context) {
                             var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-                            var percentage = ((context.parsed.y / total) * 100).toFixed(1);
+                            var percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
                             return 'Jumlah: ' + context.parsed.y + ' usulan (' + percentage + '%)';
                         }
                     }
@@ -534,7 +498,7 @@
         }
     });
 
-    updateSummaryStats(initialProdiData.data);
+    updateSummaryStats(initialJurusanData.data);
 
     // ===============================================
     // FILTER BUTTONS
@@ -544,24 +508,26 @@
         btn.addEventListener('click', function() {
             filterButtons.forEach(function(b) {
                 b.classList.remove('active');
-                b.classList.remove('bg-gradient-to-r', 'from-indigo-500', 'to-purple-600', 'text-white');
+                b.classList.remove('bg-gradient-to-r', 'from-cyan-500', 'to-blue-600', 'text-white');
                 b.classList.add('bg-white', 'border-2', 'border-gray-200', 'text-gray-700');
             });
             this.classList.add('active');
+            this.classList.remove('bg-white', 'border-2', 'border-gray-200', 'text-gray-700');
+            this.classList.add('bg-gradient-to-r', 'from-cyan-500', 'to-blue-600', 'text-white');
             
             currentPeriod = this.getAttribute('data-filter');
-            var newData = getProdiData(currentPeriod);
+            var newData = getJurusanData(currentPeriod);
             
-            prodiChart.data.labels = newData.labels;
-            prodiChart.data.datasets[0].data = newData.data;
-            prodiChart.update('active');
+            jurusanChart.data.labels = newData.labels;
+            jurusanChart.data.datasets[0].data = newData.data;
+            jurusanChart.update('active');
             
             updateSummaryStats(newData.data);
         });
     });
 
     // ===============================================
-    // DONUT CHART
+    // DONUT CHART (tetap sama)
     // ===============================================
     var donutCtx = document.getElementById('donutChart').getContext('2d');
     var donutChart = new Chart(donutCtx, {
@@ -633,237 +599,183 @@
     });
 
     // ===============================================
-    // BAR CHART - DANA KELUAR PER JURUSAN
+    // BAR CHART - DANA KELUAR PER JURUSAN (LOAD VIA AJAX)
     // ===============================================
     var danaPerJurusanCtx = document.getElementById('danaPerJurusanChart').getContext('2d');
+    var danaPerJurusanChart = null;
 
-    // Color gradient untuk chart dana (Green Money Theme)
-    var danaColorPalette = [
-        'rgba(16, 185, 129, 0.90)',  // Emerald-500
-        'rgba(52, 211, 153, 0.85)',  // Emerald-400
-        'rgba(110, 231, 183, 0.85)', // Emerald-300
-        'rgba(34, 197, 94, 0.85)',   // Green-500
-        'rgba(74, 222, 128, 0.85)',  // Green-400
-        'rgba(134, 239, 172, 0.85)', // Green-300
-        'rgba(21, 128, 61, 0.85)',   // Green-700
-        'rgba(22, 163, 74, 0.85)'    // Green-600
-    ];
-
-    var danaBorderColorPalette = [
-        'rgb(5, 150, 105)',   // Emerald-600
-        'rgb(16, 185, 129)',  // Emerald-500
-        'rgb(52, 211, 153)',  // Emerald-400
-        'rgb(22, 163, 74)',   // Green-600
-        'rgb(34, 197, 94)',   // Green-500
-        'rgb(74, 222, 128)',  // Green-400
-        'rgb(20, 83, 45)',    // Green-800
-        'rgb(21, 128, 61)'    // Green-700
-    ];
-
-    var dummyJurusanData = {
-        labels: ['Teknik Informatika', 'Akuntansi', 'Administrasi Niaga', 'Teknik Elektro', 'Teknik Mesin', 'Teknik Sipil', 'Teknik Grafika', 'Pascasarjana'],
-        datasets: [{
-            label: 'Total Dana Keluar',
-            data: [75000000, 60000000, 45000000, 30000000, 25000000, 20000000, 15000000, 10000000],
-            backgroundColor: danaColorPalette,
-            borderColor: danaBorderColorPalette,
-            borderWidth: 2,
-            borderRadius: 8,
-            borderSkipped: false,
-            barThickness: 'flex',
-            maxBarThickness: 80
-        }]
-    };
-
-    var danaPerJurusanChart = new Chart(danaPerJurusanCtx, {
-        type: 'bar',
-        data: dummyJurusanData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                    padding: 16,
-                    cornerRadius: 12,
-                    titleFont: {
-                        size: 15,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 14
-                    },
-                    displayColors: true,
-                    callbacks: {
-                        label: function(context) {
-                            var label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            var formattedValue = new Intl.NumberFormat('id-ID', { 
-                                style: 'currency', 
-                                currency: 'IDR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            }).format(context.parsed.y);
-                            
-                            var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
-                            var percentage = ((context.parsed.y / total) * 100).toFixed(1);
-                            
-                            return label + formattedValue + ' (' + percentage + '%)';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(16, 185, 129, 0.08)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        font: {
-                            size: 12,
-                            weight: '500'
-                        },
-                        color: '#6b7280',
-                        padding: 8,
-                        callback: function(value) {
-                            if (value >= 1000000) {
-                                return 'Rp ' + (value / 1000000) + ' Jt';
-                            }
-                            return new Intl.NumberFormat('id-ID', { 
-                                style: 'currency', 
-                                currency: 'IDR',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            }).format(value);
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        font: {
-                            size: 11,
-                            weight: '600'
-                        },
-                        color: '#4b5563',
-                        maxRotation: 45,
-                        minRotation: 25,
-                        padding: 8
-                    }
-                }
-            },
-            animation: {
-                duration: 750,
-                easing: 'easeInOutQuart'
+    // Load data dana via AJAX dengan error handling
+    fetch('/docutrack/public/direktur/dashboard/api/dana-per-jurusan')
+        .then(response => {
+            console.log('Dana API Response Status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        }
-    });
+            return response.json();
+        })
+        .then(result => {
+            console.log('Dana API Result:', result);
+            
+            if (result.success && result.data) {
+                var danaData = result.data;
+                
+                // Cek apakah ada data
+                if (danaData.labels.length === 0 || danaData.labels[0] === 'Belum ada data') {
+                    console.warn('Tidak ada data dana yang tersedia');
+                    // Tampilkan pesan di chart area
+                    var chartContainer = danaPerJurusanCtx.canvas.parentElement;
+                    chartContainer.innerHTML = '<div class="flex items-center justify-center h-full"><p class="text-gray-400 italic">Belum ada data pencairan dana</p></div>';
+                    return;
+                }
+                
+                var danaColorPalette = [
+                    'rgba(16, 185, 129, 0.90)',
+                    'rgba(52, 211, 153, 0.85)',
+                    'rgba(110, 231, 183, 0.85)',
+                    'rgba(34, 197, 94, 0.85)',
+                    'rgba(74, 222, 128, 0.85)',
+                    'rgba(134, 239, 172, 0.85)',
+                    'rgba(21, 128, 61, 0.85)',
+                    'rgba(22, 163, 74, 0.85)'
+                ];
+
+                var danaBorderColorPalette = [
+                    'rgb(5, 150, 105)',
+                    'rgb(16, 185, 129)',
+                    'rgb(52, 211, 153)',
+                    'rgb(22, 163, 74)',
+                    'rgb(34, 197, 94)',
+                    'rgb(74, 222, 128)',
+                    'rgb(20, 83, 45)',
+                    'rgb(21, 128, 61)'
+                ];
+
+                danaPerJurusanChart = new Chart(danaPerJurusanCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: danaData.labels,
+                        datasets: [{
+                            label: 'Total Dana Keluar',
+                            data: danaData.data,
+                            backgroundColor: danaColorPalette,
+                            borderColor: danaBorderColorPalette,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            barThickness: 'flex',
+                            maxBarThickness: 80
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                                padding: 16,
+                                cornerRadius: 12,
+                                titleFont: {
+                                    size: 15,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 14
+                                },
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        var label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        var formattedValue = new Intl.NumberFormat('id-ID', { 
+                                            style: 'currency', 
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0,
+                                            maximumFractionDigits: 0
+                                        }).format(context.parsed.y);
+                                        
+                                        var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                        var percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
+                                        
+                                        return label + formattedValue + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(16, 185, 129, 0.08)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: '500'
+                                    },
+                                    color: '#6b7280',
+                                    padding: 8,
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return 'Rp ' + (value / 1000000) + ' Jt';
+                                        }
+                                        return new Intl.NumberFormat('id-ID', { 
+                                            style: 'currency', 
+                                            currency: 'IDR',
+                                            minimumFractionDigits: 0,
+                                            maximumFractionDigits: 0
+                                        }).format(value);
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false,
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 11,
+                                        weight: '600'
+                                    },
+                                    color: '#4b5563',
+                                    maxRotation: 45,
+                                    minRotation: 25,
+                                    padding: 8
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 750,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dana data:', error);
+            var chartContainer = danaPerJurusanCtx.canvas.parentElement;
+            chartContainer.innerHTML = '<div class="flex items-center justify-center h-full"><p class="text-red-400">Error: ' + error.message + '</p></div>';
+        });
 
     // ===============================================
-    // TABLE & MOBILE CARDS FUNCTIONALITY
+    // TABLE & PAGINATION (LOAD VIA AJAX)
     // ===============================================
     document.addEventListener('DOMContentLoaded', function() {
-        const dummyData = [
-            {
-                namaKegiatan: 'Seminar Nasional AI',
-                namaPengusul: 'Ahmad Subagja',
-                nim: '192837465',
-                prodi: 'Teknik Informatika',
-                jurusan: 'Teknik Informatika',
-                dana: 15000000
-            },
-            {
-                namaKegiatan: 'Lomba Akuntansi Nasional',
-                namaPengusul: 'Siti Aminah',
-                nim: '209876543',
-                prodi: 'Akuntansi',
-                jurusan: 'Akuntansi',
-                dana: 12500000
-            },
-            {
-                namaKegiatan: 'Workshop Marketing Digital',
-                namaPengusul: 'Budi Santoso',
-                nim: '218765432',
-                prodi: 'Administrasi Niaga',
-                jurusan: 'Administrasi Niaga',
-                dana: 7800000
-            },
-            {
-                namaKegiatan: 'Pameran Robotika',
-                namaPengusul: 'Dewi Lestari',
-                nim: '187654321',
-                prodi: 'Teknik Elektro',
-                jurusan: 'Teknik Elektro',
-                dana: 25000000
-            },
-            {
-                namaKegiatan: 'Kontes Mobil Hemat Energi',
-                namaPengusul: 'Eko Prasetyo',
-                nim: '176543210',
-                prodi: 'Teknik Mesin',
-                jurusan: 'Teknik Mesin',
-                dana: 50000000
-            },
-            {
-                namaKegiatan: 'Jembatan Inovasi 2025',
-                namaPengusul: 'Rina Fitriani',
-                nim: '227654321',
-                prodi: 'Teknik Sipil',
-                jurusan: 'Teknik Sipil',
-                dana: 32000000
-            },
-            {
-                namaKegiatan: 'Pameran Desain Grafis',
-                namaPengusul: 'Joko Susilo',
-                nim: '206543210',
-                prodi: 'Teknik Grafika',
-                jurusan: 'Teknik Grafika',
-                dana: 9500000
-            },
-            {
-                namaKegiatan: 'Seminar Kewirausahaan',
-                namaPengusul: 'Lina Marlina',
-                nim: '215432109',
-                prodi: 'Administrasi Niaga',
-                jurusan: 'Administrasi Niaga',
-                dana: 5000000
-            },
-            {
-                namaKegiatan: 'Pelatihan IoT',
-                namaPengusul: 'Yoga Pratama',
-                nim: '194321098',
-                prodi: 'Teknik Informatika',
-                jurusan: 'Teknik Informatika',
-                dana: 18000000
-            },
-            {
-                namaKegiatan: 'Olimpiade Akuntansi',
-                namaPengusul: 'Nadia Putri',
-                nim: '203210987',
-                prodi: 'Akuntansi',
-                jurusan: 'Akuntansi',
-                dana: 11000000
-            }
-        ];
-
         const tableBody = document.getElementById('pengajuanTableBody');
-        const cardsContainer = document.getElementById('pengajuanCardsContainer');
         const searchInput = document.getElementById('searchPengajuan');
         const jurusanFilter = document.getElementById('filterJurusan');
         const paginationContainer = document.getElementById('paginationContainer');
 
         let currentPage = 1;
-        const rowsPerPage = 5;
+        let currentSearch = '';
+        let currentJurusan = '';
 
         function formatCurrency(amount) {
             return new Intl.NumberFormat('id-ID', { 
@@ -875,61 +787,80 @@
 
         function getJurusanColor(jurusan) {
             const colors = {
-                'Teknik Informatika': 'bg-blue-100 text-blue-800 border-blue-200',
+                'Teknik Informatika dan Komputer': 'bg-blue-100 text-blue-800 border-blue-200',
                 'Akuntansi': 'bg-green-100 text-green-800 border-green-200',
                 'Administrasi Niaga': 'bg-purple-100 text-purple-800 border-purple-200',
                 'Teknik Elektro': 'bg-yellow-100 text-yellow-800 border-yellow-200',
                 'Teknik Mesin': 'bg-red-100 text-red-800 border-red-200',
                 'Teknik Sipil': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-                'Teknik Grafika': 'bg-pink-100 text-pink-800 border-pink-200',
+                'Teknik Grafika dan Penerbitan': 'bg-pink-100 text-pink-800 border-pink-200',
                 'Pascasarjana': 'bg-orange-100 text-orange-800 border-orange-200'
             };
             return colors[jurusan] || 'bg-gray-100 text-gray-800 border-gray-200';
         }
 
-        function renderTable() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedJurusan = jurusanFilter.value;
+        function loadPengajuan() {
+            const url = `/docutrack/public/direktur/dashboard/api/pengajuan?page=${currentPage}&search=${encodeURIComponent(currentSearch)}&jurusan=${encodeURIComponent(currentJurusan)}`;
+            
+            console.log('Loading pengajuan from:', url);
+            
+            // Show loading
+            tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-10"><i class="fas fa-spinner fa-spin text-blue-600 text-2xl"></i></td></tr>';
+            
+            fetch(url)
+                .then(response => {
+                    console.log('Pengajuan API Response Status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    console.log('Pengajuan API Result:', result);
+                    
+                    if (result.success && result.data) {
+                        renderTable(result.data);
+                    } else {
+                        throw new Error(result.error || 'Data tidak valid');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading pengajuan:', error);
+                    tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-10 text-red-500">Gagal memuat data: ${error.message}</td></tr>`;
+                });
+        }
 
-            let filteredData = dummyData.filter(item => {
-                const matchesSearch = 
-                    item.namaKegiatan.toLowerCase().includes(searchTerm) ||
-                    item.namaPengusul.toLowerCase().includes(searchTerm) ||
-                    item.nim.includes(searchTerm) ||
-                    item.prodi.toLowerCase().includes(searchTerm);
-                
-                const matchesJurusan = selectedJurusan === '' || item.jurusan === selectedJurusan;
-
-                return matchesSearch && matchesJurusan;
-            });
-
-            const totalRows = filteredData.length;
-            const totalPages = Math.ceil(totalRows / rowsPerPage);
-            const startIndex = (currentPage - 1) * rowsPerPage;
-            const endIndex = startIndex + rowsPerPage;
-            const paginatedData = filteredData.slice(startIndex, endIndex);
-
-            // Render Desktop Table
+        function renderTable(data) {
             tableBody.innerHTML = '';
-            paginatedData.forEach((item, index) => {
+            
+            if (data.items.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" class="text-center py-10 text-gray-400 italic">Tidak ada data</td></tr>';
+                paginationContainer.innerHTML = '';
+                document.getElementById('showingStart').textContent = '0';
+                document.getElementById('showingEnd').textContent = '0';
+                document.getElementById('showingTotal').textContent = '0';
+                return;
+            }
+
+            data.items.forEach((item, index) => {
                 const row = `
                     <tr class="bg-white border-b hover:bg-purple-50 transition-colors duration-200" style="animation-delay: ${index * 0.05}s">
                         <td class="px-6 py-4">
                             <div class="font-bold text-gray-800 mb-1">${item.namaKegiatan}</div>
                             <div class="text-xs text-gray-500">
-                                <i class="fas fa-user mr-1"></i>${item.namaPengusul} • 
-                                <i class="fas fa-id-card mr-1"></i>${item.nim} • 
-                                <i class="fas fa-graduation-cap mr-1"></i>${item.prodi}
+                                <i class="fas fa-user mr-1"></i>${item.namaPJ || '-'} • 
+                                <i class="fas fa-id-card mr-1"></i>${item.nimPelaksana || '-'} • 
+                                <i class="fas fa-graduation-cap mr-1"></i>${item.prodiPenyelenggara || '-'}
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${getJurusanColor(item.jurusan)} border">
-                                ${item.jurusan}
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold ${getJurusanColor(item.jurusanPenyelenggara)} border">
+                                ${item.jurusanPenyelenggara}
                             </span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="font-bold text-emerald-600 text-lg">
-                                <i class="fas fa-money-bill-wave mr-1"></i>${formatCurrency(item.dana)}
+                                <i class="fas fa-money-bill-wave mr-1"></i>${formatCurrency(item.estimasi_dana)}
                             </div>
                         </td>
                     </tr>
@@ -937,158 +868,73 @@
                 tableBody.innerHTML += row;
             });
 
-            // Render Mobile Cards
-            cardsContainer.innerHTML = '';
-            paginatedData.forEach((item, index) => {
-                const card = `
-                    <div class="card-item bg-white rounded-xl p-5 shadow-md hover:shadow-xl transition-all duration-300 border-2 border-purple-100 hover:border-purple-300" style="animation-delay: ${index * 0.05}s">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-gray-800 text-base mb-2 line-clamp-2">${item.namaKegiatan}</h3>
-                                <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${getJurusanColor(item.jurusan)} border mb-2">
-                                    ${item.jurusan}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="space-y-2 mb-3">
-                            <div class="flex items-center text-xs text-gray-600">
-                                <i class="fas fa-user w-4 mr-2 text-purple-500"></i>
-                                <span>${item.namaPengusul}</span>
-                            </div>
-                            <div class="flex items-center text-xs text-gray-600">
-                                <i class="fas fa-id-card w-4 mr-2 text-purple-500"></i>
-                                <span>${item.nim}</span>
-                            </div>
-                            <div class="flex items-center text-xs text-gray-600">
-                                <i class="fas fa-graduation-cap w-4 mr-2 text-purple-500"></i>
-                                <span>${item.prodi}</span>
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs text-gray-500 font-medium">Dana Kegiatan</span>
-                                <span class="font-bold text-emerald-600 text-base">
-                                    <i class="fas fa-money-bill-wave mr-1"></i>${formatCurrency(item.dana)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                cardsContainer.innerHTML += card;
-            });
-
-            renderPagination(totalPages, totalRows, startIndex, endIndex);
+            renderPagination(data);
         }
 
-        function renderPagination(totalPages, totalRows, startIndex, endIndex) {
+        function renderPagination(data) {
             paginationContainer.innerHTML = '';
+            
+            const totalPages = data.total_pages;
+            const prevDisabled = currentPage === 1;
+            const nextDisabled = currentPage === totalPages || totalPages === 0;
 
             // Previous button
-            const prevDisabled = currentPage === 1;
             paginationContainer.innerHTML += `
-                <li>
-                    <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight ${prevDisabled ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-gray-500 bg-white hover:bg-purple-50 hover:text-purple-600'} border border-gray-300 rounded-lg transition-all duration-200" data-page="${currentPage - 1}" ${prevDisabled ? 'onclick="return false;"' : ''}>
-                        <i class="fas fa-chevron-left text-xs"></i>
-                        <span class="ml-1 hidden sm:inline">Prev</span>
-                    </a>
-                </li>
+                <button class="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 ${prevDisabled ? 'text-slate-400 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-50'}" ${prevDisabled ? 'disabled' : ''} data-page="${currentPage - 1}">
+                    <i class="fas fa-chevron-left text-[10px]"></i>
+                </button>
             `;
 
-            // Page numbers with smart truncation
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-            if (endPage - startPage < maxVisiblePages - 1) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-
-            if (startPage > 1) {
-                paginationContainer.innerHTML += `
-                    <li>
-                        <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-all duration-200" data-page="1">1</a>
-                    </li>
-                `;
-                if (startPage > 2) {
-                    paginationContainer.innerHTML += `
-                        <li>
-                            <span class="flex items-center justify-center px-3 h-8 leading-tight text-gray-400 bg-white border border-gray-300 rounded-lg">...</span>
-                        </li>
-                    `;
-                }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
                 const isActive = currentPage === i;
                 paginationContainer.innerHTML += `
-                    <li>
-                        <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-600 font-bold shadow-md' : 'text-gray-500 bg-white border-gray-300 hover:bg-purple-50 hover:text-purple-600'} border rounded-lg transition-all duration-200" data-page="${i}">${i}</a>
-                    </li>
-                `;
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    paginationContainer.innerHTML += `
-                        <li>
-                            <span class="flex items-center justify-center px-3 h-8 leading-tight text-gray-400 bg-white border border-gray-300 rounded-lg">...</span>
-                        </li>
-                    `;
-                }
-                paginationContainer.innerHTML += `
-                    <li>
-                        <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-all duration-200" data-page="${totalPages}">${totalPages}</a>
-                    </li>
+                    <button class="h-8 w-8 flex items-center justify-center rounded-lg ${isActive ? 'bg-indigo-600 text-white font-medium shadow-sm shadow-indigo-200' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}" data-page="${i}">
+                        ${i}
+                    </button>
                 `;
             }
 
             // Next button
-            const nextDisabled = currentPage === totalPages || totalPages === 0;
             paginationContainer.innerHTML += `
-                <li>
-                    <a href="#" class="flex items-center justify-center px-3 h-8 leading-tight ${nextDisabled ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-gray-500 bg-white hover:bg-purple-50 hover:text-purple-600'} border border-gray-300 rounded-lg transition-all duration-200" data-page="${currentPage + 1}" ${nextDisabled ? 'onclick="return false;"' : ''}>
-                        <span class="mr-1 hidden sm:inline">Next</span>
-                        <i class="fas fa-chevron-right text-xs"></i>
-                    </a>
-                </li>
+                <button class="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 ${nextDisabled ? 'text-slate-400 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-50'}" ${nextDisabled ? 'disabled' : ''} data-page="${currentPage + 1}">
+                    <i class="fas fa-chevron-right text-[10px]"></i>
+                </button>
             `;
-            
+
             // Update showing info
-            const startInfo = totalRows > 0 ? startIndex + 1 : 0;
-            const endInfo = Math.min(endIndex, totalRows);
+            const startInfo = data.total > 0 ? ((currentPage - 1) * data.per_page) + 1 : 0;
+            const endInfo = Math.min(currentPage * data.per_page, data.total);
             document.getElementById('showingStart').textContent = startInfo;
             document.getElementById('showingEnd').textContent = endInfo;
-            document.getElementById('showingTotal').textContent = totalRows;
+            document.getElementById('showingTotal').textContent = data.total;
         }
 
-        searchInput.addEventListener('input', () => {
+        // Event listeners
+        searchInput.addEventListener('input', function() {
+            currentSearch = this.value;
             currentPage = 1;
-            renderTable();
+            loadPengajuan();
         });
 
-        jurusanFilter.addEventListener('change', () => {
+        jurusanFilter.addEventListener('change', function() {
+            currentJurusan = this.value;
             currentPage = 1;
-            renderTable();
+            loadPengajuan();
         });
 
         paginationContainer.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = e.target.closest('a');
-            if (target && !target.classList.contains('cursor-not-allowed')) {
-                const page = parseInt(target.dataset.page);
+            const button = e.target.closest('button');
+            if (button && !button.disabled) {
+                const page = parseInt(button.dataset.page);
                 if (page > 0 && !isNaN(page)) {
                     currentPage = page;
-                    renderTable();
-                    // Smooth scroll to table
-                    document.querySelector('[aria-label="Table navigation"]').scrollIntoView({ 
-                        behavior: 'smooth', 
-                        block: 'nearest' 
-                    });
+                    loadPengajuan();
                 }
             }
         });
 
-        // Initial render
-        renderTable();
+        // Initial load
+        loadPengajuan();
     });
 </script>

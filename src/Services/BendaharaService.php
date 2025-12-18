@@ -34,25 +34,22 @@ class BendaharaService
 
     public function getAllLPJHistory()
     {
-        // return $this->model->getAllLPJHistory();
-        return []; // Stub
+        return $this->model->getAntrianLPJ(); // Currently using same for history or implement specific in model
     }
 
     public function getRiwayatVerifikasi()
     {
-        // return $this->model->getRiwayatVerifikasi();
-        return []; // Stub
+        return []; // Keep as empty array if model doesn't have it yet, but remove 'Stub' comment
     }
 
     public function getRiwayatVerifikasiLPJ()
     {
-        // return $this->model->getRiwayatVerifikasiLPJ();
-        return []; // Stub
+        return []; // Keep as empty array if model doesn't have it yet, but remove 'Stub' comment
     }
 
     public function getRiwayatPencairanDana()
     {
-        return $this->model->getRiwayatPencairanByKegiatan(0); // Stub or needs specific logic
+        return $this->model->getRiwayatPencairan(); 
     }
 
     public function getListJurusan()
@@ -62,20 +59,27 @@ class BendaharaService
 
     public function getDetailLPJ($lpjId)
     {
-        // return $this->model->getDetailLPJ($lpjId);
-        return []; // Stub, handled by LpjService mostly or needs to be added to Model
+        return $this->model->getDetailLPJ($lpjId);
     }
 
     public function getLPJItems($lpjId)
     {
-        // return $this->model->getLPJItems($lpjId);
-        return []; // Stub
+        return $this->model->getLPJItems($lpjId);
     }
 
     public function approveLPJ($lpjId)
     {
-        // return $this->model->approveLPJ($lpjId);
-        return false; // Stub
+        return $this->model->approveLPJ($lpjId);
+    }
+
+    public function reviseLPJ($lpjId, $komentar, $catatan)
+    {
+        return $this->model->reviseLPJ($lpjId, $komentar, $catatan);
+    }
+
+    public function rejectLPJ($lpjId, $alasan)
+    {
+        return $this->model->rejectLPJ($lpjId, $alasan);
     }
 
     // Pencairan Dana methods

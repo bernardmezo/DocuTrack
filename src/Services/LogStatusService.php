@@ -47,8 +47,7 @@ class LogStatusService
             'tipe_log' => $tipeLogDB,
             'id_referensi' => $refId,
             'status' => 'BELUM_DIBACA',
-            'judul' => $judul,
-            'konten_json' => json_encode(['pesan' => $pesan, 'link' => $link])
+            'konten_json' => json_encode(['judul' => $judul, 'pesan' => $pesan, 'link' => $link])
         ];
 
         // 1. Simpan ke Database

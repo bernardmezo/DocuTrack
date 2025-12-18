@@ -237,7 +237,6 @@ class PencairanService
                 mysqli_stmt_close($stmt);
 
                 // Insert into history table as well for consistency?
-                // For now, we follow legacy "penuh" logic but we should probably record it in tbl_tahapan_pencairan too for consistency.
                 // Added for consistency with new schema:
                 $pencairanData = [
                     'kegiatan_id' => $kegiatanId,
@@ -322,13 +321,21 @@ class PencairanService
             $updateQuery = "UPDATE tbl_lpj SET tenggatLpj = ? WHERE kegiatanId = ?";
             $stmt = mysqli_prepare($this->db, $updateQuery);
             mysqli_stmt_bind_param($stmt, "si", $tenggatLpj, $kegiatanId);
-            return mysqli_stmt_execute($stmt);
+            $success = mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+            
+            error_log("LPJ updated for kegiatan {$kegiatanId}");
+            return $success;
         }
 
         // Insert new LPJ
         $insertQuery = "INSERT INTO tbl_lpj (kegiatanId, tenggatLpj) VALUES (?, ?)";
         $stmt = mysqli_prepare($this->db, $insertQuery);
         mysqli_stmt_bind_param($stmt, "is", $kegiatanId, $tenggatLpj);
-        return mysqli_stmt_execute($stmt);
+        $success = mysqli_stmt_execute($stmt);
+        mysqli_stmt_close($stmt);
+        
+        error_log("LPJ created for kegiatan {$kegiatanId}");
+        return $success;
     }
 }
