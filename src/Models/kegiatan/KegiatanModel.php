@@ -372,16 +372,18 @@ class KegiatanModel
                     CASE 
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
                         WHEN k.statusUtamaId = 2 THEN 'Revisi'
+                        WHEN k.statusUtamaId = 5 THEN 'Disetujui'
                         WHEN k.posisiId = 1 AND k.statusUtamaId = 3 THEN 'Usulan Disetujui'
-                        WHEN k.posisiId = 1 AND k.statusUtamaId = 1 THEN 'Draft'
+                        WHEN k.posisiId = 1 AND k.statusUtamaId = 1 THEN 'Menunggu'
                         WHEN k.posisiId = 2 THEN 'Di Verifikator'
                         WHEN k.posisiId = 4 THEN 'Di PPK'
                         WHEN k.posisiId = 3 THEN 'Di Wadir'
                         WHEN k.posisiId = 5 AND k.tanggalPencairan IS NULL THEN 'Di Bendahara'
-                        WHEN k.posisiId = 5 AND k.tanggalPencairan IS NOT NULL THEN 'Dana Cair'
-                        ELSE s.namaStatusUsulan
+                        WHEN k.posisiId = 5 AND k.tanggalPencairan IS NOT NULL THEN 'Dana Diberikan'
+                        ELSE 'Menunggu'
                     END as status
                 FROM tbl_kegiatan k
+                LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                 LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId";
 
         // Add WHERE clause if jurusan filter is provided

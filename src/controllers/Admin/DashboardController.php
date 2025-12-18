@@ -24,8 +24,8 @@ class DashboardController extends Controller
     public function index($data_dari_router = [])
     {
         $stats = $this->kegiatanService->getDashboardStats();
-        $jurusan = $_SESSION['user_jurusan'] ?? null;
-        $list_kak = $this->kegiatanService->getDashboardKAK($jurusan);
+        // Admin tidak perlu filter jurusan - harus melihat semua data
+        $list_kak = $this->kegiatanService->getDashboardKAK(null);
         $list_lpj = $this->lpjService->getDashboardLPJ();
         $tahapan_kak = ['Pengajuan', 'Validasi', 'ACC PPK', 'ACC WD', 'Dana Cair'];
         $tahap_sekarang_kak = 'Pengajuan';
