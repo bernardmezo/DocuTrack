@@ -284,12 +284,513 @@
 </section>
 
 <!-- Process Section - Fully Responsive -->
-<section id="proses" class="py-12 sm:py-16 md:py-20 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+<!-- Process Section - Wind Flow Theme -->
+<section id="proses" class="py-12 sm:py-16 md:py-20 lg:py-24 bg-white relative overflow-hidden">
     
-    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <img src="/docutrack/public/assets/images/proses-bisnis/section-proses.svg" 
-            alt="Process Diagram" 
-            class="w-full h-auto drop-shadow-md">
+    <!-- Animated Wind Background -->
+    <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        <!-- Decorative Circles -->
+        <div class="absolute top-10 left-10 w-64 h-64 bg-gradient-to-br from-teal-100/30 to-cyan-100/20 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/4 right-20 w-96 h-96 bg-gradient-to-br from-blue-100/25 to-teal-100/20 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-20 left-1/4 w-80 h-80 bg-gradient-to-br from-cyan-100/30 to-blue-100/25 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 right-1/3 w-72 h-72 bg-gradient-to-br from-teal-100/20 to-cyan-100/30 rounded-full blur-3xl"></div>
+        
+        <!-- Floating Clouds -->
+        <div class="cloud cloud-1 absolute w-32 h-16 bg-teal-200/15 rounded-full blur-2xl"></div>
+        <div class="cloud cloud-2 absolute w-24 h-12 bg-cyan-200/12 rounded-full blur-2xl"></div>
+        <div class="cloud cloud-3 absolute w-40 h-20 bg-blue-200/15 rounded-full blur-2xl"></div>
+        
+        <!-- Wind Lines -->
+        <svg class="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="windGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#0d9488;stop-opacity:0" />
+                    <stop offset="50%" style="stop-color:#0891b2;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0e7490;stop-opacity:0" />
+                </linearGradient>
+            </defs>
+            <path class="wind-line wind-line-1" d="M-100 100 Q 200 120, 500 100 T 1100 100" stroke="url(#windGradient)" stroke-width="2" fill="none"/>
+            <path class="wind-line wind-line-2" d="M-100 300 Q 200 280, 500 300 T 1100 300" stroke="url(#windGradient)" stroke-width="2" fill="none"/>
+            <path class="wind-line wind-line-3" d="M-100 500 Q 200 520, 500 500 T 1100 500" stroke="url(#windGradient)" stroke-width="2" fill="none"/>
+        </svg>
+        
+        <!-- Decorative Dots Pattern -->
+        <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle, #0d9488 1px, transparent 1px); background-size: 30px 30px;"></div>
     </div>
 
-</section>
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Section Header -->
+        <div class="text-center mb-12 sm:mb-16 md:mb-20">
+            <div class="inline-block mb-4 floating">
+                <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 rounded-full text-sm font-semibold text-white shadow-lg">
+                    <i class="fas fa-wind"></i>
+                    Alur Proses
+                </span>
+            </div>
+            <div class="inline-block mb-4">
+                <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold px-8 py-4 text-transparent bg-clip-text bg-gradient-to-r from-teal-700 via-cyan-700 to-blue-700 custom-shadow">
+                    Tahapan Pengajuan
+                </h2>
+            </div>
+        </div>
+
+        <!-- Flowing Path Container -->
+        <div class="relative">
+            
+            <!-- Curved SVG Path for Desktop -->
+            <svg class="hidden lg:block absolute inset-0 w-full h-full pointer-events-none" style="height: 2800px;">
+                <defs>
+                    <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0d9488;stop-opacity:0.4" />
+                        <stop offset="50%" style="stop-color:#0e7490;stop-opacity:0.6" />
+                        <stop offset="100%" style="stop-color:#0891b2;stop-opacity:0.4" />
+                    </linearGradient>
+                </defs>
+                <!-- Flowing S-curve path -->
+                <path class="flowing-path" 
+                      d="M 100 50 
+                         Q 300 150, 500 250 
+                         Q 700 350, 500 450 
+                         Q 300 550, 500 650
+                         Q 700 750, 500 850
+                         Q 300 950, 500 1050
+                         Q 700 1150, 500 1250
+                         Q 300 1350, 500 1450
+                         Q 700 1550, 500 1650
+                         Q 300 1750, 500 1850
+                         Q 700 1950, 500 2050
+                         Q 300 2150, 500 2250
+                         Q 700 2350, 500 2450
+                         Q 300 2550, 400 2650" 
+                      stroke="url(#pathGradient)" 
+                      stroke-width="3" 
+                      fill="none" 
+                      stroke-dasharray="10 5"
+                      opacity="0.5"/>
+            </svg>
+
+            <!-- Mobile Curved Path -->
+            <div class="lg:hidden absolute left-12 top-0 bottom-0 w-0.5">
+                <div class="w-full h-full bg-gradient-to-b from-teal-400 via-cyan-500 to-blue-500 opacity-40 rounded-full"></div>
+            </div>
+
+            <!-- Process Steps with Wind Flow Animation -->
+            <div class="space-y-8 sm:space-y-12 md:space-y-16 lg:space-y-24">
+                
+                <!-- Step 1 - Pengajuan Kegiatan -->
+                <div class="relative lg:ml-0" style="animation-delay: 0.1s;">
+                    <div class="flex items-start gap-4 lg:gap-6">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-teal-600 to-teal-700 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    1
+                                </div>
+                                <div class="absolute inset-0 bg-teal-500/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-teal-500/30 to-teal-600/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-teal-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-paper-plane text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Pengajuan Kegiatan</h3>
+                                            <span class="px-3 py-1 bg-teal-50 rounded-full text-teal-700 text-xs font-semibold border border-teal-200">
+                                                <i class="far fa-user mr-1"></i>Pengusul
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Pengusul membuat dan mengajukan proposal kegiatan melalui sistem secara online
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 - Verifikasi -->
+                <div class="relative lg:ml-auto lg:mr-0 lg:max-w-3xl" style="animation-delay: 0.2s;">
+                    <div class="flex items-start gap-4 lg:gap-6 flex-row-reverse lg:flex-row">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-teal-700 to-cyan-700 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    2
+                                </div>
+                                <div class="absolute inset-0 bg-teal-600/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-teal-600/30 to-cyan-700/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-teal-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-teal-700 to-cyan-700 rounded-2xl flex items-center justify-center shadow-lg order-2 sm:order-1">
+                                        <i class="fas fa-check-double text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1 order-1 sm:order-2">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Verifikasi Pengajuan</h3>
+                                            <span class="px-3 py-1 bg-teal-50 rounded-full text-teal-700 text-xs font-semibold border border-teal-200">
+                                                <i class="fas fa-user-check mr-1"></i>Verifikator
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Verifikator memeriksa kelengkapan dan keabsahan dokumen pengajuan dengan teliti
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 - Komitmen PPK -->
+                <div class="relative lg:ml-0" style="animation-delay: 0.3s;">
+                    <div class="flex items-start gap-4 lg:gap-6">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-cyan-700 to-cyan-800 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    3
+                                </div>
+                                <div class="absolute inset-0 bg-cyan-600/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-cyan-600/30 to-cyan-800/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-cyan-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-700 to-cyan-800 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-handshake text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Pembuatan Komitmen</h3>
+                                            <span class="px-3 py-1 bg-cyan-50 rounded-full text-cyan-700 text-xs font-semibold border border-cyan-200">
+                                                <i class="fas fa-user-tie mr-1"></i>PPK
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Pejabat Pembuat Komitmen membuat komitmen anggaran untuk mendukung kegiatan
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 - Persetujuan Wadir -->
+                <div class="relative lg:ml-auto lg:mr-0 lg:max-w-3xl" style="animation-delay: 0.4s;">
+                    <div class="flex items-start gap-4 lg:gap-6 flex-row-reverse lg:flex-row">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-cyan-800 to-sky-800 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    4
+                                </div>
+                                <div class="absolute inset-0 bg-cyan-700/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-cyan-700/30 to-sky-800/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-cyan-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-cyan-800 to-sky-800 rounded-2xl flex items-center justify-center shadow-lg order-2 sm:order-1">
+                                        <i class="fas fa-stamp text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1 order-1 sm:order-2">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Persetujuan Final</h3>
+                                            <span class="px-3 py-1 bg-cyan-50 rounded-full text-cyan-700 text-xs font-semibold border border-cyan-200">
+                                                <i class="fas fa-user-shield mr-1"></i>Wakil Direktur
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Wakil Direktur memberikan persetujuan akhir untuk pelaksanaan kegiatan
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5 - Penyiapan Dana -->
+                <div class="relative lg:ml-0" style="animation-delay: 0.5s;">
+                    <div class="flex items-start gap-4 lg:gap-6">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-sky-700 to-blue-800 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    5
+                                </div>
+                                <div class="absolute inset-0 bg-sky-700/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-sky-700/30 to-blue-800/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-sky-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-sky-700 to-blue-800 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-money-check-alt text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Penyiapan Dana</h3>
+                                            <span class="px-3 py-1 bg-sky-50 rounded-full text-sky-700 text-xs font-semibold border border-sky-200">
+                                                <i class="fas fa-wallet mr-1"></i>Bendahara
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Bendahara memproses dan menyiapkan dana sesuai anggaran yang telah disetujui
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6 - Pelaksanaan Kegiatan -->
+                <div class="relative lg:ml-auto lg:mr-0 lg:max-w-3xl" style="animation-delay: 0.6s;">
+                    <div class="flex items-start gap-4 lg:gap-6 flex-row-reverse lg:flex-row">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-700 to-blue-900 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    6
+                                </div>
+                                <div class="absolute inset-0 bg-blue-700/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-blue-700/30 to-blue-900/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-blue-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-700 to-blue-900 rounded-2xl flex items-center justify-center shadow-lg order-2 sm:order-1">
+                                        <i class="fas fa-tasks text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1 order-1 sm:order-2">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Pelaksanaan Kegiatan</h3>
+                                            <span class="px-3 py-1 bg-blue-50 rounded-full text-blue-700 text-xs font-semibold border border-blue-200">
+                                                <i class="far fa-user mr-1"></i>Pengusul
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Pengusul menerima dana dan melaksanakan kegiatan sesuai dengan rencana yang disetujui
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 7 - Pembuatan LPJ -->
+                <div class="relative lg:ml-0" style="animation-delay: 0.7s;">
+                    <div class="flex items-start gap-4 lg:gap-6">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-blue-800 to-indigo-900 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    7
+                                </div>
+                                <div class="absolute inset-0 bg-blue-800/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-blue-800/30 to-indigo-900/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-blue-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-800 to-indigo-900 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-file-invoice text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Pembuatan LPJ</h3>
+                                            <span class="px-3 py-1 bg-blue-50 rounded-full text-blue-700 text-xs font-semibold border border-blue-200">
+                                                <i class="far fa-user mr-1"></i>Pengusul
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Pengusul menyusun laporan pertanggungjawaban atas kegiatan yang telah dilaksanakan
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 8 - Verifikasi LPJ -->
+                <div class="relative lg:ml-auto lg:mr-0 lg:max-w-3xl" style="animation-delay: 0.8s;">
+                    <div class="flex items-start gap-4 lg:gap-6 flex-row-reverse lg:flex-row">
+                        <div class="flex-shrink-0 wind-card-float">
+                            <div class="relative">
+                                <div class="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-indigo-800 to-cyan-900 rounded-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl shadow-xl z-10 relative">
+                                    8
+                                </div>
+                                <div class="absolute inset-0 bg-indigo-800/40 rounded-full animate-ping-slow"></div>
+                                <div class="absolute -inset-2 bg-gradient-to-r from-indigo-800/30 to-cyan-900/30 rounded-full blur-md"></div>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 wind-card-float-content">
+                            <div class="bg-white rounded-3xl p-5 sm:p-6 lg:p-8 shadow-xl border border-indigo-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+                                <div class="flex flex-col sm:flex-row items-start gap-4">
+                                    <div class="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-indigo-800 to-cyan-900 rounded-2xl flex items-center justify-center shadow-lg order-2 sm:order-1">
+                                        <i class="fas fa-clipboard-check text-white text-xl sm:text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1 order-1 sm:order-2">
+                                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                                            <h3 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">Pemeriksaan LPJ</h3>
+                                            <span class="px-3 py-1 bg-indigo-50 rounded-full text-indigo-700 text-xs font-semibold border border-indigo-200">
+                                                <i class="fas fa-wallet mr-1"></i>Bendahara
+                                            </span>
+                                        </div>
+                                        <p class="text-gray-600 text-sm sm:text-base leading-relaxed">
+                                            Bendahara memeriksa kelengkapan dan kesesuaian LPJ dengan realisasi an
+
+<style>
+        /* Custom Shadow for Title */
+        .custom-shadow {
+            filter: drop-shadow(0 6px 25px rgba(34, 211, 238, 0.7)) 
+                    drop-shadow(0 12px 45px rgba(39, 75, 143, 0.6))
+                    drop-shadow(0 2px 15px rgba(51, 171, 160, 0.5));
+        }
+
+        /* Wind Flow Animations */
+        @keyframes cloudFloat {
+            0%, 100% {
+                transform: translateX(-100px) translateY(0);
+            }
+            50% {
+                transform: translateX(calc(100vw + 100px)) translateY(-20px);
+            }
+        }
+
+        @keyframes windFlow {
+            0% {
+                stroke-dashoffset: 1000;
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 0;
+            }
+        }
+
+        @keyframes floating {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes ping-slow {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            75%, 100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* Cloud animations */
+        .cloud-1 {
+            top: 10%;
+            animation: cloudFloat 40s infinite linear;
+        }
+
+        .cloud-2 {
+            top: 30%;
+            animation: cloudFloat 50s infinite linear 5s;
+        }
+
+        .cloud-3 {
+            top: 60%;
+            animation: cloudFloat 45s infinite linear 10s;
+        }
+
+        /* Wind line animations */
+        .wind-line-1 {
+            animation: windFlow 8s infinite ease-in-out;
+        }
+
+        .wind-line-2 {
+            animation: windFlow 8s infinite ease-in-out 2s;
+        }
+
+        .wind-line-3 {
+            animation: windFlow 8s infinite ease-in-out 4s;
+        }
+
+        /* Flowing path animation */
+        .flowing-path {
+            stroke-dasharray: 20 10;
+            animation: dashFlow 3s linear infinite;
+        }
+
+        @keyframes dashFlow {
+            to {
+                stroke-dashoffset: -30;
+            }
+        }
+
+        /* Card float animations */
+        .wind-card-float {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        .wind-card-float-content {
+            animation: floating 3s ease-in-out infinite 0.2s;
+        }
+
+        .floating {
+            animation: floating 4s ease-in-out infinite;
+        }
+
+        /* Ping animation */
+        .animate-ping-slow {
+            animation: ping-slow 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        /* Smooth transitions */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 500ms;
+        }
+
+        /* Hover effects */
+        .group:hover .group-hover\:translate-x-1 {
+            transform: translateX(0.25rem);
+        }
+
+        .group:hover .group-hover\:-translate-y-1 {
+            transform: translateY(-0.25rem);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .wind-card-float,
+            .wind-card-float-content {
+                animation: none;
+            }
+        }
+    </style>
