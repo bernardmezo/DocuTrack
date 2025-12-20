@@ -15,7 +15,7 @@ class CaptchaController extends Controller
         }
         
         // Generate new CAPTCHA code
-        $captchaCode = generateCaptchaCode(6);
+        $captchaCode = generateCaptchaCode(3);
         $_SESSION['captcha_code'] = $captchaCode;
         $_SESSION['captcha_time'] = time();
         

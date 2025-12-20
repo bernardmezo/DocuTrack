@@ -64,7 +64,8 @@ class PengajuanLpjController extends Controller
         
         $rab_items_merged = [];
         if (!empty($lpj_detail['kakId'])) {
-            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId']]);
+            // Pass lpjId as second parameter to JOIN with tbl_lpj_item
+            $rab_items_merged = $this->safeModelCall($this->adminService, 'getRABForLPJ', [$lpj_detail['kakId'], $id]);
         }
 
         if (empty($rab_items_merged)) {
@@ -73,16 +74,24 @@ class PengajuanLpjController extends Controller
             error_log("✅ RAB berhasil diambil: " . count($rab_items_merged) . " kategori");
         }
 
+        // Count total items and uploaded items
         $total_items = 0;
         $uploaded_items = 0;
         
         foreach ($rab_items_merged as $kategori => $items) {
             foreach ($items as $item) {
                 $total_items++;
+                // Check if bukti_file exists and not empty
                 if (!empty($item['bukti_file'])) {
                     $uploaded_items++;
                 }
             }
+        }
+
+        if ($uploaded_items > 0) {
+            error_log("📂 Bukti yang diupload: $uploaded_items dari $total_items item");
+        } else {
+            error_log("📂 Belum ada bukti yang diupload untuk LPJ ID: $id");
         }
         
         $all_bukti_uploaded = ($total_items > 0 && $uploaded_items === $total_items);

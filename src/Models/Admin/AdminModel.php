@@ -3,6 +3,7 @@
 namespace App\Models\Admin;
 
 use Exception;
+use mysqli;
 
 /**
  * AdminModel - Admin Management Model
@@ -232,8 +233,8 @@ class AdminModel
                     k.nimPelaksana as nim,
                     k.prodiPenyelenggara as prodi,
                     k.jurusanPenyelenggara as jurusan,
-                    k.kegiatanId,
-                    kak.kakId,
+                    k.kegiatanId as kegiatanId,
+                    kak.kakId as kakId,
                     CASE 
                         -- Jika sudah pernah di-submit (submittedAt IS NOT NULL), gunakan statusId
                         WHEN l.submittedAt IS NOT NULL AND l.statusId = 3 THEN 'Setuju'
@@ -246,6 +247,7 @@ class AdminModel
                             WHERE li.lpjId = l.lpjId 
                             AND (li.fileBukti IS NULL OR li.fileBukti = '')
                         ) THEN 'Menunggu_Upload'
+                        -- Jika semua item sudah diupload, maka statusnya Siap_Submit
                         WHEN l.submittedAt IS NULL AND EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId
@@ -314,9 +316,6 @@ class AdminModel
                         r.sat2,
                         r.harga as harga_satuan,
                         r.totalHarga as harga_plan,
-                        NULL as bukti_file,
-                        NULL as komentar,
-                        NULL as lpj_item_id,
                         cat.namaKategori
                     FROM tbl_rab r
                     JOIN tbl_kategori_rab cat ON r.kategoriId = cat.kategoriRabId

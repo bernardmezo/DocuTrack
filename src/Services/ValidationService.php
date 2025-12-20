@@ -90,6 +90,12 @@ class ValidationService
                     $this->addError($field, "Kolom {$field} minimal harus {$minLength} karakter.");
                 }
                 break;
+            case 'max':
+                $maxLength = (int)($params[0] ?? PHP_INT_MAX);
+                if (strlen($value) > $maxLength) {
+                    $this->addError($field, "Kolom {$field} maksimal harus {$maxLength} karakter.");
+                }
+                break;
             case 'numeric':
                 if (!empty($value) && !is_numeric($value)) {
                     $this->addError($field, "Kolom {$field} harus berupa angka.");

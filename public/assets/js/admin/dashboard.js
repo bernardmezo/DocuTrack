@@ -4,13 +4,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const dataLPJ = window.dataLPJ;
 
   // Debug: Log data untuk troubleshooting
-  console.log("Data KAK:", dataKAK);
+  console.log("Data KAK anjing:", dataKAK);
   console.log("Data LPJ:", dataLPJ);
   console.log("Total KAK:", dataKAK ? dataKAK.length : 0);
   console.log("Total LPJ:", dataLPJ ? dataLPJ.length : 0);
 
   // Configuration
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 10;
 
   // Table Manager Class
   class TableManager {
@@ -102,10 +102,6 @@ document.addEventListener("DOMContentLoaded", function () {
         statusFilter,
         jurusanFilter,
       });
-      console.log(
-        `[${this.config.type}] Total data before filter:`,
-        this.allData.length
-      );
 
       this.filteredData = this.allData.filter((item) => {
         // Pastikan semua field ada sebelum digunakan
@@ -117,13 +113,43 @@ document.addEventListener("DOMContentLoaded", function () {
         const status = item.status || "";
         const jurusan = item.jurusan || "";
 
+        // Format tanggal untuk pencarian
+        let tanggalFormatted = "";
+        if (item.tanggal_pengajuan) {
+          const tglObj = new Date(item.tanggal_pengajuan);
+          // Format: "18 Des 2025", "18-12-2025", "2025-12-18"
+          const day = String(tglObj.getDate()).padStart(2, "0");
+          const month = String(tglObj.getMonth() + 1).padStart(2, "0");
+          const year = tglObj.getFullYear();
+          const monthNames = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "Mei",
+            "Jun",
+            "Jul",
+            "Agu",
+            "Sep",
+            "Okt",
+            "Nov",
+            "Des",
+          ];
+          const monthName = monthNames[tglObj.getMonth()];
+
+          // Gabungkan berbagai format untuk fleksibilitas pencarian
+          tanggalFormatted =
+            `${day} ${monthName} ${year} ${day}-${month}-${year} ${year}-${month}-${day}`.toLowerCase();
+        }
+
         const matchSearch =
           !searchTerm ||
           nama.toLowerCase().includes(searchTerm) ||
           pengusul.toLowerCase().includes(searchTerm) ||
           nama_mahasiswa.toLowerCase().includes(searchTerm) ||
           prodi.toLowerCase().includes(searchTerm) ||
-          nim.toLowerCase().includes(searchTerm);
+          nim.toLowerCase().includes(searchTerm) ||
+          tanggalFormatted.includes(searchTerm); // ← TAMBAHAN SEARCH TANGGAL
 
         const matchStatus =
           !statusFilter || status.toLowerCase() === statusFilter;

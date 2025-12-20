@@ -253,7 +253,7 @@ $can_edit = ($is_draft || $is_revisi);
                                 
                                 <!-- Bukti Upload -->
                                 <td class="px-4 py-3 text-center">
-                                    <?php if ($bukti_uploaded) : ?>
+                                    <?php if ($all_bukti_uploaded) : ?>
                                     <!-- Sudah Upload -->
                                     <button type="button" 
                                             class="btn-view-bukti inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm"
@@ -261,7 +261,7 @@ $can_edit = ($is_draft || $is_revisi);
                                             data-uraian="<?php echo htmlspecialchars($item['uraian']); ?>">
                                         <i class="fas fa-eye"></i> Lihat
                                     </button>
-                                    <?php elseif ($can_edit) : ?>
+                                    <?php else : ?>
                                     <!-- Upload Button -->
                                     <button type="button" 
                                             class="btn-upload-bukti inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
@@ -269,8 +269,6 @@ $can_edit = ($is_draft || $is_revisi);
                                             data-uraian="<?php echo htmlspecialchars($item['uraian']); ?>">
                                         <i class="fas fa-upload"></i> Upload
                                     </button>
-                                    <?php else : ?>
-                                    <span class="text-xs text-gray-400">-</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -518,8 +516,8 @@ document.getElementById('btn-confirm-upload').addEventListener('click', async fu
         const result = await response.json();
         
         if (result.success) {
-            alert('Bukti berhasil diupload!');
-            location.reload(); // Reload untuk update tampilan
+            // Reload dulu, alert setelah reload
+            location.reload();
         } else {
             alert('Gagal upload: ' + result.message);
         }
@@ -617,15 +615,16 @@ document.getElementById('btn-save-draft')?.addEventListener('click', async funct
 document.getElementById('form-lpj-submit').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Validasi semua bukti sudah diupload
+    // Validasi semua bukti sudah diupload dengan cara yang lebih akurat
     const allRows = document.querySelectorAll('[data-rab-item-id]');
-    const uploadedButtons = document.querySelectorAll('.btn-view-bukti');
+    const uploadButtons = document.querySelectorAll('.btn-upload-bukti');
     
     console.log('Total items:', allRows.length);
-    console.log('Uploaded items:', uploadedButtons.length);
+    console.log('Items belum upload:', uploadButtons.length);
     
-    if (uploadedButtons.length < allRows.length) {
-        alert('❌ GAGAL SUBMIT!\n\nMohon upload semua bukti terlebih dahulu!\n\nTotal item: ' + allRows.length + '\nSudah upload: ' + uploadedButtons.length + '\nKurang: ' + (allRows.length - uploadedButtons.length) + ' bukti');
+    // Jika masih ada tombol Upload, berarti belum semua diupload
+    if (uploadButtons.length > 0) {
+        alert('❌ GAGAL SUBMIT!\n\nMohon upload semua bukti terlebih dahulu!\n\nTotal item: ' + allRows.length + '\nBelum upload: ' + uploadButtons.length + ' bukti');
         return;
     }
     
