@@ -203,28 +203,48 @@ document.addEventListener("DOMContentLoaded", function () {
         menunggu_upload:
           "text-orange-700 bg-orange-100 border border-orange-200",
         "dana diberikan": "text-blue-700 bg-blue-100 border border-blue-200",
+        diverifikator: "text-purple-700 bg-purple-100 border border-purple-200",
+        "di verifikator":
+          "text-purple-700 bg-purple-100 border border-purple-200",
+        "di ppk": "text-indigo-700 bg-indigo-100 border border-indigo-200",
+        "di wadir": "text-cyan-700 bg-cyan-100 border border-cyan-200",
+        "di bendahara": "text-teal-700 bg-teal-100 border border-teal-200",
+        "usulan disetujui":
+          "text-green-700 bg-green-100 border border-green-200",
       };
 
       const icons = {
         disetujui: "fa-check-circle",
-        "disetujui verifikator": "fa-check-double",
+        disetujui_verifikator: "fa-check-double",
         setuju: "fa-check-circle",
         ditolak: "fa-times-circle",
         revisi: "fa-edit",
         menunggu: "fa-clock",
         menunggu_upload: "fa-upload",
         "dana diberikan": "fa-hand-holding-usd",
+        diverifikator: "fa-user-check",
+        "di verifikator": "fa-user-check",
+        "di ppk": "fa-stamp",
+        "di wadir": "fa-user-tie",
+        "di bendahara": "fa-wallet",
+        "usulan disetujui": "fa-check-circle",
       };
 
       const displayText = {
         disetujui: "Disetujui",
-        "disetujui verifikator": "Disetujui Verifikator",
+        disetujui_verifikator: "Disetujui Verifikator",
         setuju: "Disetujui",
         ditolak: "Ditolak",
         revisi: "Revisi",
         menunggu: "Menunggu",
         menunggu_upload: "Perlu Upload",
         "dana diberikan": "Dana Diberikan",
+        diverifikator: "Di Verifikator",
+        "di verifikator": "Di Verifikator",
+        "di ppk": "Di PPK",
+        "di wadir": "Di Wadir",
+        "di bendahara": "Di Bendahara",
+        "usulan disetujui": "Usulan Disetujui",
       };
 
       return `<span class='px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 ${

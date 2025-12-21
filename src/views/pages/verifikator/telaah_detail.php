@@ -116,6 +116,9 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         <?php endif; ?>
         
         <form id="form-verifikasi" action="#" method="POST">
+            <!-- Hidden fields -->
+            <input type="hidden" name="kegiatan_id" value="<?php echo htmlspecialchars($kegiatanId); ?>">
+            <input type="hidden" id="grand_total_rab_input" name="grand_total_rab" value="0">
             
             <!-- 1. KAK Section -->
             <div class="mb-6 md:mb-8">
@@ -142,26 +145,6 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                             <?= htmlspecialchars($kegiatan_data['nim_pengusul'] ?? '-') ?>
                         </div>
                         <?php if (!$is_ditolak) render_comment_box('nim_pengusul', $is_menunggu, $is_telah_direvisi); ?>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            Nama Penanggung Jawab <?php showCommentIcon('nama_penanggung_jawab', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
-                        </label>
-                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium text-sm <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nama_penanggung_jawab']) ? 'ring-2 ring-yellow-400' : ''; ?>">
-                            <?= htmlspecialchars($kegiatan_data['nama_penanggung_jawab'] ?? '-') ?>
-                        </div>
-                         <?php if (!$is_ditolak) render_comment_box('nama_penanggung_jawab', $is_menunggu, $is_telah_direvisi); ?>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            NIM/NIP Penanggung Jawab <?php showCommentIcon('nip_penanggung_jawab', $komentar_revisi, $is_revisi, $is_telah_direvisi); ?>
-                        </label>
-                        <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-gray-800 font-medium text-sm <?php echo ($is_revisi || $is_telah_direvisi) && isset($komentar_revisi['nip_penanggung_jawab']) ? 'ring-2 ring-yellow-400' : ''; ?>">
-                            <?= htmlspecialchars($kegiatan_data['nip_penanggung_jawab'] ?? '-') ?>
-                        </div>
-                         <?php if (!$is_ditolak) render_comment_box('nip_penanggung_jawab', $is_menunggu, $is_telah_direvisi); ?>
                     </div>
                 </div>
 
@@ -650,6 +633,13 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
         const isDisetujui = <?php echo json_encode($is_disetujui); ?>;
         const namaKegiatan = <?php echo json_encode($kegiatan_data['nama_kegiatan'] ?? 'Kegiatan Ini'); ?>;
         const kegiatanId = <?php echo json_encode($kegiatanId ?: $id); ?>;
+        const grandTotalRabValue = <?php echo json_encode($grand_total_rab ?? 0); ?>;
+
+        // Set nilai grand_total_rab ke hidden input
+        const grandTotalRabInput = document.getElementById('grand_total_rab_input');
+        if (grandTotalRabInput) {
+            grandTotalRabInput.value = grandTotalRabValue;
+        }
 
         if (typeof formatRupiah !== 'function') {
             window.formatRupiah = (angka) => `Rp ${new Intl.NumberFormat('id-ID').format(angka || 0)}`;
@@ -841,10 +831,19 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
             } else {
                  kodeMakInput?.classList.remove('border-red-500', 'ring-2', 'ring-red-300');
             }
+
+            // Validasi grand_total_rab
+            if (grandTotalRabValue <= 0) {
+                Swal.fire('Error', 'Total dana RAB tidak valid. Pastikan RAB sudah diisi dengan benar.', 'error');
+                return;
+            }
             
             Swal.fire({
                 title: 'Setujui Usulan Ini?',
-                html: `Usulan akan disetujui dengan Kode MAK:<br><div class="swal-kegiatan-nama">${namaKegiatan}</div>`,
+                html: `Usulan akan disetujui dengan:<br>
+                       <div class="swal-kegiatan-nama">${namaKegiatan}</div>
+                       <div class="text-sm mt-2"><b>Kode MAK:</b> ${kodeMak}</div>
+                       <div class="text-sm"><b>Total Dana:</b> ${formatRupiah(grandTotalRabValue)}</div>`,
                 icon: 'success',
                 customClass: { popup: 'swal-konfirmasi' },
                 showCancelButton: true,

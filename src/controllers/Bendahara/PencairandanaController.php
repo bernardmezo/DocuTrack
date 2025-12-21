@@ -56,10 +56,19 @@ class PencairandanaController extends Controller
         $base_url = "/docutrack/public/bendahara";
         $back_url = $base_url . '/' . $ref;
 
+        // Validasi ID untuk mencegah undefined atau invalid value
+        $id = (int) $id;
+        if ($id <= 0) {
+            error_log("PencairandanaController::show - Invalid ID received: $id");
+            $_SESSION['flash_error'] = 'ID kegiatan tidak valid.';
+            header('Location: ' . $back_url);
+            exit;
+        }
+
         $kegiatan = $this->pencairanService->getDetailPencairan($id);
 
         if (!$kegiatan) {
-            $_SESSION['flash_error'] = 'Data tidak ditemukan.';
+            $_SESSION['flash_error'] = 'Data tidak ditemukan atau kegiatan belum sampai ke Bendahara.';
             header('Location: ' . $back_url);
             exit;
         }
@@ -70,7 +79,7 @@ class PencairandanaController extends Controller
         $tahapan = $this->pencairanService->getTahapanByKegiatan($id);
 
         // Hitung total dicairkan dan sisa dana
-        $totalAnggaran = $kegiatan['total_rab'] ?? 0;
+        $totalAnggaran = $kegiatan['totalAnggaranDisetujui'] ?? 0;
         $totalDicairkan = $this->pencairanService->getTotalDicairkanByKegiatan($id);
         $sisaDana = $totalAnggaran - $totalDicairkan;
         $bolehCairkanLagi = ($totalDicairkan < $totalAnggaran);

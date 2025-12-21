@@ -26,8 +26,12 @@ class BendaharaService
     {
         $data = $this->model->getListKegiatanDashboard($limit);
         
-        // ✅ FIX: Add 'status' field for JavaScript compatibility
+        // ✅ FIX: Map database field names to JavaScript expected field names
         foreach ($data as &$item) {
+            // Map ID field for JavaScript compatibility
+            $item['id'] = $item['kegiatanId'] ?? null;
+            
+            // Map status field
             if (!isset($item['status']) && isset($item['status_text'])) {
                 $item['status'] = $item['status_text'];
             }
@@ -35,6 +39,14 @@ class BendaharaService
             if (empty($item['status'])) {
                 $item['status'] = 'Menunggu';
             }
+            
+            // Map other expected fields for consistency
+            $item['nama'] = $item['namaKegiatan'] ?? 'N/A';
+            $item['nama_mahasiswa'] = $item['pemilikKegiatan'] ?? 'N/A';
+            $item['nim'] = $item['nimPelaksana'] ?? '-';
+            $item['prodi'] = $item['prodiPenyelenggara'] ?? '-';
+            $item['jurusan'] = $item['jurusanPenyelenggara'] ?? '-';
+            $item['tanggal_pengajuan'] = $item['createdAt'] ?? null;
         }
         
         return $data;

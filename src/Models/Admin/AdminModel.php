@@ -339,12 +339,7 @@ class AdminModel
     /**
      * Mengambil detail lengkap kegiatan beserta data KAK, Penanggung Jawab, dan file pendukung.
      *
-     * Method ini melakukan JOIN dengan beberapa tabel untuk mengumpulkan informasi lengkap:
-     * - Data kegiatan utama dari tbl_kegiatan
-     * - Data KAK dari tbl_kak
-     * - Data Penanggung Jawab dari tbl_user (via rancangan_kegiatan)
-     * - Tanggal mulai dan selesai dari tbl_rancangan_kegiatan
-     * - File surat pengantar dari tbl_rancangan_kegiatan
+    
      * - Status usulan dari tbl_status_utama
      *
      * @param int $kegiatanId ID dari kegiatan yang akan diambil detailnya

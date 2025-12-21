@@ -110,6 +110,14 @@ class BendaharaModel
 
     public function getDetailPencairan($kegiatanId)
     {
+        // Validasi parameter untuk mencegah undefined atau invalid ID
+        $kegiatanId = (int) $kegiatanId;
+        
+        if ($kegiatanId <= 0) {
+            error_log("BendaharaModel::getDetailPencairan - Invalid kegiatanId received: $kegiatanId");
+            return null;
+        }
+        
         $query = "SELECT 
                     k.*,
                     kak.*,
@@ -121,19 +129,27 @@ class BendaharaModel
                     k.nip as nim_pj,
                     k.nimPelaksana as nim_pelaksana,
                     k.pemilikKegiatan as nama_pelaksana,
-                    s.namaStatusUsulan as status_text,
-                    (SELECT COALESCE(SUM(r.totalHarga), 0) 
-                     FROM tbl_rab r WHERE r.kakId = kak.kakId) as total_rab
+                    k.danaDisetujui as totalAnggaranDisetujui,
+                    s.namaStatusUsulan as status_text
                   FROM tbl_kegiatan k
-                  JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
+                  LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   LEFT JOIN tbl_user u ON u.userId = k.userId
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                  WHERE k.kegiatanId = ?";
+                  WHERE k.kegiatanId = ? AND k.posisiId = 5";
 
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $kegiatanId);
         mysqli_stmt_execute($stmt);
-        return mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+        
+        // Debug logging
+        if (!$data) {
+            error_log("BendaharaModel::getDetailPencairan - Data not found for kegiatanId: $kegiatanId (posisiId must be 5)");
+        }
+        
+        return $data;
     }
 
     public function getRABByKegiatan($kegiatanId)

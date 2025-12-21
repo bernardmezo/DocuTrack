@@ -89,9 +89,9 @@ class VerifikatorService
      * Menyetujui usulan.
      * Moved from VerifikatorModel to VerifikatorService for business logic and notification trigger.
      */
-    public function approveUsulan(int $kegiatanId, string $kodeMak, ?string $catatan = null): bool
+    public function approveUsulan(int $kegiatanId, string $kodeMak, float $danaDisetujui, ?string $catatan = null): bool
     {
-        $result = $this->verifikatorModel->updateKegiatanApprovalStatus($kegiatanId, $kodeMak, $catatan);
+        $result = $this->verifikatorModel->updateKegiatanApprovalStatus($kegiatanId, $kodeMak, $danaDisetujui, $catatan);
 
         if ($result) {
             try {

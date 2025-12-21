@@ -125,9 +125,7 @@ function isEditable($field_name, $is_revisi_mode, $komentar_list) {
                     <?php 
                     $kak_details = [
                         'Nama Pengusul' => $kegiatan_data['nama_pengusul'] ?? '-',
-                        'NIM Pengusul' => $kegiatan_data['nim_pengusul'] ?? '-',
-                        'Penanggung Jawab' => $kegiatan_data['nama_penanggung_jawab'] ?? '-',
-                        'NIM/NIP PJ' => $kegiatan_data['nip_penanggung_jawab'] ?? '-',
+                        'NIM Pengusul' => $kegiatan_data['nim_pengusul'] ?? '-'
                     ];
                     foreach ($kak_details as $label => $value): ?>
                         <div>
@@ -259,14 +257,14 @@ function isEditable($field_name, $is_revisi_mode, $komentar_list) {
                         <table class="w-full min-w-[1000px]">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Uraian</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase w-1/5">Rincian</th>
-                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-1/12">Vol 1</th>
-                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-1/12">Sat 1</th>
-                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-1/12">Vol 2</th>
-                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-1/12">Sat 2</th>
-                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase w-1/12">Harga (Rp)</th>
-                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase w-1/12">Total</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase w-[15%]">Uraian</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase w-[20%]">Rincian</th>
+                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-[8%]">Vol 1</th>
+                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-[8%]">Sat 1</th>
+                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-[8%]">Vol 2</th>
+                                    <th class="px-1 py-3 text-center text-xs font-bold text-gray-600 uppercase w-[8%]">Sat 2</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase w-[13%]">Harga (Rp)</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase w-[13%]">Total</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200 bg-white">

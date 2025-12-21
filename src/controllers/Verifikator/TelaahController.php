@@ -235,6 +235,7 @@ class TelaahController extends Controller
 
             $kodeMak = trim($_POST['kode_mak'] ?? '');
             $umpanBalik = trim($_POST['umpan_balik'] ?? '');
+            $grandTotalRab = (float) ($_POST['grand_total_rab'] ?? 0);
 
             if (empty($kegiatanId)) {
                 throw new Exception('ID kegiatan tidak ditemukan');
@@ -244,7 +245,11 @@ class TelaahController extends Controller
                 throw new Exception('Kode MAK wajib diisi.');
             }
 
-            if ($this->service->approveUsulan($kegiatanId, $kodeMak, $umpanBalik)) {
+            if ($grandTotalRab <= 0) {
+                throw new Exception('Total dana RAB tidak valid.');
+            }
+
+            if ($this->service->approveUsulan($kegiatanId, $kodeMak, $grandTotalRab, $umpanBalik)) {
                 $_SESSION['flash_message'] = 'Usulan berhasil disetujui.';
                 header('Location: /docutrack/public/verifikator/dashboard?msg=approved');
                 exit;

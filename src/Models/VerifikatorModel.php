@@ -456,17 +456,22 @@ class VerifikatorModel
      * Memperbarui status kegiatan untuk approval.
      * @param int $kegiatanId
      * @param string $kodeMak
+     * @param float $danaDisetujui Grand total RAB yang disetujui
      * @param string|null $catatan
      * @return bool
      * @throws RuntimeException
      * @throws Throwable
      */
-    public function updateKegiatanApprovalStatus(int $kegiatanId, string $kodeMak, ?string $catatan = null): bool
+    public function updateKegiatanApprovalStatus(int $kegiatanId, string $kodeMak, float $danaDisetujui, ?string $catatan = null): bool
     {
         $trimmedMak = trim($kodeMak);
 
         if ($trimmedMak === '') {
             throw new RuntimeException('Kode MAK tidak boleh kosong.');
+        }
+
+        if ($danaDisetujui < 0) {
+            throw new RuntimeException('Dana yang disetujui tidak boleh negatif.');
         }
 
         $note = null;
@@ -510,7 +515,8 @@ class VerifikatorModel
                     SET statusUtamaId = ?,
                         posisiId = ?,
                         buktiMAK = ?,
-                        umpanBalikVerifikator = ?
+                        umpanBalikVerifikator = ?,
+                        danaDisetujui = ?
                     WHERE kegiatanId = ?';
 
             $updateStmt = $connection->prepare($sql);
@@ -518,7 +524,7 @@ class VerifikatorModel
                 throw new RuntimeException('Gagal menyiapkan statement update.');
             }
 
-            $updateStmt->bind_param('iisss', $nextStatus, $nextPosisi, $trimmedMak, $note, $kegiatanId);
+            $updateStmt->bind_param('iissdi', $nextStatus, $nextPosisi, $trimmedMak, $note, $danaDisetujui, $kegiatanId);
 
             if (!$updateStmt->execute()) {
                 throw new RuntimeException('Gagal update kegiatan: ' . $updateStmt->error);
