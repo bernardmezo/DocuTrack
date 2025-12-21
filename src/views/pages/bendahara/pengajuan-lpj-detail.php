@@ -134,7 +134,6 @@ if (!function_exists('showCommentIcon')) {
                 </div>
             </div>
         <?php endif; ?>
-
         <form id="form-lpj-verifikasi" method="POST" action="/docutrack/public/bendahara/pengajuan-lpj/proses">
             <input type="hidden" name="lpj_id" value="<?= $kegiatan_data['id'] ?? '' ?>">
             <input type="hidden" name="action" id="form-action" value="">
@@ -169,7 +168,7 @@ if (!function_exists('showCommentIcon')) {
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 80px;">Vol 2</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 90px;">Sat 2</th>
                                     <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 130px;">Harga (Rp)</th>
-                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total</th>
+                                    <th class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase" style="width: 150px;">Total Realisasi (Rp)</th>
                                     <th class="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase" style="width: 100px;">Bukti</th>
                                 </tr>
                             </thead>
@@ -182,11 +181,9 @@ if (!function_exists('showCommentIcon')) {
                                     $sat1 = $item['sat1'] ?? '-';
                                     $vol2 = $item['vol2'] ?? 1;
                                     $sat2 = $item['sat2'] ?? '-';
-
-                                    // PERBAIKAN: Ambil variabel yang benar dari array $item
                                     $harga_satuan = $item['harga_satuan'] ?? 0;
-                                    $total_sub = $item['subtotal'] ?? 0; // Menggunakan key 'subtotal'
-
+                                    $harga_realisasi = $item['harga_realisasi'] ?? 0; // ✅ FIX: Now properly assigned
+                                    $total_sub = $item['subtotal'] ?? 0;
                                     $bukti_file = $item['bukti_file'] ?? null;
                                     $komentar_existing = $item['komentar'] ?? null;
 
@@ -215,7 +212,7 @@ if (!function_exists('showCommentIcon')) {
                                     </td>
                                     
                                     <td class="px-4 py-3 text-sm text-blue-600 font-semibold text-right">
-                                        <?= formatRupiah($total_sub) ?>
+                                        <?= formatRupiah($harga_realisasi) ?>
                                     </td>
                                     
                                     <td class="px-3 py-3 text-center">

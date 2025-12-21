@@ -194,57 +194,74 @@ class PengajuanLpjController extends Controller
         }
     }
 
-    public function saveDraft()
-    {
-        header('Content-Type: application/json');
+   public function saveDraft()
+{
+    header('Content-Type: application/json');
+
+    try {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Metode tidak diizinkan', 405);
+        }
+
+        $kegiatanId = $_POST['kegiatan_id'] ?? null;
+        $lpjId = $_POST['lpj_id'] ?? null;
+        $itemsJson = $_POST['items'] ?? '[]';
+        
+        error_log("💾 saveDraft called: kegiatanId={$kegiatanId}, lpjId={$lpjId}");
+        error_log("📦 Items JSON: " . $itemsJson);
+        
+        $items = json_decode($itemsJson, true);
+
+        if (!$kegiatanId || !is_numeric($kegiatanId)) {
+            throw new Exception('Kegiatan ID tidak valid');
+        }
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Format data item tidak valid: ' . json_last_error_msg());
+        }
+        
+        if (!is_array($items)) {
+            throw new Exception('Items harus berupa array');
+        }
+
+        $this->db->begin_transaction();
 
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Metode tidak diizinkan', 405);
-            }
-
-            $kegiatanId = $_POST['kegiatan_id'] ?? null;
-            $lpjId = $_POST['lpj_id'] ?? null;
-            $itemsJson = $_POST['items'] ?? '[]';
-            $items = json_decode($itemsJson, true);
-
-            if (!$kegiatanId || !is_numeric($kegiatanId)) {
-                throw new Exception('Kegiatan ID tidak valid');
-            }
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new Exception('Format data item tidak valid.');
-            }
-
-            $this->db->begin_transaction();
-
-            try {
-                if (!empty($items)) {
-                    $lpjModel = new \App\Models\Lpj\LpjModel($this->db);
+            if (!empty($items)) {
+                $lpjModel = new \App\Models\Lpj\LpjModel($this->db);
+                
+                if ($lpjId && is_numeric($lpjId)) {
+                    error_log("✅ Updating LPJ items for lpjId={$lpjId}");
                     
-                    if ($lpjId && is_numeric($lpjId)) {
-                        $lpjModel->updateLpjItemsRealisasi((int)$lpjId, $items);
-                        $lpjModel->updateLpjGrandTotal((int)$lpjId);
-                    }
+                    // ✅ Update items (accepts both 'realisasi' and 'total')
+                    $lpjModel->updateLpjItemsRealisasi((int)$lpjId, $items);
+                    
+                    // Update grand total
+                    $lpjModel->updateLpjGrandTotal((int)$lpjId);
+                    
+                    error_log("✅ Draft saved successfully");
                 }
-
-                $this->db->commit();
-
-                echo json_encode([
-                    'success' => true, 
-                    'message' => 'Draft berhasil disimpan'
-                ]);
-            } catch (Exception $e) {
-                $this->db->rollback();
-                throw $e;
             }
 
-        } catch (Exception $e) {
-            http_response_code(500);
+            $this->db->commit();
+
             echo json_encode([
-                'success' => false, 
-                'message' => 'Gagal menyimpan draft: ' . $e->getMessage()
+                'success' => true, 
+                'message' => 'Draft berhasil disimpan'
             ]);
+            
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw $e;
         }
+
+    } catch (Exception $e) {
+        error_log("❌ saveDraft error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Gagal menyimpan draft: ' . $e->getMessage()
+        ]);
     }
+}
 }

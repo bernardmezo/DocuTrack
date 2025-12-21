@@ -191,7 +191,7 @@ class AdminModel
                         WHEN l.submittedAt IS NULL AND EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 
                             WHERE li.lpjId = l.lpjId 
-                            AND (li.fileBukti IS NULL OR li.fileBukti = '')
+                            AND (li.fileBukti IS NULL OR li.fileBukti = '') OR (l.submittedAt IS NULL AND l.statusId = 1)
                         ) THEN 'Menunggu_Upload'
                         WHEN l.submittedAt IS NULL AND EXISTS (
                             SELECT 1 FROM tbl_lpj_item li 

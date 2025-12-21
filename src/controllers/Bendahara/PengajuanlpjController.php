@@ -68,7 +68,7 @@ class PengajuanLpjController extends Controller
             $back_url = $base_url . '/pengajuan-lpj';
         }
 
-        // ✅ Ambil data LPJ dari database
+        // Ambil data LPJ dari database
         $lpj = $this->safeModelCall($this->model, 'getDetailLPJ', [$id], null);
 
         if (!$lpj) {
@@ -77,10 +77,10 @@ class PengajuanLpjController extends Controller
             exit;
         }
 
-        // ✅ Ambil item-item LPJ
+        // Ambil item-item LPJ
         $lpj_items = $this->safeModelCall($this->model, 'getLPJItems', [$id], []);
 
-        // ✅ Group items by jenisBelanja (kategori)
+        // Group items by jenisBelanja (kategori)
         $rab_items = [];
         foreach ($lpj_items as $item) {
             $kategori = $item['jenisBelanja'] ?? 'Lainnya';
@@ -93,15 +93,15 @@ class PengajuanLpjController extends Controller
                 'sat1' => $item['sat1'] ?? '-',
                 'vol2' => $item['vol2'] ?? '-',
                 'sat2' => $item['sat2'] ?? '-',
-                'harga_satuan' => $item['totalHarga'] ?? 0, // Harga per item
-                'harga_plan' => $item['subTotal'] ?? 0,     // Total realisasi
+                'harga_satuan' => $item['harga'] ?? 0,
+                'harga_realisasi' => $item['realisasi'] ?? 0, 
                 'subtotal' => $item['subTotal'] ?? 0,
                 'bukti_file' => $item['fileBukti'] ?? null,
                 'komentar' => $item['komentar'] ?? null
             ];
         }
 
-        // ✅ Tentukan status
+        // Tentukan status
         $status = 'Draft';
         if (!empty($lpj['approvedAt'])) {
             $status = 'Disetujui';
@@ -154,7 +154,7 @@ class PengajuanLpjController extends Controller
 
         try {
             if ($action === 'setuju') {
-                // ✅ APPROVE LPJ
+                // Approve LPJ
                 // Validasi dilakukan di model: LPJ harus sudah di-submit terlebih dahulu
                 if ($this->safeModelCall($this->model, 'approveLPJ', [$lpj_id], false)) {
                     $_SESSION['flash_message'] = 'LPJ berhasil disetujui!';
@@ -192,7 +192,7 @@ class PengajuanLpjController extends Controller
                     exit;
                 }
 
-                // ✅ IMPLEMENTASI: Simpan komentar revisi
+                // IMPLEMENTASI: Simpan komentar revisi
                 if ($this->safeModelCall($this->model, 'reviseLPJ', [$lpj_id, $komentar, $catatan_umum], false)) {
                     $_SESSION['flash_message'] = 'Permintaan revisi berhasil dikirim ke Admin!';
                     $_SESSION['flash_type'] = 'success';

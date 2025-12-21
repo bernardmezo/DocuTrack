@@ -20,97 +20,146 @@ class LpjService
     }
 
     /**
-     * Memproses pengajuan atau pembaruan LPJ beserta item-itemnya.
-     * Mengelola transaksi database untuk memastikan integritas data.
-     *
-     * @param int $kegiatanId
-     * @param array $items
-     * @return array
-     * @throws Exception
-     */
-    public function submitLpj(int $kegiatanId, array $items): array
-    {
-        try {
-            $this->db->begin_transaction();
+ * Memproses pengajuan atau pembaruan LPJ beserta item-itemnya.
+ * Mengelola transaksi database untuk memastikan integritas data.
+ *
+ * ✅ FIXED: Proper validation and logging for realisasi updates
+ *
+ * @param int $kegiatanId
+ * @param array $items
+ * @return array
+ * @throws Exception
+ */
+public function submitLpj(int $kegiatanId, array $items): array
+{
+    try {
+        $this->db->begin_transaction();
 
-            // [SECURITY FIX] Validate Disbursed Funds
-            $disbursedAmount = $this->lpjModel->getDisbursedAmount($kegiatanId);
-            if ($disbursedAmount <= 0) {
-                 throw new Exception("LPJ tidak dapat diajukan. Dana belum dicairkan untuk kegiatan ini.");
-            }
+        error_log("🚀 submitLpj START: kegiatanId={$kegiatanId}, items=" . json_encode($items));
 
-            // Get or create LPJ record
-            $existingLpj = $this->lpjModel->getLpjWithItemsByKegiatanId($kegiatanId);
-            $lpjId = $existingLpj ? $existingLpj['lpj_id'] : $this->lpjModel->insertLpj($kegiatanId);
-
-            if (!$lpjId) {
-                throw new Exception("Gagal memproses record LPJ.");
-            }
-
-            error_log("🔍 DEBUG Submit LPJ: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
-
-            // ✅ [VALIDATION] Cek apakah LPJ sudah pernah di-submit sebelumnya
-            // Izinkan submit ulang jika statusnya adalah 'Revisi' (status_id = 2)
-            $lpjData = $this->lpjModel->getLpjWithItemsById($lpjId);
-            $isRevision = isset($lpjData['status_id']) && $lpjData['status_id'] == 2;
-
-            if ($lpjData && !empty($lpjData['submitted_at']) && !$isRevision) {
-                throw new Exception("LPJ sudah pernah disubmit sebelumnya pada " . date('d/m/Y H:i', strtotime($lpjData['submitted_at'])) . ". Tidak dapat submit ulang.");
-            }
-
-            // [VALIDATION] Cek apakah semua bukti sudah diupload
-            $uploadStatus = $this->lpjModel->getUploadBuktiStatus($lpjId);
-            error_log("📊 Upload Status: " . json_encode($uploadStatus));
-            
-            // Jika belum ada items sama sekali di tbl_lpj_item, items akan diinsert dari parameter
-            if ($uploadStatus['total'] > 0 && $uploadStatus['uploaded'] < $uploadStatus['total']) {
-                throw new Exception("Mohon upload semua bukti terlebih dahulu. (" . $uploadStatus['uploaded'] . "/" . $uploadStatus['total'] . " item sudah diupload)");
-            }
-
-            // Update realisasi items (Upsert behavior to preserve existing fileBukti)
-            if (!empty($items)) {
-                // [VALIDATION] Ensure realisasi <= plan
-                foreach ($items as $item) {
-                    $rabItemId = (int)$item['id'];
-                    $realisasiVal = floatval($item['total'] ?? 0);
-                    
-                    $rabData = $this->lpjModel->getRABItemById($rabItemId);
-                    if ($rabData) {
-                        $maxPlan = floatval($rabData['totalRencana'] ?? 0);
-                        if ($realisasiVal > $maxPlan) {
-                            throw new Exception("Item '{$rabData['uraian']}' melebihi anggaran! (Realisasi: {$realisasiVal}, Anggaran: {$maxPlan})");
-                        }
-                    }
-                }
-
-                if (!$this->lpjModel->updateLpjItemsRealisasi((int)$lpjId, $items)) {
-                    throw new Exception("Gagal memperbarui item realisasi LPJ.");
-                }
-            }
-
-            // Update grand total
-            $this->lpjModel->updateLpjGrandTotal($lpjId);
-            
-            // ✅ UPDATE STATUS KE 'Submitted' AGAR submittedAt TERISI
-            if (!$this->lpjModel->updateLpjStatus($lpjId, 'Submitted')) {
-                throw new Exception("Gagal mengupdate status LPJ.");
-            }
-
-            $this->db->commit();
-
-            error_log("✅ LPJ berhasil disubmit: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
-            return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara untuk verifikasi'];
-        } catch (Exception $e) {
-            if ($this->db->in_transaction) {
-                $this->db->rollback();
-            }
-            error_log("❌ LpjService::submitLpj Error: " . $e->getMessage());
-            throw $e;
+        // [SECURITY FIX] Validate Disbursed Funds
+        $disbursedAmount = $this->lpjModel->getDisbursedAmount($kegiatanId);
+        if ($disbursedAmount <= 0) {
+             throw new Exception("LPJ tidak dapat diajukan. Dana belum dicairkan untuk kegiatan ini.");
         }
+
+        // Get or create LPJ record
+        $existingLpj = $this->lpjModel->getLpjWithItemsByKegiatanId($kegiatanId);
+        $lpjId = $existingLpj ? $existingLpj['lpj_id'] : $this->lpjModel->insertLpj($kegiatanId);
+
+        if (!$lpjId) {
+            throw new Exception("Gagal memproses record LPJ.");
+        }
+
+        error_log("📋 LPJ Record: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
+
+        // ✅ [VALIDATION] Cek apakah LPJ sudah pernah di-submit sebelumnya
+        $lpjData = $this->lpjModel->getLpjWithItemsById($lpjId);
+        $isRevision = isset($lpjData['status_id']) && $lpjData['status_id'] == 2;
+
+        if ($lpjData && !empty($lpjData['submitted_at']) && !$isRevision) {
+            throw new Exception("LPJ sudah pernah disubmit sebelumnya pada " . date('d/m/Y H:i', strtotime($lpjData['submitted_at'])) . ". Tidak dapat submit ulang.");
+        }
+
+        // [VALIDATION] Cek apakah semua bukti sudah diupload
+        $uploadStatus = $this->lpjModel->getUploadBuktiStatus($lpjId);
+        error_log("📊 Upload Status: " . json_encode($uploadStatus));
+        
+        if ($uploadStatus['total'] > 0 && $uploadStatus['uploaded'] < $uploadStatus['total']) {
+            throw new Exception("Mohon upload semua bukti terlebih dahulu. (" . $uploadStatus['uploaded'] . "/" . $uploadStatus['total'] . " item sudah diupload)");
+        }
+
+        // ✅ [NEW VALIDATION] Validasi total agregat: sum(realisasi) harus = sum(anggaran)
+        // Per-item boleh berbeda, yang penting totalnya sama
+        if (!empty($items)) {
+            $validationErrors = [];
+            $totalRealisasi = 0;
+            
+            // Get kakId from LPJ record
+            $lpjData = $this->lpjModel->getLpjWithItemsById($lpjId);
+            $kakId = $lpjData['kakId'] ?? 0;
+            
+            if (!$kakId) {
+                throw new Exception("KAK tidak ditemukan untuk LPJ ini.");
+            }
+            
+            foreach ($items as $index => $item) {
+                $rabItemId = (int)($item['id'] ?? 0);
+                
+                // ✅ Accept both 'realisasi' and 'total' field names
+                $realisasiVal = floatval($item['realisasi'] ?? $item['total'] ?? 0);
+                
+                if ($rabItemId <= 0) {
+                    $validationErrors[] = "Item #{$index}: ID tidak valid";
+                    continue;
+                }
+                
+                if ($realisasiVal < 0) {
+                    $validationErrors[] = "Item #{$index}: Realisasi tidak boleh negatif";
+                    continue;
+                }
+                
+                // ✅ NEW: Hanya validasi negatif, tidak validasi per-item melebihi anggaran
+                $totalRealisasi += $realisasiVal;
+                
+                error_log("✅ Item #{$index} validated: rabItemId={$rabItemId}, realisasi={$realisasiVal}");
+            }
+            
+            if (!empty($validationErrors)) {
+                throw new Exception("Validasi gagal:\n" . implode("\n", $validationErrors));
+            }
+            
+            // ✅ NEW: Validasi total realisasi harus = total anggaran KAK
+            $totalAnggaran = $this->lpjModel->getTotalAnggaranByKakId($kakId);
+            
+            error_log("📊 Validation Summary: Total Anggaran=Rp " . number_format($totalAnggaran, 2) . ", Total Realisasi=Rp " . number_format($totalRealisasi, 2));
+            
+            if (abs($totalRealisasi - $totalAnggaran) > 0.01) {
+                throw new Exception(
+                    "Total realisasi tidak sesuai dengan total anggaran!\n\n" .
+                    "Total Anggaran KAK: Rp " . number_format($totalAnggaran, 2, ',', '.') . "\n" .
+                    "Total Realisasi: Rp " . number_format($totalRealisasi, 2, ',', '.') . "\n" .
+                    "Selisih: Rp " . number_format(abs($totalRealisasi - $totalAnggaran), 2, ',', '.') . "\n\n" .
+                    "Mohon sesuaikan nilai realisasi agar totalnya sama dengan total anggaran."
+                );
+            }
+            
+            error_log("✅ Total validation passed: Total Realisasi = Total Anggaran = Rp " . number_format($totalAnggaran, 2));
+
+            // ✅ Update realisasi items
+            if (!$this->lpjModel->updateLpjItemsRealisasi((int)$lpjId, $items)) {
+                throw new Exception("Gagal memperbarui item realisasi LPJ.");
+            }
+            
+            error_log("✅ All items updated successfully");
+        }
+
+        // Update grand total
+        $this->lpjModel->updateLpjGrandTotal($lpjId);
+        
+        // ✅ UPDATE STATUS KE 'Submitted'
+        if (!$this->lpjModel->updateLpjStatus($lpjId, 'Submitted')) {
+            throw new Exception("Gagal mengupdate status LPJ.");
+        }
+
+        $this->db->commit();
+
+        error_log("✅ LPJ SUBMITTED SUCCESSFULLY: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
+        return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara untuk verifikasi'];
+        
+    } catch (Exception $e) {
+        if ($this->db->in_transaction) {
+            $this->db->rollback();
+        }
+        error_log("❌ LpjService::submitLpj Error: " . $e->getMessage());
+        error_log("❌ Stack trace: " . $e->getTraceAsString());
+        throw $e;
     }
+}
 
     /**
-     * ✅ PERBAIKAN: Upload bukti DAN insert/update ke database
+     * ✅ Upload bukti HANYA untuk kolom fileBukti
+     * Tidak menyentuh kolom lain (realisasi akan diisi saat submit)
      * 
      * @param int $lpjId ID LPJ yang sedang dikerjakan
      * @param int $rabItemId ID item dari tbl_rab
@@ -120,6 +169,8 @@ class LpjService
     public function uploadLpjBukti(int $lpjId, int $rabItemId, array $fileData): array
     {
         try {
+            error_log("🔄 uploadLpjBukti: lpjId=$lpjId, rabItemId=$rabItemId");
+            
             // ✅ Validasi input
             if ($lpjId <= 0 || $rabItemId <= 0) {
                 throw new Exception('LPJ ID atau RAB Item ID tidak valid');
@@ -173,7 +224,7 @@ class LpjService
                 throw new Exception('Data RAB tidak ditemukan untuk item ID: ' . $rabItemId);
             }
             
-            // ✅ TAMBAHAN BARU: Insert/Update ke tbl_lpj_item
+            // 3. Insert/Update ke tbl_lpj_item (HANYA fileBukti)
             $insertResult = $this->lpjModel->upsertLpjItemBukti(
                 $lpjId, 
                 $rabItemId, 
@@ -187,7 +238,7 @@ class LpjService
                 throw new Exception('Gagal menyimpan data bukti ke database');
             }
             
-            error_log("✅ Database updated for lpjId=$lpjId, rabItemId=$rabItemId");
+            error_log("✅ Database updated for lpjId=$lpjId, rabItemId=$rabItemId, filename=$filename");
             
             return [
                 'success' => true,

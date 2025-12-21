@@ -24,12 +24,48 @@ class BendaharaService
 
     public function getListKegiatanDashboard($limit = 10)
     {
-        return $this->model->getListKegiatanDashboard($limit);
+        $data = $this->model->getListKegiatanDashboard($limit);
+        
+        // ✅ FIX: Add 'status' field for JavaScript compatibility
+        foreach ($data as &$item) {
+            if (!isset($item['status']) && isset($item['status_text'])) {
+                $item['status'] = $item['status_text'];
+            }
+            // Default to 'Menunggu' if no status
+            if (empty($item['status'])) {
+                $item['status'] = 'Menunggu';
+            }
+        }
+        
+        return $data;
     }
 
     public function getAntrianLPJ()
     {
-        return $this->model->getAntrianLPJ();
+        $data = $this->model->getAntrianLPJ();
+        
+        // ✅ FIX: Map database field names to JavaScript expected field names
+        foreach ($data as &$item) {
+            // Map status field
+            if (!isset($item['status']) && isset($item['status_text'])) {
+                $item['status'] = $item['status_text'];
+            }
+            if (empty($item['status'])) {
+                $item['status'] = 'Menunggu';
+            }
+            
+            // Map field names for JavaScript compatibility
+            $item['id'] = $item['lpjId'] ?? null;
+            $item['nama'] = $item['namaKegiatan'] ?? 'N/A';
+            $item['nama_mahasiswa'] = $item['pemilikKegiatan'] ?? 'N/A';
+            $item['nim'] = $item['nimPelaksana'] ?? '-';
+            $item['prodi'] = $item['prodiPenyelenggara'] ?? '-';
+            $item['jurusan'] = $item['jurusanPenyelenggara'] ?? '-';
+            $item['tanggal_pengajuan'] = $item['submittedAt'] ?? null;
+            $item['tenggat_lpj'] = $item['tenggatLpj'] ?? null;
+        }
+        
+        return $data;
     }
 
     public function getAllLPJHistory()

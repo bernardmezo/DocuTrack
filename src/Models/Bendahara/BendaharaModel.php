@@ -438,16 +438,34 @@ class BendaharaModel
      */
     public function getDetailLPJ($lpjId)
     {
-        $query = "SELECT l.*, k.namaKegiatan, k.pemilikKegiatan, k.nimPelaksana, 
-                         k.prodiPenyelenggara, k.jurusanPenyelenggara, k.userId
+        error_log("=== BENDAHARA MODEL: getDetailLPJ ===");
+        error_log("LPJ ID: " . $lpjId);
+        
+        $query = "SELECT l.*, 
+                    k.namaKegiatan, 
+                    k.pemilikKegiatan, k.nimPelaksana, 
+                    k.prodiPenyelenggara, 
+                    k.jurusanPenyelenggara, 
+                    k.userId,
+                    kak.kakId
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
+                  LEFT JOIN tbl_kak kak ON k.kegiatanId = kak.kegiatanId
                   WHERE l.lpjId = ?";
         
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $lpjId);
         mysqli_stmt_execute($stmt);
-        return mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_assoc($result);
+        
+        if ($data) {
+            error_log("LPJ found: " . $data['namaKegiatan']);
+        } else {
+            error_log("LPJ NOT FOUND for lpjId=" . $lpjId);
+        }
+        
+        return $data;
     }
 
     /**
@@ -455,6 +473,9 @@ class BendaharaModel
      */
     public function getLPJItems($lpjId)
     {
+        error_log("=== BENDAHARA MODEL: getLPJItems ===");
+        error_log("LPJ ID: " . $lpjId);
+        
         $query = "SELECT * FROM tbl_lpj_item WHERE lpjId = ? ORDER BY lpjItemId ASC";
         $stmt = mysqli_prepare($this->db, $query);
         mysqli_stmt_bind_param($stmt, "i", $lpjId);
@@ -463,8 +484,14 @@ class BendaharaModel
         
         $data = [];
         while ($row = mysqli_fetch_assoc($result)) {
+            error_log("Item: " . ($row['uraian'] ?? 'N/A') . 
+                     " | realisasi: " . ($row['realisasi'] ?? 'NULL') . 
+                     " | subTotal: " . ($row['subTotal'] ?? 'NULL') .
+                     " | totalHarga: " . ($row['totalHarga'] ?? 'NULL'));
             $data[] = $row;
         }
+        
+        error_log("Total items found: " . count($data));
         return $data;
     }
 

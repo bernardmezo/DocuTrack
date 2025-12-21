@@ -229,7 +229,7 @@ $can_edit = ($is_draft || $is_revisi);
                                 
                                 <!-- Realisasi -->
                                 <td class="px-4 py-3">
-                                    <?php if ($can_edit && !$bukti_uploaded) : ?>
+                                    <?php if ($can_edit) : ?>
                                     <!-- Editable -->
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">Rp</span>
@@ -297,7 +297,7 @@ $can_edit = ($is_draft || $is_revisi);
                 <div class="bg-green-50 p-6 rounded-lg border border-green-200">
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-medium text-green-700 uppercase">Total Realisasi (LPJ)</span>
-                        <span id="grand-total-realisasi" class="text-2xl font-bold text-green-600"><?php echo formatRupiah($grand_total_realisasi); ?></span>
+                        <span id="grand-total-realisasi" class="text-2xl font-bold text-green-600" value="<?php echo $grand_total_realisasi; ?>"><?php echo formatRupiah($grand_total_realisasi); ?></span>
                     </div>
                 </div>
             </div>
@@ -430,29 +430,91 @@ const lpjId = <?php echo $lpj_id; ?>;
 const baseBuktiUrl = '/docutrack/public/uploads/lpj/';
 let currentRabItemId = null;
 
+// ✅ FIXED: Get realisasi value from either input OR data-attribute
+function getRealisasiValue(row) {
+    const rabItemId = row.dataset.rabItemId;
+    
+    // Try to get from input field (editable mode)
+    const realisasiInput = row.querySelector('.realisasi-input');
+    if (realisasiInput) {
+        const value = parseFloat(realisasiInput.value) || 0;
+        console.log(`💰 Item ${rabItemId}: Reading from INPUT = ${value}`);
+        return Math.max(0, value);
+    }
+    
+    // Try to get from data-realisasi attribute (read-only mode after upload)
+    const dataRealisasi = row.dataset.realisasi;
+    if (dataRealisasi) {
+        const value = parseFloat(dataRealisasi) || 0;
+        console.log(`💰 Item ${rabItemId}: Reading from DATA-ATTR = ${value}`);
+        return Math.max(0, value);
+    }
+    
+    // Try to get from hidden input (if exists)
+    const hiddenInput = row.querySelector('input[type="hidden"][name*="realisasi"]');
+    if (hiddenInput) {
+        const value = parseFloat(hiddenInput.value) || 0;
+        console.log(`💰 Item ${rabItemId}: Reading from HIDDEN = ${value}`);
+        return Math.max(0, value);
+    }
+    
+    // Fallback: try to parse from text content
+    const readOnlySpan = row.querySelector('.text-green-600');
+    if (readOnlySpan) {
+        // Remove "Rp" and format, convert comma to dot
+        const textValue = readOnlySpan.textContent
+            .replace(/Rp/g, '')
+            .replace(/\./g, '')  // Remove thousand separator
+            .replace(/,/g, '.')  // Convert decimal comma to dot
+            .trim();
+        const value = parseFloat(textValue) || 0;
+        console.log(`💰 Item ${rabItemId}: Reading from TEXT = "${readOnlySpan.textContent}" => ${value}`);
+        return Math.max(0, value);
+    }
+    
+    console.warn(`⚠️ Item ${rabItemId}: No realisasi found, defaulting to 0`);
+    return 0;
+}
+
 // Update total realisasi
 function updateTotalRealisasi() {
     let total = 0;
-    document.querySelectorAll('.realisasi-input').forEach(input => {
-        const value = parseFloat(input.value) || 0;
+    const allRows = document.querySelectorAll('[data-rab-item-id]');
+    
+    allRows.forEach(row => {
+        const value = getRealisasiValue(row);
         total += value;
     });
     
-    document.getElementById('grand-total-realisasi').textContent = 
-        'Rp ' + total.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const totalElement = document.getElementById('grand-total-realisasi');
+    if (totalElement) {
+        totalElement.textContent = 'Rp ' + total.toLocaleString('id-ID', { 
+            minimumFractionDigits: 2, 
+            maximumFractionDigits: 2 
+        });
+        totalElement.setAttribute('data-value', total);
+    }
+    
+    console.log('💰 Total Realisasi Updated:', total);
 }
 
-// Validasi realisasi tidak melebihi anggaran
+// Validasi realisasi tidak melebihi anggaran (only for editable inputs)
 document.querySelectorAll('.realisasi-input').forEach(input => {
     input.addEventListener('input', function() {
-        const max = parseFloat(this.dataset.max);
-        const value = parseFloat(this.value);
+        const max = parseFloat(this.dataset.max) || 0;
+        const value = parseFloat(this.value) || 0;
         
         if (value > max) {
-            this.value = max;
-            alert('Realisasi tidak boleh melebihi anggaran yang telah disetujui!');
+            this.value = max.toFixed(2);
+            alert('⚠️ Realisasi tidak boleh melebihi anggaran yang telah disetujui!\n\nAnggaran: Rp ' + max.toLocaleString('id-ID'));
         }
         
+        updateTotalRealisasi();
+    });
+    
+    input.addEventListener('blur', function() {
+        const value = parseFloat(this.value) || 0;
+        this.value = value.toFixed(2);
         updateTotalRealisasi();
     });
 });
@@ -485,24 +547,28 @@ document.getElementById('btn-confirm-upload').addEventListener('click', async fu
         return;
     }
     
-    // Validasi ukuran
     if (file.size > 5 * 1024 * 1024) {
         alert('Ukuran file maksimal 5MB!');
         return;
     }
     
-    // Validasi tipe
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
         alert('Format file harus JPG, PNG, atau PDF!');
         return;
     }
     
-    // Upload via AJAX
+    // ✅ FIXED: Collect realisasi value before upload to preserve it
+    const currentRow = document.querySelector(`[data-rab-item-id="${currentRabItemId}"]`);
+    const realisasiValue = currentRow ? getRealisasiValue(currentRow) : 0;
+    
+    console.log(`📤 Uploading bukti for item ${currentRabItemId} with realisasi: ${realisasiValue}`);
+    
     const formData = new FormData();
     formData.append('file', file);
     formData.append('lpj_id', lpjId);
     formData.append('rab_item_id', currentRabItemId);
+    formData.append('realisasi', realisasiValue); // ✅ Kirim realisasi juga
     
     try {
         this.disabled = true;
@@ -516,13 +582,13 @@ document.getElementById('btn-confirm-upload').addEventListener('click', async fu
         const result = await response.json();
         
         if (result.success) {
-            // Reload dulu, alert setelah reload
+            console.log('✅ Upload success:', result);
             location.reload();
         } else {
             alert('Gagal upload: ' + result.message);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Upload error:', error);
         alert('Terjadi kesalahan saat upload!');
     } finally {
         this.disabled = false;
@@ -566,18 +632,22 @@ document.getElementById('btn-save-draft')?.addEventListener('click', async funct
         return;
     }
     
-    // Collect data items
     const items = [];
     document.querySelectorAll('[data-rab-item-id]').forEach(row => {
         const rabItemId = row.dataset.rabItemId;
-        const realisasiInput = row.querySelector('.realisasi-input');
-        const realisasi = realisasiInput ? parseFloat(realisasiInput.value) : 0;
+        const realisasi = getRealisasiValue(row);
         
-        items.push({
-            id: rabItemId,
-            total: realisasi
-        });
+        if (rabItemId) {
+            items.push({
+                id: parseInt(rabItemId),
+                realisasi: realisasi
+            });
+            
+            console.log('📝 Draft Item:', { id: rabItemId, realisasi: realisasi });
+        }
     });
+    
+    console.log('💾 Saving draft with items:', items);
     
     const formData = new FormData();
     formData.append('kegiatan_id', document.querySelector('input[name="kegiatan_id"]').value);
@@ -597,13 +667,13 @@ document.getElementById('btn-save-draft')?.addEventListener('click', async funct
         const result = await response.json();
         
         if (result.success) {
-            alert('Draft berhasil disimpan!');
+            alert('✅ Draft berhasil disimpan!');
             location.reload();
         } else {
-            alert('Gagal menyimpan draft: ' + result.message);
+            alert('❌ Gagal menyimpan draft: ' + result.message);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Save draft error:', error);
         alert('Terjadi kesalahan saat menyimpan draft!');
     } finally {
         this.disabled = false;
@@ -611,37 +681,88 @@ document.getElementById('btn-save-draft')?.addEventListener('click', async funct
     }
 });
 
-// Submit Form
+// ✅ FIXED Submit Form Handler
 document.getElementById('form-lpj-submit').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    // Validasi semua bukti sudah diupload dengan cara yang lebih akurat
+    console.log('🚀 Submit LPJ Started');
+    
+    // ✅ Collect data dengan method yang sudah diperbaiki
+    const items = [];
     const allRows = document.querySelectorAll('[data-rab-item-id]');
-    const uploadButtons = document.querySelectorAll('.btn-upload-bukti');
     
-    console.log('Total items:', allRows.length);
-    console.log('Items belum upload:', uploadButtons.length);
+    console.log('📋 Found', allRows.length, 'items to process');
     
-    // Jika masih ada tombol Upload, berarti belum semua diupload
-    if (uploadButtons.length > 0) {
-        alert('❌ GAGAL SUBMIT!\n\nMohon upload semua bukti terlebih dahulu!\n\nTotal item: ' + allRows.length + '\nBelum upload: ' + uploadButtons.length + ' bukti');
-        return;
-    }
-    
-    // Validasi semua realisasi sudah diisi
-    let hasEmptyRealisasi = false;
-    allRows.forEach(row => {
-        const realisasiInput = row.querySelector('.realisasi-input');
-        if (realisasiInput) {
-            const value = parseFloat(realisasiInput.value);
-            if (!value || value <= 0) {
-                hasEmptyRealisasi = true;
-            }
+    allRows.forEach((row, index) => {
+        const rabItemId = row.dataset.rabItemId;
+        const realisasi = getRealisasiValue(row);
+        
+        if (rabItemId) {
+            items.push({
+                id: parseInt(rabItemId),
+                realisasi: realisasi
+            });
+            
+            console.log(`📊 Item #${index}: rabItemId=${rabItemId}, realisasi=${realisasi}`);
         }
     });
     
-    if (hasEmptyRealisasi) {
-        alert('❌ GAGAL SUBMIT!\n\nMohon isi semua nilai realisasi dengan benar!');
+    console.log('📦 Total items collected:', items.length);
+    console.log('📦 Items data:', JSON.stringify(items));
+    
+    // ✅ NEW: Validasi total agregat (sum realisasi harus = sum anggaran)
+    const invalidItems = [];
+    let totalRealisasi = 0;
+    let totalAnggaran = 0;
+    
+    items.forEach((item, index) => {
+        // Validasi tidak boleh negatif
+        if (item.realisasi < 0) {
+            invalidItems.push(`Item #${index + 1} (ID ${item.id}): Realisasi negatif (Rp ${item.realisasi})`);
+        }
+        
+        totalRealisasi += parseFloat(item.realisasi || 0);
+    });
+    
+    // Hitung total anggaran dari semua row
+    allRows.forEach(row => {
+        const anggaranText = row.querySelector('td:nth-child(2) span:last-child')?.textContent || '0';
+        const anggaran = parseFloat(anggaranText.replace(/\./g, '').replace(',', '.'));
+        totalAnggaran += anggaran;
+    });
+    
+    console.log('📊 Validation:', { totalAnggaran, totalRealisasi, diff: Math.abs(totalAnggaran - totalRealisasi) });
+    
+    if (invalidItems.length > 0) {
+        console.error('❌ Invalid items found:', invalidItems);
+        alert('❌ GAGAL SUBMIT!\n\nAda item dengan realisasi negatif:\n\n' + invalidItems.join('\n') + '\n\nMohon perbaiki nilai realisasi!');
+        return;
+    }
+    
+    // ✅ NEW: Validasi total harus sama (toleransi 0.01 untuk floating point)
+    if (Math.abs(totalRealisasi - totalAnggaran) > 0.01) {
+        alert(
+            '❌ GAGAL SUBMIT!\n\n' +
+            'Total realisasi tidak sesuai dengan total anggaran!\n\n' +
+            'Total Anggaran: Rp ' + totalAnggaran.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '\n' +
+            'Total Realisasi: Rp ' + totalRealisasi.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '\n' +
+            'Selisih: Rp ' + Math.abs(totalRealisasi - totalAnggaran).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + '\n\n' +
+            'Catatan: Realisasi per item boleh berbeda dengan anggaran per item,\n' +
+            'tetapi TOTAL realisasi harus sama dengan TOTAL anggaran.\n\n' +
+            'Mohon sesuaikan nilai realisasi!'
+        );
+        return;
+    }
+    
+    // Validasi semua bukti sudah diupload
+    const uploadButtons = document.querySelectorAll('.btn-upload-bukti');
+    
+    console.log('🔍 Checking upload status:');
+    console.log('- Total items:', allRows.length);
+    console.log('- Items belum upload:', uploadButtons.length);
+    
+    if (uploadButtons.length > 0) {
+        alert('❌ GAGAL SUBMIT!\n\nMohon upload semua bukti terlebih dahulu!\n\nTotal item: ' + allRows.length + '\nBelum upload: ' + uploadButtons.length + ' bukti');
         return;
     }
     
@@ -650,25 +771,15 @@ document.getElementById('form-lpj-submit').addEventListener('submit', async func
         return;
     }
     
-    // Collect data items untuk submit
-    const items = [];
-    allRows.forEach(row => {
-        const rabItemId = row.dataset.rabItemId;
-        const realisasiInput = row.querySelector('.realisasi-input');
-        const realisasi = realisasiInput ? parseFloat(realisasiInput.value) : 0;
-        
-        items.push({
-            id: rabItemId,
-            total: realisasi
-        });
-    });
-    
-    console.log('Submitting items:', items);
-    
-    // Create FormData with proper structure
     const formData = new FormData();
     formData.append('kegiatan_id', document.querySelector('input[name="kegiatan_id"]').value);
     formData.append('items', JSON.stringify(items));
+    
+    console.log('📤 Sending to server:', {
+        kegiatan_id: formData.get('kegiatan_id'),
+        items_count: items.length,
+        items: formData.get('items')
+    });
     
     try {
         const btnSubmit = document.getElementById('btn-submit-lpj');
@@ -680,7 +791,10 @@ document.getElementById('form-lpj-submit').addEventListener('submit', async func
             body: formData
         });
         
+        console.log('📡 Response status:', response.status);
+        
         const result = await response.json();
+        console.log('📬 Response data:', result);
         
         if (result.success) {
             alert('✅ LPJ BERHASIL DISUBMIT!\n\n' + result.message + '\n\nAnda akan diarahkan ke halaman list LPJ.');
@@ -691,15 +805,42 @@ document.getElementById('form-lpj-submit').addEventListener('submit', async func
             btnSubmit.innerHTML = '<i class="fas fa-paper-plane"></i> Submit LPJ ke Bendahara';
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Submit error:', error);
         alert('❌ Terjadi kesalahan saat submit LPJ!');
         document.getElementById('btn-submit-lpj').disabled = false;
         document.getElementById('btn-submit-lpj').innerHTML = '<i class="fas fa-paper-plane"></i> Submit LPJ ke Bendahara';
     }
 });
 
-// Initialize
-updateTotalRealisasi();
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📋 LPJ Detail Page Loaded');
+    console.log('- LPJ ID:', lpjId);
+    
+    const allRows = document.querySelectorAll('[data-rab-item-id]');
+    console.log('- Total RAB Items:', allRows.length);
+    
+    // Debug: Show what we found for each row
+    allRows.forEach((row, index) => {
+        const rabItemId = row.dataset.rabItemId;
+        const hasInput = !!row.querySelector('.realisasi-input');
+        const hasDataAttr = !!row.dataset.realisasi;
+        const hasReadOnly = !!row.querySelector('.text-green-600');
+        
+        console.log(`  Item #${index} (ID ${rabItemId}):`, {
+            hasInput,
+            hasDataAttr,
+            hasReadOnly,
+            realisasi: getRealisasiValue(row)
+        });
+    });
+    
+    console.log('- Editable Inputs:', document.querySelectorAll('.realisasi-input').length);
+    console.log('- Upload Buttons:', document.querySelectorAll('.btn-upload-bukti').length);
+    console.log('- View Buttons:', document.querySelectorAll('.btn-view-bukti').length);
+    
+    updateTotalRealisasi();
+});
 </script>
 
 <style>
