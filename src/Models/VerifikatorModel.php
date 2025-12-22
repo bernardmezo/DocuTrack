@@ -47,7 +47,7 @@ class VerifikatorModel
         $query = "SELECT
                     COUNT(*) as total,
                     SUM(CASE
-                        WHEN posisiId IN (4, 3, 5) AND statusUtamaId != 4 THEN 1
+                        WHEN posisiId IN (4, 3, 5) AND statusUtamaId != 4 OR statusUtamaId IN (5, 6)  THEN 1
                         ELSE 0
                     END) as disetujui,
                     SUM(CASE

@@ -522,14 +522,14 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 <div class="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4 w-full sm:w-auto order-1 sm:order-2">
                 
                 <?php if ($is_menunggu): ?>
-                    <button type="button" id="btn-tolak-wadir"
+                    <!-- <button type="button" id="btn-tolak-wadir"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-red-700 transition-all duration-300">
                         <i class="fas fa-times"></i> Tolak
                     </button>
                     <button type="button" id="btn-revisi-wadir"
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-yellow-600 transition-all duration-300">
                         <i class="fas fa-pencil-alt"></i> Revisi
-                    </button>
+                    </button> -->
                     <button type="button" id="btn-setujui-Wadir" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg text-sm sm:text-base">
                          <i class="fas fa-check-double"></i> Setujui Usulan

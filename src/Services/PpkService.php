@@ -80,9 +80,11 @@ class PpkService
         $this->validationService->validate(['kegiatan_id' => $kegiatanId], ['kegiatan_id' => 'required|numeric']);
 
         // moveToNextPosition handles history logging
+        // Status tetap Menunggu karena masih perlu approval dari Wadir
         $result = $this->workflowService->moveToNextPosition(
             $kegiatanId,
-            WorkflowService::POSITION_PPK
+            WorkflowService::POSITION_PPK,
+            WorkflowService::STATUS_MENUNGGU
         );
 
         if ($result) {

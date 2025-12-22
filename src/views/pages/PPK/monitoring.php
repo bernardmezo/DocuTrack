@@ -21,6 +21,7 @@ if (!isset($list_jurusan)) { $list_jurusan = []; }
                     <button type="button" class="riwayat-filter-tab" data-status="Menunggu">Menunggu</button>
                     <button type="button" class="riwayat-filter-tab" data-status="Approved">Approved</button>
                     <button type="button" class="riwayat-filter-tab" data-status="Ditolak">Ditolak</button>
+                    <button type="button" class="riwayat-filter-tab" data-status="LPJ">LPJ</button>
                 </div>
             </div>
 
@@ -107,11 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const tahapanAll = ['Pengajuan', 'Verifikasi', 'ACC PPK', 'ACC WD', 'Dana Cair', 'LPJ'];
         
         const statusLower = status.toLowerCase();
+        const tahapLower = tahapSekarang.toLowerCase();
         const isDitolak = (statusLower === 'ditolak');
         const isApproved = (statusLower === 'approved');
         const isMenunggu = (statusLower === 'menunggu');
+        const isLPJ = (tahapLower === 'lpj');
 
         let posisiSekarang = tahapanAll.indexOf(tahapSekarang);
+        if (posisiSekarang === -1 && isLPJ) posisiSekarang = 5; // LPJ is last stage
         if (posisiSekarang === -1) posisiSekarang = 0;
         
         const totalLangkah = tahapanAll.length - 1;
@@ -125,7 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isDitolak) {
             lebarMerah = (1 / totalLangkah) * 100;
             leftMerah = lebarBiru;
-        } else if (isApproved) {
+        } else if (isApproved || isLPJ) {
+            // Untuk LPJ atau Approved, progress bar penuh dengan akhiran hijau
             lebarBiru = ( (totalLangkah - 1) / totalLangkah ) * 100;
             lebarHijau = (1 / totalLangkah) * 100;
             leftHijau = lebarBiru;
@@ -153,10 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isCompleted) { nodeClass = 'bg-blue-500'; textClass = 'text-blue-600'; }
             else if (isActive) {
                 if (isDitolak) { nodeClass = 'bg-red-500 ring-2 md:ring-4 ring-red-200 scale-110'; textClass = 'text-red-600 font-bold'; }
+                else if (isLPJ && namaTahap === 'LPJ') { nodeClass = 'bg-green-500 ring-2 md:ring-4 ring-green-200 scale-110'; textClass = 'text-green-600 font-bold'; }
                 else { nodeClass = 'bg-blue-500 ring-2 md:ring-4 ring-blue-200 scale-110'; textClass = 'text-blue-600 font-bold'; }
             }
             
-            if (isApproved) {
+            if (isApproved || isLPJ) {
                 nodeClass = 'bg-blue-500'; textClass = 'text-blue-600';
                 if (namaTahap === 'LPJ') { nodeClass = 'bg-green-500 ring-2 md:ring-4 ring-green-200 scale-110'; textClass = 'text-green-600 font-bold'; }
             }

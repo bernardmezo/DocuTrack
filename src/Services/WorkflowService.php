@@ -54,7 +54,7 @@ class WorkflowService
      */
     private const WORKFLOW_ROUTING = [
         self::POSITION_ADMIN => self::POSITION_VERIFIKATOR,      // Admin -> Verifikator
-        self::POSITION_VERIFIKATOR => self::POSITION_PPK,        // Verifikator -> PPK (Fixed: was Admin)
+        self::POSITION_VERIFIKATOR => self::POSITION_ADMIN,      // Verifikator -> Admin (input penanggung jawab)
         self::POSITION_PPK => self::POSITION_WADIR,              // PPK -> Wadir
         self::POSITION_WADIR => self::POSITION_BENDAHARA,        // Wadir -> Bendahara
         self::POSITION_BENDAHARA => self::POSITION_BENDAHARA     // Bendahara (end of workflow)

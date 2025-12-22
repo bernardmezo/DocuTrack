@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Exception;
+use mysqli;
 
 /**
  * WadirModel - Wadir Management Model
@@ -43,10 +44,20 @@ class WadirModel
      */
     public function getDashboardStats()
     {
-        $query = "SELECT 
-                    SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as total,
-                    SUM(CASE WHEN posisiId = 5 AND statusUtamaId != 4 THEN 1 ELSE 0 END) as disetujui,
-                    SUM(CASE WHEN posisiId = 3 THEN 1 ELSE 0 END) as menunggu
+        $query = "SELECT
+                    COUNT(*) as total,
+                    SUM(CASE
+                        WHEN posisiId = 5 AND statusUtamaId != 4 OR statusUtamaId IN (5, 6) AND posisiId IN (1) THEN 1
+                        ELSE 0
+                    END) as disetujui,
+                    SUM(CASE
+                        WHEN statusUtamaId = 4 THEN 1
+                        ELSE 0
+                    END) as ditolak,
+                    SUM(CASE
+                        WHEN posisiId = 4 THEN 1
+                        ELSE 0
+                    END) as pending
                 FROM tbl_kegiatan";
 
         $result = mysqli_query($this->db, $query);
@@ -232,46 +243,27 @@ class WadirModel
                     k.pemilikKegiatan as pengusul,
                     k.nimPelaksana as nim,
                     k.prodiPenyelenggara as prodi,
-                    k.jurusanPenyelenggara as jurusan,
                     k.createdAt as tanggal_pengajuan,
-                    k.createdAt as tanggal_update,
-                    
-                    -- Ambil tanggal approval dari history (jika ada)
-                    COALESCE(
-                        (SELECT ph.timestamp 
-                         FROM tbl_progress_history ph 
-                         WHERE ph.kegiatanId = k.kegiatanId 
-                         AND ph.statusId IN (3, 5) 
-                         ORDER BY ph.timestamp DESC 
-                         LIMIT 1),
-                        k.createdAt
-                    ) as tanggal_disetujui,
-                    
                     CASE 
-                        WHEN k.posisiId >= 5 AND k.statusUtamaId != 4 THEN 'Disetujui'
                         WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN k.posisiId >= 4 OR k.statusUtamaId IN (5, 6) THEN 'Disetujui'
                         ELSE 'Diproses'
                     END as status
-                    
                   FROM tbl_kegiatan k
-                  WHERE k.posisiId >= 4 OR k.statusUtamaId = 4
-                  ORDER BY tanggal_disetujui DESC";
+                  WHERE 
+                    k.posisiId = 5 OR k.statusUtamaId = 4 OR k.statusUtamaId IN (5, 6)
+                  ORDER BY k.createdAt DESC";
 
         $result = mysqli_query($this->db, $query);
         $data = [];
 
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
-                // Pastikan field jurusan tidak null
-                $row['jurusan'] = $row['jurusan'] ?? '-';
-                $row['prodi'] = $row['prodi'] ?? '-';
                 $data[] = $row;
             }
         }
-
         return $data;
     }
-
     /**
      * Mengambil data monitoring untuk Wadir dengan filtering dan pagination.
      *
@@ -288,105 +280,106 @@ class WadirModel
      * @param string $jurusanFilter Filter jurusan: 'semua' atau nama jurusan spesifik
      * @return array Array dengan key 'data' (list kegiatan) dan 'totalItems' (total records)
      */
-    public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter)
+   public function getMonitoringData($page, $perPage, $search, $statusFilter, $jurusanFilter)
     {
         $offset = ($page - 1) * $perPage;
+
+        // Base Where Clause & Params Construction
+        $whereClause = " WHERE 1=1";
+        $types = "";
         $params = [];
-        $types = '';
 
-        $baseQuery = "SELECT 
-                        k.kegiatanId as id,
-                        k.namaKegiatan as nama,
-                        k.pemilikKegiatan as pengusul,
-                        k.nimPelaksana as nim,
-                        k.prodiPenyelenggara as prodi,
-                        k.jurusanPenyelenggara as jurusan,
-                        k.createdAt as tanggal,
-                        k.posisiId,
-                        k.statusUtamaId,
-                        CASE 
-                            WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                            WHEN k.posisiId = 1 THEN 'Pengajuan'    
-                            WHEN k.posisiId = 2 THEN 'Verifikasi'   
-                            WHEN k.posisiId = 4 THEN 'ACC PPK'      
-                            WHEN k.posisiId = 3 THEN 'ACC WD'       
-                            WHEN k.posisiId = 5 THEN 'Dana Cair'    
-                            ELSE 'Unknown'
-                        END as tahap_sekarang,
-                        CASE 
-                            WHEN k.statusUtamaId = 4 THEN 'Ditolak'
-                            WHEN k.posisiId >= 4 AND k.statusUtamaId != 4 THEN 'Approved'
-                            WHEN k.posisiId = 3 AND k.statusUtamaId = 1 THEN 'Menunggu'
-                            ELSE 'In Process'
-                        END as status
-                    FROM tbl_kegiatan k
-                    WHERE 1=1 ";
-
-        $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k WHERE 1=1 ";
-
-        // Apply search filter using LIKE with wildcards
+        // Filter pencarian
         if (!empty($search)) {
-            $searchParam = "%{$search}%";
-            $baseQuery .= " AND (k.namaKegiatan LIKE ? OR k.pemilikKegiatan LIKE ?)";
-            $countQuery .= " AND (k.namaKegiatan LIKE ? OR k.pemilikKegiatan LIKE ?)";
-            $params[] = $searchParam;
-            $params[] = $searchParam;
+            $whereClause .= " AND (k.namaKegiatan LIKE ? OR k.pemilikKegiatan LIKE ?)";
+            $searchTerm = "%{$search}%";
             $types .= "ss";
+            $params[] = $searchTerm;
+            $params[] = $searchTerm;
         }
 
-        // Apply status filter
+        // Filter status
         if ($statusFilter !== 'semua') {
             if ($statusFilter === 'ditolak') {
-                $baseQuery .= " AND k.statusUtamaId = 4";
-                $countQuery .= " AND k.statusUtamaId = 4";
+                $whereClause .= " AND k.statusUtamaId = 4";
             } elseif ($statusFilter === 'approved') {
-                $baseQuery .= " AND k.posisiId >= 4 AND k.statusUtamaId != 4";
-                $countQuery .= " AND k.posisiId >= 4 AND k.statusUtamaId != 4";
+                $whereClause .= " AND k.posisiId >= 5 AND k.statusUtamaId != 4";
             } elseif ($statusFilter === 'menunggu') {
-                $baseQuery .= " AND k.posisiId = 3 AND k.statusUtamaId = 1";
-                $countQuery .= " AND k.posisiId = 3 AND k.statusUtamaId = 1";
+                // FIXED: Menunggu = posisi di PPK (4) DAN statusUtama = 1 (menunggu approval)
+                $whereClause .= " AND k.posisiId = 4 AND k.statusUtamaId = 1";
             } elseif ($statusFilter === 'in process') {
-                $baseQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 4";
-                $countQuery .= " AND k.statusUtamaId != 4 AND k.posisiId < 4";
+                $whereClause .= " AND k.statusUtamaId != 4 AND k.posisiId < 5";
+            } elseif ($statusFilter === 'lpj') {
+                // Filter untuk LPJ: posisi di 1 atau 6, status 5 atau 6, dan dana sudah cair
+                $whereClause .= " AND k.posisiId IN (1, 6) AND k.statusUtamaId IN (5, 6) AND k.jumlahDicairkan IS NOT NULL";
             }
         }
 
-        // Apply jurusan filter
+        // Filter jurusan
         if ($jurusanFilter !== 'semua') {
-            $baseQuery .= " AND k.jurusanPenyelenggara = ?";
-            $countQuery .= " AND k.jurusanPenyelenggara = ?";
-            $params[] = $jurusanFilter;
+            $whereClause .= " AND k.jurusanPenyelenggara = ?";
             $types .= "s";
+            $params[] = $jurusanFilter;
         }
 
-        // --- Execute Count Query ---
+        // 1. Execute Count Query
+        $countQuery = "SELECT COUNT(*) as total FROM tbl_kegiatan k" . $whereClause;
         $stmtCount = mysqli_prepare($this->db, $countQuery);
-        if (!$stmtCount) {
-             error_log("WadirModel::getMonitoringData - Prepare count statement failed: " . mysqli_error($this->db));
-             return ['data' => [], 'totalItems' => 0];
-        }
-        if ($types) {
+
+        if ($types !== "") {
             mysqli_stmt_bind_param($stmtCount, $types, ...$params);
         }
+
         mysqli_stmt_execute($stmtCount);
-        $resultCount = mysqli_stmt_get_result($stmtCount);
-        $totalItems = mysqli_fetch_assoc($resultCount)['total'] ?? 0;
+        $totalResult = mysqli_stmt_get_result($stmtCount);
+        $totalItems = ($totalResult) ? mysqli_fetch_assoc($totalResult)['total'] : 0;
         mysqli_stmt_close($stmtCount);
 
-        // --- Execute Main Data Query ---
-        $baseQuery .= " ORDER BY k.createdAt DESC LIMIT ? OFFSET ?";
 
-        $mainQueryParams = $params; // Copy params for the main query
-        $mainQueryParams[] = $perPage;
-        $mainQueryParams[] = $offset;
-        $mainQueryTypes = $types . "ii";
+        // 2. Execute Data Query
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as pengusul,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    k.jurusanPenyelenggara as jurusan,
+                    k.createdAt as tanggal,
+                    k.posisiId,
+                    k.statusUtamaId,
+                    l.statusId as lpj_status_id,
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak' 
+                        WHEN k.posisiId = 1 AND k.statusUtamaId NOT IN (4, 5, 6) THEN 'Pengajuan'
+                        WHEN k.posisiId = 2 AND k.statusUtamaId != 4 THEN 'Verifikasi'
+                        WHEN k.posisiId = 4 THEN 'ACC PPK'
+                        WHEN k.posisiId = 3 THEN 'ACC WD'
+                        WHEN k.posisiId IN (1) AND k.statusUtamaId IN (5, 6) AND k.jumlahDicairkan IS NOT NULL AND l.statusId = 1 THEN 'LPJ'
+                        WHEN k.posisiId = 5 OR (k.posisiId = 1 AND k.statusUtamaId IN (5, 6) AND k.jumlahDicairkan IS NULL) THEN 'Dana Cair'
+                        ELSE 'Unknown'
+                    END as tahap_sekarang,
+                    CASE 
+                        WHEN k.statusUtamaId = 4 THEN 'Ditolak'
+                        WHEN (k.posisiId >= 5 OR (k.posisiId = 1 AND k.statusUtamaId IN (5, 6) AND k.jumlahDicairkan IS NOT NULL)) AND l.statusId = 3 THEN 'Approved'
+                        WHEN k.posisiId = 4 AND k.statusUtamaId = 1 OR l.statusId = 1 THEN 'Menunggu'
+                        ELSE 'In Process'
+                    END as status
+                  FROM tbl_kegiatan k
+                  LEFT JOIN tbl_lpj l ON k.kegiatanId = l.kegiatanId" . $whereClause;
+                  
 
-        $stmt = mysqli_prepare($this->db, $baseQuery);
-        if (!$stmt) {
-             error_log("WadirModel::getMonitoringData - Prepare main statement failed: " . mysqli_error($this->db));
-             return ['data' => [], 'totalItems' => 0];
-        }
-        mysqli_stmt_bind_param($stmt, $mainQueryTypes, ...$mainQueryParams);
+        // Add ORDER BY and LIMIT
+        $query .= " ORDER BY k.createdAt DESC LIMIT ? OFFSET ?";
+        
+        // Add limit/offset to params
+        $typesWithLimit = $types . "ii";
+        $paramsWithLimit = $params;
+        $paramsWithLimit[] = $perPage;
+        $paramsWithLimit[] = $offset;
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, $typesWithLimit, ...$paramsWithLimit);
+        
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 
