@@ -56,7 +56,9 @@ class LpjModel
         mysqli_stmt_bind_param($stmt, 'id', $kegiatan_id, $grand_total_default);
 
         if (mysqli_stmt_execute($stmt)) {
-            $newId = mysqli_insert_id($this->db);            error_log("✅ LPJ Draft created: lpjId={$newId}, kegiatanId={$kegiatan_id}, statusId=1, submittedAt=NULL (Draft)");            mysqli_stmt_close($stmt);
+            $newId = mysqli_insert_id($this->db);            
+            error_log("✅ LPJ Draft created: lpjId={$newId}, kegiatanId={$kegiatan_id}, statusId=1, submittedAt=NULL (Draft)");
+            mysqli_stmt_close($stmt);
             return $newId;
         } else {
             error_log('LpjModel::insertLpj - Execute failed: ' . mysqli_stmt_error($this->db));
@@ -71,7 +73,7 @@ class LpjModel
     public function updateLpjGrandTotal($lpj_id)
     {
         $query = "UPDATE tbl_lpj SET grandTotalRealisasi = 
-                    (SELECT COALESCE(SUM(realisasi), 0) FROM tbl_lpj_item WHERE lpjId = ?)
+                    (SELECT COALESCE(SUM(realisasi), 120) FROM tbl_lpj_item WHERE lpjId = ?)
                   WHERE lpjId = ?";
 
         $stmt = mysqli_prepare($this->db, $query);
@@ -265,8 +267,8 @@ public function upsertLpjItemBukti(int $lpjId, int $rabItemId, string $filename,
             $insertQuery = "INSERT INTO tbl_lpj_item 
                             (lpjId, rabItemId, kategoriId, uraian, rincian,
                              sat1, sat2, vol1, vol2, harga, totalHarga,
-                             realisasi, fileBukti, createdAt) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW())";
+                             fileBukti, createdAt) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
             
             $stmt = mysqli_prepare($this->db, $insertQuery);
             
@@ -507,7 +509,7 @@ public function upsertLpjItemBukti(int $lpjId, int $rabItemId, string $filename,
      */
     public function getDisbursedAmount(int $kegiatanId): float
     {
-        $query = "SELECT COALESCE(SUM(nominal), 0) as total FROM tbl_tahapan_pencairan WHERE idKegiatan = ?";
+        $query = "SELECT danaDiSetujui as total FROM tbl_kegiatan WHERE kegiatanId = ?";
         $stmt = mysqli_prepare($this->db, $query);
         if (!$stmt) return 0.0;
         
@@ -688,6 +690,23 @@ public function updateLpjItemsRealisasi(int $lpjId, array $items): bool
 {
     error_log("🔄 updateLpjItemsRealisasi called with lpjId={$lpjId}, items count=" . count($items));
     
+    // ✅ SAFETY: Deduplicate items by rabItemId (keep last non-zero or last entry)
+    $deduplicatedItems = [];
+    foreach ($items as $item) {
+        $rabItemId = (int)($item['id'] ?? 0);
+        if ($rabItemId > 0) {
+            $realisasi = floatval($item['realisasi'] ?? $item['total'] ?? 0);
+            
+            // Keep this item if: no previous entry OR this has realisasi > 0
+            if (!isset($deduplicatedItems[$rabItemId]) || $realisasi > 0) {
+                $deduplicatedItems[$rabItemId] = $item;
+            }
+        }
+    }
+    
+    $items = array_values($deduplicatedItems);
+    error_log("✅ After deduplication: " . count($items) . " unique items");
+    
     mysqli_begin_transaction($this->db);
     try {
         foreach ($items as $index => $item) {
@@ -699,7 +718,14 @@ public function updateLpjItemsRealisasi(int $lpjId, array $items): bool
             }
             
             // ✅ FIX: Accept both 'realisasi' and 'total' for backward compatibility
+            // DECIMAL(15,2) max: 9999999999999.99, default = 0
             $realisasi = floatval($item['realisasi'] ?? $item['total'] ?? 0);
+            
+            // ✅ Validate range for DECIMAL(15,2)
+            if ($realisasi < 0 || $realisasi > 9999999999999.99) {
+                error_log("❌ Item #{$index}: realisasi out of range for DECIMAL(15,2): {$realisasi}");
+                throw new Exception("Realisasi untuk item #{$index} melebihi batas maksimal (Rp 9.999.999.999.999,99)");
+            }
             
             error_log("📝 Processing Item #{$index}: rabItemId={$rabItemId}, realisasi={$realisasi}");
             

@@ -113,6 +113,11 @@ class PengajuanLpjController extends Controller
         $this->view('pages/admin/detail_lpj_new', $data, 'admin');
     }
 
+    // ============================================================================
+    // FIX 1: PengajuanLpjController.php - submitLpj()
+    // ============================================================================
+    // Tambahkan logging untuk debug data flow
+
     public function submitLpj()
     {
         header('Content-Type: application/json');
@@ -121,16 +126,39 @@ class PengajuanLpjController extends Controller
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Metode tidak diizinkan', 405);
             }
-
+            
+            // ✅ CRITICAL DEBUG: Log raw POST data
+            error_log("🔥 ===== SUBMIT LPJ DEBUG START =====");
+            error_log("📨 RAW POST kegiatan_id: " . ($_POST['kegiatan_id'] ?? 'NOT SET'));
+            error_log("📨 RAW POST items (JSON string): " . ($_POST['items'] ?? 'NOT SET'));
+            
             $rules = ['kegiatan_id' => 'required|numeric'];
             $validatedData = $this->validationService->validate($_POST, $rules);
 
             $itemsJson = $_POST['items'] ?? '[]';
+            error_log("📦 Items JSON length: " . strlen($itemsJson));
+            
+            // ✅ DECODE JSON
             $items = json_decode($itemsJson, true);
+            
             if (json_last_error() !== JSON_ERROR_NONE) {
-                throw new ValidationException('Format data item tidak valid.', ['items' => ['JSON tidak valid.']]);
+                error_log("❌ JSON DECODE ERROR: " . json_last_error_msg());
+                throw new ValidationException('Format data item tidak valid.', ['items' => ['JSON tidak valid: ' . json_last_error_msg()]]);
+            }
+            
+            error_log("✅ Items decoded successfully. Count: " . count($items));
+            error_log("📦 FULL DECODED ARRAY: " . print_r($items, true));
+            
+            // ✅ CRITICAL DEBUG: Check each item structure
+            foreach ($items as $idx => $item) {
+                error_log("🔍 Item #{$idx} STRUCTURE:");
+                error_log("  - Keys: " . implode(', ', array_keys($item)));
+                error_log("  - id: " . ($item['id'] ?? 'MISSING'));
+                error_log("  - realisasi: " . ($item['realisasi'] ?? 'MISSING'));
+                error_log("  - Full item: " . json_encode($item));
             }
 
+            // ✅ Pass ke Service (data sudah correct format)
             $result = $this->lpjService->submitLpj((int)$validatedData['kegiatan_id'], $items);
 
             echo json_encode($result);

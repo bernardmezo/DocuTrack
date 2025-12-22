@@ -69,13 +69,11 @@ public function submitLpj(int $kegiatanId, array $items): array
             throw new Exception("Mohon upload semua bukti terlebih dahulu. (" . $uploadStatus['uploaded'] . "/" . $uploadStatus['total'] . " item sudah diupload)");
         }
 
-        // ✅ [NEW VALIDATION] Validasi total agregat: sum(realisasi) harus = sum(anggaran)
-        // Per-item boleh berbeda, yang penting totalnya sama
+        // ✅ VALIDATION with DECIMAL string parsing
         if (!empty($items)) {
             $validationErrors = [];
             $totalRealisasi = 0;
             
-            // Get kakId from LPJ record
             $lpjData = $this->lpjModel->getLpjWithItemsById($lpjId);
             $kakId = $lpjData['kakId'] ?? 0;
             
@@ -86,30 +84,30 @@ public function submitLpj(int $kegiatanId, array $items): array
             foreach ($items as $index => $item) {
                 $rabItemId = (int)($item['id'] ?? 0);
                 
-                // ✅ Accept both 'realisasi' and 'total' field names
-                $realisasiVal = floatval($item['realisasi'] ?? $item['total'] ?? 0);
+                // ✅ Parse realisasi as decimal string
+                $realisasiRaw = $item['realisasi'] ?? $item['total'] ?? "0.00";
+                $realisasiFloat = floatval($realisasiRaw);
+                
+                error_log("✅ Item #{$index} validated: rabItemId={$rabItemId}, realisasi=\"{$realisasiRaw}\" ({$realisasiFloat})");
                 
                 if ($rabItemId <= 0) {
                     $validationErrors[] = "Item #{$index}: ID tidak valid";
                     continue;
                 }
                 
-                if ($realisasiVal < 0) {
+                if ($realisasiFloat < 0) {
                     $validationErrors[] = "Item #{$index}: Realisasi tidak boleh negatif";
                     continue;
                 }
                 
-                // ✅ NEW: Hanya validasi negatif, tidak validasi per-item melebihi anggaran
-                $totalRealisasi += $realisasiVal;
-                
-                error_log("✅ Item #{$index} validated: rabItemId={$rabItemId}, realisasi={$realisasiVal}");
+                $totalRealisasi += $realisasiFloat;
             }
             
             if (!empty($validationErrors)) {
                 throw new Exception("Validasi gagal:\n" . implode("\n", $validationErrors));
             }
             
-            // ✅ NEW: Validasi total realisasi harus = total anggaran KAK
+            // ✅ Validate total (with tolerance)
             $totalAnggaran = $this->lpjModel->getTotalAnggaranByKakId($kakId);
             
             error_log("📊 Validation Summary: Total Anggaran=Rp " . number_format($totalAnggaran, 2) . ", Total Realisasi=Rp " . number_format($totalRealisasi, 2));
@@ -120,13 +118,13 @@ public function submitLpj(int $kegiatanId, array $items): array
                     "Total Anggaran KAK: Rp " . number_format($totalAnggaran, 2, ',', '.') . "\n" .
                     "Total Realisasi: Rp " . number_format($totalRealisasi, 2, ',', '.') . "\n" .
                     "Selisih: Rp " . number_format(abs($totalRealisasi - $totalAnggaran), 2, ',', '.') . "\n\n" .
-                    "Mohon sesuaikan nilai realisasi agar totalnya sama dengan total anggaran."
+                    "Mohon sesuaikan nilai realisasi."
                 );
             }
             
-            error_log("✅ Total validation passed: Total Realisasi = Total Anggaran = Rp " . number_format($totalAnggaran, 2));
+            error_log("✅ Total validation passed");
 
-            // ✅ Update realisasi items
+            // ✅ Update items
             if (!$this->lpjModel->updateLpjItemsRealisasi((int)$lpjId, $items)) {
                 throw new Exception("Gagal memperbarui item realisasi LPJ.");
             }
@@ -144,15 +142,14 @@ public function submitLpj(int $kegiatanId, array $items): array
 
         $this->db->commit();
 
-        error_log("✅ LPJ SUBMITTED SUCCESSFULLY: lpjId={$lpjId}, kegiatanId={$kegiatanId}");
-        return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara untuk verifikasi'];
+        error_log("✅ LPJ SUBMITTED SUCCESSFULLY");
+        return ['success' => true, 'message' => 'LPJ berhasil diajukan ke Bendahara'];
         
     } catch (Exception $e) {
         if ($this->db->in_transaction) {
             $this->db->rollback();
         }
         error_log("❌ LpjService::submitLpj Error: " . $e->getMessage());
-        error_log("❌ Stack trace: " . $e->getTraceAsString());
         throw $e;
     }
 }

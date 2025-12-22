@@ -472,7 +472,7 @@ function getRealisasiValue(row) {
         return Math.max(0, value);
     }
     
-    console.warn(`⚠️ Item ${rabItemId}: No realisasi found, defaulting to 0`);
+    // console.warn(`⚠️ Item ${rabItemId}: No realisasi found, defaulting to 0`);
     return 0;
 }
 
@@ -689,25 +689,38 @@ document.getElementById('form-lpj-submit').addEventListener('submit', async func
     
     // ✅ Collect data dengan method yang sudah diperbaiki
     const items = [];
-    const allRows = document.querySelectorAll('[data-rab-item-id]');
+    const allRows = document.querySelectorAll('[data-rab-item-id]');  
     
     console.log('📋 Found', allRows.length, 'items to process');
+    
+    // ✅ FIX: Use Map to deduplicate by rabItemId (keep last value)
+    const itemsMap = new Map();
     
     allRows.forEach((row, index) => {
         const rabItemId = row.dataset.rabItemId;
         const realisasi = getRealisasiValue(row);
         
         if (rabItemId) {
-            items.push({
-                id: parseInt(rabItemId),
-                realisasi: realisasi
-            });
+            const itemId = parseInt(rabItemId);
             
-            console.log(`📊 Item #${index}: rabItemId=${rabItemId}, realisasi=${realisasi}`);
+            // ✅ Only add/update if this item has realisasi > 0 OR not yet in map
+            if (realisasi > 0 || !itemsMap.has(itemId)) {
+                itemsMap.set(itemId, {
+                    id: itemId,
+                    realisasi: realisasi
+                });
+                console.log(`📊 Item #${index}: rabItemId=${rabItemId}, realisasi=${realisasi} ${itemsMap.has(itemId) && realisasi === 0 ? '(KEPT PREVIOUS VALUE)' : ''}`);
+            } else {
+                console.log(`⏭️ Item #${index}: rabItemId=${rabItemId}, realisasi=${realisasi} (SKIPPED - duplicate with 0 value)`);
+            }
         }
     });
     
-    console.log('📦 Total items collected:', items.length);
+    // ✅ Convert Map to Array
+    const uniqueItems = Array.from(itemsMap.values());
+    items.push(...uniqueItems);
+    
+    console.log('📦 Total items collected:', items.length, '(after deduplication)');
     console.log('📦 Items data:', JSON.stringify(items));
     
     // ✅ NEW: Validasi total agregat (sum realisasi harus = sum anggaran)
