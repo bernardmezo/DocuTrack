@@ -18,30 +18,13 @@ class PpkService
     private KegiatanModel $kegiatanModel;
     private WorkflowService $workflowService;
 
-    public function __construct(
-        $ppkModelOrDb,
-        $logStatusService = null,
-        $validationService = null,
-        $kegiatanModel = null
-    ) {
-        if ($ppkModelOrDb instanceof PpkModel) {
-            $this->ppkModel = $ppkModelOrDb;
-            $this->logStatusService = $logStatusService;
-            $this->validationService = $validationService;
-            $this->kegiatanModel = $kegiatanModel;
-            
-            // Get database from model for WorkflowService
-            $db = $this->ppkModel->db ?? db();
-            $this->workflowService = new WorkflowService($db);
-        } else {
-             // Assume $ppkModelOrDb is $db
-            $db = $ppkModelOrDb;
-            $this->ppkModel = new PpkModel($db);
-            $this->logStatusService = new LogStatusService($db);
-            $this->validationService = new ValidationService();
-            $this->kegiatanModel = new KegiatanModel($db);
-            $this->workflowService = new WorkflowService($db);
-        }
+    public function __construct($db)
+    {
+        $this->ppkModel = new PpkModel($db);
+        $this->logStatusService = new LogStatusService($db);
+        $this->validationService = new ValidationService();
+        $this->kegiatanModel = new KegiatanModel($db);
+        $this->workflowService = new WorkflowService($db);
     }
 
     public function getDashboardStats()
@@ -96,7 +79,11 @@ class PpkService
     {
         $this->validationService->validate(['kegiatan_id' => $kegiatanId], ['kegiatan_id' => 'required|numeric']);
 
-        $result = $this->ppkModel->approveUsulan($kegiatanId, $rekomendasi);
+        // moveToNextPosition handles history logging
+        $result = $this->workflowService->moveToNextPosition(
+            $kegiatanId,
+            WorkflowService::POSITION_PPK
+        );
 
         if ($result) {
             try {
@@ -105,7 +92,7 @@ class PpkService
                     $this->logStatusService->createNotification(
                         (int) $kegiatan['userId'],
                         'APPROVAL',
-                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda telah disetujui oleh PPK.",
+                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda telah disetujui oleh PPK dan diteruskan ke Wakil Direktur.",
                         $kegiatanId
                     );
                 }
@@ -115,5 +102,23 @@ class PpkService
         }
 
         return $result;
+    }
+
+    public function rejectUsulan(int $kegiatanId, string $alasanPenolakan = ''): bool
+    {
+        return $this->workflowService->reject(
+            $kegiatanId,
+            WorkflowService::POSITION_PPK,
+            $alasanPenolakan
+        );
+    }
+
+    public function reviseUsulan(int $kegiatanId, string $komentarRevisi): bool
+    {
+        return $this->workflowService->requestRevision(
+            $kegiatanId,
+            WorkflowService::POSITION_PPK,
+            $komentarRevisi
+        );
     }
 }

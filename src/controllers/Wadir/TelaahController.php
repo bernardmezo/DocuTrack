@@ -102,17 +102,60 @@ class TelaahController extends Controller
     public function approve($id)
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $userId = $_SESSION['user_id'] ?? 0;
-
-            $kegiatan = $this->model->getDetailKegiatan($id);
-            $oldStatusId = $kegiatan['statusUtamaId'] ?? null;
-
             if ($this->model->approveUsulan($id)) {
-                if (function_exists('logApproval')) {
-                    logApproval($userId, $id, 'WADIR', true, 'Kegiatan: ' . ($kegiatan['namaKegiatan'] ?? 'Unknown'), $oldStatusId, 3);
+                header('Location: /docutrack/public/wadir/dashboard?msg=approved');
+                exit;
+            }
+        }
+        header('Location: /docutrack/public/wadir/telaah/show/' . $id);
+        exit;
+    }
+
+    public function reject($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $alasan = trim($_POST['alasan_penolakan'] ?? '');
+                if (empty($alasan)) {
+                    throw new \Exception('Alasan penolakan wajib diisi.');
                 }
 
-                header('Location: /docutrack/public/wadir/dashboard?msg=approved');
+                if ($this->model->rejectUsulan((int)$id, $alasan)) {
+                    $_SESSION['flash_message'] = 'Usulan telah ditolak.';
+                    header('Location: /docutrack/public/wadir/dashboard?msg=rejected');
+                    exit;
+                } else {
+                    throw new \Exception('Gagal menolak usulan.');
+                }
+            } catch (\Exception $e) {
+                $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                header('Location: /docutrack/public/wadir/telaah/show/' . $id);
+                exit;
+            }
+        }
+        header('Location: /docutrack/public/wadir/telaah/show/' . $id);
+        exit;
+    }
+
+    public function revise($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $komentar = trim($_POST['komentar_revisi'] ?? '');
+                if (empty($komentar)) {
+                    throw new \Exception('Komentar revisi wajib diisi.');
+                }
+
+                if ($this->model->reviseUsulan((int)$id, $komentar)) {
+                    $_SESSION['flash_message'] = 'Usulan telah dikembalikan untuk direvisi.';
+                    header('Location: /docutrack/public/wadir/dashboard?msg=revised');
+                    exit;
+                } else {
+                    throw new \Exception('Gagal mengirim permintaan revisi.');
+                }
+            } catch (\Exception $e) {
+                $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                header('Location: /docutrack/public/wadir/telaah/show/' . $id);
                 exit;
             }
         }

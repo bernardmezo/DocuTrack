@@ -522,6 +522,14 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 <div class="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4 w-full sm:w-auto order-1 sm:order-2">
                 
                 <?php if ($is_menunggu): ?>
+                    <button type="button" id="btn-tolak-wadir"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-red-700 transition-all duration-300">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>
+                    <button type="button" id="btn-revisi-wadir"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-yellow-600 transition-all duration-300">
+                        <i class="fas fa-pencil-alt"></i> Revisi
+                    </button>
                     <button type="button" id="btn-setujui-Wadir" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg text-sm sm:text-base">
                          <i class="fas fa-check-double"></i> Setujui Usulan
@@ -553,6 +561,9 @@ function displayValue($value, $placeholder = 'Belum diisi') {
         const kegiatanId = "<?php echo $id ?? ''; ?>"; 
         
         const btnSetujuiWadir = document.getElementById('btn-setujui-Wadir');
+        const btnTolakWadir = document.getElementById('btn-tolak-wadir');
+        const btnRevisiWadir = document.getElementById('btn-revisi-wadir');
+
         btnSetujuiWadir?.addEventListener('click', (e) => {
             e.preventDefault();
             
@@ -593,6 +604,70 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                     formWadir.submit();
                 }
             }
+        });
+
+        btnTolakWadir?.addEventListener('click', (e) => {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Tolak Usulan?',
+                input: 'textarea',
+                inputPlaceholder: 'Masukkan alasan penolakan...',
+                inputAttributes: {
+                    'aria-label': 'Masukkan alasan penolakan'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Tolak',
+                confirmButtonColor: '#DC2626',
+                cancelButtonText: 'Batal',
+                preConfirm: (text) => {
+                    if (!text) {
+                        Swal.showValidationMessage('Alasan penolakan tidak boleh kosong');
+                    }
+                    return text;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'alasan_penolakan';
+                    input.value = result.value;
+                    formWadir.appendChild(input);
+                    formWadir.action = `/docutrack/public/wadir/telaah/reject/${kegiatanId}`;
+                    formWadir.submit();
+                }
+            });
+        });
+
+        btnRevisiWadir?.addEventListener('click', (e) => {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Kirim untuk Revisi?',
+                input: 'textarea',
+                inputPlaceholder: 'Masukkan komentar atau catatan untuk revisi...',
+                inputAttributes: {
+                    'aria-label': 'Masukkan komentar atau catatan untuk revisi'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Kirim Revisi',
+                confirmButtonColor: '#F59E0B',
+                cancelButtonText: 'Batal',
+                preConfirm: (text) => {
+                    if (!text) {
+                        Swal.showValidationMessage('Komentar revisi tidak boleh kosong');
+                    }
+                    return text;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'komentar_revisi';
+                    input.value = result.value;
+                    formWadir.appendChild(input);
+                    formWadir.action = `/docutrack/public/wadir/telaah/revise/${kegiatanId}`;
+                    formWadir.submit();
+                }
+            });
         });
         
     });

@@ -107,18 +107,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusLower = status.toLowerCase();
             const badges = {
                 'disetujui': 'text-green-700 bg-green-100 border border-green-200',
+                'sudah dicairkan': 'text-green-700 bg-green-100 border border-green-200',
                 'dana diberikan': 'text-green-700 bg-green-300 border border-green-200',
                 'ditolak': 'text-red-700 bg-red-100 border border-red-200',
                 'revisi': 'text-yellow-700 bg-yellow-100 border border-yellow-200',
+                'belum dicairkan': 'text-blue-700 bg-blue-100 border border-blue-200',
                 'menunggu': 'text-blue-700 bg-blue-100 border border-blue-200',
                 'telah direvisi': 'text-purple-700 bg-purple-100 border border-purple-200'
             };
             
             const icons = {
                 'disetujui': 'fa-check-circle',
+                'sudah dicairkan': 'fa-check-circle',
                 'dana diberikan': 'fa-money-check-alt',
                 'ditolak': 'fa-times-circle',
                 'revisi': 'fa-pencil-alt',
+                'belum dicairkan': 'fa-hourglass-half',
                 'menunggu': 'fa-hourglass-half',
                 'telah direvisi': 'fa-edit'
             };
@@ -133,18 +137,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusLower = status.toLowerCase();
             const badges = {
                 'disetujui': 'bg-green-100 text-green-700 border-green-200',
+                'sudah dicairkan': 'bg-green-100 text-green-700 border-green-200',
                 'dana diberikan': 'bg-green-300 text-green-800 border-green-400',
                 'ditolak': 'bg-red-100 text-red-700 border-red-200',
                 'revisi': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                'belum dicairkan': 'bg-blue-100 text-blue-700 border-blue-200',
                 'menunggu': 'bg-blue-100 text-blue-700 border-blue-200',
                 'telah direvisi': 'bg-purple-100 text-purple-700 border-purple-200'
             };
             
             const icons = {
                 'disetujui': 'fa-check-circle',
+                'sudah dicairkan': 'fa-check-circle',
                 'dana diberikan': 'fa-money-check-alt',
                 'ditolak': 'fa-times-circle',
                 'revisi': 'fa-pencil-alt',
+                'belum dicairkan': 'fa-hourglass-half',
                 'menunggu': 'fa-hourglass-half',
                 'telah direvisi': 'fa-edit'
             };

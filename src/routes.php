@@ -288,6 +288,18 @@ return [
         'middleware' => ['AuthMiddleware', 'WadirMiddleware'],
         'methods'    => ['POST'],
     ],
+    '/wadir/telaah/reject/{id}' => [
+        'controller' => 'Wadir\TelaahController',
+        'method'     => 'reject',
+        'middleware' => ['AuthMiddleware', 'WadirMiddleware'],
+        'methods'    => ['POST'],
+    ],
+    '/wadir/telaah/revise/{id}' => [
+        'controller' => 'Wadir\TelaahController',
+        'method'     => 'revise',
+        'middleware' => ['AuthMiddleware', 'WadirMiddleware'],
+        'methods'    => ['POST'],
+    ],
     '/wadir/monitoring' => [
         'controller' => 'Wadir\MonitoringController',
         'method'     => 'index',
@@ -349,6 +361,18 @@ return [
     '/ppk/telaah/approve/{id}' => [
         'controller' => 'PPK\TelaahController',
         'method'     => 'approve',
+        'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
+        'methods'    => ['POST'],
+    ],
+    '/ppk/telaah/reject/{id}' => [
+        'controller' => 'PPK\TelaahController',
+        'method'     => 'reject',
+        'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
+        'methods'    => ['POST'],
+    ],
+    '/ppk/telaah/revise/{id}' => [
+        'controller' => 'PPK\TelaahController',
+        'method'     => 'revise',
         'middleware' => ['AuthMiddleware', 'PpkMiddleware'],
         'methods'    => ['POST'],
     ],

@@ -17,19 +17,7 @@ class TelaahController extends Controller
     public function __construct()
     {
         parent::__construct();
-
-        $dbConnection = $this->db;
-        $ppkModel = new PpkModel($dbConnection);
-        $logStatusService = new LogStatusService($dbConnection);
-        $validationService = new ValidationService();
-        $kegiatanModel = new KegiatanModel($dbConnection);
-
-        $this->service = new PpkService(
-            $ppkModel,
-            $logStatusService,
-            $validationService,
-            $kegiatanModel
-        );
+        $this->service = new PpkService($this->db);
     }
 
     public function show($id, $data_dari_router = [])
@@ -110,7 +98,7 @@ class TelaahController extends Controller
                 $rekomendasi = trim($_POST['rekomendasi'] ?? '');
 
                 if ($this->service->approveUsulan((int)$id, $rekomendasi)) {
-                    $_SESSION['flash_message'] = 'Usulan berhasil disetujui dan diteruskan ke Bendahara.';
+                    $_SESSION['flash_message'] = 'Usulan berhasil disetujui dan diteruskan ke Wakil Direktur.';
                     header('Location: /docutrack/public/ppk/dashboard?msg=approved');
                     exit;
                 } else {
@@ -123,6 +111,58 @@ class TelaahController extends Controller
             }
         }
         // Jika bukan POST, redirect kembali
+        header('Location: /docutrack/public/ppk/telaah/show/' . $id);
+        exit;
+    }
+
+    public function reject($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $alasan = trim($_POST['alasan_penolakan'] ?? '');
+                if (empty($alasan)) {
+                    throw new Exception('Alasan penolakan wajib diisi.');
+                }
+
+                if ($this->service->rejectUsulan((int)$id, $alasan)) {
+                    $_SESSION['flash_message'] = 'Usulan telah ditolak.';
+                    header('Location: /docutrack/public/ppk/dashboard?msg=rejected');
+                    exit;
+                } else {
+                    throw new Exception('Gagal menolak usulan.');
+                }
+            } catch (Exception $e) {
+                $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                header('Location: /docutrack/public/ppk/telaah/show/' . $id);
+                exit;
+            }
+        }
+        header('Location: /docutrack/public/ppk/telaah/show/' . $id);
+        exit;
+    }
+
+    public function revise($id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $komentar = trim($_POST['komentar_revisi'] ?? '');
+                if (empty($komentar)) {
+                    throw new Exception('Komentar revisi wajib diisi.');
+                }
+
+                if ($this->service->reviseUsulan((int)$id, $komentar)) {
+                    $_SESSION['flash_message'] = 'Usulan telah dikembalikan untuk direvisi.';
+                    header('Location: /docutrack/public/ppk/dashboard?msg=revised');
+                    exit;
+                } else {
+                    throw new Exception('Gagal mengirim permintaan revisi.');
+                }
+            } catch (Exception $e) {
+                $_SESSION['flash_error'] = 'Terjadi kesalahan: ' . $e->getMessage();
+                header('Location: /docutrack/public/ppk/telaah/show/' . $id);
+                exit;
+            }
+        }
         header('Location: /docutrack/public/ppk/telaah/show/' . $id);
         exit;
     }

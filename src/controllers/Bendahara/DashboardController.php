@@ -25,7 +25,7 @@ class DashboardController extends Controller
         ]);
         $list_kak = $this->safeModelCall($this->bendaharaService, 'getListKegiatanDashboard', [10], []);
         $list_lpj = $this->safeModelCall($this->bendaharaService, 'getAntrianLPJ', [], []);
-        $riwayat_verifikasi = $this->safeModelCall($this->bendaharaService, 'getRiwayatVerifikasi', [], []);
+        
 
         $success_msg = $_SESSION['flash_message'] ?? null;
         $error_msg = $_SESSION['flash_error'] ?? null;
@@ -41,7 +41,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'list_kak' => $list_kak ?? [],
             'list_lpj' => $list_lpj ?? [],
-            'riwayat_verifikasi' => $riwayat_verifikasi ?? [], // Passed to view
+            
             'success_message' => $success_msg,
             'error_message' => $error_msg,
             'notifications' => $notificationsData['items'], // Added

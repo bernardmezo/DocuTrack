@@ -17,20 +17,7 @@ class TelaahController extends Controller
     public function __construct()
     {
         parent::__construct();
-
-        // Manual dependency instantiation
-        $dbConnection = $this->db;
-        $verifikatorModel = new VerifikatorModel($dbConnection);
-        $logStatusService = new LogStatusService($dbConnection);
-        $validationService = new ValidationService();
-        $kegiatanModel = new KegiatanModel($dbConnection);
-
-        $this->service = new VerifikatorService(
-            $verifikatorModel,
-            $logStatusService,
-            $validationService,
-            $kegiatanModel
-        );
+        $this->service = new VerifikatorService($this->db);
     }
 
     /**

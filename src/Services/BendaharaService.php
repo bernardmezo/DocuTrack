@@ -31,13 +31,11 @@ class BendaharaService
             // Map ID field for JavaScript compatibility
             $item['id'] = $item['kegiatanId'] ?? null;
             
-            // Map status field
-            if (!isset($item['status']) && isset($item['status_text'])) {
-                $item['status'] = $item['status_text'];
-            }
-            // Default to 'Menunggu' if no status
-            if (empty($item['status'])) {
-                $item['status'] = 'Menunggu';
+            // Determine disbursement status based on the new total_dicairkan field from the model
+            if (isset($item['total_dicairkan']) && $item['total_dicairkan'] > 0) {
+                $item['status'] = 'Sudah Dicairkan';
+            } else {
+                $item['status'] = 'Belum Dicairkan';
             }
             
             // Map other expected fields for consistency

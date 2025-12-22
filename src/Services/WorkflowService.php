@@ -193,7 +193,7 @@ class WorkflowService
         int $kegiatanId, 
         int $currentPosition, 
         int $newStatus = self::STATUS_DISETUJUI,
-        ?string $kodeMak = null
+        array $additionalData = []
     ): bool {
         $nextPosition = $this->getNextPosition($currentPosition);
         
@@ -219,11 +219,23 @@ class WorkflowService
             $params = [$nextPosition, $newStatus];
             $types = 'ii';
             
-            // Add MAK code if provided (Verifikator approval)
-            if ($kodeMak !== null) {
-                $updateSql .= ", buktiMAK = ?";
-                $params[] = $kodeMak;
-                $types .= 's';
+            // Add additional data based on current position
+            if ($currentPosition === self::POSITION_VERIFIKATOR) {
+                if (isset($additionalData['kodeMak'])) {
+                    $updateSql .= ", buktiMAK = ?";
+                    $params[] = $additionalData['kodeMak'];
+                    $types .= 's';
+                }
+                if (isset($additionalData['danaDisetujui'])) {
+                    $updateSql .= ", danaDisetujui = ?";
+                    $params[] = $additionalData['danaDisetujui'];
+                    $types .= 'd';
+                }
+                if (isset($additionalData['umpanBalik'])) {
+                    $updateSql .= ", umpanBalikVerifikator = ?";
+                    $params[] = $additionalData['umpanBalik'];
+                    $types .= 's';
+                }
             }
             
             $updateSql .= " WHERE kegiatanId = ?";

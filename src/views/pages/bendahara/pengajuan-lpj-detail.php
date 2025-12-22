@@ -287,6 +287,11 @@ if (!function_exists('showCommentIcon')) {
                 <?php else : ?>
                     <div class="flex gap-3 w-full sm:w-auto">
                         <button type="button" 
+                                onclick="konfirmasiTolak()"
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5">
+                            <i class="fas fa-times-circle"></i> Tolak
+                        </button>
+                        <button type="button" 
                                 onclick="konfirmasiRevisi()"
                                 class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 transition-all duration-300 transform hover:-translate-y-0.5">
                             <i class="fas fa-edit"></i> Minta Revisi
@@ -410,6 +415,58 @@ function konfirmasiSetuju() {
     } else {
         if (confirm('Apakah Anda yakin akan menyetujui LPJ ini?\n\nTindakan ini tidak dapat dibatalkan.')) {
             document.getElementById('form-action').value = 'setuju';
+            document.getElementById('form-lpj-verifikasi').submit();
+        }
+    }
+}
+
+function konfirmasiTolak() {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Tolak LPJ?',
+            html: '<span class="text-red-600 font-bold">❌ KONFIRMASI PENOLAKAN</span><br><br>Anda yakin akan <strong>menolak</strong> LPJ ini?',
+            icon: 'warning',
+            input: 'textarea',
+            inputPlaceholder: 'Tuliskan alasan penolakan di sini...',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Alasan penolakan tidak boleh kosong!'
+                }
+            },
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: 'Ya, Tolak!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ 
+                    title: 'Memproses...', 
+                    allowOutsideClick: false, 
+                    didOpen: () => Swal.showLoading() 
+                });
+                
+                const form = document.getElementById('form-lpj-verifikasi');
+                document.getElementById('form-action').value = 'tolak';
+                
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'alasan_penolakan';
+                hiddenInput.value = result.value;
+                form.appendChild(hiddenInput);
+                
+                form.submit();
+            }
+        });
+    } else {
+        const alasan = prompt('Masukkan alasan penolakan:');
+        if (alasan) {
+            document.getElementById('form-action').value = 'tolak';
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'alasan_penolakan';
+            hiddenInput.value = alasan;
+            document.getElementById('form-lpj-verifikasi').appendChild(hiddenInput);
             document.getElementById('form-lpj-verifikasi').submit();
         }
     }
