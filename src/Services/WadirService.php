@@ -71,7 +71,10 @@ class WadirService
      */
     public function approveUsulan($kegiatanId, $rekomendasi = '')
     {
-        $result = $this->model->approveUsulan($kegiatanId, $rekomendasi);
+        $result = $this->workflowService->moveToNextPosition(
+            $kegiatanId,
+            WorkflowService::POSITION_WADIR
+        );
 
         if ($result) {
             try {
@@ -81,7 +84,7 @@ class WadirService
                     $this->logStatusService->createNotification(
                         (int) $kegiatan['userId'],
                         'APPROVAL',
-                        "Usulan kegiatan \"{$kegiatan['namaKegiatan']}\" telah disetujui oleh Wakil Direktur.",
+                        "Usulan kegiatan \"{$kegiatan['namaKegiatan']}\" telah disetujui oleh Wakil Direktur dan diteruskan ke Bendahara.",
                         $kegiatanId
                     );
                 }
@@ -92,6 +95,24 @@ class WadirService
         }
 
         return $result;
+    }
+
+    public function rejectUsulan(int $kegiatanId, string $alasanPenolakan = ''): bool
+    {
+        return $this->workflowService->reject(
+            $kegiatanId,
+            WorkflowService::POSITION_WADIR,
+            $alasanPenolakan
+        );
+    }
+
+    public function reviseUsulan(int $kegiatanId, string $komentarRevisi): bool
+    {
+        return $this->workflowService->requestRevision(
+            $kegiatanId,
+            WorkflowService::POSITION_WADIR,
+            $komentarRevisi
+        );
     }
 
     // Fallback for any other methods not explicitly defined

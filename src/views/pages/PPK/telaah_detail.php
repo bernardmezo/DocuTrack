@@ -516,6 +516,14 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                 <div class="flex flex-col sm:flex-row-reverse gap-3 sm:gap-4 w-full sm:w-auto order-1 sm:order-2">
                 
                 <?php if ($is_menunggu): ?>
+                    <button type="button" id="btn-tolak-ppk"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-red-600 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-red-700 transition-all duration-300">
+                        <i class="fas fa-times"></i> Tolak
+                    </button>
+                    <button type="button" id="btn-revisi-ppk"
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-yellow-500 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-yellow-600 transition-all duration-300">
+                        <i class="fas fa-pencil-alt"></i> Revisi
+                    </button>
                     <button type="button" id="btn-setujui-PPK" 
                             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 text-white font-semibold px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg shadow-md hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg text-sm sm:text-base">
                          <i class="fas fa-check-double"></i> Setujui Usulan
@@ -545,6 +553,8 @@ function displayValue($value, $placeholder = 'Belum diisi') {
         
         const formPPK = document.getElementById('form-PPK-approval');
         const btnSetujuiPPK = document.getElementById('btn-setujui-PPK');
+        const btnTolakPPK = document.getElementById('btn-tolak-ppk');
+        const btnRevisiPPK = document.getElementById('btn-revisi-ppk');
         
         btnSetujuiPPK?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -585,6 +595,70 @@ function displayValue($value, $placeholder = 'Belum diisi') {
                     formPPK.submit();
                 }
             }
+        });
+
+        btnTolakPPK?.addEventListener('click', (e) => {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Tolak Usulan?',
+                input: 'textarea',
+                inputPlaceholder: 'Masukkan alasan penolakan...',
+                inputAttributes: {
+                    'aria-label': 'Masukkan alasan penolakan'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Tolak',
+                confirmButtonColor: '#DC2626',
+                cancelButtonText: 'Batal',
+                preConfirm: (text) => {
+                    if (!text) {
+                        Swal.showValidationMessage('Alasan penolakan tidak boleh kosong');
+                    }
+                    return text;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'alasan_penolakan';
+                    input.value = result.value;
+                    formPPK.appendChild(input);
+                    formPPK.action = `/docutrack/public/ppk/telaah/reject/${kegiatanId}`;
+                    formPPK.submit();
+                }
+            });
+        });
+
+        btnRevisiPPK?.addEventListener('click', (e) => {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Kirim untuk Revisi?',
+                input: 'textarea',
+                inputPlaceholder: 'Masukkan komentar atau catatan untuk revisi...',
+                inputAttributes: {
+                    'aria-label': 'Masukkan komentar atau catatan untuk revisi'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Kirim Revisi',
+                confirmButtonColor: '#F59E0B',
+                cancelButtonText: 'Batal',
+                preConfirm: (text) => {
+                    if (!text) {
+                        Swal.showValidationMessage('Komentar revisi tidak boleh kosong');
+                    }
+                    return text;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'komentar_revisi';
+                    input.value = result.value;
+                    formPPK.appendChild(input);
+                    formPPK.action = `/docutrack/public/ppk/telaah/revise/${kegiatanId}`;
+                    formPPK.submit();
+                }
+            });
         });
         
     });

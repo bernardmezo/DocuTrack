@@ -89,9 +89,8 @@ if (!isset($stats)) {
                             style="color: #374151 !important; font-size: 14px !important;"
                             class="w-full pl-9 pr-8 py-2 sm:py-2.5 border border-gray-300 rounded-lg bg-white transition-all duration-200 appearance-none cursor-pointer hover:border-blue-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="" selected style="color: #374151 !important;">Semua Status</option>
-                        <option value="dana diberikan" style="color: #374151 !important;">Dana Diberikan</option>
-                        <option value="ditolak" style="color: #374151 !important;">Ditolak</option>
-                        <option value="menunggu" style="color: #374151 !important;">Menunggu</option>
+                        <option value="Sudah Dicairkan" style="color: #374151 !important;">Sudah Dicairkan</option>
+                        <option value="Belum Dicairkan" style="color: #374151 !important;">Belum Dicairkan</option>
                     </select>
                     <i class="fas fa-filter absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs sm:text-sm pointer-events-none"></i>
                     <i class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
@@ -246,85 +245,6 @@ if (!isset($stats)) {
                 <div class="text-xs text-gray-600 text-center">
                     Menampilkan <span id="showing-lpj" class="font-semibold text-gray-800">0</span> dari <span id="total-lpj" class="font-semibold text-gray-800">0</span> data
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Table Riwayat Verifikasi -->
-    <section class="bg-white rounded-xl shadow-lg overflow-hidden mb-5 flex flex-col">
-        <div class="p-4 border-b border-gray-200">
-            <h3 class="text-base font-semibold text-gray-800 flex items-center gap-2 mb-3">
-                <i class="fas fa-history text-purple-600"></i>
-                <span>Riwayat Verifikasi</span>
-            </h3>
-            
-            <!-- Filter Controls -->
-            <!-- Simplified for now, can be expanded later -->
-        </div>
-
-        <!-- Desktop Table -->
-        <div class="hidden md:block overflow-x-auto">
-            <div class="overflow-y-auto" style="max-height: 500px;">
-                <table class="min-w-full" id="table-riwayat">
-                    <thead class="bg-gradient-to-r from-purple-50 to-pink-50 sticky top-0 z-10">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">No</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Kegiatan</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">NIM</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Prodi</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Tanggal Verifikasi</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Verifikator</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-riwayat" class="divide-y divide-gray-100 bg-white">
-                        <?php if (empty($riwayat_verifikasi)): ?>
-                            <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada riwayat verifikasi.</td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($riwayat_verifikasi as $index => $item): ?>
-                                <tr class="hover:bg-gray-50 transition-colors duration-150">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"><?= $index + 1 ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700"><?= htmlspecialchars($item['nama'] ?? '-') ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><?= htmlspecialchars($item['nim'] ?? '-') ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><?= htmlspecialchars($item['prodi'] ?? '-') ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars(date('d/m/Y H:i', strtotime($item['tanggal_verifikasi'] ?? 'now'))) ?></td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            <?= htmlspecialchars($item['status'] ?? '-') ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?= htmlspecialchars($item['verifikator'] ?? '-') ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Mobile Cards -->
-        <div class="md:hidden overflow-y-auto" style="max-height: 500px;">
-            <div id="mobile-riwayat-list" class="p-3 space-y-3">
-                 <!-- Mobile logic will be handled by JS or simple PHP loop here -->
-                 <?php foreach ($riwayat_verifikasi as $item): ?>
-                    <div class="bg-white border rounded-lg p-4 shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-sm text-gray-900"><?= htmlspecialchars($item['nama'] ?? '-') ?></h4>
-                                <p class="text-xs text-gray-600 mt-0.5"><?= htmlspecialchars($item['nim'] ?? '-') ?> - <?= htmlspecialchars($item['prodi'] ?? '-') ?></p>
-                                <p class="text-xs text-gray-500 mt-1"><?= htmlspecialchars($item['verifikator'] ?? '-') ?></p>
-                            </div>
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                <?= htmlspecialchars($item['status'] ?? '-') ?>
-                            </span>
-                        </div>
-                        <div class="mt-3 text-xs text-gray-400">
-                            <?= htmlspecialchars(date('d/m/Y H:i', strtotime($item['tanggal_verifikasi'] ?? 'now'))) ?>
-                        </div>
-                    </div>
-                 <?php endforeach; ?>
             </div>
         </div>
     </section>
@@ -528,6 +448,6 @@ if (!isset($stats)) {
 <script>
     window.dataKAK = <?= json_encode($list_kak) ?>;
     window.dataLPJ = <?= json_encode($list_lpj) ?>;
-    window.dataRiwayat = <?= json_encode($riwayat_verifikasi ?? []) ?>;
+    
 </script>
 <script src="/docutrack/public/assets/js/bendahara/dashboard.js"></script>

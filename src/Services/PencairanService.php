@@ -256,12 +256,15 @@ class PencairanService
             }
             
             // Log History (Unified)
-            $statusDisetujui = 3; // Status Disetujui (Internal History) or 5 (Cair)? Using 3 per Dev code.
-            $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, timestamp) VALUES (?, ?, NOW())";
-            $stmtHist = mysqli_prepare($this->db, $historyQuery);
-            mysqli_stmt_bind_param($stmtHist, "ii", $kegiatanId, $statusDisetujui);
-            mysqli_stmt_execute($stmtHist);
-            mysqli_stmt_close($stmtHist);
+            $statusDanaDiberikan = 5; // Status "Dana diberikan"
+            $userId = $_SESSION['user_id'] ?? null;
+            if ($userId) {
+                $historyQuery = "INSERT INTO tbl_progress_history (kegiatanId, statusId, changedByUserId, timestamp) VALUES (?, ?, ?, NOW())";
+                $stmtHist = mysqli_prepare($this->db, $historyQuery);
+                mysqli_stmt_bind_param($stmtHist, "iii", $kegiatanId, $statusDanaDiberikan, $userId);
+                mysqli_stmt_execute($stmtHist);
+                mysqli_stmt_close($stmtHist);
+            }
             
             mysqli_commit($this->db);
             

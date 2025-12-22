@@ -18,26 +18,13 @@ class VerifikatorService
     private KegiatanModel $kegiatanModel;
     private WorkflowService $workflowService;
 
-    public function __construct(
-        $verifikatorModelOrDb,
-        $logStatusService = null,
-        $validationService = null,
-        $kegiatanModel = null
-    ) {
-        if ($verifikatorModelOrDb instanceof VerifikatorModel) {
-            $this->verifikatorModel = $verifikatorModelOrDb;
-            $this->logStatusService = $logStatusService;
-            $this->validationService = $validationService;
-            $this->kegiatanModel = $kegiatanModel;
-        } else {
-             // Assume $verifikatorModelOrDb is $db
-            $db = $verifikatorModelOrDb;
-            $this->verifikatorModel = new VerifikatorModel($db);
-            $this->logStatusService = new LogStatusService($db);
-            $this->validationService = new ValidationService();
-            $this->kegiatanModel = new KegiatanModel($db);
-            $this->workflowService = new WorkflowService($db);
-        }
+    public function __construct($db)
+    {
+        $this->verifikatorModel = new VerifikatorModel($db);
+        $this->logStatusService = new LogStatusService($db);
+        $this->validationService = new ValidationService();
+        $this->kegiatanModel = new KegiatanModel($db);
+        $this->workflowService = new WorkflowService($db);
     }
 
     public function getDashboardStats()
@@ -91,7 +78,18 @@ class VerifikatorService
      */
     public function approveUsulan(int $kegiatanId, string $kodeMak, float $danaDisetujui, ?string $catatan = null): bool
     {
-        $result = $this->verifikatorModel->updateKegiatanApprovalStatus($kegiatanId, $kodeMak, $danaDisetujui, $catatan);
+        $additionalData = [
+            'kodeMak' => $kodeMak,
+            'danaDisetujui' => $danaDisetujui,
+            'umpanBalik' => $catatan
+        ];
+
+        $result = $this->workflowService->moveToNextPosition(
+            $kegiatanId,
+            WorkflowService::POSITION_VERIFIKATOR,
+            WorkflowService::STATUS_DISETUJUI,
+            $additionalData
+        );
 
         if ($result) {
             try {
@@ -100,7 +98,7 @@ class VerifikatorService
                     $this->logStatusService->createNotification(
                         (int) $kegiatan['userId'],
                         'APPROVAL',
-                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda telah disetujui oleh Verifikator. Silakan lengkapi rincian kegiatan di menu Pengajuan Kegiatan.",
+                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda telah disetujui oleh Verifikator dan diteruskan ke PPK.",
                         $kegiatanId
                     );
                 }
@@ -113,37 +111,18 @@ class VerifikatorService
 
     /**
      * Menolak usulan.
-     * Moved from VerifikatorModel to VerifikatorService for business logic and notification trigger.
      */
     public function rejectUsulan(int $kegiatanId, string $alasanPenolakan = ''): bool
     {
-        $result = $this->verifikatorModel->updateKegiatanRejectionStatus($kegiatanId, $alasanPenolakan);
-
-        if ($result) {
-            try {
-                $kegiatan = $this->verifikatorModel->getDetailKegiatan($kegiatanId);
-                if ($kegiatan && isset($kegiatan['userId'])) {
-                    $this->logStatusService->createNotification(
-                        (int) $kegiatan['userId'],
-                        'REJECTION',
-                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda ditolak oleh Verifikator. Alasan: " . ($alasanPenolakan ?: 'Tidak ada.'),
-                        $kegiatanId
-                    );
-                }
-            } catch (Throwable $e) {
-                error_log("Gagal membuat notifikasi penolakan untuk kegiatan ID {$kegiatanId}: " . $e->getMessage());
-            }
-        }
-        return $result;
+        return $this->workflowService->reject(
+            $kegiatanId,
+            WorkflowService::POSITION_VERIFIKATOR,
+            $alasanPenolakan
+        );
     }
 
     /**
      * Mengirim usulan untuk direvisi oleh Verifikator.
-     *
-     * @param int $kegiatanId ID Kegiatan
-     * @param array $komentarRevisi Komentar revisi
-     * @return bool
-     * @throws BusinessLogicException
      */
     public function reviseUsulan(int $kegiatanId, array $komentarRevisi): bool
     {
@@ -152,26 +131,16 @@ class VerifikatorService
             'komentar' => 'required|array'
         ]);
 
-        $dbResult = $this->verifikatorModel->updateKegiatanRevisionStatus($kegiatanId, $komentarRevisi);
-
-        if ($dbResult) {
-            try {
-                // Dapatkan userId dari pengusul kegiatan
-                $kegiatan = $this->verifikatorModel->getDetailKegiatan($kegiatanId);
-                if ($kegiatan && isset($kegiatan['userId'])) {
-                    $this->logStatusService->createNotification(
-                        (int) $kegiatan['userId'],
-                        'REVISION',
-                        "Proposal kegiatan \"{$kegiatan['namaKegiatan']}\" Anda perlu direvisi.",
-                        $kegiatanId
-                    );
-                }
-            } catch (Throwable $e) {
-                // Jika notifikasi gagal, jangan gagalkan seluruh proses, tapi catat errornya.
-                error_log("Gagal membuat notifikasi revisi untuk kegiatan ID {$kegiatanId}: " . $e->getMessage());
-            }
+        $comments = [];
+        foreach($komentarRevisi as $komentar) {
+            $comments[] = "Field '{$komentar['targetKolom']}': {$komentar['komentar']}";
         }
+        $commentString = implode("\n", $comments);
 
-        return $dbResult;
+        return $this->workflowService->requestRevision(
+            $kegiatanId,
+            WorkflowService::POSITION_VERIFIKATOR,
+            $commentString
+        );
     }
 }

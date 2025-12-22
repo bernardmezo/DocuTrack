@@ -208,6 +208,27 @@ class PengajuanLpjController extends Controller
                 } else {
                     throw new Exception('Gagal memproses permintaan revisi.');
                 }
+            } elseif ($action === 'tolak') {
+                $alasan = trim($_POST['alasan_penolakan'] ?? '');
+                if (empty($alasan)) {
+                    throw new Exception('Alasan penolakan wajib diisi.');
+                }
+
+                if ($this->safeModelCall($this->model, 'rejectLPJ', [$lpj_id, $alasan], false)) {
+                    $_SESSION['flash_message'] = 'LPJ berhasil ditolak.';
+                    $_SESSION['flash_type'] = 'success';
+
+                    // --- Notifikasi ke Pengusul ---
+                    $lpjData = $this->model->getDetailLPJ($lpj_id);
+                    if ($lpjData && isset($lpjData['userId'])) {
+                        $pengusulId = $lpjData['userId'];
+                        $namaKegiatan = $lpjData['namaKegiatan'] ?? 'Kegiatan';
+                        $pesan = "LPJ untuk kegiatan '{$namaKegiatan}' ditolak oleh Bendahara. Alasan: " . $alasan;
+                        $this->logStatusService->createNotification($pengusulId, 'REJECTION', $pesan, $lpj_id);
+                    }
+                } else {
+                    throw new Exception('Gagal menolak LPJ.');
+                }
             } else {
                 throw new Exception('Action tidak valid');
             }
