@@ -53,11 +53,22 @@ class WorkflowService
      * [current_position => next_position_on_approve]
      */
     private const WORKFLOW_ROUTING = [
-        self::POSITION_ADMIN => self::POSITION_VERIFIKATOR,  // Admin → Verifikator
-        self::POSITION_VERIFIKATOR => self::POSITION_ADMIN,  // Verifikator → Admin (for rincian)
-        self::POSITION_PPK => self::POSITION_WADIR,          // PPK → Wadir
-        self::POSITION_WADIR => self::POSITION_BENDAHARA,    // Wadir → Bendahara
-        self::POSITION_BENDAHARA => self::POSITION_BENDAHARA // Bendahara (end of workflow)
+        self::POSITION_ADMIN => self::POSITION_VERIFIKATOR,      // Admin -> Verifikator
+        self::POSITION_VERIFIKATOR => self::POSITION_PPK,        // Verifikator -> PPK (Fixed: was Admin)
+        self::POSITION_PPK => self::POSITION_WADIR,              // PPK -> Wadir
+        self::POSITION_WADIR => self::POSITION_BENDAHARA,        // Wadir -> Bendahara
+        self::POSITION_BENDAHARA => self::POSITION_BENDAHARA     // Bendahara (end of workflow)
+    ];
+
+    /**
+     * Reverse workflow map for rollbacks
+     * [current_position => previous_position]
+     */
+    private const WORKFLOW_REVERSE_ROUTING = [
+        self::POSITION_VERIFIKATOR => self::POSITION_ADMIN,
+        self::POSITION_PPK => self::POSITION_VERIFIKATOR,
+        self::POSITION_WADIR => self::POSITION_PPK,
+        self::POSITION_BENDAHARA => self::POSITION_WADIR
     ];
     
     /**
@@ -91,6 +102,17 @@ class WorkflowService
         }
         
         return self::WORKFLOW_ROUTING[$currentPosition];
+    }
+
+    /**
+     * Get previous position for rejection/rollback
+     * 
+     * @param int $currentPosition
+     * @return int Previous position ID or POSITION_ADMIN if start
+     */
+    public function getPreviousPosition(int $currentPosition): int
+    {
+        return self::WORKFLOW_REVERSE_ROUTING[$currentPosition] ?? self::POSITION_ADMIN;
     }
     
     /**
@@ -231,27 +253,30 @@ class WorkflowService
     }
     
     /**
-     * Reject kegiatan and send back to Admin
+     * Reject kegiatan and send back to Previous Role (Rollback) or Admin
      * 
      * @param int $kegiatanId
      * @param int $currentPosition
      * @param string $reason Rejection reason
+     * @param int|null $targetPosition Optional explicit target position
      * @return bool
      */
-    public function reject(int $kegiatanId, int $currentPosition, string $reason): bool
+    public function reject(int $kegiatanId, int $currentPosition, string $reason, ?int $targetPosition = null): bool
     {
         $this->db->begin_transaction();
         
         try {
+            // Determine target position: Explicit -> Previous Step -> Admin
+            $backToPosition = $targetPosition ?? $this->getPreviousPosition($currentPosition);
+            
             $sql = "UPDATE tbl_kegiatan 
                    SET posisiId = ?, statusUtamaId = ? 
                    WHERE kegiatanId = ?";
             
             $stmt = $this->db->prepare($sql);
-            $backToAdmin = self::POSITION_ADMIN;
             $statusDitolak = self::STATUS_DITOLAK;
             
-            $stmt->bind_param('iii', $backToAdmin, $statusDitolak, $kegiatanId);
+            $stmt->bind_param('iii', $backToPosition, $statusDitolak, $kegiatanId);
             
             if (!$stmt->execute()) {
                 throw new BusinessLogicException("Failed to reject: " . $stmt->error);
@@ -260,9 +285,9 @@ class WorkflowService
             $stmt->close();
             
             // Record rejection in history
-            $this->recordHistory($kegiatanId, $statusDitolak, $currentPosition, $backToAdmin, $reason);
+            $this->recordHistory($kegiatanId, $statusDitolak, $currentPosition, $backToPosition, $reason);
             
-            // Send notification to Admin
+            // Send notification to Admin (Owner) - Logic could be expanded to notify previous role
             $this->notifyRejection($kegiatanId, $currentPosition, $reason);
             
             $this->db->commit();

@@ -42,21 +42,22 @@ class KakModel
      * @param string $gambaranUmum
      * @param string $penerimaManfaat
      * @param string $metodePelaksanaan
-     * @param string|null $indikatorKerjaUtamaRenstra
+     * @param string|null $iku
      * @return int|false New KAK ID on success, false on failure.
      */
-    public function insertKAK($kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null)
+    public function insertKAK($kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $iku = null)
     {
+        // Fixed: Table name tbl_kak, Columns: kegiatanId, gambaranUmum, penerimaManfaat, metodePelaksanaan, iku
         $stmt = mysqli_prepare($this->db, "
-            INSERT INTO tbl_kak (kegiatan_id, gambaran_umum, penerimaManfaat, metode_pelaksanaan, indikator_kerja_utama_renstra)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO tbl_kak (kegiatanId, gambaranUmum, penerimaManfaat, metodePelaksanaan, iku, tglPembuatan)
+            VALUES (?, ?, ?, ?, ?, CURDATE())
         ");
         if ($stmt === false) {
             error_log('KakModel::insertKAK - Prepare failed: ' . mysqli_error($this->db));
             return false;
         }
 
-        mysqli_stmt_bind_param($stmt, 'issss', $kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra);
+        mysqli_stmt_bind_param($stmt, 'issss', $kegiatanId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $iku);
 
         if (mysqli_stmt_execute($stmt)) {
             $newId = mysqli_insert_id($this->db);
@@ -76,25 +77,26 @@ class KakModel
      * @param string $gambaranUmum
      * @param string $penerimaManfaat
      * @param string $metodePelaksanaan
-     * @param string|null $indikatorKerjaUtamaRenstra
+     * @param string|null $iku
      * @return bool True on success, false on failure.
      */
-    public function updateKAK($kakId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra = null)
+    public function updateKAK($kakId, $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $iku = null)
     {
+        // Fixed: Column names matched to schema
         $stmt = mysqli_prepare($this->db, "
             UPDATE tbl_kak SET 
-                gambaran_umum = ?, 
+                gambaranUmum = ?, 
                 penerimaManfaat = ?, 
-                metode_pelaksanaan = ?, 
-                indikator_kerja_utama_renstra = ?
-            WHERE kak_id = ?
+                metodePelaksanaan = ?, 
+                iku = ?
+            WHERE kakId = ?
         ");
         if ($stmt === false) {
             error_log('KakModel::updateKAK - Prepare failed: ' . mysqli_error($this->db));
             return false;
         }
 
-        mysqli_stmt_bind_param($stmt, 'ssssi', $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $indikatorKerjaUtamaRenstra, $kakId);
+        mysqli_stmt_bind_param($stmt, 'ssssi', $gambaranUmum, $penerimaManfaat, $metodePelaksanaan, $iku, $kakId);
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
@@ -114,6 +116,7 @@ class KakModel
      */
     public function getKAKWithRelationsById($kakId)
     {
+        // Fixed: Column names and table joins
         $query = "
             SELECT 
                 k.kakId, 
@@ -167,8 +170,16 @@ class KakModel
             }
 
             if (!empty($row['indikatorId'])) {
-                $indikator_exists = array_column($kakData['indikator_list'], 'indikatorId');
-                if (!in_array($row['indikatorId'], $indikator_exists)) {
+                // Check duplicates in result set
+                $exists = false;
+                foreach ($kakData['indikator_list'] as $ind) {
+                    if ($ind['indikatorId'] == $row['indikatorId']) {
+                        $exists = true;
+                        break;
+                    }
+                }
+                
+                if (!$exists) {
                     $kakData['indikator_list'][] = [
                         'indikatorId' => $row['indikatorId'],
                         'bulan' => $row['bulan'],
@@ -179,8 +190,16 @@ class KakModel
             }
 
             if (!empty($row['tahapanId'])) {
-                $tahapan_exists = array_column($kakData['tahapan_list'], 'tahapanId');
-                if (!in_array($row['tahapanId'], $tahapan_exists)) {
+                // Check duplicates in result set
+                $exists = false;
+                foreach ($kakData['tahapan_list'] as $tah) {
+                    if ($tah['tahapanId'] == $row['tahapanId']) {
+                        $exists = true;
+                        break;
+                    }
+                }
+
+                if (!$exists) {
                     $kakData['tahapan_list'][] = [
                         'tahapanId' => $row['tahapanId'],
                         'namaTahapan' => $row['namaTahapan']
@@ -230,36 +249,51 @@ class KakModel
 
         $kakList = [];
         while ($row = mysqli_fetch_assoc($result)) {
-            $kakId = $row['kak_id'];
+            $kakId = $row['kakId'];
 
             if (!isset($kakList[$kakId])) {
                 $kakList[$kakId] = [
-                    'kak_id' => $row['kak_id'],
-                    'kegiatan_id' => $row['kegiatan_id'],
-                    'gambaran_umum' => $row['gambaran_umum'],
+                    'kakId' => $row['kakId'],
+                    'kegiatanId' => $row['kegiatanId'],
+                    'gambaranUmum' => $row['gambaranUmum'],
                     'penerimaManfaat' => $row['penerimaManfaat'],
-                    'metode_pelaksanaan' => $row['metode_pelaksanaan'],
-                    'indikator_kerja_utama_renstra' => $row['indikator_kerja_utama_renstra'],
+                    'metodePelaksanaan' => $row['metodePelaksanaan'],
+                    'iku' => $row['iku'],
                     'indikator_list' => [],
                     'tahapan_list' => []
                 ];
             }
 
-            if (!empty($row['indikator_id'])) {
-                $kakList[$kakId]['indikator_list'][] = [
-                    'indikator_id' => $row['indikator_id'],
-                    'bulan' => $row['bulan'],
-                    'indikator_keberhasilan' => $row['indikator_keberhasilan'],
-                    'target_persen' => $row['target_persen']
-                ];
+            if (!empty($row['indikatorId'])) {
+                $exists = false;
+                foreach ($kakList[$kakId]['indikator_list'] as $item) {
+                    if ($item['indikatorId'] == $row['indikatorId']) {
+                        $exists = true;
+                        break;
+                    }
+                }
+                if (!$exists) {
+                    $kakList[$kakId]['indikator_list'][] = [
+                        'indikatorId' => $row['indikatorId'],
+                        'bulan' => $row['bulan'],
+                        'indikatorKeberhasilan' => $row['indikatorKeberhasilan'],
+                        'targetPersen' => $row['targetPersen']
+                    ];
+                }
             }
 
-            if (!empty($row['tahapan_id'])) {
-                $tahapan_exists = array_column($kakList[$kakId]['tahapan_list'], 'tahapan_id');
-                if (!in_array($row['tahapan_id'], $tahapan_exists)) {
+            if (!empty($row['tahapanId'])) {
+                $exists = false;
+                foreach ($kakList[$kakId]['tahapan_list'] as $item) {
+                    if ($item['tahapanId'] == $row['tahapanId']) {
+                        $exists = true;
+                        break;
+                    }
+                }
+                if (!$exists) {
                     $kakList[$kakId]['tahapan_list'][] = [
-                        'tahapan_id' => $row['tahapan_id'],
-                        'nama_tahapan' => $row['nama_tahapan']
+                        'tahapanId' => $row['tahapanId'],
+                        'namaTahapan' => $row['namaTahapan']
                     ];
                 }
             }
@@ -294,6 +328,7 @@ class KakModel
             mysqli_stmt_close($stmt1);
 
             // 2. Prepare & Execute Delete Indicators
+            // Fixed: Table name tbl_indikator_kak
             $stmt2 = mysqli_prepare($this->db, "DELETE FROM tbl_indikator_kak WHERE kakId = ?");
             if ($stmt2 === false) {
                 throw new Exception("KakModel::deleteKAK - Prepare indikator failed: " . mysqli_error($this->db));
@@ -368,8 +403,9 @@ class KakModel
      */
     public function insertIndikatorKinerja($kakId, $indikatorList)
     {
+        // Fixed: Table name tbl_indikator_kak and column names
         $stmt = mysqli_prepare($this->db, "
-            INSERT INTO tbl_kak_indikator (kak_id, bulan, indikator_keberhasilan, target_persen)
+            INSERT INTO tbl_indikator_kak (kakId, bulan, indikatorKeberhasilan, targetPersen)
             VALUES (?, ?, ?, ?)
         ");
         if ($stmt === false) {
@@ -383,8 +419,8 @@ class KakModel
                 'iisi',
                 $kakId,
                 $indikator['bulan'],
-                $indikator['indikator_keberhasilan'],
-                $indikator['target_persen']
+                $indikator['indikatorKeberhasilan'], // Fixed: snake_case to camelCase
+                $indikator['targetPersen'] // Fixed: snake_case to camelCase
             );
             if (!mysqli_stmt_execute($stmt)) {
                 error_log('KakModel::insertIndikatorKinerja - Execute failed: ' . mysqli_stmt_error($this->db));

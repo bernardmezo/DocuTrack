@@ -42,7 +42,9 @@ class BendaharaService
             
             // Map other expected fields for consistency
             $item['nama'] = $item['namaKegiatan'] ?? 'N/A';
+            $item['nama_kegiatan'] = $item['namaKegiatan'] ?? 'N/A'; // Pass original too
             $item['nama_mahasiswa'] = $item['pemilikKegiatan'] ?? 'N/A';
+            $item['pengusul'] = $item['pemilikKegiatan'] ?? 'N/A'; // Pass original/alias
             $item['nim'] = $item['nimPelaksana'] ?? '-';
             $item['prodi'] = $item['prodiPenyelenggara'] ?? '-';
             $item['jurusan'] = $item['jurusanPenyelenggara'] ?? '-';
@@ -69,7 +71,9 @@ class BendaharaService
             // Map field names for JavaScript compatibility
             $item['id'] = $item['lpjId'] ?? null;
             $item['nama'] = $item['namaKegiatan'] ?? 'N/A';
+            $item['nama_kegiatan'] = $item['namaKegiatan'] ?? 'N/A'; // Pass original too
             $item['nama_mahasiswa'] = $item['pemilikKegiatan'] ?? 'N/A';
+            $item['pengusul'] = $item['pemilikKegiatan'] ?? 'N/A'; // Pass original/alias
             $item['nim'] = $item['nimPelaksana'] ?? '-';
             $item['prodi'] = $item['prodiPenyelenggara'] ?? '-';
             $item['jurusan'] = $item['jurusanPenyelenggara'] ?? '-';
@@ -87,7 +91,20 @@ class BendaharaService
 
     public function getRiwayatVerifikasi()
     {
-        return []; // Keep as empty array if model doesn't have it yet, but remove 'Stub' comment
+        $data = $this->model->getRiwayatVerifikasi();
+        
+        // Map fields if necessary for frontend
+        foreach ($data as &$item) {
+            $item['tanggal'] = $item['tanggal_verifikasi'] ?? null;
+            // Ensure ID is present
+            $item['id'] = $item['id'] ?? $item['kegiatanId'] ?? null;
+            // Map prodi if not already set (though query aliases it as 'prodi')
+            $item['prodi'] = $item['prodi'] ?? $item['prodiPenyelenggara'] ?? '-';
+            // Map nim
+            $item['nim'] = $item['nim'] ?? $item['nimPelaksana'] ?? '-';
+        }
+        
+        return $data;
     }
 
     public function getRiwayatVerifikasiLPJ()

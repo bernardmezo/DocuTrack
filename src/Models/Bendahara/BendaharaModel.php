@@ -104,6 +104,41 @@ class BendaharaModel
         return $data;
     }
 
+    public function getRiwayatVerifikasi($limit = 10)
+    {
+        // Query to get history of verifications done by Bendahara
+        // Added prodiPenyelenggara to fix missing department name
+        // Added nimPelaksana to fix missing NIM
+        $query = "SELECT 
+                    k.kegiatanId as id,
+                    k.namaKegiatan as nama,
+                    k.pemilikKegiatan as nama_mahasiswa,
+                    k.nimPelaksana as nim,
+                    k.prodiPenyelenggara as prodi,
+                    ph.timestamp as tanggal_verifikasi,
+                    s.namaStatusUsulan as status,
+                    u.nama as verifikator
+                  FROM tbl_progress_history ph
+                  JOIN tbl_kegiatan k ON ph.kegiatanId = k.kegiatanId
+                  LEFT JOIN tbl_status_utama s ON ph.statusId = s.statusId
+                  LEFT JOIN tbl_user u ON ph.changedByUserId = u.userId
+                  -- Filtering for Bendahara context if needed, but for now showing recent history
+                  ORDER BY ph.timestamp DESC
+                  LIMIT ?";
+
+        $stmt = mysqli_prepare($this->db, $query);
+        mysqli_stmt_bind_param($stmt, "i", $limit);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        $data = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data[] = $row;
+        }
+        mysqli_stmt_close($stmt);
+        return $data;
+    }
+
     // =========================================================
     // 3. DETAIL KEGIATAN & DATA PENDUKUNG
     // =========================================================
@@ -410,7 +445,7 @@ class BendaharaModel
         $query = "SELECT k.*, s.namaStatusUsulan as status_text 
                   FROM tbl_kegiatan k
                   LEFT JOIN tbl_status_utama s ON k.statusUtamaId = s.statusId
-                  WHERE k.posisiId = 5
+                  WHERE k.posisiId = 5 AND k.statusUtamaId != 4
                   ORDER BY k.createdAt DESC 
                   LIMIT ?";
         
@@ -429,15 +464,16 @@ class BendaharaModel
 
     public function getAntrianLPJ()
     {
-        // Asumsi statusId 1 = Submitted/Menunggu
+        // Modified to show ALL recent LPJs, not just 'Menunggu' (statusId=1)
+        // This fixes the empty dashboard issue.
         $query = "SELECT l.*, k.namaKegiatan, k.pemilikKegiatan, k.nimPelaksana, 
                          k.prodiPenyelenggara, k.jurusanPenyelenggara, k.userId,
                          s.namaStatusUsulan as status_text
                   FROM tbl_lpj l
                   JOIN tbl_kegiatan k ON l.kegiatanId = k.kegiatanId
                   LEFT JOIN tbl_status_utama s ON l.statusId = s.statusId
-                  WHERE l.statusId = 1
-                  ORDER BY l.submittedAt ASC";
+                  WHERE l.statusId != 4
+                  ORDER BY l.submittedAt DESC LIMIT 20"; // Limit for dashboard performance
 
         $result = mysqli_query($this->db, $query);
         $data = [];
