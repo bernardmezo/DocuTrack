@@ -279,7 +279,8 @@ class WorkflowService
         
         try {
             // Determine target position: Explicit -> Previous Step -> Admin
-            $backToPosition = $targetPosition ?? $this->getPreviousPosition($currentPosition);
+            // UNTUK REJECT: Posisi tetap di current (tidak rollback), status jadi DITOLAK
+            $backToPosition = $currentPosition; // TETAP DI POSISI VERIFIKATOR
             
             $sql = "UPDATE tbl_kegiatan 
                    SET posisiId = ?, statusUtamaId = ? 
@@ -288,11 +289,14 @@ class WorkflowService
             $stmt = $this->db->prepare($sql);
             $statusDitolak = self::STATUS_DITOLAK;
             
+            // FIX: Gunakan variabel yang benar, bukan hardcoded!
             $stmt->bind_param('iii', $backToPosition, $statusDitolak, $kegiatanId);
             
             if (!$stmt->execute()) {
                 throw new BusinessLogicException("Failed to reject: " . $stmt->error);
             }
+            
+            error_log("WORKFLOW REJECT - Updated kegiatanId=$kegiatanId to posisi=$backToPosition, status=$statusDitolak");
             
             $stmt->close();
             

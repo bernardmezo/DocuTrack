@@ -1,0 +1,12 @@
+DB_HOST=localhost
+DB_NAME=db_docutrack2
+DB_USER=root
+DB_PASS=
+
+# Konfigurasi SMTP (Untuk Notifikasi Email)
+SMTP_HOST=smtp.zoho.com
+SMTP_PORT=587
+SMTP_USER=administrator@docutrack-pnj.me
+SMTP_PASS=bNpziv9hREB9
+
+GEMINI_API_KEY=AIzaSyCbdhSMaCXJg1YubJ860k5i4pvgDOWjDyo

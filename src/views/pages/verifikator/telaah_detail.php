@@ -455,74 +455,7 @@ function render_comment_box($field_name, $is_menunggu_status, $is_telah_direvisi
                 </div>
             </div>
 
-            <!-- 5. Rincian Rancangan Kegiatan -->
-            <div class="mb-6 md:mb-8 pt-4 md:pt-6 border-t border-gray-200 animate-reveal" style="animation-delay: 500ms;">
-                <h3 class="text-lg md:text-xl font-bold text-gray-800 pb-2 md:pb-3 mb-3 md:mb-4 border-b border-gray-200">5. Rincian Rancangan Kegiatan</h3>
-                
-                <div class="mb-4 md:mb-6">
-                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Surat Pengantar</label>
-                    <div class="relative max-w-2xl">
-                        <?php if (!empty($surat_pengantar)): ?>
-                            <div class="flex items-center justify-between gap-3 px-3 md:px-4 py-3 md:py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                                <div class="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-                                    <i class="fas fa-file-pdf text-red-500 text-lg md:text-xl flex-shrink-0"></i>
-                                    <span class="text-xs md:text-sm text-gray-800 font-medium truncate" title="<?php echo htmlspecialchars($surat_pengantar); ?>">
-                                        <?php echo htmlspecialchars($surat_pengantar); ?>
-                                    </span>
-                                </div>
-                                <a href="<?php echo htmlspecialchars($surat_pengantar_url); ?>" target="_blank" 
-                                   class="text-blue-600 hover:text-blue-700 transition-colors flex-shrink-0 p-2">
-                                    <i class="fas fa-download"></i>
-                                </a>
-                            </div>
-                        <?php else: ?>
-                            <div class="flex items-center justify-between px-3 md:px-4 py-3 md:py-3.5 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                <div class="flex items-center gap-2 md:gap-3">
-                                    <i class="fas fa-file-pdf text-gray-300 text-lg md:text-xl"></i>
-                                    <span class="text-xs md:text-sm text-gray-400 italic">Belum ada file yang diunggah</span>
-                                </div>
-                                <i class="fas fa-times-circle text-gray-300"></i>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 md:mb-3 block">Kurun Waktu Pelaksanaan</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-w-lg">
-                        <div class="flex items-center justify-between px-3 md:px-4 py-3 md:py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                            <div>
-                                <span class="text-xs text-gray-500 block mb-1">Tanggal Mulai</span>
-                                <span class="text-sm text-gray-800 font-semibold">
-                                    <?php 
-                                    if (isValidDate($tanggal_mulai)) {
-                                        echo formatTanggal($tanggal_mulai);
-                                    } else {
-                                        echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
-                                    }
-                                    ?>
-                                </span>
-                            </div>
-                            <i class="fas fa-calendar-alt <?php echo isValidDate($tanggal_mulai) ? 'text-blue-500' : 'text-gray-300'; ?> text-base md:text-lg"></i>
-                        </div>
-                        <div class="flex items-center justify-between px-3 md:px-4 py-3 md:py-3.5 bg-gray-100 rounded-lg border border-gray-200">
-                            <div>
-                                <span class="text-xs text-gray-500 block mb-1">Tanggal Selesai</span>
-                                <span class="text-sm text-gray-800 font-semibold">
-                                    <?php 
-                                    if (isValidDate($tanggal_selesai)) {
-                                        echo formatTanggal($tanggal_selesai);
-                                    } else {
-                                        echo '<span class="text-gray-400 italic font-normal">Belum ditentukan</span>';
-                                    }
-                                    ?>
-                                </span>
-                            </div>
-                            <i class="fas fa-calendar-check <?php echo isValidDate($tanggal_selesai) ? 'text-green-500' : 'text-gray-300'; ?> text-base md:text-lg"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
             
             <!-- 6. Kode MAK -->
             <div id="mak-section" class="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-200 animate-reveal 

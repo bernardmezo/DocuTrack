@@ -13,11 +13,14 @@ use Exception;
 class TelaahController extends Controller
 {
     private VerifikatorService $service;
+    private VerifikatorModel $verifikatorModel;
 
     public function __construct()
     {
         parent::__construct();
         $this->service = new VerifikatorService($this->db);
+
+        $this->verifikatorModel = new VerifikatorModel($this->db);
     }
 
     /**
@@ -274,7 +277,7 @@ class TelaahController extends Controller
                 throw new Exception('Alasan penolakan wajib diisi');
             }
 
-            $result = $this->service->rejectUsulan($kegiatanId, $alasanPenolakan);
+            $result = $this->verifikatorModel->updateKegiatanRejectionStatus($kegiatanId, $alasanPenolakan);
 
             if ($result) {
                 $_SESSION['flash_message'] = 'Usulan berhasil ditolak.';
@@ -331,7 +334,7 @@ class TelaahController extends Controller
                 throw new Exception('Minimal isi satu catatan revisi');
             }
 
-            $result = $this->service->reviseUsulan($kegiatanId, $komentarRevisi);
+            $result = $this->verifikatorModel->updateKegiatanRevisionStatus($kegiatanId, $komentarRevisi);
 
             if ($result) {
                 $_SESSION['flash_message'] = 'Usulan dikembalikan untuk revisi.';

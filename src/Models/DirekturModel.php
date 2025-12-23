@@ -25,7 +25,8 @@ class DirekturModel
                 SUM(CASE WHEN (k.posisiId >= 5 OR (k.posisiId = 1 AND k.statusUtamaId IN (5, 6) AND k.jumlahDicairkan IS NOT NULL)) AND l.statusId = 3 THEN 1 ELSE 0 END) as disetujui,
                 SUM(CASE WHEN k.statusUtamaId = 4 THEN 1 ELSE 0 END) as ditolak,
                 SUM(CASE WHEN k.posisiId = 4 AND k.statusUtamaId = 1 OR l.statusId = 1 THEN 1 ELSE 0 END) as menunggu,
-                SUM(CASE WHEN k.statusUtamaId = 2 THEN 1 ELSE 0 END) as revisi
+                SUM(CASE WHEN k.statusUtamaId = 2 THEN 1 ELSE 0 END) as revisi,
+                SUM(CASE WHEN k.statusUtamaId = 1 THEN 1 ELSE 0 END) as menunggu
             FROM tbl_kegiatan k
             LEFT JOIN tbl_lpj l ON k.kegiatanId = l.kegiatanId
         ";

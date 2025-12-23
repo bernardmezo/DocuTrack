@@ -190,7 +190,7 @@ CREATE TABLE `tbl_kegiatan` (
   `posisiId` int(11) NOT NULL DEFAULT 1 COMMENT 'Posisi workflow: 1=Admin, 2=Verifikator, 3=Wadir, 4=PPK, 5=Bendahara',
   `tanggalPencairan` datetime DEFAULT NULL COMMENT 'Tanggal dana dicairkan (full/first disbursement)',
   `jumlahDicairkan` decimal(15,2) DEFAULT NULL COMMENT 'Jumlah dana yang dicairkan',
-  `danaDiSetujui` decimal(15,2) DEFAULT NULL COMMENT 'Total dana yang sudah disetujui verifikator atas grand total RAB pengusul',
+  `danaDisetujui` decimal(15,2) DEFAULT NULL COMMENT 'Total dana yang sudah disetujui verifikator atas grand total RAB pengusul',
   `metodePencairan` varchar(50) DEFAULT NULL COMMENT 'Metode: uang_muka, dana_penuh, bertahap',
   `catatanBendahara` text DEFAULT NULL COMMENT 'Catatan dari Bendahara saat pencairan',
   `pencairan_tahap_json` text DEFAULT NULL COMMENT 'JSON array untuk pencairan bertahap: [{tahap, tanggal, persentase, jumlah, status}]',
