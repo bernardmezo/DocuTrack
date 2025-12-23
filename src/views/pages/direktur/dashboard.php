@@ -43,9 +43,9 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
                 <div>
                     <h2 class="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-700 bg-clip-text text-transparent mb-1">
-                        <i class="fas fa-chart-bar mr-2"></i>Usulan Per Program Studi
+                        <i class="fas fa-chart-bar mr-2"></i>Usulan Per Jurusan
                     </h2>
-                    <p class="text-sm text-gray-500">Distribusi pengajuan berdasarkan program studi</p>
+                    <p class="text-sm text-gray-500">Distribusi pengajuan berdasarkan jurusan</p>
                 </div>
                 <div class="flex gap-2 mt-4 sm:mt-0 flex-wrap">
                     <button class="filter-btn-prodi active px-3 md:px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs md:text-sm font-medium hover:from-cyan-600 hover:to-blue-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 whitespace-nowrap" data-filter="today">
